@@ -6,9 +6,8 @@
   <meta name="theme-color" content="#14202b" />
   <title>学涯 Copilot · 课程知识副驾</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22%3E%3Crect width=%2264%22 height=%2264%22 rx=%2212%22 fill=%22%2314202b%22/%3E%3Ctext x=%2232%22 y=%2243%22 text-anchor=%22middle%22 font-size=%2238%22 fill=%22%23f0c75e%22%3E学%3C/text%3E%3C/svg%3E" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=IBM+Plex+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="preconnect" href="https://cdn.cnbj1.fds.api.mi-img.com" />
+  <link href="https://cdn.cnbj1.fds.api.mi-img.com/aife/mimo-blog-fe/doc_build/fonts/font-faces.b3ff14bbe16d.css" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
   <script src="https://unpkg.com/lucide@latest"></script>
 </head>
@@ -108,7 +107,7 @@
         <section class="workspace-grid" id="chatView">
           <div class="chat-panel panel">
             <div class="panel-heading">
-              <div><span class="eyebrow">RAG workspace</span><h2>问一问资料</h2></div><span class="panel-tag">演示模式</span>
+              <div><span class="eyebrow">RAG workspace</span><h2>问一问资料</h2></div><span class="panel-tag" id="engineStatus">MiMo 初始化</span>
               <button class="icon-button subtle" type="button" title="清空对话" aria-label="清空对话" id="clearChat"><i data-lucide="rotate-ccw"></i></button>
             </div>
             <div class="mode-switcher" role="tablist" aria-label="问答模式"><button class="mode-button active" type="button" data-chat-mode="ask" role="tab"><i data-lucide="message-circle"></i>资料问答</button><button class="mode-button" type="button" data-chat-mode="summarize" role="tab"><i data-lucide="list-tree"></i>知识整理</button><button class="mode-button" type="button" data-chat-mode="quiz" role="tab"><i data-lucide="badge-check"></i>练习生成</button></div>

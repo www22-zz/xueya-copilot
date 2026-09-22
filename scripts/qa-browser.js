@@ -19,8 +19,9 @@ const fs = require("fs");
   await page.click('[data-chat-mode="summarize"]');
   await page.fill("#chatInput", "平衡树与旋转");
   await page.click(".send-button");
-  await page.waitForTimeout(900);
+  await page.waitForFunction(() => !document.querySelector(".ai-message.loading-message"), null, { timeout: 60000 });
   results.desktop.modeResponse = await page.locator(".ai-message").last().innerText();
+  results.desktop.engineStatus = await page.locator("#engineStatus").innerText();
 
   await page.keyboard.press("Control+k");
   results.desktop.commandPalette = await page.locator("#commandPalette").getAttribute("aria-hidden");

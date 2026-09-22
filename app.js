@@ -82,6 +82,41 @@ function escapeHtml(value) {
   }[char]));
 }
 
+function renderRichText(value) {
+  return escapeHtml(value)
+    .replace(/\n\n/g, "<br><br>")
+    .replace(/\n/g, "<br>")
+    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+    .replace(/`([^`]+)`/g, "<code>$1</code>");
+}
+
+async function requestMiMo(question, sources, mode) {
+  const response = await fetch("/api/ai", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ question, sources, mode })
+  });
+  const payload = await response.json();
+  if (!response.ok || !payload.ok) throw new Error(payload.error || "MiMo request failed");
+  return payload;
+}
+
+async function checkEngine() {
+  try {
+    const payload = await (await fetch("/api/health")).json();
+    const status = $("#engineStatus");
+    if (payload.engine === "xiaomi-mimo") {
+      status.textContent = "MiMo 已连接";
+      status.classList.add("online");
+    } else {
+      status.textContent = "本地降级";
+      status.classList.add("offline");
+    }
+  } catch {
+    $("#engineStatus").textContent = "本地降级";
+    $("#engineStatus").classList.add("offline");
+  }
+}
 function showToast(message) {
   const toast = $("#toast");
   toast.textContent = message;
@@ -214,9 +249,16 @@ function aiBodyMarkup(answer) {
     <button class="citation-chip" type="button" data-source="${sourceId}">
       <span>${index + 1}</span>${sourceId === "source-1" ? "讲义 p.42" : sourceId === "source-2" ? "复习题 p.8" : "实验指导书 p.3"}
     </button>`).join("");
-  return `<div class="message-meta"><strong>学涯 Copilot</strong><span>${answer.meta}</span></div><p>${answer.text}${citationMarkup ? `<br />${citationMarkup}` : ""}</p>${answer.sources.length ? `<div class="answer-actions"><button class="mini-action" type="button" data-save-message><i data-lucide="bookmark-plus"></i>保存为知识卡片</button><button class="mini-action" type="button" data-follow-up><i data-lucide="corner-down-right"></i>继续追问</button></div>` : ""}`;
+  const answerText = answer.html ? answer.text : renderRichText(answer.text);
+  const knowledgePoints = Array.isArray(answer.knowledgePoints) ? answer.knowledgePoints.slice(0, 4) : [];
+  const knowledgeMarkup = knowledgePoints.length
+    ? `<div class="knowledge-pills"><span>知识点</span>${knowledgePoints.map((point) => `<b>${escapeHtml(point)}</b>`).join("")}</div>`
+    : "";
+  const confidence = Number.isFinite(answer.confidence)
+    ? `<span><i class="confidence-dot"></i>置信度 ${Math.round(answer.confidence * 100)}%</span>`
+    : "";
+  return `<div class="message-meta"><strong>学涯 Copilot</strong><span>${answer.meta}</span>${confidence}</div><p>${answerText}${citationMarkup ? `<br />${citationMarkup}` : ""}</p>${knowledgeMarkup}${answer.sources.length ? `<div class="answer-actions"><button class="mini-action" type="button" data-save-message><i data-lucide="bookmark-plus"></i>保存为知识卡片</button><button class="mini-action" type="button" data-follow-up><i data-lucide="corner-down-right"></i>继续追问</button></div>` : ""}`;
 }
-
 function addChatMessage({ role, text, sources = [], meta = "", loading = false }) {
   const thread = $("#chatThread");
   const article = document.createElement("article");
@@ -236,23 +278,44 @@ function addChatMessage({ role, text, sources = [], meta = "", loading = false }
   return article;
 }
 
-function handleQuestion(question) {
+async function handleQuestion(question) {
   const cleanQuestion = question.trim();
   if (!cleanQuestion) {
     showToast("先输入一个课程问题");
     return;
   }
   addChatMessage({ role: "user", text: escapeHtml(cleanQuestion) });
-  const loading = addChatMessage({ role: "ai", text: "正在检索课程知识库并整理证据…", meta: "检索中", loading: true });
-  setTimeout(() => {
-    const answer = answerFor(cleanQuestion, state.chatMode);
+  const loading = addChatMessage({ role: "ai", text: "正在检索课程知识库并整理证据…", meta: "MiMo 检索中", loading: true });
+  const localSources = retrieve(cleanQuestion);
+  try {
+    const remote = await requestMiMo(cleanQuestion, localSources, state.chatMode);
+    const sources = remote.sources.length ? remote.sources : localSources;
+    const answer = {
+      text: remote.answer,
+      sources,
+      meta: `MiMo ${remote.model || "V2.6"} · 检索到 ${sources.length} 个来源`,
+      knowledgePoints: remote.knowledgePoints || [],
+      confidence: remote.confidence,
+      html: false
+    };
     loading.classList.remove("loading-message");
     loading.querySelector(".message-body").innerHTML = aiBodyMarkup(answer);
-    $("#chatThread").scrollTop = $("#chatThread").scrollHeight;
-    refreshIcons();
-  }, 680);
+    $("#engineStatus").textContent = "MiMo 已连接";
+    $("#engineStatus").classList.add("online");
+    $("#engineStatus").classList.remove("offline");
+  } catch (error) {
+    const answer = answerFor(cleanQuestion, state.chatMode);
+    answer.html = true;
+    answer.meta = `本地降级 · ${answer.meta}`;
+    loading.classList.remove("loading-message");
+    loading.querySelector(".message-body").innerHTML = aiBodyMarkup(answer);
+    $("#engineStatus").textContent = "本地降级";
+    $("#engineStatus").classList.add("offline");
+    $("#engineStatus").classList.remove("online");
+  }
+  $("#chatThread").scrollTop = $("#chatThread").scrollHeight;
+  refreshIcons();
 }
-
 function saveCard() {
   state.cardCount += 1;
   state.savedCards.push({ createdAt: new Date().toISOString() });
@@ -485,12 +548,13 @@ function bindEvents() {
   });
 
   $("#courseButton").addEventListener("click", () => showToast("当前课程空间：数据结构"));
-  $("#settingsButton").addEventListener("click", () => showToast("偏好设置：当前使用演示模式"));
+  $("#settingsButton").addEventListener("click", () => showToast(`AI 引擎：${$("#engineStatus").textContent}`));
 }
 
 document.addEventListener("DOMContentLoaded", () => {
   bindEvents();
   renderDocuments();
+  checkEngine();
   $(".quick-stat:nth-child(3) strong").textContent = state.cardCount;
   refreshIcons();
 });
