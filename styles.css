@@ -140,7 +140,7 @@ h2 { font-size: 17px; line-height: 1.2; }
 .user-message .message-body p { color: var(--ink); font-size: 12px; }
 .message-meta { display: flex; align-items: baseline; gap: 8px; margin: 0 0 6px; }
 .message-meta strong { font-size: 11px; }
-.message-meta span { color: var(--ink-soft); font-family: var(--mono); font-size: 9px; }
+.message-meta span { color: var(--ink-soft); font-family: var(--mono); font-size: 9px; }.loading-copy { color: var(--ink-soft) !important; font-family: var(--mono); font-size: 10px !important; }.loading-message .ai-avatar svg { animation: spin 1s linear infinite; }.loading-message { opacity: .82; }
 .ai-message p { margin-top: 7px; color: var(--ink-soft); font-size: 12px; line-height: 1.75; }
 .ai-message mark { padding: 1px 3px; background: var(--yellow-soft); color: var(--ink); }
 .citation-chip { display: inline-flex; align-items: center; gap: 4px; margin: 0 2px; padding: 2px 6px; border: 1px solid #c8d5fb; border-radius: 3px; background: var(--blue-soft); color: var(--blue); font-family: var(--mono); font-size: 9px; vertical-align: middle; }
@@ -286,7 +286,7 @@ h2 { font-size: 17px; line-height: 1.2; }
 .toast { position: fixed; right: 24px; bottom: 24px; z-index: 30; max-width: 300px; padding: 11px 14px; border: 1px solid var(--line); border-radius: 5px; background: var(--ink); color: white; box-shadow: var(--shadow); font-size: 11px; opacity: 0; pointer-events: none; transform: translateY(10px); transition: opacity .25s, transform .25s; }
 .toast.show { opacity: 1; transform: translateY(0); }
 
-@keyframes viewIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes spin { to { transform: rotate(360deg); } }@keyframes viewIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; } }
 
 @media (max-width: 1080px) {

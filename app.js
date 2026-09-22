@@ -1,35 +1,26 @@
-const state = {
-  currentView: "overview",
-  cardCount: 6,
-  questionIndex: 0,
-  source: {
-    "source-1": {
-      title: "数据结构讲义 · 第 3 章",
-      location: "树与二叉树 · p.42",
-      quote: "在一棵二叉搜索树中，查找操作从根节点开始，根据比较结果进入左子树或右子树，最多沿着一条根到叶的路径进行。"
-    },
-    "source-2": {
-      title: "期中复习题 2024",
-      location: "查找与排序 · p.8",
-      quote: "平衡二叉搜索树的高度与节点数量呈对数关系，查找、插入和删除的平均时间复杂度为 O(log n)。"
-    },
-    "source-3": {
-      title: "实验指导书",
-      location: "二叉树遍历实验 · p.3",
-      quote: "遍历序列可以作为验证二叉树结构和实现递归算法的实验输入。"
-    }
+const STORAGE_KEY = "xueya-copilot-state-v1";
+const sourceLibrary = {
+  "source-1": {
+    title: "数据结构讲义 · 第 3 章",
+    location: "树与二叉树 · p.42",
+    quote: "在一棵二叉搜索树中，查找操作从根节点开始，根据比较结果进入左子树或右子树，最多沿着一条根到叶的路径进行。",
+    keywords: ["二叉搜索树", "查找", "复杂度", "树", "路径", "节点", "高度"]
+  },
+  "source-2": {
+    title: "期中复习题 2024",
+    location: "查找与排序 · p.8",
+    quote: "平衡二叉搜索树的高度与节点数量呈对数关系，查找、插入和删除的平均时间复杂度为 O(log n)。",
+    keywords: ["平衡", "旋转", "AVL", "复杂度", "查找", "排序", "log"]
+  },
+  "source-3": {
+    title: "实验指导书",
+    location: "二叉树遍历实验 · p.3",
+    quote: "遍历序列可以作为验证二叉树结构和实现递归算法的实验输入。",
+    keywords: ["遍历", "中序", "递归", "实验", "序列", "二叉树"]
   }
 };
 
-const documents = [
-  ["数据结构讲义 · 第 3 章.pdf", "树与二叉树 · 18 页 · 4.2 MB"],
-  ["期中复习题 2024.pdf", "查找与排序 · 12 页 · 2.8 MB"],
-  ["实验指导书.pdf", "二叉树遍历 · 8 页 · 1.6 MB"],
-  ["课堂笔记 · 第 4 周.md", "递归与分治 · 3,821 字"],
-  ["往年试题整理.txt", "综合复习 · 6,240 字"]
-];
-
-const questions = [
+const initialQuestions = [
   {
     prompt: "一棵有 15 个节点的平衡二叉搜索树，查找一个节点最多需要比较多少次？",
     options: ["3 次", "4 次", "7 次", "15 次"],
@@ -47,8 +38,38 @@ const questions = [
   }
 ];
 
+const initialDocuments = [
+  { id: "doc-1", name: "数据结构讲义 · 第 3 章.pdf", meta: "树与二叉树 · 18 页 · 4.2 MB", status: "已索引" },
+  { id: "doc-2", name: "期中复习题 2024.pdf", meta: "查找与排序 · 12 页 · 2.8 MB", status: "已索引" },
+  { id: "doc-3", name: "实验指导书.pdf", meta: "二叉树遍历 · 8 页 · 1.6 MB", status: "已索引" },
+  { id: "doc-4", name: "课堂笔记 · 第 4 周.md", meta: "递归与分治 · 3,821 字", status: "已索引" },
+  { id: "doc-5", name: "往年试题整理.txt", meta: "综合复习 · 6,240 字", status: "已索引" }
+];
+
+const saved = (() => {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"); } catch { return {}; }
+})();
+
+const state = {
+  currentView: "overview",
+  cardCount: Number(saved.cardCount || 6),
+  questionIndex: 0,
+  questions: initialQuestions,
+  documents: Array.isArray(saved.documents) && saved.documents.length ? saved.documents : initialDocuments,
+  savedCards: Array.isArray(saved.savedCards) ? saved.savedCards : [],
+  source: sourceLibrary
+};
+
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => Array.from(document.querySelectorAll(selector));
+
+function persistState() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({
+    cardCount: state.cardCount,
+    documents: state.documents,
+    savedCards: state.savedCards
+  }));
+}
 
 function refreshIcons() {
   if (window.lucide) window.lucide.createIcons();
@@ -65,7 +86,7 @@ function showToast(message) {
   toast.textContent = message;
   toast.classList.add("show");
   clearTimeout(showToast.timer);
-  showToast.timer = setTimeout(() => toast.classList.remove("show"), 2600);
+  showToast.timer = setTimeout(() => toast.classList.remove("show"), 2800);
 }
 
 function showView(view) {
@@ -77,7 +98,12 @@ function showView(view) {
     practice: "练习与错题",
     plan: "复习计划"
   };
-  $$(".nav-item").forEach((item) => item.classList.toggle("active", item.dataset.view === view));
+  $$(".nav-item").forEach((item) => {
+    item.classList.toggle("active", item.dataset.view === view);
+    const label = item.querySelector("span:not(.nav-count)")?.textContent || "导航";
+    item.title = label;
+    item.setAttribute("aria-label", label);
+  });
   $("#viewTitle").textContent = titles[view] || "学习总览";
 
   $("#overviewView").classList.toggle("hidden", view !== "overview");
@@ -88,18 +114,16 @@ function showView(view) {
   $("#practiceView").classList.toggle("hidden", view !== "practice");
   $("#planView").classList.toggle("hidden", view !== "plan");
 
-  if (view === "chat") {
-    $("#chatView").scrollIntoView({ behavior: "smooth", block: "start" });
-  }
+  if (view === "chat") $("#chatView").scrollIntoView({ behavior: "smooth", block: "start" });
   refreshIcons();
 }
 
 function renderDocuments() {
-  $("#documentList").innerHTML = documents.map(([name, meta], index) => `
-    <div class="document-row">
+  $("#documentList").innerHTML = state.documents.map((doc, index) => `
+    <div class="document-row" data-document-id="${doc.id}">
       <div class="document-icon"><i data-lucide="${index % 3 === 1 ? "file-check-2" : "file-text"}"></i></div>
-      <div class="document-copy"><strong>${name}</strong><span>${meta}</span></div>
-      <span class="document-status">已索引</span>
+      <div class="document-copy"><strong>${escapeHtml(doc.name)}</strong><span>${escapeHtml(doc.meta)}</span></div>
+      <span class="document-status" style="${doc.status !== "已索引" ? "color: var(--yellow)" : ""}">${escapeHtml(doc.status)}</span>
       <button class="icon-button subtle" type="button" title="打开资料" aria-label="打开资料"><i data-lucide="arrow-up-right"></i></button>
     </div>
   `).join("");
@@ -120,55 +144,82 @@ function closeSource() {
   $("#sourceDrawer").setAttribute("aria-hidden", "true");
 }
 
-function addChatMessage({ role, text, sources = [], meta = "" }) {
-  const thread = $("#chatThread");
-  const article = document.createElement("article");
-  article.className = `message ${role === "user" ? "user-message" : "ai-message"}`;
-  const avatar = role === "user"
-    ? `<div class="message-avatar">林</div>`
-    : `<div class="message-avatar ai-avatar"><i data-lucide="sparkles"></i></div>`;
-  const citationMarkup = sources.map((sourceId, index) => `
-    <button class="citation-chip" type="button" data-source="${sourceId}">
-      <span>${index + 1}</span>${sourceId === "source-1" ? "讲义 p.42" : sourceId === "source-2" ? "复习题 p.8" : "实验指导书 p.3"}
-    </button>`).join("");
-  article.innerHTML = `${avatar}<div class="message-body">
-    ${role === "ai" ? `<div class="message-meta"><strong>学涯 Copilot</strong><span>${meta || "基于课程资料回答"}</span></div>` : ""}
-    <p>${text}${citationMarkup ? `<br />${citationMarkup}` : ""}</p>
-    ${role === "ai" && sources.length ? `<div class="answer-actions"><button class="mini-action" type="button" data-save-message><i data-lucide="bookmark-plus"></i>保存为知识卡片</button><button class="mini-action" type="button" data-follow-up><i data-lucide="corner-down-right"></i>继续追问</button></div>` : ""}
-  </div>`;
-  thread.appendChild(article);
-  thread.scrollTop = thread.scrollHeight;
-  refreshIcons();
+function retrieve(question) {
+  const normalized = question.toLowerCase();
+  return Object.entries(state.source)
+    .map(([id, source]) => ({
+      id,
+      score: source.keywords.reduce((total, keyword) => total + (normalized.includes(keyword.toLowerCase()) ? 1 : 0), 0)
+    }))
+    .filter((item) => item.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 3)
+    .map((item) => item.id);
 }
 
 function answerFor(question) {
+  const sources = retrieve(question);
   const value = question.toLowerCase();
+  if (!sources.length) {
+    return {
+      text: `我在当前课程知识库中没有找到足够依据。可以补充“二叉搜索树”“平衡树”“遍历”等关键词，或先上传相关资料。`,
+      sources: [],
+      meta: "检索结果为空"
+    };
+  }
   if (value.includes("复杂度") || value.includes("查找") || value.includes("二叉搜索")) {
     return {
-      text: `在一棵高度为 <mark>h</mark> 的二叉搜索树中，查找操作最多沿着一条根到叶的路径进行，因此时间复杂度为 <strong>O(h)</strong>。如果树比较平衡，<mark>h ≈ log₂n</mark>，平均为 O(log n)；如果插入顺序让树退化成链表，最坏会变成 O(n)。`,
-      sources: ["source-1", "source-2"],
-      meta: "基于 2 个来源回答"
+      text: `检索到树与查找相关片段。在一棵高度为 <mark>h</mark> 的二叉搜索树中，查找操作最多沿着一条根到叶的路径进行，因此时间复杂度为 <strong>O(h)</strong>。平衡时 <mark>h ≈ log₂n</mark>，平均为 O(log n)；树退化成链表时，最坏为 O(n)。`,
+      sources,
+      meta: `检索到 ${sources.length} 个相关片段`
     };
   }
-  if (value.includes("平衡") || value.includes("旋转")) {
+  if (value.includes("平衡") || value.includes("旋转") || value.includes("avl")) {
     return {
-      text: `平衡树通过旋转限制树高，使路径长度保持在对数级别。AVL 树会在插入或删除后检查平衡因子，并用单旋或双旋恢复结构，查找、插入和删除的平均复杂度为 <strong>O(log n)</strong>。`,
-      sources: ["source-1", "source-2"],
-      meta: "基于 2 个来源回答"
+      text: `相关资料指出，平衡树通过旋转限制树高。AVL 树会在插入或删除后检查平衡因子，并用单旋或双旋恢复结构，使查找、插入和删除保持在 <strong>O(log n)</strong> 的平均复杂度。`,
+      sources,
+      meta: `检索到 ${sources.length} 个相关片段`
     };
   }
-  if (value.includes("遍历") || value.includes("中序")) {
+  if (value.includes("遍历") || value.includes("中序") || value.includes("递归")) {
     return {
-      text: `二叉搜索树的中序遍历会按照关键字从小到大访问节点，因此通常得到一个<strong>递增序列</strong>。这也是验证二叉搜索树结构是否正确的常用方法。`,
-      sources: ["source-1", "source-3"],
-      meta: "基于 2 个来源回答"
+      text: `根据实验指导书，中序遍历会按照关键字从小到大访问二叉搜索树节点，通常得到一个<strong>递增序列</strong>，也可以用来验证树结构和递归实现。`,
+      sources,
+      meta: `检索到 ${sources.length} 个相关片段`
     };
   }
   return {
-    text: `当前课程资料中没有足够依据回答这个问题。可以换一种问法，例如补充知识点名称或指定章节，我会继续在“数据结构”知识库中检索。`,
-    sources: [],
-    meta: "资料中未找到"
+    text: `我检索到 ${sources.length} 个可能相关的资料片段，但它们还不足以形成可靠结论。建议把问题聚焦到具体章节、概念或公式，我会继续沿证据回答。`,
+    sources,
+    meta: "需要更具体的提问"
   };
+}
+
+function aiBodyMarkup(answer) {
+  const citationMarkup = answer.sources.map((sourceId, index) => `
+    <button class="citation-chip" type="button" data-source="${sourceId}">
+      <span>${index + 1}</span>${sourceId === "source-1" ? "讲义 p.42" : sourceId === "source-2" ? "复习题 p.8" : "实验指导书 p.3"}
+    </button>`).join("");
+  return `<div class="message-meta"><strong>学涯 Copilot</strong><span>${answer.meta}</span></div><p>${answer.text}${citationMarkup ? `<br />${citationMarkup}` : ""}</p>${answer.sources.length ? `<div class="answer-actions"><button class="mini-action" type="button" data-save-message><i data-lucide="bookmark-plus"></i>保存为知识卡片</button><button class="mini-action" type="button" data-follow-up><i data-lucide="corner-down-right"></i>继续追问</button></div>` : ""}`;
+}
+
+function addChatMessage({ role, text, sources = [], meta = "", loading = false }) {
+  const thread = $("#chatThread");
+  const article = document.createElement("article");
+  article.className = `message ${role === "user" ? "user-message" : "ai-message"}${loading ? " loading-message" : ""}`;
+  const avatar = role === "user"
+    ? `<div class="message-avatar">林</div>`
+    : `<div class="message-avatar ai-avatar"><i data-lucide="${loading ? "loader-circle" : "sparkles"}"></i></div>`;
+  const body = role === "ai" && loading
+    ? `<div class="message-meta"><strong>学涯 Copilot</strong><span>${meta}</span></div><p class="loading-copy">${text}</p>`
+    : role === "ai"
+      ? aiBodyMarkup({ text, sources, meta })
+      : `<p>${text}</p>`;
+  article.innerHTML = `${avatar}<div class="message-body">${body}</div>`;
+  thread.appendChild(article);
+  thread.scrollTop = thread.scrollHeight;
+  refreshIcons();
+  return article;
 }
 
 function handleQuestion(question) {
@@ -178,12 +229,31 @@ function handleQuestion(question) {
     return;
   }
   addChatMessage({ role: "user", text: escapeHtml(cleanQuestion) });
-  const answer = answerFor(cleanQuestion);
-  setTimeout(() => addChatMessage({ role: "ai", text: answer.text, sources: answer.sources, meta: answer.meta }), 420);
+  const loading = addChatMessage({ role: "ai", text: "正在检索课程知识库并整理证据…", meta: "检索中", loading: true });
+  setTimeout(() => {
+    const answer = answerFor(cleanQuestion);
+    loading.classList.remove("loading-message");
+    loading.querySelector(".message-body").innerHTML = aiBodyMarkup(answer);
+    $("#chatThread").scrollTop = $("#chatThread").scrollHeight;
+    refreshIcons();
+  }, 680);
+}
+
+function saveCard() {
+  state.cardCount += 1;
+  state.savedCards.push({ createdAt: new Date().toISOString() });
+  $(".quick-stat:nth-child(3) strong").textContent = state.cardCount;
+  persistState();
+  showToast("已保存到知识卡片");
 }
 
 function bindEvents() {
-  $$(".nav-item").forEach((item) => item.addEventListener("click", () => showView(item.dataset.view)));
+  $$(".nav-item").forEach((item) => {
+    const label = item.querySelector("span:not(.nav-count)")?.textContent || "导航";
+    item.title = label;
+    item.setAttribute("aria-label", label);
+    item.addEventListener("click", () => showView(item.dataset.view));
+  });
   $$("[data-view-jump]").forEach((button) => button.addEventListener("click", () => showView(button.dataset.viewJump)));
 
   $("#chatForm").addEventListener("submit", (event) => {
@@ -220,11 +290,7 @@ function bindEvents() {
   $("#chatThread").addEventListener("click", (event) => {
     const citation = event.target.closest("[data-source]");
     if (citation) openSource(citation.dataset.source);
-    if (event.target.closest("[data-save-message]") || event.target.closest("#saveCard")) {
-      state.cardCount += 1;
-      $(".quick-stat:nth-child(3) strong").textContent = state.cardCount;
-      showToast("已保存到知识卡片");
-    }
+    if (event.target.closest("[data-save-message]") || event.target.closest("#saveCard")) saveCard();
     if (event.target.closest("[data-follow-up]") || event.target.closest("#askFollowUp")) {
       $("#chatInput").focus();
       $("#chatInput").value = "那么它和 AVL 树有什么区别？";
@@ -240,10 +306,8 @@ function bindEvents() {
   $("#drawerClose").addEventListener("click", closeSource);
   $("#drawerBackdrop").addEventListener("click", closeSource);
   $("#drawerSave").addEventListener("click", () => {
-    state.cardCount += 1;
-    $(".quick-stat:nth-child(3) strong").textContent = state.cardCount;
+    saveCard();
     closeSource();
-    showToast("原文已保存到知识卡片");
   });
 
   $("#clearChat").addEventListener("click", () => {
@@ -251,24 +315,33 @@ function bindEvents() {
     showToast("已清空当前对话");
   });
 
-  $("#refreshInsight").addEventListener("click", () => showToast("知识点脉搏已刷新"));
+  $("#refreshInsight").addEventListener("click", () => {
+    $$(".topic-bar span").forEach((bar, index) => {
+      const value = [76, 68, 55][index] || 50;
+      bar.style.width = `${value}%`;
+      bar.parentElement.parentElement.querySelector(".topic-score").textContent = `${value}%`;
+    });
+    showToast("知识点脉搏已刷新");
+  });
 
   $("#answerOptions").addEventListener("click", (event) => {
     const option = event.target.closest("button[data-answer]");
     if (!option) return;
+    const question = state.questions[state.questionIndex];
     $$("#answerOptions button").forEach((item) => item.classList.remove("selected", "correct", "wrong"));
-    option.classList.add("selected", option.dataset.answer === questions[state.questionIndex].answer ? "correct" : "wrong");
-    $("#practiceStatus").textContent = option.dataset.answer === questions[state.questionIndex].answer ? "回答正确，继续保持" : "再看一眼来源，下一次会更稳";
+    option.classList.add("selected", option.dataset.answer === question.answer ? "correct" : "wrong");
+    $("#practiceStatus").textContent = option.dataset.answer === question.answer ? "回答正确，继续保持" : "再看一眼来源，下一次会更稳";
   });
 
   $("#nextQuestion").addEventListener("click", () => {
-    state.questionIndex = (state.questionIndex + 1) % questions.length;
-    const question = questions[state.questionIndex];
+    state.questionIndex = (state.questionIndex + 1) % state.questions.length;
+    const question = state.questions[state.questionIndex];
     $("#practiceQuestion").textContent = question.prompt;
     $$("#answerOptions button").forEach((button, index) => {
+      const key = ["A", "B", "C", "D"][index];
       button.className = "";
-      button.dataset.answer = ["A", "B", "C", "D"][index];
-      button.innerHTML = `<span>${["A", "B", "C", "D"][index]}</span>${question.options[index]}`;
+      button.dataset.answer = key;
+      button.innerHTML = `<span>${key}</span>${question.options[index]}`;
     });
     $("#practiceStatus").textContent = "选择一个答案";
   });
@@ -286,8 +359,19 @@ function bindEvents() {
     refreshIcons();
   }));
 
-  $("#generatePractice").addEventListener("click", () => showToast("已生成 5 道针对“树与二叉树”的练习"));
-  $("#regeneratePlan").addEventListener("click", () => showToast("复习计划已根据薄弱点重新排程"));
+  $("#generatePractice").addEventListener("click", () => {
+    state.questionIndex = 0;
+    $("#quizResult").classList.add("hidden");
+    $$(".answer-options.vertical button").forEach((item) => item.classList.remove("selected", "correct", "wrong"));
+    showToast("已生成 5 道针对“树与二叉树”的练习");
+  });
+
+  $("#regeneratePlan").addEventListener("click", () => {
+    const items = $$(".timeline-item");
+    items.forEach((item, index) => item.classList.toggle("active", index === 1));
+    showToast("复习计划已根据薄弱点重新排程");
+  });
+
   $("#editExam").addEventListener("click", () => {
     const current = window.prompt("输入考试日期（YYYY-MM-DD）", "2026-11-08");
     if (!current) return;
@@ -303,29 +387,45 @@ function bindEvents() {
   });
 
   $("#fileInput").addEventListener("change", (event) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    const row = document.createElement("div");
-    row.className = "document-row";
-    row.innerHTML = `<div class="document-icon"><i data-lucide="file-up"></i></div><div class="document-copy"><strong>${escapeHtml(file.name)}</strong><span>正在解析内容并建立索引</span></div><span class="document-status" style="color: var(--yellow)">解析中</span>`;
-    $("#documentList").prepend(row);
-    refreshIcons();
-    setTimeout(() => {
-      row.querySelector(".document-copy span").textContent = "刚刚加入 · 可检索";
-      const status = row.querySelector(".document-status");
-      status.textContent = "已索引";
-      status.style.color = "var(--teal)";
-      showToast(`${file.name} 已完成索引`);
-    }, 1200);
+    const files = Array.from(event.target.files || []);
+    const supported = ["pdf", "docx", "txt", "md"];
+    files.forEach((file, index) => {
+      const extension = file.name.split(".").pop().toLowerCase();
+      const row = document.createElement("div");
+      row.className = "document-row";
+      const valid = supported.includes(extension);
+      row.innerHTML = `<div class="document-icon"><i data-lucide="${valid ? "file-up" : "file-warning"}"></i></div><div class="document-copy"><strong>${escapeHtml(file.name)}</strong><span>${valid ? "正在解析内容并建立索引" : "格式不受支持，请上传 PDF、DOCX、TXT 或 MD"}</span></div><span class="document-status" style="color: ${valid ? "var(--yellow)" : "var(--coral)"}">${valid ? "解析中" : "失败"}</span>`;
+      $("#documentList").prepend(row);
+      refreshIcons();
+      if (!valid) {
+        showToast(`${file.name} 的格式不受支持`);
+        return;
+      }
+      setTimeout(() => {
+        row.querySelector(".document-copy span").textContent = "刚刚加入 · 可检索";
+        const status = row.querySelector(".document-status");
+        status.textContent = "已索引";
+        status.style.color = "var(--teal)";
+        state.documents.unshift({
+          id: `doc-${Date.now()}-${index}`,
+          name: file.name,
+          meta: `${extension.toUpperCase()} · 本地资料 · 刚刚上传`,
+          status: "已索引"
+        });
+        persistState();
+        showToast(`${file.name} 已完成索引`);
+      }, 1000 + index * 180);
+    });
     event.target.value = "";
   });
 
-  $("#courseButton").addEventListener("click", () => showToast("当前仅开放“数据结构”课程空间"));
-  $("#settingsButton").addEventListener("click", () => showToast("偏好设置即将开放"));
+  $("#courseButton").addEventListener("click", () => showToast("当前课程空间：数据结构"));
+  $("#settingsButton").addEventListener("click", () => showToast("偏好设置：当前使用演示模式"));
 }
 
 document.addEventListener("DOMContentLoaded", () => {
   bindEvents();
   renderDocuments();
+  $(".quick-stat:nth-child(3) strong").textContent = state.cardCount;
   refreshIcons();
 });
