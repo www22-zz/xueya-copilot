@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#14202b" />
   <title>学涯 Copilot · 课程知识副驾</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22%3E%3Crect width=%2264%22 height=%2264%22 rx=%2212%22 fill=%22%2314202b%22/%3E%3Ctext x=%2232%22 y=%2243%22 text-anchor=%22middle%22 font-size=%2238%22 fill=%22%23f0c75e%22%3E学%3C/text%3E%3C/svg%3E" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=IBM+Plex+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -68,8 +69,8 @@
         <div class="topbar-actions">
           <label class="search-box">
             <i data-lucide="search"></i>
-            <input type="search" placeholder="搜索资料、知识点或提问" id="globalSearch" />
-            <kbd>/</kbd>
+            <input type="search" placeholder="搜索页面或开始提问" id="globalSearch" />
+
           </label>
           <button class="icon-button" type="button" title="通知" aria-label="通知"><i data-lucide="bell"></i><span class="notification-dot"></span></button>
           <button class="avatar-button" type="button" title="个人中心" aria-label="个人中心">林</button>
@@ -110,6 +111,7 @@
               <div><span class="eyebrow">RAG workspace</span><h2>问一问资料</h2></div><span class="panel-tag">演示模式</span>
               <button class="icon-button subtle" type="button" title="清空对话" aria-label="清空对话" id="clearChat"><i data-lucide="rotate-ccw"></i></button>
             </div>
+            <div class="mode-switcher" role="tablist" aria-label="问答模式"><button class="mode-button active" type="button" data-chat-mode="ask" role="tab"><i data-lucide="message-circle"></i>资料问答</button><button class="mode-button" type="button" data-chat-mode="summarize" role="tab"><i data-lucide="list-tree"></i>知识整理</button><button class="mode-button" type="button" data-chat-mode="quiz" role="tab"><i data-lucide="badge-check"></i>练习生成</button></div>
             <div class="chat-thread" id="chatThread">
               <div class="date-divider"><span>今天 10:24</span></div>
               <article class="message user-message">
@@ -130,7 +132,7 @@
               <textarea id="chatInput" rows="1" placeholder="输入一个关于课程资料的问题…" aria-label="输入问题"></textarea>
               <button class="send-button" type="submit" title="发送问题" aria-label="发送问题"><i data-lucide="arrow-up"></i></button>
             </form>
-            <div class="composer-hint"><span><i data-lucide="shield-check"></i>回答只使用当前课程资料</span><span><i data-lucide="paperclip"></i>支持 PDF、DOCX、TXT</span></div>
+            <div class="composer-hint"><span><i data-lucide="library"></i>当前知识库 · 12 份资料</span><span><i data-lucide="shield-check"></i>来源可追溯</span></div>
           </div>
 
           <aside class="right-column">
@@ -215,6 +217,7 @@
     </main>
   </div>
 
+  <div class="command-palette" id="commandPalette" aria-hidden="true"><div class="command-backdrop" id="commandBackdrop"></div><section class="command-sheet" role="dialog" aria-modal="true" aria-label="快捷操作"><div class="command-search"><i data-lucide="search"></i><input id="commandInput" type="search" placeholder="搜索页面、资料或操作" /></div><div class="command-list"><button type="button" data-command="chat"><i data-lucide="message-circle"></i><span>问一问资料</span></button><button type="button" data-command="library"><i data-lucide="library"></i><span>打开课程知识库</span></button><button type="button" data-command="upload"><i data-lucide="upload-cloud"></i><span>上传课程资料</span></button><button type="button" data-command="practice"><i data-lucide="badge-check"></i><span>开始今日练习</span></button><button type="button" data-command="plan"><i data-lucide="calendar-range"></i><span>查看复习计划</span></button></div></section></div>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <div class="source-drawer" id="sourceDrawer" aria-hidden="true">
     <div class="drawer-backdrop" id="drawerBackdrop"></div>

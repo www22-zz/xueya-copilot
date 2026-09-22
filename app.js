@@ -52,6 +52,7 @@ const saved = (() => {
 
 const state = {
   currentView: "overview",
+  chatMode: "ask",
   cardCount: Number(saved.cardCount || 6),
   questionIndex: 0,
   questions: initialQuestions,
@@ -157,9 +158,23 @@ function retrieve(question) {
     .map((item) => item.id);
 }
 
-function answerFor(question) {
+function answerFor(question, mode = state.chatMode) {
   const sources = retrieve(question);
   const value = question.toLowerCase();
+  if (mode === "summarize") {
+    return {
+      text: `围绕“${escapeHtml(question)}”，我整理出三个学习重点：先理解定义和适用条件，再掌握典型操作或算法，最后用一道例题验证是否真正掌握。当前资料中检索到 ${sources.length} 个相关片段，建议先保存为知识卡片再进入练习。`,
+      sources,
+      meta: `整理自 ${sources.length} 个片段`
+    };
+  }
+  if (mode === "quiz") {
+    return {
+      text: `练习建议：请先判断“${escapeHtml(question)}”的定义、关键条件和典型边界情况。答完后我会把错题加入复习计划。当前资料中检索到 ${sources.length} 个相关片段。`,
+      sources,
+      meta: `练习依据 ${sources.length} 个片段`
+    };
+  }
   if (!sources.length) {
     return {
       text: `我在当前课程知识库中没有找到足够依据。可以补充“二叉搜索树”“平衡树”“遍历”等关键词，或先上传相关资料。`,
@@ -194,7 +209,6 @@ function answerFor(question) {
     meta: "需要更具体的提问"
   };
 }
-
 function aiBodyMarkup(answer) {
   const citationMarkup = answer.sources.map((sourceId, index) => `
     <button class="citation-chip" type="button" data-source="${sourceId}">
@@ -231,7 +245,7 @@ function handleQuestion(question) {
   addChatMessage({ role: "user", text: escapeHtml(cleanQuestion) });
   const loading = addChatMessage({ role: "ai", text: "正在检索课程知识库并整理证据…", meta: "检索中", loading: true });
   setTimeout(() => {
-    const answer = answerFor(cleanQuestion);
+    const answer = answerFor(cleanQuestion, state.chatMode);
     loading.classList.remove("loading-message");
     loading.querySelector(".message-body").innerHTML = aiBodyMarkup(answer);
     $("#chatThread").scrollTop = $("#chatThread").scrollHeight;
@@ -247,6 +261,35 @@ function saveCard() {
   showToast("已保存到知识卡片");
 }
 
+function openCommandPalette() {
+  $("#commandPalette").classList.add("open");
+  $("#commandPalette").setAttribute("aria-hidden", "false");
+  $("#commandInput").value = "";
+  filterCommands("");
+  setTimeout(() => $("#commandInput").focus(), 20);
+}
+
+function closeCommandPalette() {
+  $("#commandPalette").classList.remove("open");
+  $("#commandPalette").setAttribute("aria-hidden", "true");
+}
+
+function filterCommands(value) {
+  const keyword = value.trim().toLowerCase();
+  $$("[data-command]").forEach((button) => {
+    button.hidden = keyword && !button.textContent.toLowerCase().includes(keyword);
+  });
+}
+
+function runCommand(command) {
+  closeCommandPalette();
+  if (command === "upload") {
+    showView("library");
+    setTimeout(() => $("#fileInput").click(), 80);
+    return;
+  }
+  showView(command);
+}
 function bindEvents() {
   $$(".nav-item").forEach((item) => {
     const label = item.querySelector("span:not(.nav-count)")?.textContent || "导航";
@@ -284,7 +327,7 @@ function bindEvents() {
       event.preventDefault();
       $("#globalSearch").focus();
     }
-    if (event.key === "Escape") closeSource();
+    if (event.key === "Escape") { closeSource(); closeCommandPalette(); }
   });
 
   $("#chatThread").addEventListener("click", (event) => {
@@ -386,6 +429,28 @@ function bindEvents() {
     showToast("考试日期已更新");
   });
 
+  $$("[data-chat-mode]").forEach((button) => button.addEventListener("click", () => {
+    state.chatMode = button.dataset.chatMode;
+    $$("[data-chat-mode]").forEach((item) => item.classList.toggle("active", item === button));
+    const placeholders = {
+      ask: "输入一个关于课程资料的问题…",
+      summarize: "输入一个知识点，整理为学习卡片…",
+      quiz: "输入一个知识点，生成一道练习题…"
+    };
+    $("#chatInput").placeholder = placeholders[state.chatMode];
+    showToast(state.chatMode === "ask" ? "已切换到资料问答" : state.chatMode === "summarize" ? "已切换到知识整理" : "已切换到练习生成");
+  }));
+
+  $$("[data-command]").forEach((button) => button.addEventListener("click", () => runCommand(button.dataset.command)));
+  $("#commandBackdrop").addEventListener("click", closeCommandPalette);
+  $("#commandInput").addEventListener("input", (event) => filterCommands(event.currentTarget.value));
+
+  document.addEventListener("keydown", (event) => {
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
+      event.preventDefault();
+      openCommandPalette();
+    }
+  });
   $("#fileInput").addEventListener("change", (event) => {
     const files = Array.from(event.target.files || []);
     const supported = ["pdf", "docx", "txt", "md"];
