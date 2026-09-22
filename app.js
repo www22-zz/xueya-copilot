@@ -403,8 +403,8 @@ function bindEvents() {
     }
   });
 
-  $$(".source-card").forEach((card) => card.addEventListener("click", () => {
-    $$(".source-card").forEach((item) => item.classList.remove("selected"));
+  $$(".source-row").forEach((card) => card.addEventListener("click", () => {
+    $$(".source-row").forEach((item) => item.classList.remove("selected"));
     card.classList.add("selected");
     openSource(card.id);
   }));
@@ -506,6 +506,7 @@ function bindEvents() {
 
   $$("[data-command]").forEach((button) => button.addEventListener("click", () => runCommand(button.dataset.command)));
   $("#commandBackdrop").addEventListener("click", closeCommandPalette);
+  $("#commandTrigger").addEventListener("click", openCommandPalette);
   $("#commandInput").addEventListener("input", (event) => filterCommands(event.currentTarget.value));
 
   document.addEventListener("keydown", (event) => {

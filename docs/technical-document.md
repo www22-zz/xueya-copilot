@@ -116,7 +116,8 @@
 
 - `index.html`：页面结构和可访问的主布局
 - `styles.css`：设计令牌、组件样式、响应式布局
-- `app.js`：课程状态、RAG 调用、引用交互、练习和计划逻辑`n- `server.js`：静态资源服务、MiMo API 代理和本地降级接口
+- `app.js`：课程状态、RAG 调用、引用交互、练习和计划逻辑
+- `server.js`：静态资源服务、MiMo API 代理和本地降级接口
 
 前端组件对应关系：
 
@@ -145,7 +146,8 @@
 
 | 实体 | 关键字段 |
 |---|---|
-| `Course` | `id`、`name`、`examDate`、`progress` |
+| `Course` | `id`、
+ame`、`examDate`、`progress` |
 | `Document` | `id`、`courseId`、`fileName`、`fileType`、`status` |
 | `Chunk` | `id`、`documentId`、`content`、`pageNumber`、`embedding` |
 | `Conversation` | `id`、`courseId`、`createdAt` |
@@ -335,7 +337,8 @@ MiMo 返回统一的数据结构，前端只需要渲染答案、引用、知识
 
 ### 6.2 已完成验证
 
-- JavaScript 语法检查：`node --check app.js`
+- JavaScript 语法检查：
+ode --check app.js`
 - 本地静态资源加载：`index.html`、`styles.css`、`app.js` 均返回 HTTP 200
 - Git 差异检查：`git diff --check`
 - Playwright UI 冒烟测试：1440×1000 桌面端和 375×812 移动端均无横向溢出、无控制台错误。
@@ -411,13 +414,15 @@ http://127.0.0.1:4173/
 
 ## 9. 设计参考与迭代记录
 
-本次视觉迭代重点参考了 Xiaomi MiMo、Linear、Notion、Figma 和 Anthropic 的产品页面与工作台式界面，并将它们的共同优点转译到学涯 Copilot：
+本次视觉迭代重点参考了 Xiaomi MiMo、Linear、Notion、Figma、Anthropic、Stripe、Vercel、Apple 和 Airbnb 的产品页面，并将它们的共同优点转译到学涯 Copilot：
 
 1. **Xiaomi MiMo**：借鉴 MiSans 字体、克制的黑白界面、明确的模型状态和开发者工作流。
 2. **Linear**：借鉴紧凑的工具栏、明确的状态反馈和快捷操作面板，新增全局命令面板和模式切换。
 3. **Notion**：借鉴稳定的内容层级、左侧导航和文档感，强化课程知识库与学习总览的结构。
 4. **Figma**：借鉴工具区与内容区分离的布局，让问答、来源和知识点操作形成清晰的工作台关系。
 5. **Anthropic**：借鉴克制的字体、留白和单一强调色，让 AI 回答区域更像可信的工作工具，而不是营销页面。
+6. **Stripe / Vercel**：借鉴商业 SaaS 的精密网格、状态标签、数据指标和开发者工作台感。
+7. **Apple / Airbnb**：借鉴大幅产品视觉、清晰内容层级和更具品牌感的首屏叙事。
 
 迭代结果：
 
@@ -427,6 +432,7 @@ http://127.0.0.1:4173/
 - 缩短首屏宣传式区域，把更多空间留给实际学习工作台。
 - 移除显眼的快捷键说明，改用控件语义和可访问标签。
 - 使用 MiSans 与 Huiwen Mincho 建立更贴近小米产品生态的字体系统。
+- 将首屏改造成商业级课程控制台，结合真实场景图片、证据浮层和数据进度。
 - 保留来源、进度和学习状态，让产品更接近专业工作流工具。
 ## 附录：项目文件
 
@@ -434,7 +440,8 @@ http://127.0.0.1:4173/
 |---|---|
 | `index.html` | Web 应用入口和页面结构 |
 | `styles.css` | 视觉系统、布局、响应式和动效 |
-| `app.js` | 状态管理、检索、问答、练习和计划逻辑 |`n| `server.js` | MiMo API 代理、静态资源服务和降级接口 |
+| `app.js` | 状态管理、检索、问答、练习和计划逻辑 |
+| `server.js` | MiMo API 代理、静态资源服务和降级接口 |
 | `docs/superpowers/specs/2026-09-22-xueya-copilot-design.md` | 产品设计规格 |
 | `docs/superpowers/plans/2026-09-22-xueya-copilot-plan.md` | 实施计划 |
 | `docs/technical-document.md` | 本文档的 Markdown 源文件 |

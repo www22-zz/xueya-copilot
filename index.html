@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content="#14202b" />
+  <meta name="theme-color" content="#0b1220" />
   <title>学涯 Copilot · 课程知识副驾</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22%3E%3Crect width=%2264%22 height=%2264%22 rx=%2212%22 fill=%22%2314202b%22/%3E%3Ctext x=%2232%22 y=%2243%22 text-anchor=%22middle%22 font-size=%2238%22 fill=%22%23f0c75e%22%3E学%3C/text%3E%3C/svg%3E" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22%3E%3Crect width=%2264%22 height=%2264%22 rx=%2214%22 fill=%22%230b1220%22/%3E%3Cpath d=%22M16 18h32v8H24v18h24v8H16z%22 fill=%22%23c7f36b%22/%3E%3C/svg%3E" />
   <link rel="preconnect" href="https://cdn.cnbj1.fds.api.mi-img.com" />
   <link href="https://cdn.cnbj1.fds.api.mi-img.com/aife/mimo-blog-fe/doc_build/fonts/font-faces.b3ff14bbe16d.css" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
@@ -16,32 +16,34 @@
     <aside class="sidebar" aria-label="主导航">
       <div class="brand-lockup">
         <div class="brand-mark">学</div>
-        <div>
-          <div class="brand-name">学涯 Copilot</div>
-          <div class="brand-subtitle">course intelligence</div>
+        <div class="brand-copy">
+          <strong>学涯 Copilot</strong>
+          <span>Learning Intelligence</span>
         </div>
       </div>
 
       <div class="course-switcher">
         <span class="eyebrow">当前课程</span>
         <button class="course-button" type="button" id="courseButton">
-          <span class="course-dot"></span>
-          <span>数据结构</span>
+          <span class="course-monogram">DS</span>
+          <span><strong>数据结构</strong><small>2026 秋季学期</small></span>
           <i data-lucide="chevrons-up-down"></i>
         </button>
       </div>
 
       <nav class="main-nav">
+        <div class="nav-group-label">工作台</div>
         <button class="nav-item active" data-view="overview" type="button">
           <i data-lucide="layout-dashboard"></i><span>学习总览</span>
         </button>
         <button class="nav-item" data-view="chat" type="button">
-          <i data-lucide="message-circle"></i><span>问一问资料</span>
+          <i data-lucide="sparkles"></i><span>AI 课程问答</span>
           <span class="nav-count">3</span>
         </button>
         <button class="nav-item" data-view="library" type="button">
           <i data-lucide="library"></i><span>课程知识库</span>
         </button>
+        <div class="nav-group-label">学习计划</div>
         <button class="nav-item" data-view="practice" type="button">
           <i data-lucide="badge-check"></i><span>练习与错题</span>
         </button>
@@ -51,12 +53,10 @@
       </nav>
 
       <div class="sidebar-bottom">
-        <div class="streak-card">
-          <div class="streak-icon"><i data-lucide="flame"></i></div>
-          <div>
-            <strong>连续学习 6 天</strong>
-            <span>再坚持 2 天解锁新徽章</span>
-          </div>
+        <div class="engine-card">
+          <div class="engine-card-top"><span class="live-dot"></span><span>AI ENGINE</span></div>
+          <strong id="engineStatus">MiMo 初始化</strong>
+          <small>mimo-v2.6-flash</small>
         </div>
         <button class="sidebar-link" type="button" id="settingsButton"><i data-lucide="settings-2"></i><span>偏好设置</span></button>
       </div>
@@ -64,55 +64,92 @@
 
     <main class="main-content">
       <header class="topbar">
-        <div class="breadcrumbs"><span>我的学习空间</span><i data-lucide="chevron-right"></i><strong id="viewTitle">学习总览</strong></div>
+        <div class="breadcrumbs">
+          <span>我的学习空间</span><i data-lucide="chevron-right"></i><strong id="viewTitle">学习总览</strong>
+        </div>
         <div class="topbar-actions">
           <label class="search-box">
             <i data-lucide="search"></i>
             <input type="search" placeholder="搜索页面或开始提问" id="globalSearch" />
-
           </label>
+          <button class="icon-button command-trigger" type="button" title="快捷操作" aria-label="快捷操作" id="commandTrigger"><i data-lucide="command"></i></button>
           <button class="icon-button" type="button" title="通知" aria-label="通知"><i data-lucide="bell"></i><span class="notification-dot"></span></button>
           <button class="avatar-button" type="button" title="个人中心" aria-label="个人中心">林</button>
         </div>
       </header>
 
       <div class="content-wrap">
-        <section class="hero-panel" id="overviewView">
-          <div class="hero-copy">
-            <div class="hero-kicker"><span class="pulse-dot"></span>第 8 周 · 课程知识正在生长</div>
-            <h1>把资料，变成<br /><em>会回答的学习地图</em></h1>
-            <p>今天从树与二叉树开始，沿着证据继续理解。</p>
+        <section class="course-masthead" id="overviewView">
+          <div class="masthead-copy">
+            <div class="masthead-kicker"><span>DATA STRUCTURES</span><span>WEEK 08</span></div>
+            <h1>理解结构，<em>掌握复杂度。</em></h1>
+            <p>从证据出发，把今天的知识变成可以复用的能力。</p>
             <div class="hero-actions">
-              <button class="primary-button" type="button" data-view-jump="chat"><i data-lucide="sparkles"></i>开始提问</button>
-              <button class="text-button" type="button" data-view-jump="library"><i data-lucide="upload-cloud"></i>添加课程资料</button>
+              <button class="primary-button" type="button" data-view-jump="chat"><i data-lucide="sparkles"></i>继续学习</button>
+              <button class="secondary-button" type="button" data-view-jump="library"><i data-lucide="folder-up"></i>管理资料</button>
+            </div>
+            <div class="course-progress">
+              <div class="progress-copy"><span>课程掌握度</span><strong>68%</strong></div>
+              <div class="progress-track"><span></span></div>
+              <div class="progress-meta"><span>12 份资料已索引</span><span>下一个目标：平衡树</span></div>
             </div>
           </div>
-          <div class="hero-visual" role="img" aria-label="学生在书桌前整理课程资料">
-            <div class="hero-caption"><span>课程研究台</span><strong>DS / 03</strong></div>
-          </div>
-          <div class="hero-progress">
-            <div class="progress-label"><span>本周学习轨道</span><strong>68%</strong></div>
-            <div class="progress-track"><span></span></div>
-            <div class="progress-foot"><span>4 个知识点已掌握</span><span>剩余 2 个待复习</span></div>
+
+          <div class="masthead-visual" role="img" aria-label="学生在课程工作台前整理学习资料">
+            <div class="visual-shade"></div>
+            <div class="floating-source">
+              <div class="floating-source-head"><span>LIVE EVIDENCE</span><strong>02</strong></div>
+              <p>查找最多沿着一条根到叶的路径进行。</p>
+              <div class="floating-source-foot"><span>数据结构讲义 · p.42</span><i data-lucide="arrow-up-right"></i></div>
+            </div>
+            <div class="visual-index">DS / 03</div>
           </div>
         </section>
 
-        <section class="quick-row" aria-label="快捷操作">
-          <div class="quick-stat"><span class="stat-icon blue"><i data-lucide="file-text"></i></span><div><strong>12</strong><span>份资料已索引</span></div></div>
-          <div class="quick-stat"><span class="stat-icon coral"><i data-lucide="quote"></i></span><div><strong>28</strong><span>条引用可追溯</span></div></div>
-          <div class="quick-stat"><span class="stat-icon teal"><i data-lucide="brain"></i></span><div><strong>6</strong><span>张知识卡片</span></div></div>
-          <button class="quick-action" type="button" data-view-jump="practice"><i data-lucide="arrow-up-right"></i><span>查看今日练习</span></button>
+        <section class="signal-row quick-row" aria-label="学习状态">
+          <div class="quick-stat">
+            <span class="stat-icon blue"><i data-lucide="files"></i></span>
+            <div><strong>12</strong><span>课程资料</span></div>
+            <small>+2 本周</small>
+          </div>
+          <div class="quick-stat">
+            <span class="stat-icon coral"><i data-lucide="quote"></i></span>
+            <div><strong>28</strong><span>可追溯引用</span></div>
+            <small>91% 置信</small>
+          </div>
+          <div class="quick-stat">
+            <span class="stat-icon acid"><i data-lucide="brain"></i></span>
+            <div><strong>6</strong><span>知识卡片</span></div>
+            <small>3 待复习</small>
+          </div>
+          <button class="quick-action" type="button" data-view-jump="practice">
+            <span class="quick-action-icon"><i data-lucide="target"></i></span>
+            <span><strong>今日练习</strong><small>5 分钟 · 5 道题</small></span>
+            <i data-lucide="arrow-up-right"></i>
+          </button>
         </section>
 
         <section class="workspace-grid" id="chatView">
           <div class="chat-panel panel">
-            <div class="panel-heading">
-              <div><span class="eyebrow">RAG workspace</span><h2>问一问资料</h2></div><span class="panel-tag" id="engineStatus">MiMo 初始化</span>
-              <button class="icon-button subtle" type="button" title="清空对话" aria-label="清空对话" id="clearChat"><i data-lucide="rotate-ccw"></i></button>
+            <div class="panel-heading chat-heading">
+              <div class="panel-title">
+                <div class="panel-icon"><i data-lucide="sparkles"></i></div>
+                <div><span class="eyebrow">grounded learning</span><h2>AI 课程问答</h2></div>
+              </div>
+              <div class="heading-actions">
+                <span class="model-chip"><span></span>MiMo V2.6</span>
+                <button class="icon-button subtle" type="button" title="清空对话" aria-label="清空对话" id="clearChat"><i data-lucide="rotate-ccw"></i></button>
+              </div>
             </div>
-            <div class="mode-switcher" role="tablist" aria-label="问答模式"><button class="mode-button active" type="button" data-chat-mode="ask" role="tab"><i data-lucide="message-circle"></i>资料问答</button><button class="mode-button" type="button" data-chat-mode="summarize" role="tab"><i data-lucide="list-tree"></i>知识整理</button><button class="mode-button" type="button" data-chat-mode="quiz" role="tab"><i data-lucide="badge-check"></i>练习生成</button></div>
+
+            <div class="mode-switcher" role="tablist" aria-label="问答模式">
+              <button class="mode-button active" type="button" data-chat-mode="ask" role="tab"><i data-lucide="message-circle"></i>资料问答</button>
+              <button class="mode-button" type="button" data-chat-mode="summarize" role="tab"><i data-lucide="list-tree"></i>知识整理</button>
+              <button class="mode-button" type="button" data-chat-mode="quiz" role="tab"><i data-lucide="badge-check"></i>练习生成</button>
+            </div>
+
             <div class="chat-thread" id="chatThread">
-              <div class="date-divider"><span>今天 10:24</span></div>
+              <div class="date-divider"><span>今天 · 10:24</span></div>
               <article class="message user-message">
                 <div class="message-avatar">林</div>
                 <div class="message-body"><p>二叉搜索树的查找复杂度是多少？为什么会是这个结果？</p></div>
@@ -120,53 +157,80 @@
               <article class="message ai-message">
                 <div class="message-avatar ai-avatar"><i data-lucide="sparkles"></i></div>
                 <div class="message-body">
-                  <div class="message-meta"><strong>学涯 Copilot</strong><span>基于 3 个来源回答</span></div>
-                  <p>在一棵高度为 <mark>h</mark> 的二叉搜索树中，查找操作最多沿着一条根到叶的路径进行，因此时间复杂度为 <strong>O(h)</strong>。</p>
-                  <p>如果树比较平衡，<mark>h ≈ log₂n</mark>，查找平均为 O(log n)；如果插入顺序导致树退化成链表，最坏会变成 O(n)。<button class="citation-chip" type="button" data-source="source-1"><span>1</span>讲义 p.42</button><button class="citation-chip" type="button" data-source="source-2"><span>2</span>复习题 p.8</button></p>
-                  <div class="answer-actions"><button class="mini-action" type="button" id="saveCard"><i data-lucide="bookmark-plus"></i>保存为知识卡片</button><button class="mini-action" type="button" id="askFollowUp"><i data-lucide="corner-down-right"></i>继续追问</button></div>
+                  <div class="message-meta"><strong>学涯 Copilot</strong><span>MiMo mimo-v2.6-flash · 2 个来源</span><span><i class="confidence-dot"></i>置信度 88%</span></div>
+                  <p>在一棵高度为 <mark>h</mark> 的二叉搜索树中，查找操作最多沿着一条根到叶的路径进行，因此时间复杂度为 <strong>O(h)</strong>。平衡时 <mark>h ≈ log₂n</mark>，平均为 O(log n)。</p>
+                  <div class="evidence-spine">
+                    <div class="spine-line"></div>
+                    <button class="citation-chip" type="button" data-source="source-1"><span>1</span>讲义 p.42</button>
+                    <button class="citation-chip" type="button" data-source="source-2"><span>2</span>复习题 p.8</button>
+                  </div>
+                  <div class="knowledge-pills"><span>知识点</span><b>二叉搜索树</b><b>树高与复杂度</b><b>平衡树</b></div>
+                  <div class="answer-actions">
+                    <button class="mini-action" type="button" id="saveCard"><i data-lucide="bookmark-plus"></i>保存为知识卡片</button>
+                    <button class="mini-action" type="button" id="askFollowUp"><i data-lucide="corner-down-right"></i>继续追问</button>
+                  </div>
                 </div>
               </article>
             </div>
+
             <form class="chat-composer" id="chatForm">
               <textarea id="chatInput" rows="1" placeholder="输入一个关于课程资料的问题…" aria-label="输入问题"></textarea>
               <button class="send-button" type="submit" title="发送问题" aria-label="发送问题"><i data-lucide="arrow-up"></i></button>
             </form>
-            <div class="composer-hint"><span><i data-lucide="library"></i>当前知识库 · 12 份资料</span><span><i data-lucide="shield-check"></i>来源可追溯</span></div>
+            <div class="composer-status"><span><i data-lucide="library"></i>当前知识库 · 12 份资料</span><span><i data-lucide="shield-check"></i>来源可追溯</span></div>
           </div>
 
           <aside class="right-column">
-            <div class="panel source-panel">
-              <div class="panel-heading compact"><div><span class="eyebrow">evidence trail</span><h2>答案来源</h2></div><span class="source-count">2 / 3</span></div>
-              <button class="source-card selected" type="button" id="source-1">
-                <div class="source-thumb"><i data-lucide="file-text"></i></div>
-                <div class="source-copy"><strong>数据结构讲义 · 第 3 章</strong><span>树与二叉树 · p.42</span><small>命中 2 个片段</small></div>
-                <i data-lucide="arrow-up-right"></i>
-              </button>
-              <button class="source-card" type="button" id="source-2">
-                <div class="source-thumb coral"><i data-lucide="file-check-2"></i></div>
-                <div class="source-copy"><strong>期中复习题 2024</strong><span>查找与排序 · p.8</span><small>命中 1 个片段</small></div>
-                <i data-lucide="arrow-up-right"></i>
-              </button>
-              <button class="source-card muted" type="button" id="source-3">
-                <div class="source-thumb yellow"><i data-lucide="file-question"></i></div>
-                <div class="source-copy"><strong>实验指导书</strong><span>二叉树遍历实验 · p.3</span><small>待查看</small></div>
-                <i data-lucide="arrow-up-right"></i>
-              </button>
+            <div class="panel evidence-panel">
+              <div class="panel-heading compact">
+                <div><span class="eyebrow">evidence trail</span><h2>答案来源</h2></div>
+                <span class="source-count">2 / 3</span>
+              </div>
+              <div class="evidence-list">
+                <button class="source-row selected" type="button" id="source-1">
+                  <span class="source-index">01</span>
+                  <span class="source-copy"><strong>数据结构讲义 · 第 3 章</strong><small>树与二叉树 · p.42</small></span>
+                  <span class="source-score">96%</span>
+                  <i data-lucide="arrow-up-right"></i>
+                </button>
+                <button class="source-row" type="button" id="source-2">
+                  <span class="source-index">02</span>
+                  <span class="source-copy"><strong>期中复习题 2024</strong><small>查找与排序 · p.8</small></span>
+                  <span class="source-score">88%</span>
+                  <i data-lucide="arrow-up-right"></i>
+                </button>
+                <button class="source-row muted" type="button" id="source-3">
+                  <span class="source-index">03</span>
+                  <span class="source-copy"><strong>实验指导书</strong><small>二叉树遍历 · p.3</small></span>
+                  <span class="source-score">待查看</span>
+                  <i data-lucide="arrow-up-right"></i>
+                </button>
+              </div>
             </div>
 
-            <div class="panel insight-panel">
-              <div class="panel-heading compact"><div><span class="eyebrow">knowledge pulse</span><h2>知识点脉搏</h2></div><button class="icon-button subtle" type="button" title="刷新知识点" aria-label="刷新知识点" id="refreshInsight"><i data-lucide="refresh-cw"></i></button></div>
-              <div class="topic-row"><span class="topic-rank">01</span><div><strong>二叉搜索树</strong><div class="topic-bar"><span style="width: 82%"></span></div></div><span class="topic-score">82%</span></div>
-              <div class="topic-row"><span class="topic-rank">02</span><div><strong>平衡树与旋转</strong><div class="topic-bar"><span style="width: 64%"></span></div></div><span class="topic-score">64%</span></div>
-              <div class="topic-row"><span class="topic-rank">03</span><div><strong>树的遍历</strong><div class="topic-bar"><span style="width: 48%"></span></div></div><span class="topic-score">48%</span></div>
-              <button class="outline-button full" type="button" data-view-jump="practice"><i data-lucide="target"></i>针对薄弱点练习</button>
+            <div class="panel mastery-panel">
+              <div class="panel-heading compact">
+                <div><span class="eyebrow">mastery signal</span><h2>知识点脉搏</h2></div>
+                <button class="icon-button subtle" type="button" title="刷新知识点" aria-label="刷新知识点" id="refreshInsight"><i data-lucide="refresh-cw"></i></button>
+              </div>
+              <div class="mastery-score">
+                <div class="score-ring"><strong>68</strong><span>掌握度</span></div>
+                <div class="score-copy"><strong>正在形成知识网络</strong><span>平衡树是下一个关键节点</span></div>
+              </div>
+              <div class="topic-row"><span class="topic-rank">01</span><div><strong>二叉搜索树</strong><div class="topic-bar"><span style="width:82%"></span></div></div><span class="topic-score">82%</span></div>
+              <div class="topic-row"><span class="topic-rank">02</span><div><strong>平衡树与旋转</strong><div class="topic-bar"><span style="width:64%"></span></div></div><span class="topic-score">64%</span></div>
+              <div class="topic-row"><span class="topic-rank">03</span><div><strong>树的遍历</strong><div class="topic-bar"><span style="width:48%"></span></div></div><span class="topic-score">48%</span></div>
+              <button class="secondary-button full" type="button" data-view-jump="practice"><i data-lucide="target"></i>针对薄弱点练习</button>
             </div>
           </aside>
         </section>
 
         <section class="lower-grid">
           <div class="panel practice-panel">
-            <div class="panel-heading"><div><span class="eyebrow">recall lab</span><h2>今日练习</h2></div><span class="panel-tag">5 min</span></div>
+            <div class="panel-heading">
+              <div><span class="eyebrow">recall lab</span><h2>今日练习</h2></div>
+              <span class="panel-tag">5 MIN</span>
+            </div>
             <div class="practice-question" id="practiceQuestion">一棵有 15 个节点的平衡二叉搜索树，查找一个节点最多需要比较多少次？</div>
             <div class="answer-options" id="answerOptions">
               <button type="button" data-answer="A"><span>A</span>3 次</button>
@@ -178,8 +242,15 @@
           </div>
 
           <div class="panel plan-panel">
-            <div class="panel-heading"><div><span class="eyebrow">next checkpoint</span><h2>复习计划</h2></div><button class="icon-button subtle" type="button" title="编辑考试日期" aria-label="编辑考试日期" id="editExam"><i data-lucide="pencil"></i></button></div>
-            <div class="exam-date"><div class="calendar-icon"><i data-lucide="calendar-days"></i></div><div><span>数据结构期中考试</span><strong id="examDateLabel">还有 17 天</strong></div><span class="date-chip">11 月 08 日</span></div>
+            <div class="panel-heading">
+              <div><span class="eyebrow">next checkpoint</span><h2>复习计划</h2></div>
+              <button class="icon-button subtle" type="button" title="编辑考试日期" aria-label="编辑考试日期" id="editExam"><i data-lucide="pencil"></i></button>
+            </div>
+            <div class="exam-date">
+              <div class="calendar-icon"><i data-lucide="calendar-days"></i></div>
+              <div><span>数据结构期中考试</span><strong id="examDateLabel">还有 17 天</strong></div>
+              <span class="date-chip">11 月 08 日</span>
+            </div>
             <div class="plan-steps">
               <div class="plan-step done"><span class="step-dot"><i data-lucide="check"></i></span><div><strong>树的基本概念</strong><span>已完成 · 18 分钟</span></div></div>
               <div class="plan-step current"><span class="step-dot">2</span><div><strong>平衡树与旋转</strong><span>今天 · 预计 25 分钟</span></div></div>
@@ -190,34 +261,94 @@
         </section>
 
         <section class="view-panel hidden" id="libraryView">
-          <div class="view-header"><div><span class="eyebrow">course library</span><h1>课程知识库</h1><p>12 份资料已完成索引，引用会跟随每个回答出现。</p></div><label class="primary-button upload-label"><i data-lucide="upload"></i>上传资料<input type="file" id="fileInput" hidden multiple /></label></div>
+          <div class="view-header">
+            <div><span class="eyebrow">course library</span><h1>课程知识库</h1><p>12 份资料已完成索引，引用会跟随每个回答出现。</p></div>
+            <label class="primary-button upload-label"><i data-lucide="upload"></i>上传资料<input type="file" id="fileInput" hidden multiple /></label>
+          </div>
           <div class="library-layout">
-            <div class="panel document-panel"><div class="panel-heading"><h2>资料列表</h2><span class="panel-tag">12 indexed</span></div><div class="document-list" id="documentList"></div></div>
-            <div class="panel index-panel"><div class="panel-heading"><h2>索引健康度</h2><span class="status-pill"><span></span>运行正常</span></div><div class="index-score"><strong>96</strong><span>/ 100</span></div><div class="index-meter"><span></span></div><div class="index-facts"><div><span>可检索片段</span><strong>248</strong></div><div><span>知识点</span><strong>36</strong></div><div><span>平均置信度</span><strong>91%</strong></div></div></div>
+            <div class="panel document-panel">
+              <div class="panel-heading"><h2>资料列表</h2><span class="panel-tag">12 INDEXED</span></div>
+              <div class="document-list" id="documentList"></div>
+            </div>
+            <div class="panel index-panel">
+              <div class="panel-heading"><h2>索引健康度</h2><span class="status-pill"><span></span>运行正常</span></div>
+              <div class="index-score"><strong>96</strong><span>/ 100</span></div>
+              <div class="index-meter"><span></span></div>
+              <div class="index-facts"><div><span>可检索片段</span><strong>248</strong></div><div><span>知识点</span><strong>36</strong></div><div><span>平均置信度</span><strong>91%</strong></div></div>
+            </div>
           </div>
         </section>
 
         <section class="view-panel hidden" id="practiceView">
-          <div class="view-header"><div><span class="eyebrow">recall lab</span><h1>练习与错题</h1><p>把刚刚理解的内容，变成能回忆起来的能力。</p></div><button class="primary-button" type="button" id="generatePractice"><i data-lucide="wand-sparkles"></i>生成一组练习</button></div>
+          <div class="view-header">
+            <div><span class="eyebrow">recall lab</span><h1>练习与错题</h1><p>把刚刚理解的内容，变成能回忆起来的能力。</p></div>
+            <button class="primary-button" type="button" id="generatePractice"><i data-lucide="wand-sparkles"></i>生成一组练习</button>
+          </div>
           <div class="practice-full-grid">
-            <div class="panel quiz-card"><div class="quiz-top"><span class="question-index">第 02 / 05 题</span><span class="difficulty">中等</span></div><h2>下面哪种情况会让二叉搜索树的查找复杂度退化到 O(n)？</h2><div class="answer-options vertical"><button type="button" data-full-answer="A"><span>A</span>节点按照从小到大的顺序插入</button><button type="button" data-full-answer="B"><span>B</span>每次插入后进行一次旋转</button><button type="button" data-full-answer="C"><span>C</span>树中所有节点都有两个孩子</button><button type="button" data-full-answer="D"><span>D</span>节点数量是 2 的幂</button></div><div class="quiz-result hidden" id="quizResult"></div></div>
-            <div class="panel mistakes-panel"><div class="panel-heading"><h2>错题回顾</h2><span class="panel-tag">3 待复习</span></div><div class="mistake-item"><span class="mistake-mark">!</span><div><strong>平衡树旋转</strong><span>上次答错 · 2 天前</span></div><i data-lucide="arrow-up-right"></i></div><div class="mistake-item"><span class="mistake-mark">!</span><div><strong>中序遍历结果</strong><span>上次答错 · 4 天前</span></div><i data-lucide="arrow-up-right"></i></div><div class="mistake-item"><span class="mistake-mark">!</span><div><strong>ASL 平均查找长度</strong><span>上次答错 · 6 天前</span></div><i data-lucide="arrow-up-right"></i></div></div>
+            <div class="panel quiz-card">
+              <div class="quiz-top"><span class="question-index">第 02 / 05 题</span><span class="difficulty">中等</span></div>
+              <h2>下面哪种情况会让二叉搜索树的查找复杂度退化到 O(n)？</h2>
+              <div class="answer-options vertical">
+                <button type="button" data-full-answer="A"><span>A</span>节点按照从小到大的顺序插入</button>
+                <button type="button" data-full-answer="B"><span>B</span>每次插入后进行一次旋转</button>
+                <button type="button" data-full-answer="C"><span>C</span>树中所有节点都有两个孩子</button>
+                <button type="button" data-full-answer="D"><span>D</span>节点数量是 2 的幂</button>
+              </div>
+              <div class="quiz-result hidden" id="quizResult"></div>
+            </div>
+            <div class="panel mistakes-panel">
+              <div class="panel-heading"><h2>错题回顾</h2><span class="panel-tag">3 待复习</span></div>
+              <div class="mistake-item"><span class="mistake-mark">!</span><div><strong>平衡树旋转</strong><span>上次答错 · 2 天前</span></div><i data-lucide="arrow-up-right"></i></div>
+              <div class="mistake-item"><span class="mistake-mark">!</span><div><strong>中序遍历结果</strong><span>上次答错 · 4 天前</span></div><i data-lucide="arrow-up-right"></i></div>
+              <div class="mistake-item"><span class="mistake-mark">!</span><div><strong>ASL 平均查找长度</strong><span>上次答错 · 6 天前</span></div><i data-lucide="arrow-up-right"></i></div>
+            </div>
           </div>
         </section>
 
         <section class="view-panel hidden" id="planView">
-          <div class="view-header"><div><span class="eyebrow">study rhythm</span><h1>复习计划</h1><p>让每天的投入，都落在真正需要的地方。</p></div><button class="primary-button" type="button" id="regeneratePlan"><i data-lucide="sparkles"></i>重新生成计划</button></div>
+          <div class="view-header">
+            <div><span class="eyebrow">study rhythm</span><h1>复习计划</h1><p>让每天的投入，都落在真正需要的地方。</p></div>
+            <button class="primary-button" type="button" id="regeneratePlan"><i data-lucide="sparkles"></i>重新生成计划</button>
+          </div>
           <div class="plan-board">
-            <div class="panel plan-summary"><div class="summary-date"><span>下一次检查点</span><strong>11 月 08 日</strong></div><div class="summary-progress"><strong>17</strong><span>天准备期</span></div><div class="summary-line"></div><div class="summary-bottom"><span>6 个学习单元</span><span>3 个薄弱点</span></div></div>
-            <div class="panel timeline-panel"><div class="panel-heading"><h2>接下来 7 天</h2><span class="panel-tag">已排程</span></div><div class="timeline"><div class="timeline-item active"><span class="timeline-day">今天</span><div><strong>平衡树与旋转</strong><span>25 分钟 · 概念 + 例题</span></div><i data-lucide="play"></i></div><div class="timeline-item"><span class="timeline-day">明天</span><div><strong>综合错题回顾</strong><span>15 分钟 · 3 个错题</span></div><i data-lucide="circle"></i></div><div class="timeline-item"><span class="timeline-day">周五</span><div><strong>树与二叉树章节测验</strong><span>20 分钟 · 5 道题</span></div><i data-lucide="circle"></i></div><div class="timeline-item"><span class="timeline-day">周六</span><div><strong>期中模拟问答</strong><span>30 分钟 · 课程资料</span></div><i data-lucide="circle"></i></div></div></div>
+            <div class="panel plan-summary">
+              <div class="summary-label">NEXT CHECKPOINT</div>
+              <div class="summary-date"><span>数据结构期中考试</span><strong>11 月 08 日</strong></div>
+              <div class="summary-progress"><strong>17</strong><span>天准备期</span></div>
+              <div class="summary-line"></div>
+              <div class="summary-bottom"><span>6 个学习单元</span><span>3 个薄弱点</span></div>
+            </div>
+            <div class="panel timeline-panel">
+              <div class="panel-heading"><h2>接下来 7 天</h2><span class="panel-tag">已排程</span></div>
+              <div class="timeline">
+                <div class="timeline-item active"><span class="timeline-day">今天</span><div><strong>平衡树与旋转</strong><span>25 分钟 · 概念 + 例题</span></div><i data-lucide="play"></i></div>
+                <div class="timeline-item"><span class="timeline-day">明天</span><div><strong>综合错题回顾</strong><span>15 分钟 · 3 个错题</span></div><i data-lucide="circle"></i></div>
+                <div class="timeline-item"><span class="timeline-day">周五</span><div><strong>树与二叉树章节测验</strong><span>20 分钟 · 5 道题</span></div><i data-lucide="circle"></i></div>
+                <div class="timeline-item"><span class="timeline-day">周六</span><div><strong>期中模拟问答</strong><span>30 分钟 · 课程资料</span></div><i data-lucide="circle"></i></div>
+              </div>
+            </div>
           </div>
         </section>
       </div>
     </main>
   </div>
 
-  <div class="command-palette" id="commandPalette" aria-hidden="true"><div class="command-backdrop" id="commandBackdrop"></div><section class="command-sheet" role="dialog" aria-modal="true" aria-label="快捷操作"><div class="command-search"><i data-lucide="search"></i><input id="commandInput" type="search" placeholder="搜索页面、资料或操作" /></div><div class="command-list"><button type="button" data-command="chat"><i data-lucide="message-circle"></i><span>问一问资料</span></button><button type="button" data-command="library"><i data-lucide="library"></i><span>打开课程知识库</span></button><button type="button" data-command="upload"><i data-lucide="upload-cloud"></i><span>上传课程资料</span></button><button type="button" data-command="practice"><i data-lucide="badge-check"></i><span>开始今日练习</span></button><button type="button" data-command="plan"><i data-lucide="calendar-range"></i><span>查看复习计划</span></button></div></section></div>
+  <div class="command-palette" id="commandPalette" aria-hidden="true">
+    <div class="command-backdrop" id="commandBackdrop"></div>
+    <section class="command-sheet" role="dialog" aria-modal="true" aria-label="快捷操作">
+      <div class="command-search"><i data-lucide="search"></i><input id="commandInput" type="search" placeholder="搜索页面、资料或操作" /></div>
+      <div class="command-list">
+        <button type="button" data-command="chat"><i data-lucide="sparkles"></i><span>问一问资料</span></button>
+        <button type="button" data-command="library"><i data-lucide="library"></i><span>打开课程知识库</span></button>
+        <button type="button" data-command="upload"><i data-lucide="upload-cloud"></i><span>上传课程资料</span></button>
+        <button type="button" data-command="practice"><i data-lucide="badge-check"></i><span>开始今日练习</span></button>
+        <button type="button" data-command="plan"><i data-lucide="calendar-range"></i><span>查看复习计划</span></button>
+      </div>
+    </section>
+  </div>
+
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
   <div class="source-drawer" id="sourceDrawer" aria-hidden="true">
     <div class="drawer-backdrop" id="drawerBackdrop"></div>
     <article class="drawer-sheet">

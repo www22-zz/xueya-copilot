@@ -12,7 +12,7 @@ const fs = require("fs");
   await page.goto("http://127.0.0.1:4173/", { waitUntil: "networkidle" });
   results.desktop.title = await page.title();
   results.desktop.noHorizontalOverflow = await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth);
-  results.desktop.heroVisible = await page.locator(".hero-panel").isVisible();
+  results.desktop.heroVisible = await page.locator(".course-masthead").isVisible();
   results.desktop.chatVisible = await page.locator("#chatView").isVisible();
   await page.screenshot({ path: "docs/qa/desktop-overview.png", fullPage: true });
 
@@ -42,7 +42,7 @@ const fs = require("fs");
   await page.setViewportSize({ width: 375, height: 812 });
   await page.goto("http://127.0.0.1:4173/", { waitUntil: "networkidle" });
   results.mobile.noHorizontalOverflow = await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth);
-  results.mobile.heroVisible = await page.locator(".hero-panel").isVisible();
+  results.mobile.heroVisible = await page.locator(".course-masthead").isVisible();
   results.mobile.navScrollable = await page.locator(".main-nav").evaluate((el) => el.scrollWidth >= el.clientWidth);
   await page.screenshot({ path: "docs/qa/mobile-overview.png", fullPage: true });
 
