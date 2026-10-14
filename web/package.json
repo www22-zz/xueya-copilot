@@ -1,0 +1,13 @@
+{
+  "name": "xueya-copilot",
+  "version": "2.0.0",
+  "private": true,
+  "description": "A redesigned course learning space with grounded answers, notes, practice and planning.",
+  "main": "backend/server.js",
+  "scripts": {
+    "start": "node backend/server.js",
+    "test": "node --test tests/unit/learning.test.js tests/integration/server.test.js",
+    "test:browser": "node tests/e2e/browser.js"
+  },
+  "engines": { "node": ">=20" }
+}
