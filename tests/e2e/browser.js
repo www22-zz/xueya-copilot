@@ -14,7 +14,7 @@ const outputDirectory=path.resolve(__dirname,'../../test-results/browser');
   fs.mkdirSync(outputDirectory,{recursive:true});
   try{
     await page.goto('http://127.0.0.1:4173/');
-    assert.equal(await page.locator('.hero h1').innerText(),'让知识，\n真正连起来。');
+    assert.equal(await page.locator('.hero h1').innerText(),'资料，读得懂。\n知识，用得上。');
     await page.getByRole('tab',{name:'记得牢固'}).click();
     assert.match(await page.locator('#demoContent').innerText(),/知识卡片/);
     await page.getByRole('link',{name:'进入学习空间',exact:true}).click();

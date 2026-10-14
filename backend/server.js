@@ -23,7 +23,7 @@ function staticFile(req,res){
   try{requested=decodeURIComponent(url.pathname);}catch{return json(res,400,{error:'Invalid path'});}
   if(requested==='/')requested='/index.html';
   const isSharedLearning=requested==='/shared/learning.js';
-  const allowed=['/index.html','/css/styles.css','/js/app.js','/js/visual.js'];
+  const allowed=['/index.html','/css/styles.css','/js/app.js','/js/visual.js','/js/motion.js','/js/pointer.js'];
   const isFrontendAsset=/^\/assets\/[a-zA-Z0-9_-]+\.(svg|png|jpg|woff2)$/.test(requested);
   if(!isSharedLearning&&!allowed.includes(requested)&&!isFrontendAsset){
     res.writeHead(404,{'Content-Type':'text/plain; charset=utf-8'});

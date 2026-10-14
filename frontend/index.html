@@ -2,41 +2,44 @@
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#fafbfe">
-  <meta name="description" content="学涯 Copilot，把课程资料连接成真正理解的知识。资料问答、原文引用、知识卡片、练习与复习计划。">
+  <meta name="description" content="读懂课程资料，把理解存成知识卡片，用练习和复习计划巩固。学涯 Copilot，让每一次学习都有依据。">
   <title>学涯 Copilot — 让知识，真正连起来</title>
   <link rel="icon" href="assets/mark.svg" type="image/svg+xml"><link rel="stylesheet" href="css/styles.css">
-  <script src="/shared/learning.js" defer></script><script src="js/visual.js" defer></script><script src="js/app.js" defer></script>
+  <script src="../shared/learning.js" defer></script><script src="js/motion.js" defer></script><script src="js/visual.js" defer></script><script src="js/pointer.js" defer></script><script src="js/app.js" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#main">跳到主要内容</a>
   <header class="site-header">
     <a href="#home" class="brand" aria-label="学涯 Copilot 首页"><img src="assets/mark.svg" alt="" width="32" height="32"><strong>学涯<span>Copilot</span></strong></a>
-    <nav class="site-nav" aria-label="网站导航"><a href="#possibilities">学习的新可能</a><a href="#evidence">每一步，有依据</a><a href="#rhythm">找到你的节奏</a></nav>
+    <nav class="site-nav" aria-label="网站导航"><a href="#possibilities">读懂你的资料</a><a href="#evidence">回到答案的出处</a><a href="#rhythm">把理解练扎实</a></nav>
     <a class="button button-dark header-cta" href="#space/overview">进入学习空间 <span data-icon="arrow"></span></a>
   </header>
   <main id="main">
     <div id="homePage">
       <section class="hero section-width">
         <div class="hero-copy">
-          <div class="eyebrow hero-enter"><span class="small-star">✳</span> 你的 AI 学习副驾</div>
-          <h1 class="hero-enter">让知识，<br><span>真正连起来。</span></h1>
-          <p class="hero-description hero-enter">从一页讲义，到一次豁然开朗。<br>把零散的资料，变成属于你的理解。</p>
-          <div class="hero-actions hero-enter"><a class="button button-blue" href="#space/overview">开始探索 <span data-icon="arrow"></span></a><a class="text-link" href="#possibilities">看看它如何工作 <span data-icon="down"></span></a></div>
-          <div class="hero-footnote hero-enter"><span class="mini-dot"></span> 基于你的课程资料 · 回答有迹可循</div>
+          <div class="eyebrow hero-enter"><span class="small-star">✳</span> 和你一起，把知识学懂</div>
+          <h1 class="hero-enter">资料，读得懂。<br><span>知识，用得上。</span></h1>
+          <p class="hero-description hero-enter">从讲义里的疑问，到自己的理解。<br>问一问，读原文，记重点，再练一次。</p>
+          <div class="hero-actions hero-enter"><a class="button button-blue" href="#space/overview">开始学习 <span data-icon="arrow"></span></a><a class="text-link" href="#possibilities">看一段学习过程 <span data-icon="down"></span></a></div>
+          <div class="hero-footnote hero-enter"><span class="mini-dot"></span> 课程资料有出处 · 学习记录在本地</div>
         </div>
-        <div class="knowledge-universe" aria-label="课程资料、问题与知识点互相连接的动态知识球体">
+        <div class="knowledge-universe" aria-label="知识星球：移动鼠标探索课程资料、问答与知识卡片">
           <div class="universe-light"></div><div class="orbit orbit-one"></div><div class="orbit orbit-two"></div><canvas id="knowledgeCanvas" aria-hidden="true"></canvas>
-          <div class="orbit-label label-document"><span class="orb-icon" data-icon="file"></span><span><small>你的课程资料</small><strong>数据结构讲义.pdf</strong></span><span class="label-tick" data-icon="check"></span></div>
-          <div class="orbit-label label-question"><span class="orb-icon blue" data-icon="spark"></span><span><small>从好奇开始</small><strong>为什么查找是 O(log n)？</strong></span></div>
-          <div class="orbit-label label-insight"><span class="insight-dot"></span> 一个知识点，清晰了</div>
-          <span class="universe-caption">A LITTLE CURIOUS. A LOT CLEARER.</span>
+          <svg id="knowledgeConnections" class="knowledge-connections" viewBox="0 0 600 600" aria-hidden="true"><path data-branch="library"></path><path data-branch="chat"></path><path data-branch="cards"></path><path class="leaf-line" data-leaf-line="notes"></path><path class="leaf-line" data-leaf-line="text"></path><path class="leaf-line" data-leaf-line="citation"></path><path class="leaf-line" data-leaf-line="question"></path><path class="leaf-line" data-leaf-line="practice"></path><path class="leaf-line" data-leaf-line="plan"></path></svg>
+          <span class="knowledge-center" data-graph-center>你的知识<span>一点一点，连起来</span></span>
+          <a class="knowledge-node node-library" data-node="library" data-x="22" data-y="21" href="#space/library" aria-label="课程资料" aria-describedby="nodeLibraryHint"><span class="node-dot"></span><span class="node-title">课程资料</span><span class="node-subtitle">从一页笔记开始</span><span class="node-tooltip" id="nodeLibraryHint" role="tooltip"><strong>让资料成为起点。</strong>添加 TXT / MD 笔记，带着课程内容开始提问。<span>整理我的资料 <span data-icon="arrow"></span></span></span></a>
+          <a class="knowledge-node node-chat" data-node="chat" data-x="82" data-y="43" href="#space/chat" aria-label="有据问答" aria-describedby="nodeChatHint"><span class="node-dot"></span><span class="node-title">有据问答</span><span class="node-subtitle">从疑问走向理解</span><span class="node-tooltip" id="nodeChatHint" role="tooltip"><strong>答案，也有来路。</strong>围绕课程资料提问，点击引用，回到原文核对。<span>问一个课程问题 <span data-icon="arrow"></span></span></span></a>
+          <a class="knowledge-node node-cards" data-node="cards" data-x="29" data-y="78" href="#space/cards" aria-label="知识卡片" aria-describedby="nodeCardsHint"><span class="node-dot"></span><span class="node-title">知识卡片</span><span class="node-subtitle">把理解留下来</span><span class="node-tooltip" id="nodeCardsHint" role="tooltip"><strong>让理解积累下来。</strong>保存回答或原文，复习时再用自己的话复述。<span>查看我的卡片 <span data-icon="arrow"></span></span></span></a>
+          <span class="knowledge-leaf" data-leaf="notes" data-parent="library" data-x="7" data-y="12">讲义与笔记</span><span class="knowledge-leaf" data-leaf="text" data-parent="library" data-x="42" data-y="9">文本检索</span><span class="knowledge-leaf" data-leaf="citation" data-parent="chat" data-x="85" data-y="22">原文引用</span><span class="knowledge-leaf" data-leaf="question" data-parent="chat" data-x="91" data-y="62">继续追问</span><span class="knowledge-leaf" data-leaf="practice" data-parent="cards" data-x="8" data-y="66">练习巩固</span><span class="knowledge-leaf" data-leaf="plan" data-parent="cards" data-x="55" data-y="91">复习节奏</span>
+          <span class="universe-caption"><span class="graph-desktop-hint">移动鼠标，看看知识如何连接</span><span class="graph-touch-hint">点一个知识节点，开始探索</span></span>
           <button id="motionToggle" class="motion-toggle" type="button" aria-label="暂停背景动态效果" aria-pressed="false"><span data-icon="pause"></span></button>
         </div>
         <a class="scroll-note" href="#possibilities">向下，发现更多 <span data-icon="down"></span></a>
       </section>
-      <div class="intro-strip section-width reveal"><p>理解，不止于得到答案。</p><div><span>读懂资料</span><span class="strip-line"></span><span>连接知识</span><span class="strip-line"></span><span>学以致用</span></div></div>
+      <div class="intro-strip section-width reveal"><p>一次学习，三个小步骤。</p><div><span>带着资料提问</span><span class="strip-line"></span><span>回到原文理解</span><span class="strip-line"></span><span>通过练习巩固</span></div></div>
       <section id="possibilities" class="possibilities section-width section-space">
-        <div class="section-heading reveal"><span class="eyebrow">LEARNING, REIMAGINED</span><h2>资料很多。<br><span class="muted-title">思路，可以很清晰。</span></h2><p>把讲义里的重点、脑海里的疑问，放到同一个地方。<br>让每一次提问，都成为理解的起点。</p></div>
+        <div class="section-heading reveal"><span class="eyebrow">FROM NOTES TO KNOWING</span><h2>不只把资料存下来。<br><span class="muted-title">把它，学成自己的。</span></h2><p>从一道课程问题开始，沿着引用读原文。<br>把读懂的重点留下来，再看看自己是否真的会用。</p></div>
         <div class="product-demo reveal">
           <div class="demo-tabs" role="tablist" aria-label="体验学习流程"><button id="demoTabAsk" class="active" role="tab" aria-selected="true" aria-controls="demoPanel" data-demo="ask">问得明白</button><button id="demoTabCard" role="tab" aria-selected="false" aria-controls="demoPanel" tabindex="-1" data-demo="card">记得牢固</button><button id="demoTabPractice" role="tab" aria-selected="false" aria-controls="demoPanel" tabindex="-1" data-demo="practice">练得扎实</button><span class="demo-caption">一段真实的学习过程</span></div>
           <div id="demoPanel" class="demo-panel" role="tabpanel" aria-labelledby="demoTabAsk">
@@ -47,7 +50,7 @@
         <div class="feature-notes reveal"><div><span data-icon="layers"></span><strong>你的资料，你的语境</strong><p>围绕课程内容提问，减少来回查找。</p></div><div><span data-icon="link"></span><strong>知识之间，有了连接</strong><p>从一个概念出发，找到相关的重点。</p></div><div><span data-icon="bookmark"></span><strong>理解之后，再进一步</strong><p>保存卡片、动手练习，让知识留下来。</p></div></div>
       </section>
       <section id="evidence" class="evidence-section">
-        <div class="evidence-inner section-width"><div class="evidence-copy reveal"><span class="eyebrow">CLARITY YOU CAN TRACE</span><h2>好的答案，<br>经得起追问。</h2><p>理解从不靠“听起来正确”。<br>点击引用，回到课程原文。<br>知道答案，也知道它从哪里来。</p><a class="text-link light-link" href="#space/chat">带着依据，开始提问 <span data-icon="arrow"></span></a></div>
+        <div class="evidence-inner section-width"><div class="evidence-copy reveal"><span class="eyebrow">UNDERSTAND THE WHY</span><h2>看到答案。<br>也读懂依据。</h2><p>每个引用，都是回到原文的入口。<br>资料不足时，会明确告诉你。<br>理解，一步一步建立在依据上。</p><a class="text-link light-link" href="#space/chat">带着问题，读懂原文 <span data-icon="arrow"></span></a></div>
         <div class="evidence-art reveal"><div class="evidence-orbit"></div><div class="excerpt-paper"><div class="paper-top"><span data-icon="file"></span> 数据结构讲义 <span>第 42 页</span></div><small>3.2 二叉搜索树</small><h3>每一个结论，<br>都有一条来路。</h3><p>查找操作从根节点开始，根据比较结果进入左子树或右子树，<mark>最多沿着一条根到叶的路径进行。</mark></p><div class="paper-lines"><i></i><i></i><i></i></div><div class="paper-bottom">课程示例原文 <span data-icon="check"></span></div></div><div class="citation-float"><span data-icon="link"></span> 回答与原文，连在一起 <span class="citation-number">1</span></div></div></div>
       </section>
       <section id="rhythm" class="rhythm-section section-width section-space">

@@ -12,7 +12,7 @@ test('proxy carries text and history, validates citations, and protects private 
     for(const file of ['/.env','/.git/config','/backend/server.js','/README.md','/docs/verification.md','/shared/private.js'])assert.equal((await fetch(base+file)).status,404);
     const homepage=await fetch(base+'/');assert.equal(homepage.status,200);
     const html=await homepage.text();
-    for(const asset of ['/css/styles.css','/js/app.js','/js/visual.js','/shared/learning.js','/assets/mark.svg'])assert.equal((await fetch(base+asset)).status,200,asset);
+    for(const asset of ['/css/styles.css','/js/app.js','/js/visual.js','/js/motion.js','/js/pointer.js','/shared/learning.js','/assets/mark.svg'])assert.equal((await fetch(base+asset)).status,200,asset);
     assert.match(html,/css\/styles\.css/);assert.match(html,/shared\/learning\.js/);assert.match(html,/js\/app\.js/);
     assert.equal((await fetch(base+'/css/styles.css',{method:'HEAD'})).status,200);
     assert.equal((await fetch(base+'/api/ai',{method:'POST',body:'{'})).status,400);
