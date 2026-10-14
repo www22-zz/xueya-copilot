@@ -1,7 +1,6 @@
-docs/qa/
-docs/rendered/
-match.html
-
+test-results/
+node_modules/
 .env
-
-mimo-llms-full.txt
+.env.*
+!.env.example
+*.log
