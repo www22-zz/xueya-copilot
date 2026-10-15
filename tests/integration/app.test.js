@@ -21,7 +21,7 @@ test('assembled app serves every browser dependency and preserves API failures w
       assert.equal(response.status,200,asset.pathname);
       assert.equal(response.headers.get('x-content-type-options'),'nosniff');
     }
-    for(const file of ['/backend/app.js','/backend/mcp/index.js','/backend/config.js','/shared/contracts/private.js','/.env','/package.json','/docs/team-development.md']){
+    for(const file of ['/backend/app.js','/backend/mcp/index.js','/backend/config.js','/shared/contracts/private.js','/.env','/package.json','/docs/api-contracts.md']){
       assert.equal((await fetch(base+file)).status,404,file);
     }
     for(const body of [null,[],{question:'  '}])assert.equal((await post(body)).status,400);

@@ -4,6 +4,10 @@
 
 [首页预览](docs/images/home-preview.jpg) · [验证记录](docs/verification.md)
 
+团队开始开发：[六个大任务与可复制的 AI 指令](docs/tasks/README.md)。直接分配前端、RAG、Agent学习、MCP、工程底座、测试报告六个完整工作包；AI在包内自主分步实现，负责人不逐项派小任务。
+
+详细技术参考：[80项内部规格索引](docs/tasks/完整任务索引.md)。所有条目已归入六个大任务，供AI核对功能与验收；完整方案保留在[长计划书](docs/plans/2026-10-15-学涯Copilot开发计划书.md)。
+
 ## 运行
 
 需要 Node.js 20 或更新版本。首次下载或更新此版本后，先运行 `npm ci` 安装锁定的官方 MCP SDK 依赖。
@@ -60,7 +64,7 @@ web/
 │   ├── agent/                     # C：任务规则、追问语境、本地摘录与 SSE 解析
 │   └── learning.js                # 旧接口兼容、练习与计划规则
 ├── docs/
-│   ├── team-development.md        # 分工、文件归属、分支与合并
+│   ├── tasks/                     # 六个大任务、AI指令与内部技术规格
 │   ├── api-contracts.md           # HTTP 和模块接口约定
 │   ├── agent-mcp-guide.md         # Agent 与真实 MCP 的使用指南
 │   ├── design/                   # 设计与模块整理方案
@@ -79,14 +83,15 @@ web/
 
 ## 共同开发
 
-先读 [四人协作指南](docs/team-development.md) 和 [模块接口约定](docs/api-contracts.md)。
+先读 [六个大任务与AI指令](docs/tasks/README.md) 和 [模块接口约定](docs/api-contracts.md)。完整技术、Git操作和验收方案见 [长计划书](docs/plans/2026-10-15-学涯Copilot开发计划书.md)。
 
-- A：界面，主要修改 HTML、CSS、`frontend/js/ui/` 与动效脚本。
-- B：RAG，主要修改 `backend/rag/`、`shared/rag/` 与前端资料读取服务。
-- C：Agent，主要修改 `backend/agent/`、`backend/providers/` 与前端问答服务。
-- D：MCP，主要修改 `backend/mcp/`，通过工具网关向 Agent 提供能力。
-- 公共契约、启动配置、HTTP 路由和模块装配由联调负责人协调，避免四人一起修改入口文件。
-- 各自从最新 `main` 创建任务分支，小批量提交 PR，验证后合并。不要删除其他模块目录。
+- A：完整前端学习空间，维护 `frontend/`，包括页面、状态与浏览器服务。
+- B：资料库与RAG，维护 `backend/rag/`、`shared/rag/` 与解析/检索Worker。
+- C：Agent与个性化学习，维护模型、工作流和学习业务模块。
+- D：MCP工具平台，维护 `backend/mcp/`，通过业务服务包装工具。
+- E：工程底座与集成，统筹存储、公共契约、启动配置、HTTP路由和模块装配。
+- F：测试评测、技术报告与交付，负责独立回归、实验、报告和演示。
+- 各项从最新 `main` 创建大任务分支，内部自行分步开发、分阶段提交与验收。分支保留完整项目，不上传旧文件夹覆盖队友修改；冲突按业务含义协调解决。
 
 已按模块接入队友的液态玻璃界面、PDF/DOCX 解析、流式问答、知识点与 AI 题库、记忆卡片功能。已接入真实的本地课程 MCP 工具服务，Agent 会自动检索并核对原文，也可分析薄弱点、生成复习计划预览。当前未接入向量数据库或额外联网工具。
 
