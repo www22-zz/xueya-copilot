@@ -18,11 +18,14 @@ function createAIHandler(agent){
       catch{return json(res,400,{ok:false,error:'INVALID_JSON'});}
       try{normalizeChatRequest(input);}
       catch{return json(res,400,{ok:false,error:'EMPTY_QUESTION'});}
-      try{json(res,200,await agent.run(input));}
+      const controller=new AbortController();
+      const abort=()=>{if(!res.writableEnded)controller.abort();};
+      res.on('close',abort);
+      try{json(res,200,await agent.run(input,{signal:controller.signal}));}
       catch(error){
         const code=error.name==='AbortError'?'AI_TIMEOUT':['NO_SOURCES','EMPTY_QUESTION'].includes(error.message)?error.message:'AI_UNAVAILABLE';
         json(res,200,{ok:false,error:code,engine:'local-fallback'});
-      }
+      }finally{res.removeListener('close',abort);}
     });
   };
 }

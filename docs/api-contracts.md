@@ -168,7 +168,41 @@ await chat.stream(request, {onUpdate({answer,reasoning}) { /* 更新 UI */ }})
 
 前端出题请求由 `frontend/js/services/practice-service.js` 的 `createPracticeService()` 提供 `topics(sources)` 和 `questions({sources,topic,focus,count})`。题库保存在同一个 localStorage 记录的 `bank` 中，知识点缓存在 `bankTopics` 中；新增或删除资料会清除知识点缓存。新增题库接入错题回顾、记忆卡片和计划优先级；学习规则函数可接收包含内置题与题库的合并题池。
 
-## 5. MCP 工具网关（C/D）
+## 5. Agent 学习流程（C/D）
+
+`POST /api/agent` 和 `POST /api/agent/stream` 接收兼容的 ChatRequest，另可传入有界的 `context`：
+
+```js
+{
+  question: '帮我安排复习计划', mode: 'ask', sources: [], history: [],
+  context: {
+    library: [source],
+    questions: [{id:'q3',topic:'中序遍历',sourceId:'source-3'}],
+    records: [{questionId:'q3',correct:false,createdAt:'2026-10-15T02:00:00Z'}],
+    examDate: '2026-11-08', minutes: 30
+  }
+}
+```
+
+不传 `context.library` 时兼容使用请求 `sources`；前端默认提供命中优先的候选片段和题库元信息。服务器计算上海时区当前日期，不接受客户端伪造的 `baseDate`。日期无效时使用默认设置，日期已过时保留设置并提示更新。
+
+响应保留 `ok/answer/sources/knowledgePoints/model`，并增加：
+
+```js
+{
+  engine: 'xiaomi-mimo', // 或 local-workflow，明确表示本地工具/规则结果
+  workflow: {intent:'ask',steps:[{stage:'read',label:'原文和引用位置已核对',status:'completed'}]},
+  artifacts: {progress:{total:1,correct:0,weakTopics:['中序遍历'],dueTopics:[]},plan:{examDate:'2026-11-08',minutes:30,days:[]}}
+}
+```
+
+`artifacts` 只在薄弱点分析或计划任务中返回。计划任务的 `days` 是真实计算出的任务数组，上面只是形状示例。计划不自动保存。
+
+流式接口额外发送 `{type:'workflow',stage,label,status}`，状态包括 `running/completed/degraded`；最终是兼容的 `done` 事件。前端仅在有效 `done` 后保存最终回答。课程型任务先搜索并核对实际原文；学习统计和计划通过只读工具计算，可以在没有 AI 密钥时完成。工具失败会标注回退，来源不足会明确说明。
+
+实现入口为 `createLearningWorkflow({model,openSession?,toolTimeoutMs?})`，公开 `run(input,{signal?})` 与异步生成器 `stream(input,{signal?})`。旧的 `createAgent` 保留原问答和出题兼容接口。
+
+## 6. MCP 工具网关（C/D）
 
 ```js
 const tools = createToolGateway({ timeoutMs: 10000 });
@@ -200,4 +234,4 @@ await tools.registerServer('course', {
 
 网关错误：`TOOL_NOT_FOUND`、`INVALID_TOOL_ARGUMENTS`、`TOOL_TIMEOUT`、`TOOL_ABORTED`、`INVALID_TOOL_RESULT`。注册错误：`INVALID_TOOL`、`INVALID_MCP_ADAPTER`、`DUPLICATE_TOOL`。适配器自身的异常继续抛出，由调用方处理。
 
-装配发生在 `backend/app.js`。当前没有外部连接、没有公开的任意工具执行 HTTP 接口；需要接入真实客户端时，由 C/D 与联调负责人共同接入。
+装配发生在 `backend/app.js`。现在已通过 `stdio-client.js` 和 `course-session.js` 接入真实的课程 MCP 服务。每次学习流程创建独立连接、绑定上下文，并在工具阶段结束后关闭。四个课程工具及使用方法见 [Agent 与 MCP 指南](agent-mcp-guide.md)。没有公开的任意工具执行 HTTP 接口；接入额外服务时仍需由 C/D 与联调负责人共同确认工具白名单和数据范围。

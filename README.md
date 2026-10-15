@@ -6,7 +6,7 @@
 
 ## 运行
 
-需要 Node.js 20 或更新版本，不需要安装依赖。
+需要 Node.js 20 或更新版本。首次下载或更新此版本后，先运行 `npm ci` 安装锁定的官方 MCP SDK 依赖。
 
 ```text
 node backend/server.js
@@ -46,9 +46,9 @@ web/
 │   └── assets/
 ├── backend/
 │   ├── rag/                       # B：RAG 服务与 PDF/DOCX 解析器
-│   ├── agent/                     # C：流式工作流、提示词、回答校验、出题
+│   ├── agent/                     # C：任务路由、学习工作流、提示词、校验与出题
 │   ├── providers/mimo.js          # C：模型 HTTP 适配器
-│   ├── mcp/index.js               # D：工具注册与调用网关
+│   ├── mcp/                       # D：真实 MCP 课程服务、客户端与工具网关
 │   ├── http/                      # 联调：HTTP 与静态资源
 │   ├── config.js                  # 联调：环境配置
 │   ├── app.js                     # 联调：模块装配
@@ -62,6 +62,7 @@ web/
 ├── docs/
 │   ├── team-development.md        # 分工、文件归属、分支与合并
 │   ├── api-contracts.md           # HTTP 和模块接口约定
+│   ├── agent-mcp-guide.md         # Agent 与真实 MCP 的使用指南
 │   ├── design/                   # 设计与模块整理方案
 │   ├── plans/                    # 实施计划
 │   └── verification.md            # 验证记录
@@ -70,10 +71,11 @@ web/
 │   ├── integration/              # HTTP、模型代理与静态路径
 │   └── e2e/browser.js             # 可选的实际浏览器流程测试
 ├── .env.example                  # 本地配置模板；真实 .env 不提交
+├── package-lock.json             # 可复现的依赖版本
 └── package.json
 ```
 
-服务保留 `/api/health` 和 `/api/ai`，并提供 `/api/ai/stream`、`/api/parse`、`/api/topics` 与 `/api/questions`。前端加载可在浏览器与 Node 共用的模块，保留 `/shared/learning.js` 兼容入口。服务不公开后端源码、文档或环境配置。
+服务保留原有接口，并增加 `/api/agent` 与 `/api/agent/stream`，页面默认使用 Agent 学习流程。前端加载可在浏览器与 Node 共用的模块，保留 `/shared/learning.js` 兼容入口。服务不公开后端源码、文档或环境配置。
 
 ## 共同开发
 
@@ -86,7 +88,11 @@ web/
 - 公共契约、启动配置、HTTP 路由和模块装配由联调负责人协调，避免四人一起修改入口文件。
 - 各自从最新 `main` 创建任务分支，小批量提交 PR，验证后合并。不要删除其他模块目录。
 
-已按模块接入队友的液态玻璃界面、PDF/DOCX 解析、流式问答、知识点与 AI 题库、记忆卡片功能。当前尚未接入向量数据库或真实 MCP 服务，后续可分别开发。MCP 工具列表默认为空，课程问答不会自动执行外部工具。
+已按模块接入队友的液态玻璃界面、PDF/DOCX 解析、流式问答、知识点与 AI 题库、记忆卡片功能。已接入真实的本地课程 MCP 工具服务，Agent 会自动检索并核对原文，也可分析薄弱点、生成复习计划预览。当前未接入向量数据库或额外联网工具。
+
+## Agent 与 MCP
+
+在资料问答中可以直接问“我有哪些薄弱知识点？”或“帮我安排一份复习计划”。回答会显示处理阶段，完成后可展开处理过程。计划仅预览，不自动覆盖当前计划。使用 `npm run mcp:check` 可独立验证真实 stdio 工具连接。更多说明见 [专项指南](docs/agent-mcp-guide.md)。
 
 ## 使用流程
 

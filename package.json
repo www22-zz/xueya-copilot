@@ -7,9 +7,16 @@
   "scripts": {
     "start": "node backend/server.js",
     "test": "node --test",
-    "test:browser": "node tests/e2e/browser.js"
+    "test:browser": "node tests/e2e/browser.js",
+    "mcp:server": "node backend/mcp/course-server.js",
+    "mcp:check": "node backend/mcp/check.js"
   },
   "engines": {
     "node": ">=20"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/client": "2.3.1",
+    "@modelcontextprotocol/server": "2.3.1",
+    "zod": "4.6.7"
   }
 }

@@ -35,7 +35,7 @@
        ├─ /api/ai/stream（兼容 /api/ai）→ Agent（C）→ RAG 来源规范化（B）→ 模型适配器（C）
        └─ 请求失败或 file: 预览 → 本地摘录（C）
 
-Agent 的显式工具调用入口（C）→ 工具网关（D）→ 后续真实 MCP 客户端适配器
+Agent 学习流程（C）→ 工具网关与上下文绑定（C/D）→ 真实 MCP stdio 客户端 → 课程工具服务（D）
 题库界面（A）→ 出题服务（C）→ /api/topics、/api/questions → Agent 练习模块（C）
 ```
 
@@ -86,5 +86,7 @@ git push -u origin feat/ui-polish
 
 - RAG 仍是浏览器保存资料、关键词检索，尚无向量数据库或账号隔离。
 - TXT/MD 能解析；PDF/DOCX 已接入服务端基础文本解析，扫描件没有 OCR，解析失败仍保留待解析记录。
-- MCP 网关已具备可测试的注册、适配、发现和调用接口，但未安装 MCP SDK、未连接外部服务，默认工具列表为空。
+- MCP 已使用官方 SDK 接入本地课程工具服务，提供检索、原文读取、学习分析和计划预览；额外联网服务尚未接入。旧的独立网关仍默认为空，由会话层按白名单注册工具。
 - 不改变现有 localStorage 键、资料 ID、历史引用和启动方式。真实密钥只由后端读取。
+
+Agent 和 MCP 的运行与分工入口见 [专项使用指南](agent-mcp-guide.md)。此版本新增依赖，同步后先执行 `npm ci`。

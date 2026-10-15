@@ -25,16 +25,20 @@
     const clean=question.trim();if(!clean||state.pending)return;
     const history=state.messages.slice(-8).map(m=>({role:m.role==='ai'?'assistant':'user',content:m.text}));
     const prior=[...state.messages].reverse().find(m=>m.role==='ai'&&m.sources?.length);
-    const request={question:clean,mode:state.mode,sources:allSources(),history,previousSources:prior?.sources||[]};
+    const request={question:clean,mode:state.mode,sources:allSources(),history,previousSources:prior?.sources||[],learning:{questions:[...L.questions,...state.bank],records:state.records,examDate:state.examDate,minutes:state.minutes}};
     const ai={role:'ai',text:'',reasoning:'',sources:[],engine:'正在回答',title:clean,createdAt:new Date().toISOString()};
     state.draft='';state.pending=true;state.messages.push({role:'user',text:clean},ai);persist();
     if(state.view!=='chat')location.hash='space/chat';else render();
-    const result=await chatService.stream(request,{onUpdate(update){
-      ai.text=update.answer;ai.reasoning=update.reasoning;
+    const result=await chatService.stream(request,{workflow:true,onUpdate(update){
+      if(typeof update.answer==='string')ai.text=update.answer;
+      if(typeof update.reasoning==='string')ai.reasoning=update.reasoning;
+      if(update.progress)ai.progress=update.progress;
       if(state.view==='chat'){
         const body=$$('#chatThread .ai-message .message-body').at(-1);
         const paragraph=body?.querySelector('p');
         if(paragraph)paragraph.textContent=ai.text;
+        const status=body?.querySelector('.message-meta span');
+        if(status&&ai.progress)status.textContent=ai.progress;
         if(ai.reasoning&&body){
           let line=body.querySelector('.reasoning-line');
           if(!line){line=document.createElement('div');line.className='reasoning-line';paragraph?.before(line);}
@@ -42,8 +46,8 @@
         }
       }
     }});
-    Object.assign(ai,{text:result.answer,reasoning:result.reasoning||'',sources:result.sources,engine:result.engine});
-    $('#engineStatus').textContent=result.online?'MiMo 在线':'本地检索模式';
+    Object.assign(ai,{text:result.answer,reasoning:result.reasoning||'',sources:result.sources,engine:result.engine,...(result.workflow?{workflow:result.workflow}:{}),...(result.artifacts?{artifacts:result.artifacts}:{})});
+    $('#engineStatus').textContent=result.online?'MiMo 在线':result.workflow?'本地学习模式':'本地检索模式';
     $('#engineStatus').classList.toggle('online',result.online);
     state.pending=false;persist();
     if(state.view==='chat'&&!$('#spacePage').hidden){render();$$('#chatThread .message').at(-1)?.scrollIntoView({block:'nearest',behavior:'instant'});}

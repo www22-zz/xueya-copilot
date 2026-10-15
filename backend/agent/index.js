@@ -25,9 +25,9 @@ function createAgent({rag,model,tools}){
     return{sources,messages:buildMessages({...request,sources})};
   }
   return{
-    async run(input){
+    async run(input,{signal}={}){
       const {sources,messages}=await prepare(input);
-      const response=await model.generate({messages});
+      const response=await model.generate({messages,signal});
       return groundedAnswer(response.content,sources,response.model);
     },
     async *stream(input,{signal}={}){
@@ -56,4 +56,4 @@ function createAgent({rag,model,tools}){
   };
 }
 
-module.exports={createAgent};
+module.exports={createAgent,groundedAnswer};

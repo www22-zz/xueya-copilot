@@ -10,13 +10,17 @@ const {json}=require('./http/json.js');
 const {createStreamHandler}=require('./http/stream.js');
 const {createPracticeHandler}=require('./http/practice.js');
 const {createParseHandler}=require('./http/parse.js');
+const {createLearningWorkflow}=require('./agent/learning-workflow.js');
 
 /** Integration owner: assemble modules here; individual modules never start servers. */
 function createApp({config,rag=createRagService(),tools=createToolGateway(),model=createMimoProvider(config.ai)}){
   const agent=createAgent({rag,model,tools});
+  const workflow=createLearningWorkflow({model,toolTimeoutMs:config.agent?.toolTimeoutMs||5000});
   const handleAI=createAIHandler(agent);
   const postRoutes=new Map([
     ['/api/ai',handleAI],
+    ['/api/agent',createAIHandler(workflow)],
+    ['/api/agent/stream',createStreamHandler(workflow)],
     ['/api/ai/stream',createStreamHandler(agent)],
     ['/api/topics',createPracticeHandler(agent,'topics')],
     ['/api/questions',createPracticeHandler(agent,'questions')],

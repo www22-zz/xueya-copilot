@@ -13,6 +13,7 @@ function loadConfig(root=path.resolve(__dirname,'..')){
   }
   return{
     root,port:Number(process.env.PORT||4173),
+    agent:{toolTimeoutMs:Math.max(1000,Math.min(10000,Number(process.env.MCP_TOOL_TIMEOUT_MS)||5000))},
     ai:{apiKey:process.env.MIMO_API_KEY||'',baseURL:process.env.MIMO_BASE_URL||'https://api.xiaomimimo.com/v1',model:process.env.MIMO_MODEL||'mimo-v2.6-flash'}
   };
 }
