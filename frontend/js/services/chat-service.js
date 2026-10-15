@@ -5,6 +5,7 @@
   function createChatService({fetchImpl=globalThis.fetch,protocol=globalThis.location?.protocol||'http:',timeoutMs=30000,streamTimeoutMs=90000}={}){
     function prepare(input,{currentSourcesOnly=false}={}){
       const request=C.normalizeChatRequest(input);
+      if(typeof input.courseId==='string')request.courseId=input.courseId.slice(0,150);
       request.sources=request.sources.map(source=>typeof source==='string'?L.sources.find(item=>item.id===source):source).filter(source=>source&&typeof source.id==='string'&&typeof source.quote==='string');
       let hits=L.retrieve(Tasks.retrievalQuery(request,request.sources),request.sources);
       if(!hits.length&&Tasks.refersToPrevious(request.question)&&input.previousSources?.length){
