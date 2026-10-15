@@ -1,0 +1,83 @@
+const test=require('node:test');
+const assert=require('node:assert/strict');
+const {readSSE}=require('../../shared/agent/sse.js');
+const {createChatService}=require('../../frontend/js/services/chat-service.js');
+const {prepareDocument}=require('../../frontend/js/services/library-service.js');
+const {createPracticeTasks}=require('../../backend/agent/practice.js');
+const {createRagService}=require('../../backend/rag/index.js');
+const {createPracticeService}=require('../../frontend/js/services/practice-service.js');
+const L=require('../../shared/learning.js');
+
+function body(text,step=1){
+  const bytes=new TextEncoder().encode(text);
+  return new ReadableStream({start(controller){for(let i=0;i<bytes.length;i+=step)controller.enqueue(bytes.slice(i,i+step));controller.close();}});
+}
+const event=value=>'data: '+JSON.stringify(value)+'\n\n';
+
+test('SSE framing preserves split UTF-8, CRLF, comments, multiline data and a final partial frame',async()=>{
+  const text=': keepalive\r\n\r\ndata: {"answer":\r\ndata: "中文原文"}\r\n\r\ndata: [DONE]';
+  const data=[];
+  for await(const item of readSSE(body(text)))data.push(item);
+  assert.deepEqual(JSON.parse(data[0]),{answer:'中文原文'});
+  assert.equal(data[1],'[DONE]');
+});
+
+test('streamed chat renders answer text and accepts only a validated completion with known citations',async()=>{
+  let sent,updates=[];
+  const content=event({type:'content',text:'{"answer":"查找需要'})
+    +event({type:'content',text:' O(h)。","sources":["source-1"]}'})
+    +event({type:'done',ok:true,answer:'查找需要 O(h)。',sources:['source-1','forged'],knowledgePoints:[],model:'controlled'});
+  const service=createChatService({fetchImpl:async(url,options)=>{
+    assert.equal(url,'/api/ai/stream');sent=JSON.parse(options.body);
+    return new Response(body(content),{headers:{'Content-Type':'text/event-stream'}});
+  }});
+  const result=await service.stream({question:'二叉搜索树的查找复杂度？',sources:L.sources},{onUpdate:update=>updates.push(update)});
+  assert.equal(result.online,true);
+  assert.deepEqual(result.sources.map(source=>source.id),['source-1']);
+  assert.ok(updates.some(update=>update.answer.includes('查找需要')));
+  assert.equal(updates.some(update=>update.answer.includes('"answer"')),false);
+  assert.equal(sent.sources[0].id,'source-1');
+});
+
+test('stream EOF without done, malformed events and server error all fall back to actual local passages',async()=>{
+  const cases=[event({type:'content',text:'{"answer":"半段回答'}),'data: broken JSON\n\n',event({type:'error',error:'AI_UNAVAILABLE'})];
+  for(const stream of cases){
+    const service=createChatService({fetchImpl:async()=>new Response(body(stream),{headers:{'Content-Type':'text/event-stream'}})});
+    const result=await service.stream({question:'二叉搜索树的查找复杂度？',sources:L.sources});
+    assert.equal(result.online,false);
+    assert.match(result.answer,/本地检索摘录/);
+    assert.equal(result.answer.includes('半段回答'),false);
+    assert.ok(result.sources.length);
+  }
+});
+
+test('PDF/DOCX browser service sends binary data, handles empty text and retains file preview fallback',async()=>{
+  const file=new File(['binary'],'讲义.docx');
+  const doc=await prepareDocument(file,{fetchImpl:async(url,options)=>{
+    assert.equal(url,'/api/parse?type=docx');assert.ok(options.body instanceof ArrayBuffer);
+    return new Response(JSON.stringify({ok:true,text:'光合作用发生在叶绿体。',kind:'docx'}));
+  }});
+  assert.equal(doc.status,'已解析，可检索');
+  assert.match(doc.chunks[0].quote,/叶绿体/);
+  const empty=await prepareDocument(file,{fetchImpl:async()=>new Response(JSON.stringify({ok:true,text:'',empty:true}))});
+  assert.equal(empty.status,'未识别到文字');
+  const local=await prepareDocument(file,{protocol:'file:',fetchImpl:async()=>assert.fail('file preview contacted parse API')});
+  assert.equal(local.status,'内容待解析');
+});
+
+test('question validation rejects answers pointing beyond the retained six options',async()=>{
+  const tasks=createPracticeTasks({rag:createRagService(),model:{generate:async()=>({model:'test',content:JSON.stringify([{prompt:'错误题',options:['a','b','c','d','e','f','g'],answer:6}])})}});
+  await assert.rejects(tasks.questions({sources:['source-1']}),/AI_EMPTY/);
+});
+
+test('practice browser service forwards selected topics and fails clearly without HTTP',async()=>{
+  let request;
+  const service=createPracticeService({fetchImpl:async(url,options)=>{
+    request={url,input:JSON.parse(options.body)};
+    return new Response(JSON.stringify({ok:true,questions:[{prompt:'题目'}]}));
+  }});
+  assert.equal((await service.questions({sources:L.sources,focus:'树的高度'}))[0].prompt,'题目');
+  assert.equal(request.input.focus,'树的高度');
+  assert.equal(request.url,'/api/questions');
+  await assert.rejects(createPracticeService({protocol:'file:'}).topics(L.sources),/AI_UNAVAILABLE/);
+});

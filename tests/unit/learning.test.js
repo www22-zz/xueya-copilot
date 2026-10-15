@@ -35,3 +35,27 @@ test('latest result resolves wrong questions and drives plan priorities',()=>{
   assert.deepEqual(L.buildPlan('2026-10-13',30,[],'2026-10-14'),[]);
   assert.equal(L.buildPlan('2026-10-14',15,[],'2026-10-14').length,1);
 });
+test('memory cards remind sooner after mistakes and reset after a correct answer',()=>{
+  const wrongs=[{questionId:'q1',correct:false,createdAt:'2026-10-10T02:00:00Z'},{questionId:'q1',correct:false,createdAt:'2026-10-11T02:00:00Z'}];
+  const repeated=L.memoryCards(wrongs,'2026-10-14').find(c=>c.topic==='树的高度');
+  assert.equal(repeated.wrongCount,2);
+  assert.equal(repeated.nextReview,'2026-10-13');
+  assert.equal(repeated.due,true);
+  const cleared=L.memoryCards([...wrongs,{questionId:'q1',correct:true,createdAt:'2026-10-14T02:00:00Z'}],'2026-10-14').find(c=>c.topic==='树的高度');
+  assert.equal(cleared.wrongCount,0);
+  assert.equal(cleared.nextReview,'2026-10-21');
+  assert.equal(cleared.due,false);
+  assert.equal(L.memoryCards([],'2026-10-14').every(c=>c.due===false&&c.lastReviewed===null),true);
+});
+
+test('generated questions join wrong-question review, memory scheduling and plan priorities',()=>{
+  const bank={id:'bank-test',topic:'拓扑排序',sourceId:'upload-notes-chunk-0'};
+  const pool=[...L.questions,bank];
+  const records=[{questionId:bank.id,correct:false,createdAt:'2026-10-14T02:00:00Z'}];
+  assert.equal(L.wrongQuestions(records,pool).at(-1).id,bank.id);
+  const card=L.memoryCards(records,'2026-10-15',pool).find(item=>item.topic===bank.topic);
+  assert.equal(card.wrongCount,1);
+  assert.equal(card.nextReview,'2026-10-17');
+  assert.match(L.buildPlan('2026-10-20',30,records,'2026-10-15',pool)[0].tasks[0].title,/薄弱点.*拓扑排序/);
+  assert.equal(L.wrongQuestions([...records,{questionId:bank.id,correct:true}],pool).length,0);
+});

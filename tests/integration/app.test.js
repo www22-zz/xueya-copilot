@@ -31,3 +31,31 @@ test('assembled app serves every browser dependency and preserves API failures w
     assert.equal((await fetch(base+'/api/ai',{method:'DELETE'})).status,405);
   }finally{await new Promise(resolve=>server.close(resolve));}
 });
+
+test('closing a streamed HTTP response cancels the model request',async()=>{
+  const config={root:path.resolve(__dirname,'../..'),ai:{apiKey:'',model:'test'}};
+  let resolveAbort;
+  const aborted=new Promise(resolve=>{resolveAbort=resolve;});
+  const model={async *stream({signal}){
+    yield{type:'content',text:'{"answer":"partial',model:'test'};
+    await new Promise(resolve=>{
+      if(signal.aborted)resolve();else signal.addEventListener('abort',resolve,{once:true});
+    });
+    resolveAbort(signal.aborted);
+  }};
+  const server=http.createServer(createApp({config,model}));
+  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+  let timer;
+  try{
+    const response=await fetch(`http://127.0.0.1:${server.address().port}/api/ai/stream`,{method:'POST',body:JSON.stringify({question:'查找复杂度？',sources:['source-1']})});
+    const reader=response.body.getReader();
+    await reader.read();
+    await reader.cancel();
+    const timeout=new Promise((resolve,reject)=>{timer=setTimeout(()=>reject(new Error('Model request was not cancelled')),1500);});
+    assert.equal(await Promise.race([aborted,timeout]),true);
+  }finally{
+    clearTimeout(timer);
+    server.closeAllConnections?.();
+    await new Promise(resolve=>server.close(resolve));
+  }
+});

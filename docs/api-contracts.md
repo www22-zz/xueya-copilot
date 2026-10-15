@@ -39,7 +39,7 @@
 }
 ```
 
-当前由浏览器检索后提交原文；`sources: []` 明确表示没有资料，不会自动替换成示例来源。历史只用于理解追问，不能作为引用依据。请求非流式，响应一次返回完整答案。
+当前由浏览器检索后提交原文；`sources: []` 明确表示没有资料，不会自动替换成示例来源。历史只用于理解追问，不能作为引用依据。此接口保留为非流式兼容接口；页面默认使用下面的流式接口。
 
 成功响应（HTTP 200）：
 
@@ -59,7 +59,52 @@
 
 请求本身的错误：无效 JSON → HTTP 400 / `INVALID_JSON`；空问题或无效请求对象 → HTTP 400 / `EMPTY_QUESTION`；请求超过 512 KiB → HTTP 413 / `REQUEST_TOO_LARGE`。错误响应包含 `ok:false,error`。不支持的方法返回 HTTP 405。
 
-限制：问题 4000 字符；来源只处理前 6 条、每条原文最多 3000 字符；历史先取最后 8 条再保留 user/assistant 文本，每条最多 5000 字符；回答最多 16000 字符。模型请求上限 25 秒，前端请求上限 30 秒。
+限制：问题 4000 字符；来源只处理前 6 条、每条原文最多 3000 字符；历史先取最后 8 条再保留 user/assistant 文本，每条最多 5000 字符；回答最多 16000 字符。非流式模型请求上限 25 秒，前端非流式请求上限 30 秒。
+
+### POST /api/ai/stream
+
+请求与 `/api/ai` 相同。响应为 `text/event-stream`，每条事件是 `data: JSON` 加空行：
+
+```js
+{ type: 'content', text: '模型 JSON 文本增量', model: 'mimo-v2.6-flash' }
+{ type: 'reasoning', text: '上游模型提供的生成过程增量', model: 'mimo-v2.6-flash' }
+{ type: 'done', ok: true, answer: '最终答案', sources: ['source-1'], knowledgePoints: [], model: 'mimo-v2.6-flash' }
+{ type: 'error', error: 'AI_UNAVAILABLE' }
+```
+
+`reasoning` 是否出现取决于上游模型。只有 `done` 才表示经过 Agent 格式与引用检查的完整回答；正文增量本身不是完整结果。连接结束而没有 `done`、事件损坏或服务报错时，前端回退本地摘录，不保存半段 JSON 为成功答案。模型流式请求上限 60 秒，前端上限 90 秒；客户端断开后向模型请求传递取消信号。
+
+无效 JSON 或空问题在发送流头之前返回 HTTP 400。流内运行失败通过 `error` 事件返回，可能是 `AI_TIMEOUT`、`AI_UNAVAILABLE`、`AI_INVALID_RESPONSE` 或 `NO_SOURCES`。
+
+### POST /api/topics、POST /api/questions
+
+两者都是 JSON 请求和非流式响应，使用相同来源规范化规则。
+
+```js
+// /api/topics
+{ sources: [source] }
+// → {ok:true,topics:[{name:'树的高度',sourceId:'source-1'}],model:'...'}
+
+// /api/questions
+{ sources: [source], topic: '课程资料名', focus: '树的高度、查找', count: 5 }
+// → {ok:true,questions:[{topic:'树的高度',prompt:'题干',options:['A','B','C','D'],answer:1,explanation:'解析',sourceId:'source-1'}],model:'...'}
+```
+
+`focus` 优先于 `topic`；数量限制 1～8。题目选项保留 2～6 项，答案必须是保留选项的有效下标。知识点去重。沿用队友版本：无效 `sourceId` 回落到本次第一条来源 ID；调用方不能将 ID 合法视为模型内容已经逐句核实。
+
+服务失败返回 HTTP 200 的 `{ok:false,error}`，错误码含 `NO_SOURCES`、`AI_EMPTY`、`AI_TIMEOUT`、`AI_UNAVAILABLE`。模型知识点请求上限 45 秒、题目请求上限 60 秒；前端分别为 50 和 65 秒。
+
+### POST /api/parse?type=pdf 或 type=docx
+
+请求体是文件原始二进制，`Content-Type: application/octet-stream`，上限 10 MiB：
+
+```js
+{ok:true,text:'解析得到的原文',kind:'docx'}
+{ok:true,text:'',kind:'pdf',empty:true}
+{ok:false,error:'PARSE_FAILED'}
+```
+
+解析正文最多保留 120 万字符；服务器不保存上传原文件。不支持的类型返回 HTTP 400 / `UNSUPPORTED_DOCUMENT_TYPE`，超限返回 HTTP 413 / `FILE_TOO_LARGE`。空正文不伪造内容，前端显示未识别到文字。内置 PDF 解析器覆盖部分文本 PDF、CMap 与压缩流，不提供 OCR，也不承诺支持全部 PDF 编码或布局。
 
 ## 3. RAG（B）
 
@@ -76,6 +121,7 @@ retrieve(question, sources)      // → Source[]；当前关键词检索，最�
 await rag.ingest({ text, document })   // → { document, sources: Source[] }
 await rag.retrieve({ question, sources? }) // → Source[]；缺省用内置示例
 await rag.prepareSources(sources)     // → 规范化后的 Source[]；不重新排序
+await rag.parseDocument({buffer,kind}) // → 上述解析响应；kind 为 pdf 或 docx
 ```
 
 这些方法为异步接口，B 可替换为真正的解析或检索实现。当前 `ingest` 不持久化，HTTP Agent 使用 `prepareSources` 校验前端已选资料。前端资料读取在 `frontend/js/services/library-service.js`：
@@ -84,23 +130,27 @@ await rag.prepareSources(sources)     // → 规范化后的 Source[]；不重�
 await prepareDocument(file) // → {id,name,bytes,status,meta,chunks?}
 ```
 
-TXT/MD 读取文本，限制 1 MiB、12 万字符；PDF/DOCX 限 10 MiB，仅记录。校验失败抛出 `error.code === 'INVALID_DOCUMENT'`，`error.message` 为可展示文案。读取失败由页面统一提示；保存与去重由控制器处理。
+TXT/MD 在浏览器读取文本，限制 1 MiB、12 万字符；PDF/DOCX 限 10 MiB，调用服务端解析后加入相同分段检索。解析失败或 `file:` 预览时保存待解析记录；空正文显示未识别到文字。校验失败抛出 `error.code === 'INVALID_DOCUMENT'`，`error.message` 为可展示文案。读取失败由页面统一提示；保存与去重由控制器处理。
 
 ## 4. Agent 与模型（C）
 
 ```js
 const agent = createAgent({ rag, model, tools });
 await agent.run(chatRequest);       // → HTTP 成功响应形状，失败抛 Error
+for await (const event of agent.stream(chatRequest, {signal})) { /* 上述 SSE 事件对象 */ }
+await agent.topics({sources});      // → 知识点响应
+await agent.questions({sources,focus,count}); // → 题目响应
 await agent.listTools();            // → ToolDefinition[]
 await agent.callTool(name, args, { signal }); // → ToolResult
 ```
 
-`run` 当前固定为“规范化请求 → 准备来源 → 构造提示词 → 模型请求 → 校验答案和引用”。工具调用是显式入口，不会执行资料或模型文本中的命令。C 后续设计工具决策流程时调用 `callTool`，无需修改 MCP 内部代码。
+`run` 当前固定为“规范化请求 → 准备来源 → 构造提示词 → 模型请求 → 校验答案和引用”。`stream` 在最终 `done` 前执行同样校验；`topics/questions` 在 `backend/agent/practice.js` 中维护。工具调用是显式入口，不会执行资料或模型文本中的命令。C 后续设计工具决策流程时调用 `callTool`，无需修改 MCP 内部代码。
 
 模型适配器：
 
 ```js
-await model.generate({ messages }) // → {content: string, model: string}
+await model.generate({ messages, temperature?, timeoutMs?, signal? }) // → {content: string, model: string}
+for await (const event of model.stream({messages,timeoutMs?,signal?})) { /* {type,text,model} */ }
 ```
 
 模型返回的是原始文本，JSON 解析、知识点与引用过滤由 Agent 负责。MiMo 密钥、URL、模型名称沿用 `.env`。`createMimoProvider(config, fetchImpl?)` 支持替换请求实现，测试不使用真实密钥。
@@ -110,9 +160,13 @@ await model.generate({ messages }) // → {content: string, model: string}
 ```js
 await chat.ask({ question, mode, sources, history, previousSources? })
 // → {answer, sources: Source[], engine, online, knowledgePoints, model?}
+await chat.stream(request, {onUpdate({answer,reasoning}) { /* 更新 UI */ }})
+// → 同上，可包含上游 reasoning 文本
 ```
 
 这里的 `sources` 是浏览器候选来源集合，服务先检索再发 HTTP。没有直接命中且问题包含追问词时，可使用 `previousSources`。网络、超时、服务失败或响应格式异常时返回本地摘录；`file:` 页面不请求 HTTP。不要在 UI 模板中重复实现这套逻辑。
+
+前端出题请求由 `frontend/js/services/practice-service.js` 的 `createPracticeService()` 提供 `topics(sources)` 和 `questions({sources,topic,focus,count})`。题库保存在同一个 localStorage 记录的 `bank` 中，知识点缓存在 `bankTopics` 中；新增或删除资料会清除知识点缓存。新增题库接入错题回顾、记忆卡片和计划优先级；学习规则函数可接收包含内置题与题库的合并题池。
 
 ## 5. MCP 工具网关（C/D）
 

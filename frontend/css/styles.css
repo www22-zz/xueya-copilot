@@ -82,3 +82,45 @@ body.cursor-on-dark .cursor-ring,body.cursor-on-dark .cursor-dot{color:white}
 .knowledge-node{color:#3e4c6b}
 .knowledge-leaf{color:#8b95a9}
 @media(min-width:561px){.node-tooltip{font-size:11px}}
+.empty-actions{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;align-items:center;margin-top:18px}
+/* 记忆卡片：答错次数驱动的复习提醒 */
+.memory-note{margin:-14px 0 22px;font-size:12px;color:var(--muted)}
+.memory-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:18px}
+.memory-card{display:flex;flex-direction:column;gap:14px;padding:22px}
+.memory-card.due{border-color:var(--blue);box-shadow:0 0 0 1px var(--blue) inset,0 10px 30px rgba(64,88,216,.08)}
+.memory-card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.memory-card-top h2{font-size:19px;font-weight:600;letter-spacing:-.02em}
+.memory-badge{flex:none;font-size:9px;padding:3px 8px;border-radius:99px;font-weight:600;white-space:nowrap}
+.memory-badge.due{background:#e9edff;color:var(--blue)}
+.memory-badge.done{background:#e4f1ec;color:var(--green)}
+.memory-badge.new{background:var(--mist);color:var(--muted)}
+.memory-stat{display:flex;gap:18px;font-size:11px;color:var(--muted)}
+.memory-stat strong{color:var(--ink);font-weight:600}
+.memory-hint{font-size:11px;color:var(--muted);line-height:1.7}
+.memory-card .button{margin-top:auto}
+.reasoning-line{margin:6px 0 4px;font-size:11px;line-height:1.7;color:#8490a7;white-space:pre-wrap}
+@media(max-width:560px){.memory-grid{grid-template-columns:1fr}.memory-card{padding:16px}.memory-stat{flex-direction:column;gap:6px}}
+/* 液态玻璃：流动的彩色背景 + 磨砂玻璃面板（只在学习空间内生效）
+   想调效果改这两行即可：--aura-opacity 背景浓淡、--glass-blur 玻璃模糊强度 */
+body.in-space{--aura-opacity:.85;--glass-blur:22px;background:#eef3fc}
+#spacePage{position:relative;isolation:isolate}
+#spacePage::before{content:"";position:fixed;inset:-14%;z-index:-1;pointer-events:none;opacity:var(--aura-opacity);background:radial-gradient(38% 42% at 16% 20%,rgba(64,88,216,.34),transparent 70%),radial-gradient(34% 40% at 84% 16%,rgba(182,185,244,.48),transparent 70%),radial-gradient(42% 46% at 72% 84%,rgba(88,186,196,.30),transparent 72%),radial-gradient(34% 38% at 24% 80%,rgba(255,184,136,.26),transparent 72%);filter:blur(44px) saturate(1.15);animation:aura-drift 28s var(--ease-in-out) infinite alternate}
+@keyframes aura-drift{from{transform:translate3d(-2%,-1%,0) scale(1)}to{transform:translate3d(2%,2%,0) scale(1.07)}}
+.in-space .site-header{background:rgba(247,250,255,.70);backdrop-filter:blur(20px) saturate(1.6);-webkit-backdrop-filter:blur(20px) saturate(1.6);border-bottom-color:rgba(255,255,255,.65)}
+.in-space .panel{background:linear-gradient(118deg,rgba(255,255,255,.60) 0%,rgba(255,255,255,0) 38%),linear-gradient(152deg,rgba(255,255,255,.76),rgba(255,255,255,.50));backdrop-filter:blur(var(--glass-blur)) saturate(1.55);-webkit-backdrop-filter:blur(var(--glass-blur)) saturate(1.55);border:1px solid rgba(255,255,255,.74);box-shadow:0 20px 44px rgba(23,32,54,.10),inset 0 1px 0 rgba(255,255,255,.92)}
+.in-space .memory-card.due{box-shadow:0 0 0 1px var(--blue) inset,0 20px 44px rgba(64,88,216,.18),inset 0 1px 0 rgba(255,255,255,.92)}
+.in-space .space-top{background:linear-gradient(120deg,rgba(255,255,255,.62),rgba(255,255,255,.40));backdrop-filter:blur(18px) saturate(1.5);-webkit-backdrop-filter:blur(18px) saturate(1.5);border:1px solid rgba(255,255,255,.7);border-radius:18px;padding:16px 22px;margin-top:22px;box-shadow:0 16px 36px rgba(23,32,54,.09)}
+.in-space .composer,.in-space .welcome-composer{background:linear-gradient(150deg,rgba(255,255,255,.82),rgba(255,255,255,.60));backdrop-filter:blur(20px) saturate(1.5);-webkit-backdrop-filter:blur(20px) saturate(1.5);border:1px solid rgba(255,255,255,.85);box-shadow:0 18px 44px rgba(23,32,54,.12),inset 0 1px 0 rgba(255,255,255,.9)}
+.in-space dialog{background:linear-gradient(150deg,rgba(255,255,255,.88),rgba(255,255,255,.74));backdrop-filter:blur(26px) saturate(1.5);-webkit-backdrop-filter:blur(26px) saturate(1.5);border-color:rgba(255,255,255,.8)}
+@media(prefers-reduced-motion:reduce){#spacePage::before{animation:none}}
+@media(prefers-reduced-transparency:reduce){#spacePage::before{display:none}body.in-space{background:var(--paper)}.in-space .panel,.in-space .composer,.in-space .welcome-composer,.in-space .space-top,.in-space dialog{background:var(--white);backdrop-filter:none;-webkit-backdrop-filter:none}}
+@supports not ((backdrop-filter:blur(2px)) or (-webkit-backdrop-filter:blur(2px))){.in-space .panel,.in-space .composer,.in-space .welcome-composer,.in-space .space-top,.in-space dialog{background:rgba(255,255,255,.96)}}
+/* AI 出题：知识点勾选 */
+.bank-dialog-body{padding:22px 28px 6px}
+.bank-dialog-body h2{font-size:16px;font-weight:600;margin-bottom:8px}
+.bank-topics{display:flex;flex-wrap:wrap;gap:10px;margin:16px 0 10px;min-height:40px}
+.bank-topic{display:inline-flex;align-items:center;gap:8px;padding:9px 14px;border:1px solid rgba(180,193,220,.6);border-radius:99px;background:rgba(255,255,255,.6);font-size:12px;cursor:pointer;transition:border-color 160ms var(--ease-out),background 160ms var(--ease-out)}
+.bank-topic:hover{border-color:var(--blue)}
+.bank-topic:has(input:checked){border-color:var(--blue);background:#e9edff;color:var(--blue);font-weight:600}
+.bank-topic input{accent-color:var(--blue);width:14px;height:14px;cursor:pointer}
+.bank-dialog-footer{display:flex;align-items:center;justify-content:space-between;gap:12px}

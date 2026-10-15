@@ -29,7 +29,7 @@
    * @typedef {{content:Array<Object>,isError?:boolean,structuredContent?:Object}} ToolResult
    */
   const MODES=Object.freeze(['ask','summarize','quiz']);
-  const LIMITS=Object.freeze({question:4000,history:8,historyContent:5000,sources:6,quote:3000,answer:16000,requestBytes:524288,textBytes:1048576,fileBytes:10485760,textCharacters:120000});
+  const LIMITS=Object.freeze({question:4000,history:8,historyContent:5000,sources:6,quote:3000,answer:16000,requestBytes:524288,textBytes:1048576,fileBytes:10485760,textCharacters:120000,parsedCharacters:1200000});
 
   function normalizeChatRequest(input){
     if(!input||typeof input!=='object'||Array.isArray(input))throw new Error('EMPTY_QUESTION');

@@ -9,9 +9,11 @@
   <script src="../shared/fixtures/course.js" defer></script>
   <script src="../shared/rag/index.js" defer></script>
   <script src="../shared/agent/local-answer.js" defer></script>
+  <script src="../shared/agent/sse.js" defer></script>
   <script src="../shared/learning.js" defer></script>
   <script src="js/services/library-service.js" defer></script>
   <script src="js/services/chat-service.js" defer></script>
+  <script src="js/services/practice-service.js" defer></script>
   <script src="js/ui/views.js" defer></script>
   <script src="js/motion.js" defer></script>
   <script src="js/visual.js" defer></script>
@@ -74,13 +76,14 @@
     </div>
     <div id="spacePage" hidden>
       <div class="space-top section-width"><div class="course-context"><span class="course-symbol" data-icon="tree"></span><div><strong>数据结构</strong><small>我的课程空间</small></div></div><div class="space-top-right"><span class="engine-status" id="engineStatus">正在连接</span><button id="searchTrigger" class="icon-button" type="button" aria-label="搜索资料与操作"><span data-icon="search"></span></button><span class="profile-avatar" aria-label="本地学习空间">学</span></div></div>
-      <nav class="space-nav section-width" aria-label="学习空间导航"><a href="#space/overview" data-view="overview">学习概览</a><a href="#space/chat" data-view="chat">资料问答</a><a href="#space/library" data-view="library">课程资料 <span id="documentCount">3</span></a><a href="#space/cards" data-view="cards">知识卡片</a><a href="#space/practice" data-view="practice">练习与错题</a><a href="#space/plan" data-view="plan">复习计划</a></nav>
+      <nav class="space-nav section-width" aria-label="学习空间导航"><a href="#space/overview" data-view="overview">学习概览</a><a href="#space/chat" data-view="chat">资料问答</a><a href="#space/library" data-view="library">课程资料 <span id="documentCount">3</span></a><a href="#space/cards" data-view="cards">知识卡片</a><a href="#space/practice" data-view="practice">练习与错题</a><a href="#space/memory" data-view="memory">记忆卡片</a><a href="#space/plan" data-view="plan">复习计划</a></nav>
       <div class="space-content section-width" id="spaceContent" tabindex="-1"></div>
       <footer class="space-footer section-width"><span><span class="mini-dot"></span> 学习记录保存在当前浏览器</span><a href="#home">回到首页 <span data-icon="external"></span></a></footer>
     </div>
   </main>
   <dialog id="sourceDialog" class="source-dialog" aria-label="资料原文"><div class="dialog-head"><span class="eyebrow">回到原文</span><button type="button" class="icon-button" data-close-dialog aria-label="关闭原文"><span data-icon="close"></span></button></div><div id="sourceContent"></div><div class="source-dialog-footer"><button class="button button-blue" type="button" id="sourceSave"><span data-icon="bookmark"></span> 保存为知识卡片</button></div></dialog>
   <dialog id="searchDialog" class="search-dialog" aria-label="全局搜索"><div class="search-dialog-top"><span data-icon="search"></span><input id="searchInput" type="search" aria-label="搜索资料、卡片或页面" placeholder="搜索资料、卡片或页面…" autocomplete="off"><button class="icon-button" data-close-dialog type="button" aria-label="关闭搜索"><span data-icon="close"></span></button></div><div id="searchResults"></div><div class="search-hint">输入关键词查找 · Esc 关闭</div></dialog>
+  <dialog id="bankDialog" class="source-dialog bank-dialog" aria-label="选择知识点出题"><div class="dialog-head"><span class="eyebrow">AI 出题</span><button type="button" class="icon-button" data-close-dialog aria-label="关闭"><span data-icon="close"></span></button></div><div class="bank-dialog-body"><h2>选择要出题的知识点</h2><p class="panel-description">选一个就只出这一块的题，选多个就生成一整套。知识点由 AI 从你导入的资料里整理。</p><div id="bankTopics" class="bank-topics"></div></div><div class="source-dialog-footer bank-dialog-footer"><button type="button" id="bankRefresh" class="subtle-button">重新整理知识点</button><button type="button" id="bankGenerate" class="button button-blue button-small" disabled>请选择知识点</button></div></dialog>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <noscript><div class="noscript-note">请开启 JavaScript 使用学习空间。你仍然可以阅读首页介绍。</div></noscript>
 </body>
