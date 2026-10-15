@@ -4,7 +4,7 @@
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#fafbfe">
   <meta name="description" content="读懂课程资料，把理解存成知识卡片，用练习和复习计划巩固。学涯 Copilot，让每一次学习都有依据。">
   <title>学涯 Copilot — 让知识，真正连起来</title>
-  <link rel="icon" href="assets/mark.svg" type="image/svg+xml"><link rel="stylesheet" href="css/styles.css">
+  <link rel="icon" href="assets/mark.svg" type="image/svg+xml"><link rel="stylesheet" href="css/styles.css"><link rel="stylesheet" href="css/workspace.css">
   <script src="../shared/contracts/index.js" defer></script>
   <script src="../shared/fixtures/course.js" defer></script>
   <script src="../shared/rag/index.js" defer></script>
@@ -16,7 +16,14 @@
   <script src="js/services/library-service.js" defer></script>
   <script src="js/services/chat-service.js" defer></script>
   <script src="js/services/practice-service.js" defer></script>
+  <script src="js/state/workspace-store.js" defer></script>
+  <script src="js/services/workspace-service.js" defer></script>
+  <script src="js/services/file-cache.js" defer></script>
+  <script src="js/ui/rich-content.js" defer></script>
   <script src="js/ui/views.js" defer></script>
+  <script src="js/ui/workspace-views.js" defer></script>
+  <script src="js/workspace-controller.js" defer></script>
+  <script src="js/practice-controller.js" defer></script>
   <script src="js/motion.js" defer></script>
   <script src="js/visual.js" defer></script>
   <script src="js/pointer.js" defer></script>
@@ -77,8 +84,10 @@
       <footer class="site-footer section-width"><a class="brand" href="#home"><img src="assets/mark.svg" alt="" width="28" height="28"><strong>学涯<span>Copilot</span></strong></a><span>让知识，真正连起来。</span><small>© 2026 学涯 Copilot</small><a href="#space/library">开始整理资料 <span data-icon="arrow"></span></a></footer>
     </div>
     <div id="spacePage" hidden>
-      <div class="space-top section-width"><div class="course-context"><span class="course-symbol" data-icon="tree"></span><div><strong>数据结构</strong><small>我的课程空间</small></div></div><div class="space-top-right"><span class="engine-status" id="engineStatus">正在连接</span><button id="searchTrigger" class="icon-button" type="button" aria-label="搜索资料与操作"><span data-icon="search"></span></button><span class="profile-avatar" aria-label="本地学习空间">学</span></div></div>
-      <nav class="space-nav section-width" aria-label="学习空间导航"><a href="#space/overview" data-view="overview">学习概览</a><a href="#space/chat" data-view="chat">资料问答</a><a href="#space/library" data-view="library">课程资料 <span id="documentCount">3</span></a><a href="#space/cards" data-view="cards">知识卡片</a><a href="#space/practice" data-view="practice">练习与错题</a><a href="#space/memory" data-view="memory">记忆卡片</a><a href="#space/plan" data-view="plan">复习计划</a></nav>
+      <div class="space-top section-width"><div class="course-context"><span class="course-symbol" data-icon="tree"></span><div><label class="sr-only" for="courseSelect">当前课程</label><select id="courseSelect" aria-label="当前课程"><option value="course-default">数据结构</option></select><small id="courseLabel">我的课程空间</small></div></div><div class="space-top-right"><span class="engine-status" id="engineStatus">正在连接</span><button id="searchTrigger" class="icon-button" type="button" aria-label="搜索资料与操作"><span data-icon="search"></span></button><button type="button" class="subtle-button" data-manage-courses>管理课程</button><button type="button" class="subtle-button" data-export-workspace>导出记录</button><span class="profile-avatar" aria-label="本地学习空间">学</span></div></div>
+      <nav class="space-nav section-width" aria-label="学习空间导航"><a href="#space/overview" data-view="overview">学习概览</a><a href="#space/chat" data-view="chat">资料问答</a><a href="#space/library" data-view="library">课程资料 <span id="documentCount">3</span></a><a href="#space/cards" data-view="cards">知识卡片</a><a href="#space/practice" data-view="practice">练习与错题</a><a href="#space/memory" data-view="memory">记忆卡片</a><a href="#space/plan" data-view="plan">复习计划</a><a href="#space/graph" data-view="graph">知识图谱</a><a href="#space/media" data-view="media">多模态学习</a></nav>
+      <div id="activityBanner" class="activity-banner section-width" role="status" hidden><span id="activityLabel"></span><button type="button" class="button button-outline button-small" data-stop-practice>停止等待</button></div>
+      <div id="storageNotice" class="storage-notice section-width" role="alert" hidden><span>本次修改尚未保存。请先导出记录，避免关闭页面后丢失。</span><button type="button" class="button button-outline button-small" data-export-workspace>导出记录</button></div>
       <div class="space-content section-width" id="spaceContent" tabindex="-1"></div>
       <footer class="space-footer section-width"><span><span class="mini-dot"></span> 学习记录保存在当前浏览器</span><a href="#home">回到首页 <span data-icon="external"></span></a></footer>
     </div>

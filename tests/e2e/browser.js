@@ -47,8 +47,9 @@ const outputDirectory=path.join(root,'test-results/browser');
     await page.getByRole('tab',{name:'记得牢固'}).click();
     assert.match(await page.locator('#demoContent').innerText(),/知识卡片/);
     await page.getByRole('link',{name:'进入学习空间',exact:true}).click();
+    await page.locator('#spacePage').waitFor({state:'visible'});
 
-    await page.getByRole('link',{name:/课程资料/}).first().click();
+    await page.locator('.space-nav [data-view=library]').click();
     await page.locator('#fileInput').setInputFiles({name:'协作验证.md',mimeType:'text/markdown',buffer:Buffer.from('拓扑排序每轮选择入度为零的顶点，移除该顶点和出边，再更新相邻顶点的入度。')});
     await page.waitForFunction(()=>document.querySelector('#documentList')?.textContent.includes('协作验证.md'));
     assert.match(await page.locator('#documentList').innerText(),/已解析，可检索/);
@@ -82,7 +83,7 @@ const outputDirectory=path.join(root,'test-results/browser');
     // Stop a real in-flight model request and retry without saving partial content.
     await page.locator('#chatInput').fill('请慢一点解释拓扑排序');
     await page.getByRole('button',{name:'发送问题',exact:true}).click();
-    await page.waitForFunction(()=>[...document.querySelectorAll('.ai-message .message-body > p')].at(-1)?.textContent.includes('尚未校验'));
+    await page.waitForFunction(()=>[...document.querySelectorAll('.ai-message .message-body')].at(-1)?.textContent.includes('尚未校验'));
     await page.getByRole('button',{name:'停止生成',exact:true}).click();
     await page.getByRole('button',{name:'发送问题',exact:true}).waitFor();
     assert.match(await page.locator('.ai-message').last().innerText(),/已停止生成/);
@@ -142,7 +143,7 @@ const outputDirectory=path.join(root,'test-results/browser');
     await page.getByRole('button',{name:'AI 题库 (1)',exact:true}).click();
     assert.match(await page.locator('.quiz-panel h2').innerText(),/拓扑排序/);
 
-    await page.getByRole('link',{name:/课程资料/}).first().click();
+    await page.locator('.space-nav [data-view=library]').click();
     await page.locator('#fileInput').setInputFiles([
       {name:'生物讲义.docx',mimeType:'application/vnd.openxmlformats-officedocument.wordprocessingml.document',buffer:sampleDocx()},
       {name:'photosynthesis.pdf',mimeType:'application/pdf',buffer:samplePdf()}
@@ -161,7 +162,7 @@ const outputDirectory=path.join(root,'test-results/browser');
     await page.getByRole('button',{name:'资料问答',exact:true}).click();
     await page.locator('#chatInput').fill('帮我安排一份复习计划');
     await page.getByRole('button',{name:'发送问题',exact:true}).click();
-    await page.waitForFunction(()=>[...document.querySelectorAll('.ai-message .message-body > p')].at(-1)?.textContent.includes('尚未修改'));
+    await page.waitForFunction(()=>[...document.querySelectorAll('.ai-message .message-body')].at(-1)?.textContent.includes('尚未修改'));
     assert.match(await page.locator('.ai-message').last().innerText(),/尚未修改/);
     assert.deepEqual(await page.evaluate(()=>JSON.parse(localStorage.getItem('xueya-copilot-state-v2')).plan),savedPlan);
     await page.route('**/api/agent/stream',route=>route.abort('failed'));
