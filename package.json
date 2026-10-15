@@ -6,8 +6,10 @@
   "main": "backend/server.js",
   "scripts": {
     "start": "node backend/server.js",
-    "test": "node --test tests/unit/learning.test.js tests/unit/motion.test.js tests/integration/server.test.js tests/integration/frontend.test.js",
+    "test": "node --test",
     "test:browser": "node tests/e2e/browser.js"
   },
-  "engines": { "node": ">=20" }
+  "engines": {
+    "node": ">=20"
+  }
 }

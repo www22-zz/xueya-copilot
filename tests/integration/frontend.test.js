@@ -15,7 +15,7 @@ test('frontend assets resolve both from a local HTML file and the server homepag
     assert.equal(localURL.protocol,'file:');
     assert.ok(fs.existsSync(fileURLToPath(localURL)),`Missing local asset: ${reference}`);
     const webURL=new URL(reference,'http://127.0.0.1:4173/');
-    const expected=reference.includes('shared/')?'/shared/learning.js':'/'+reference;
+    const expected=reference.startsWith('../shared/')?reference.slice(2):'/'+reference;
     assert.equal(webURL.pathname,expected,`Unexpected server asset: ${reference}`);
   }
 });
