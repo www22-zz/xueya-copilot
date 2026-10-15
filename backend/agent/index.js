@@ -28,24 +28,31 @@ function createAgent({rag,model,tools}){
     async run(input,{signal}={}){
       const {sources,messages}=await prepare(input);
       const response=await model.generate({messages,signal});
+      signal?.throwIfAborted();
       return groundedAnswer(response.content,sources,response.model);
     },
     async *stream(input,{signal}={}){
       const {sources,messages}=await prepare(input);
       if(typeof model.stream!=='function'){
         const response=await model.generate({messages,signal});
+        signal?.throwIfAborted();
         yield{type:'done',...groundedAnswer(response.content,sources,response.model)};
         return;
       }
-      let content='',modelName;
+      let content='',modelName,received=0;
       for await(const event of model.stream({messages,signal})){
+        signal?.throwIfAborted();
+        if(['content','reasoning'].includes(event.type)&&typeof event.text==='string'){
+          received+=event.text.length;
+          if(received>200000)throw new Error('AI_INVALID_RESPONSE');
+        }
         if(event.type==='content'&&typeof event.text==='string'){
           content+=event.text;
-          if(content.length>200000)throw new Error('AI_INVALID_RESPONSE');
         }
         modelName=event.model||modelName;
         if(['content','reasoning'].includes(event.type)&&typeof event.text==='string')yield event;
       }
+      signal?.throwIfAborted();
       yield{type:'done',...groundedAnswer(content,sources,modelName)};
     },
     ...createPracticeTasks({rag,model}),

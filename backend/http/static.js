@@ -4,7 +4,7 @@ const fs=require('node:fs');
 const path=require('node:path');
 const {json}=require('./json.js');
 const MIME={'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.svg':'image/svg+xml','.png':'image/png','.jpg':'image/jpeg','.json':'application/json; charset=utf-8'};
-const PUBLIC_SHARED=new Set(['/shared/learning.js','/shared/contracts/index.js','/shared/fixtures/course.js','/shared/rag/index.js','/shared/agent/local-answer.js','/shared/agent/sse.js','/shared/agent/context.js']);
+const PUBLIC_SHARED=new Set(['/shared/learning.js','/shared/contracts/index.js','/shared/fixtures/course.js','/shared/rag/index.js','/shared/agent/local-answer.js','/shared/agent/sse.js','/shared/agent/context.js','/shared/agent/tasks.js']);
 
 function createStaticHandler(root){
   const frontendRoot=path.join(root,'frontend');

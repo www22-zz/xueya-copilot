@@ -29,7 +29,9 @@
     const baseDate=L.today();
     const examDate=L.validDate(input.examDate)?input.examDate:L.addDays(baseDate,21);
     const minutes=Math.max(15,Math.min(120,Math.round(Number(input.minutes)||30)));
-    return{library,questions,records,baseDate,examDate,minutes};
+    const previousSourceIds=[...new Set(Array.isArray(input.previousSourceIds)?input.previousSourceIds:[])]
+      .filter(id=>typeof id==='string'&&ids.has(id)).slice(0,3);
+    return{library,questions,records,baseDate,examDate,minutes,previousSourceIds};
   }
 
   return{CONTEXT_LIMITS,normalizeContext};

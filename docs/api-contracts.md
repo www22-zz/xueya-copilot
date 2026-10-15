@@ -202,6 +202,10 @@ await chat.stream(request, {onUpdate({answer,reasoning}) { /* 更新 UI */ }})
 
 实现入口为 `createLearningWorkflow({model,openSession?,toolTimeoutMs?})`，公开 `run(input,{signal?})` 与异步生成器 `stream(input,{signal?})`。旧的 `createAgent` 保留原问答和出题兼容接口。
 
+追问可提供 `context.previousSourceIds`，最多三个，仅保留当前 `context.library` 内的 ID。泛指追问结合近期用户问题生成检索词；没有命中时读取这些有效来源并核对原文，不把历史回答作为原文。常规新问题不会自动使用上一轮来源。
+
+前端 `createChatService().stream(input,{workflow:true,onUpdate,signal})` 接受调用方的 AbortSignal。主动取消向外抛出取消原因，不返回本地摘录；页面清除未校验的片段，保留重试输入。网络失败或超时可本地回退，学习任务使用与服务端相同的 `shared/agent/tasks.js`，返回 `workflow` 和 `artifacts`，不写入已保存计划。SSE 单事件最多 1 Mi 字符，累计模型正文和推理最多 200,000 字符。
+
 ## 6. MCP 工具网关（C/D）
 
 ```js

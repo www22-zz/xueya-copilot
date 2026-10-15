@@ -7,16 +7,23 @@
     return lines.length?lines.map(line=>line.slice(5).replace(/^ /,'')).join('\n'):null;
   }
 
-  async function* readSSE(stream){
+  async function* readSSE(stream,{signal}={}){
+    signal?.throwIfAborted();
     if(!stream?.getReader)throw new Error('INVALID_STREAM');
     const reader=stream.getReader(),decoder=new TextDecoder();
+    const onAbort=()=>{reader.cancel(signal.reason).catch(()=>{});};
+    signal?.addEventListener('abort',onAbort,{once:true});
     let buffer='';
     try{
       while(true){
+        signal?.throwIfAborted();
         const {done,value}=await reader.read();
+        signal?.throwIfAborted();
         buffer+=done?decoder.decode():decoder.decode(value,{stream:true});
         let boundary;
         while((boundary=/\r?\n\r?\n/.exec(buffer))){
+          signal?.throwIfAborted();
+          if(boundary.index>1048576)throw new Error('STREAM_TOO_LARGE');
           const data=eventData(buffer.slice(0,boundary.index));
           buffer=buffer.slice(boundary.index+boundary[0].length);
           if(data!==null)yield data;
@@ -27,6 +34,7 @@
       const data=eventData(buffer);
       if(data!==null)yield data;
     }finally{
+      signal?.removeEventListener('abort',onAbort);
       try{await reader.cancel();}catch{}
       reader.releaseLock();
     }

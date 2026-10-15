@@ -101,3 +101,31 @@ test('summary and quiz routes keep their own task instructions and grounded sour
     assert.deepEqual(result.sources,['source-1']);
   }
 });
+
+test('generic follow-ups keep actual previous sources through MCP retrieval and repeated follow-ups',async()=>{
+  const session=mockSession();let modelCalls=0;
+  const workflow=createLearningWorkflow({openSession:session.open,model:{generate:async({messages})=>{
+    modelCalls++;
+    const input=JSON.parse(messages.at(-1).content);
+    assert.equal(input.question,'请进一步解释这个问题，并给出资料中的依据。');
+    assert.ok(input.materials.some(source=>source.id==='source-1'));
+    return{model:'controlled',content:JSON.stringify({answer:'树的高度决定查找的路径长度。',sources:['source-1']})};
+  }}});
+  const result=await workflow.run({question:'请进一步解释这个问题，并给出资料中的依据。',sources:L.sources,history:[{role:'user',content:'二叉搜索树的查找复杂度？'},{role:'assistant',content:'This answer is context, not a source.'},{role:'user',content:'再解释一下'}],context:{library:L.sources,previousSourceIds:['source-1','forged']}});
+  assert.equal(modelCalls,1);
+  assert.equal(result.engine,'xiaomi-mimo');
+  assert.deepEqual(result.sources,['source-1']);
+  assert.match(session.calls[0].args.query,/二叉搜索树/);
+});
+
+test('follow-up can use known prior source IDs without history but never cites a missing source',async()=>{
+  for(const previousSourceIds of [['source-1'],['deleted-source']]){
+    const session=mockSession();let modelCalls=0;
+    const workflow=createLearningWorkflow({openSession:session.open,model:{generate:async()=>{
+      modelCalls++;return{content:JSON.stringify({answer:'依据当前原文解释。',sources:['source-1']})};
+    }}});
+    const result=await workflow.run({question:'再解释一下',context:{library:L.sources,previousSourceIds}});
+    assert.equal(modelCalls,previousSourceIds[0]==='source-1'?1:0);
+    assert.deepEqual(result.sources,previousSourceIds[0]==='source-1'?['source-1']:[]);
+  }
+});

@@ -81,3 +81,67 @@ test('practice browser service forwards selected topics and fails clearly withou
   assert.equal(request.url,'/api/questions');
   await assert.rejects(createPracticeService({protocol:'file:'}).topics(L.sources),/AI_UNAVAILABLE/);
 });
+
+test('offline workflow keeps real learning analysis and plan preview instead of course excerpts',async()=>{
+  for(const protocol of ['file:','http:']){
+    const service=createChatService({protocol,fetchImpl:async()=>{throw new Error('offline');}});
+    const input={question:'帮我安排一份复习计划',sources:L.sources,learning:{questions:L.questions,records:[{questionId:'q3',correct:false,createdAt:new Date().toISOString()}],examDate:L.addDays(L.today(),3),minutes:45}};
+    const result=await service.stream(input,{workflow:true});
+    assert.equal(result.online,false);
+    assert.equal(result.workflow?.intent,'plan');
+    assert.equal(result.artifacts?.progress.total,1);
+    assert.deepEqual(result.artifacts.progress.weakTopics,['中序遍历']);
+    assert.equal(result.artifacts.plan.days[0].tasks.reduce((sum,task)=>sum+task.minutes,0),45);
+    assert.match(result.answer,/尚未修改/);
+    assert.deepEqual(result.sources,[]);
+    assert.equal(input.learning.minutes,45);
+  }
+});
+
+test('browser stream cancellation rejects without offline fallback and releases a blocked reader',async()=>{
+  const controller=new AbortController();let cancelled=false,requestSignal;
+  const stream=new ReadableStream({start(target){target.enqueue(new TextEncoder().encode(event({type:'content',text:'{"answer":"未验证的半段'})));},cancel(){cancelled=true;}});
+  const service=createChatService({fetchImpl:async(url,options)=>{requestSignal=options.signal;return new Response(stream,{headers:{'Content-Type':'text/event-stream'}});}});
+  const pending=service.stream({question:'二叉搜索树',sources:L.sources},{signal:controller.signal,onUpdate(){controller.abort();}});
+  await assert.rejects(pending,error=>error.name==='AbortError');
+  assert.equal(requestSignal.aborted,true);
+  assert.equal(cancelled,true);
+});
+
+test('an already cancelled chat never sends a request',async()=>{
+  const controller=new AbortController();controller.abort();
+  const service=createChatService({fetchImpl:async()=>assert.fail('request sent after cancellation')});
+  await assert.rejects(service.stream({question:'问题',sources:L.sources},{signal:controller.signal}),error=>error.name==='AbortError');
+});
+
+test('SSE rejects a complete oversized event and cancels a reader blocked before its first frame',async()=>{
+  await assert.rejects(async()=>{for await(const data of readSSE(body('data: '+'x'.repeat(1048577)+'\n\n',2097152)))assert.fail('accepted oversized frame');},/STREAM_TOO_LARGE/);
+  const controller=new AbortController();let cancelled=false;
+  const blocked=new ReadableStream({cancel(){cancelled=true;}});
+  const pending=(async()=>{for await(const data of readSSE(blocked,{signal:controller.signal}))assert.fail('unexpected frame');})();
+  controller.abort();
+  await assert.rejects(pending,error=>error.name==='AbortError');
+  assert.equal(cancelled,true);
+});
+
+test('workflow browser includes valid previous sources but does not resurrect deleted materials',async()=>{
+  for(const sources of [L.sources,[]]){
+    let sent;
+    const service=createChatService({fetchImpl:async(url,options)=>{
+      sent=JSON.parse(options.body);throw new Error('offline');
+    }});
+    const result=await service.stream({question:'再解释一下',sources,previousSources:[L.sources[0]]},{workflow:true});
+    assert.deepEqual(sent.context.previousSourceIds,sources.length?['source-1']:[]);
+    assert.deepEqual(result.sources.map(source=>source.id),sources.length?['source-1']:[]);
+  }
+});
+
+test('stream timeout falls back locally while a user cancellation wins over a queued completion',async()=>{
+  const stalled=createChatService({streamTimeoutMs:15,fetchImpl:async()=>new Response(new ReadableStream(),{headers:{'Content-Type':'text/event-stream'}})});
+  const result=await stalled.stream({question:'二叉搜索树',sources:L.sources});
+  assert.equal(result.online,false);
+  assert.ok(result.sources.length);
+  const controller=new AbortController();
+  const service=createChatService({fetchImpl:async()=>new Response(body(event({type:'content',text:'{"answer":"partial'})+event({type:'done',ok:true,answer:'should be cancelled',sources:[]})),{headers:{'Content-Type':'text/event-stream'}})});
+  await assert.rejects(service.stream({question:'二叉搜索树',sources:L.sources},{signal:controller.signal,onUpdate(){controller.abort();}}),error=>error.name==='AbortError');
+});

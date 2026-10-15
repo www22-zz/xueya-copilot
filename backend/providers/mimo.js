@@ -37,7 +37,7 @@ function createMimoProvider({apiKey,baseURL,model,timeoutMs=25000},fetchImpl=glo
       try{
         const response=await request(messages,control.signal,.2,true);
         if(!response.ok||!response.body)throw new Error('AI_UNAVAILABLE');
-        for await(const data of readSSE(response.body)){
+        for await(const data of readSSE(response.body,{signal:control.signal})){
           if(data==='[DONE]')break;
           let payload;
           try{payload=JSON.parse(data);}catch{continue;}

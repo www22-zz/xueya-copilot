@@ -126,4 +126,5 @@ body.in-space{--aura-opacity:.85;--glass-blur:22px;background:#eef3fc}
 .bank-dialog-footer{display:flex;align-items:center;justify-content:space-between;gap:12px}
 
 /* Learning workflow progress, using the existing interface palette. */
+.stop-button{display:inline-flex;align-items:center;justify-content:center;gap:7px;flex-shrink:0;min-height:34px;padding:7px 12px;border:1px solid #dce3f3;border-radius:18px;background:#fff;color:var(--blue);font-size:11px;cursor:pointer}.stop-button::before{content:"";width:8px;height:8px;border-radius:2px;background:currentColor}.stop-button:hover{background:#f1f4fc}.stop-button:focus-visible{outline:2px solid var(--blue);outline-offset:3px}
 .workflow-details{margin:12px 0;color:var(--muted);font-size:11px;line-height:1.8}.workflow-details summary{cursor:pointer;width:fit-content;color:var(--blue)}.workflow-details ol{padding-left:20px;margin-top:8px}.workflow-details summary:focus-visible{outline:2px solid var(--blue);outline-offset:4px;border-radius:3px}

@@ -12,6 +12,8 @@ const outputDirectory=path.join(root,'test-results/browser');
 (async()=>{
   // Controlled model exercises the complete application without a key or paid calls.
   const config={root,ai:{apiKey:'browser-test-only',model:'controlled'}};
+  let resolveCancellation;
+  const modelCancelled=new Promise(resolve=>{resolveCancellation=resolve;});
   const model={generate:async({messages})=>{
     const {materials}=JSON.parse(messages.at(-1).content);
     const source=materials.find(item=>item.title==='协作验证.md')||materials[0];
@@ -19,7 +21,12 @@ const outputDirectory=path.join(root,'test-results/browser');
     if(messages[0].content.includes('出题助手'))return{model:'controlled',content:JSON.stringify([{topic:'拓扑排序',prompt:'拓扑排序首先选择哪类顶点？',options:['入度为零的顶点','出度最大的顶点','任意顶点','编号最大的顶点'],answer:0,explanation:'每轮选择入度为零的顶点。',sourceId:source.id}])};
     return{model:'controlled',content:JSON.stringify({answer:'受控问答：'+source.quote,sources:[source.id],knowledgePoints:[]})};
   }};
-  model.stream=async function*({messages}){
+  model.stream=async function*({messages,signal}){
+    if(JSON.parse(messages.at(-1).content).question.includes('慢一点')){
+      yield{type:'content',text:'{"answer":"尚未校验的半段答案',model:'controlled'};
+      await new Promise(resolve=>{if(signal.aborted)resolve();else signal.addEventListener('abort',resolve,{once:true});});
+      resolveCancellation(signal.aborted);return;
+    }
     const response=await model.generate({messages});
     for(let offset=0;offset<response.content.length;offset+=12)yield{type:'content',text:response.content.slice(offset,offset+12),model:'controlled'};
   };
@@ -61,6 +68,33 @@ const outputDirectory=path.join(root,'test-results/browser');
     assert.match(await page.locator('#cardList').innerText(),/拓扑排序/);
     await page.reload();
     assert.match(await page.locator('#cardList').innerText(),/拓扑排序/);
+
+    // The existing follow-up button must retain actual evidence through MCP.
+    await page.getByRole('link',{name:'资料问答',exact:true}).click();
+    await page.locator('.ai-message [data-followup]').last().click();
+    await page.getByRole('button',{name:'发送问题',exact:true}).click();
+    await page.getByRole('button',{name:'发送问题',exact:true}).waitFor();
+    assert.match(await page.locator('.ai-message').last().innerText(),/受控问答.*入度为零/s);
+    await page.locator('.ai-message .workflow-details summary').last().click();
+    assert.match(await page.locator('.ai-message .workflow-details').last().innerText(),/上一轮/);
+    assert.match(await page.locator('.ai-message .citation-chip').last().innerText(),/协作验证.md/);
+
+    // Stop a real in-flight model request and retry without saving partial content.
+    await page.locator('#chatInput').fill('请慢一点解释拓扑排序');
+    await page.getByRole('button',{name:'发送问题',exact:true}).click();
+    await page.waitForFunction(()=>[...document.querySelectorAll('.ai-message .message-body > p')].at(-1)?.textContent.includes('尚未校验'));
+    await page.getByRole('button',{name:'停止生成',exact:true}).click();
+    await page.getByRole('button',{name:'发送问题',exact:true}).waitFor();
+    assert.match(await page.locator('.ai-message').last().innerText(),/已停止生成/);
+    assert.equal(await page.locator('.ai-message').last().locator('.citation-chip,[data-save-message]').count(),0);
+    assert.equal(await page.locator('#chatInput').inputValue(),'请慢一点解释拓扑排序');
+    let cancellationTimer;
+    try{assert.equal(await Promise.race([modelCancelled,new Promise((resolve,reject)=>{cancellationTimer=setTimeout(()=>reject(new Error('Stop button did not cancel server model')),1500);})]),true);}finally{clearTimeout(cancellationTimer);}
+    assert.equal((await page.evaluate(()=>JSON.parse(localStorage.getItem('xueya-copilot-state-v2')).messages.at(-1))).text.includes('尚未校验'),false);
+    await page.locator('#chatInput').fill('拓扑排序如何选择顶点？');
+    await page.getByRole('button',{name:'发送问题',exact:true}).click();
+    await page.getByRole('button',{name:'发送问题',exact:true}).waitFor();
+    assert.match(await page.locator('.ai-message').last().innerText(),/受控问答/);
 
     // Force server failure: the same uploaded passage must remain available offline.
     await page.route('**/api/agent/stream',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({ok:false,error:'AI_UNAVAILABLE',engine:'local-fallback'})}));
@@ -130,6 +164,17 @@ const outputDirectory=path.join(root,'test-results/browser');
     await page.waitForFunction(()=>[...document.querySelectorAll('.ai-message .message-body > p')].at(-1)?.textContent.includes('尚未修改'));
     assert.match(await page.locator('.ai-message').last().innerText(),/尚未修改/);
     assert.deepEqual(await page.evaluate(()=>JSON.parse(localStorage.getItem('xueya-copilot-state-v2')).plan),savedPlan);
+    await page.route('**/api/agent/stream',route=>route.abort('failed'));
+    await page.locator('#chatInput').fill('帮我安排一份复习计划');
+    await page.getByRole('button',{name:'发送问题',exact:true}).click();
+    await page.getByRole('button',{name:'发送问题',exact:true}).waitFor();
+    assert.match(await page.locator('.ai-message').last().innerText(),/尚未修改/);
+    await page.locator('.ai-message .workflow-details summary').last().click();
+    assert.match(await page.locator('.ai-message .workflow-details').last().innerText(),/本地学习记录/);
+    const offlineState=await page.evaluate(()=>JSON.parse(localStorage.getItem('xueya-copilot-state-v2')));
+    assert.equal(offlineState.messages.at(-1).artifacts.progress.total,offlineState.records.length);
+    assert.deepEqual(offlineState.plan,savedPlan);
+    await page.unroute('**/api/agent/stream');
     await page.getByRole('button',{name:'搜索资料与操作',exact:true}).click();
     await page.locator('#searchInput').fill('协作验证');
     assert.match(await page.locator('#searchResults').innerText(),/协作验证.md/);
@@ -168,9 +213,14 @@ const outputDirectory=path.join(root,'test-results/browser');
     await filePage.waitForSelector('.ai-message:not(.loading-message)');
     assert.match(await filePage.locator('.ai-message').innerText(),/本地检索摘录/);
     assert.match(await filePage.locator('.ai-message').innerText(),/O\(h\)/);
+    await filePage.locator('#chatInput').fill('帮我安排一份复习计划');
+    await filePage.getByRole('button',{name:'发送问题',exact:true}).click();
+    await filePage.getByRole('button',{name:'发送问题',exact:true}).waitFor();
+    assert.match(await filePage.locator('.ai-message').last().innerText(),/复习计划预览/);
+    assert.match(await filePage.locator('.ai-message').last().innerText(),/尚未修改/);
     assert.deepEqual(apiRequests,[]);
     assert.deepEqual(fileErrors,[]);
-    console.log('Browser passed: real MCP workflow, grounded streamed answer, visible stages, plan preview without saving, TXT/MD/PDF/DOCX, citations, cards, fallback, AI question bank, memory, practice, plan persistence, search, responsive pages and file preview.');
+    console.log('Browser passed: real MCP workflow, repeated follow-up evidence, stop cancels model, retry after stop, offline and file-preview study plans without saving, TXT/MD/PDF/DOCX, citations, cards, fallback, AI question bank, memory, practice, plan persistence, search and responsive pages.');
   }finally{
     if(browser)await browser.close();
     await new Promise(resolve=>server.close(resolve));

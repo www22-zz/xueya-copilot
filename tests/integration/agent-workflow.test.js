@@ -47,3 +47,25 @@ test('Agent produces a genuine local plan preview through MCP without an AI key'
     assert.match(result.answer,/尚未修改/);
   }finally{await new Promise(resolve=>server.close(resolve));}
 });
+
+test('closing Agent HTTP stream cancels the ongoing model after real MCP lookup',async()=>{
+  let resolveAbort,timer;
+  const aborted=new Promise(resolve=>{resolveAbort=resolve;});
+  const model={async *stream({signal}){
+    yield{type:'content',text:'{"answer":"unfinished',model:'controlled'};
+    await new Promise(resolve=>{if(signal.aborted)resolve();else signal.addEventListener('abort',resolve,{once:true});});
+    resolveAbort(signal.aborted);
+  }};
+  const server=http.createServer(createApp({config:{root:path.resolve(__dirname,'../..'),ai:{apiKey:'',model:'test'}},model}));
+  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+  try{
+    const response=await fetch(`http://127.0.0.1:${server.address().port}/api/agent/stream`,{method:'POST',body:JSON.stringify({question:'二叉搜索树的查找复杂度',sources:['source-1']})});
+    const reader=response.body.getReader();let text='';
+    while(!text.includes('unfinished')){const chunk=await reader.read();assert.equal(chunk.done,false);text+=new TextDecoder().decode(chunk.value);}
+    await reader.cancel();
+    assert.equal(await Promise.race([aborted,new Promise((resolve,reject)=>{timer=setTimeout(()=>reject(new Error('Agent did not cancel its model')),1500);})]),true);
+  }finally{
+    clearTimeout(timer);server.closeAllConnections?.();
+    await new Promise(resolve=>server.close(resolve));
+  }
+});

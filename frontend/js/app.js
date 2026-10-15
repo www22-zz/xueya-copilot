@@ -14,6 +14,7 @@
   let toastTimer;function toast(text){$('#toast').textContent=text;$('#toast').classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('#toast').classList.remove('show'),3500);}
   const {titles,renders,documentRows,cardRows,currentQuestions}=window.XueyaViews.createViews({state,L,e,icon,sourceById});
   const chatService=window.XueyaChat.createChatService();
+  let activeChat;
   const libraryService=window.XueyaLibrary;
   const practiceService=window.XueyaPractice.createPracticeService();
   function render(){const pool=currentQuestions();if(state.quizIndex>=pool.length)state.quizIndex=0;$('#spaceContent').innerHTML=renders[state.view]();$('#documentCount').textContent=state.documents.length;icons();}
@@ -23,35 +24,46 @@
   function saveCard(title,text,sources){if(state.cards.some(c=>c.text===text)){toast('这段重点已经在知识卡片里了。');return;}state.cards.unshift({id:crypto.randomUUID(),title:title.slice(0,80),text,sources,createdAt:new Date().toISOString()});if(persist())toast('理解，留下来了。已保存知识卡片。');}
   async function ask(question){
     const clean=question.trim();if(!clean||state.pending)return;
-    const history=state.messages.slice(-8).map(m=>({role:m.role==='ai'?'assistant':'user',content:m.text}));
+    const history=state.messages.filter(m=>!m.cancelled&&!m.failed).slice(-8).map(m=>({role:m.role==='ai'?'assistant':'user',content:m.text}));
     const prior=[...state.messages].reverse().find(m=>m.role==='ai'&&m.sources?.length);
     const request={question:clean,mode:state.mode,sources:allSources(),history,previousSources:prior?.sources||[],learning:{questions:[...L.questions,...state.bank],records:state.records,examDate:state.examDate,minutes:state.minutes}};
     const ai={role:'ai',text:'',reasoning:'',sources:[],engine:'正在回答',title:clean,createdAt:new Date().toISOString()};
+    const controller=new AbortController();activeChat=controller;
     state.draft='';state.pending=true;state.messages.push({role:'user',text:clean},ai);persist();
     if(state.view!=='chat')location.hash='space/chat';else render();
-    const result=await chatService.stream(request,{workflow:true,onUpdate(update){
-      if(typeof update.answer==='string')ai.text=update.answer;
-      if(typeof update.reasoning==='string')ai.reasoning=update.reasoning;
-      if(update.progress)ai.progress=update.progress;
-      if(state.view==='chat'){
-        const body=$$('#chatThread .ai-message .message-body').at(-1);
-        const paragraph=body?.querySelector('p');
-        if(paragraph)paragraph.textContent=ai.text;
-        const status=body?.querySelector('.message-meta span');
-        if(status&&ai.progress)status.textContent=ai.progress;
-        if(ai.reasoning&&body){
-          let line=body.querySelector('.reasoning-line');
-          if(!line){line=document.createElement('div');line.className='reasoning-line';paragraph?.before(line);}
-          line.textContent='思考：'+ai.reasoning;
+    try{
+      const result=await chatService.stream(request,{workflow:true,signal:controller.signal,onUpdate(update){
+        if(typeof update.answer==='string')ai.text=update.answer;
+        if(typeof update.reasoning==='string')ai.reasoning=update.reasoning;
+        if(update.progress)ai.progress=update.progress;
+        if(state.view==='chat'){
+          const body=$$('#chatThread .ai-message .message-body').at(-1);
+          const paragraph=body?.querySelector('p');
+          if(paragraph)paragraph.textContent=ai.text;
+          const status=body?.querySelector('.message-meta span');
+          if(status&&ai.progress)status.textContent=ai.progress;
+          if(ai.reasoning&&body){
+            let line=body.querySelector('.reasoning-line');
+            if(!line){line=document.createElement('div');line.className='reasoning-line';paragraph?.before(line);}
+            line.textContent='思考：'+ai.reasoning;
+          }
         }
-      }
-    }});
-    Object.assign(ai,{text:result.answer,reasoning:result.reasoning||'',sources:result.sources,engine:result.engine,...(result.workflow?{workflow:result.workflow}:{}),...(result.artifacts?{artifacts:result.artifacts}:{})});
-    $('#engineStatus').textContent=result.online?'MiMo 在线':result.workflow?'本地学习模式':'本地检索模式';
-    $('#engineStatus').classList.toggle('online',result.online);
-    state.pending=false;persist();
-    if(state.view==='chat'&&!$('#spacePage').hidden){render();$$('#chatThread .message').at(-1)?.scrollIntoView({block:'nearest',behavior:'instant'});}
-    else toast('回答已准备好，可在资料问答中查看。');
+      }});
+      controller.signal.throwIfAborted();
+      Object.assign(ai,{text:result.answer,reasoning:result.reasoning||'',sources:result.sources,engine:result.engine,...(result.workflow?{workflow:result.workflow}:{}),...(result.artifacts?{artifacts:result.artifacts}:{})});
+      $('#engineStatus').textContent=result.online?'MiMo 在线':result.workflow?'本地学习模式':'本地检索模式';
+      $('#engineStatus').classList.toggle('online',result.online);
+    }catch{
+      const cancelled=controller.signal.aborted;
+      Object.assign(ai,{text:cancelled?'已停止生成。你可以修改问题或重新发送。':'这次回答未能完成，请重新发送问题。',reasoning:'',sources:[],engine:cancelled?'已停止':'回答未完成',cancelled,failed:!cancelled});
+      if(!state.draft)state.draft=clean;
+    }finally{
+      if(activeChat===controller)activeChat=undefined;
+      delete ai.progress;
+      state.pending=false;persist();
+      if(state.view==='chat'&&!$('#spacePage').hidden){render();$$('#chatThread .message').at(-1)?.scrollIntoView({block:'nearest',behavior:'instant'});}
+      else toast(ai.cancelled?'已停止生成。':ai.failed?'回答未完成，请在资料问答中重试。':'回答已准备好，可在资料问答中查看。');
+    }
   }
   let uploading=false;
   async function upload(files){
@@ -88,6 +100,7 @@
     $('#spaceContent').addEventListener('drop',event=>{if(event.target.closest('#uploadZone')){event.preventDefault();$('#uploadZone').classList.remove('drag-over');upload([...event.dataTransfer.files]);}});
     document.addEventListener('click',event=>{const b=event.target.closest('button');if(!b)return;const d=b.dataset;
       if('closeDialog'in d)b.closest('dialog').close();if(d.citation)openSource(sourceById(d.citation));if(d.document)showDocument(d.document);if('upload'in d)$('#fileInput').click();if(d.prompt)ask(d.prompt);
+      if('stopChat'in d)activeChat?.abort();
       if(d.mode){state.mode=d.mode;render();$('#chatInput').focus();}if('clearChat'in d&&!state.pending){state.messages=[];state.draft='';persist();render();}
       if(d.saveMessage!==undefined){const m=state.messages[Number(d.saveMessage)];saveCard(m.title||'课程重点',m.text,m.sources||[]);}if(d.followup!==undefined){state.draft='请进一步解释这个问题，并给出资料中的依据。';render();$('#chatInput').focus();}
       if(d.removeCard){state.cards=state.cards.filter(c=>c.id!==d.removeCard);persist();render();toast('知识卡片已移除。');}if(d.removeDocument){state.documents=state.documents.filter(doc=>doc.id!==d.removeDocument);state.bankTopics=[];state.bankSelected=[];persist();render();toast('资料已移除。已保存的卡片仍保留引用。');}
