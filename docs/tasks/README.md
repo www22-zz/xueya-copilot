@@ -1,5 +1,7 @@
 # 现在就按六个大任务派工
 
+> 所有AI能力仅调用API，不接入本地模型。见[当前产品约束](../requirements.md)，该约束覆盖旧计划中的GPU和本地推理建议。
+
 **负责人只分配A～F六个完整工作包；每包里的小任务、开发顺序和验证由队友的AI自行推进。**不需要你读完长计划、从80项里选下一项，或每完成一点重新派活。
 
 前四项是产品功能，后两项是共用底座与质量交付。**这是六项工作，不是要求六个人**：你或队友可以承担多项，同一项只设一个主责。
@@ -55,8 +57,8 @@
 | A | 当前AI | 前端实现完成，待联调验收 | `feat/large-A-frontend` · [交付与接口](../delivery/large-A-frontend.md) |
 | B | 待领取 | 待领取 | — |
 | C | 待领取 | 待领取 | — |
-| D | AI执行 | 待验收（平台完成，待B/C/E/A联调） | feat/large-D-mcp；[交付记录](../delivery/large-D-mcp.md)；86项测试通过 |
-| E | 待领取 | 待领取 | — |
+| D | AI执行 | 已接E存储与A确认页，待B/C增强及验收 | feat/large-D-mcp；[D记录](../delivery/large-D-mcp.md)；[E接线](../delivery/large-E-platform.md) |
+| E | 当前AI | 底座与当前模块集成完成，待验收 | feat/large-E-platform；[交付与验证](../delivery/large-E-platform.md)；107项测试及3套浏览器脚本通过 |
 | F | 待领取 | 待领取 | — |
 
 状态使用“待领取、进行中、待验收、已完成”；每项只看当前成果、依赖缺口和下一步。AI在各自的`docs/delivery/large-*.md`维护内部细项，你不用再维护80行派工表。创建任务单不表示功能已实现。
