@@ -1,3 +1,5 @@
+> 历史记录：本文件保留当时的实现与验收证据。当前后端已迁移Python/FastAPI，启动和派工以[README](../../README.md)、[当前需求](../requirements.md)及[Python迁移记录](../delivery/python-backend-migration.md)为准；旧Node命令不再作为开发要求。
+
 # 大任务E交付记录：本地工程底座与集成
 
 日期2026-10-16，分支`feat/large-E-platform`；起点main `0a16b0e`。已合入A `466893a`、D `008847c`，不合并main，不覆盖其他任务分支。状态：**E底座与现有模块集成完成，待负责人/F验收；B/C后续新增业务继续按契约接入。**

@@ -3,28 +3,25 @@
   "version": "2.0.0",
   "private": true,
   "description": "A redesigned course learning space with grounded answers, notes, practice and planning.",
-  "main": "backend/server.js",
   "scripts": {
-    "start": "node backend/server.js",
-    "test": "node --test",
+    "start": "node scripts/run-python.js -m backend.xueya.server",
+    "test": "node scripts/test.js",
+    "test:python": "node scripts/run-python.js -m pytest -q",
+    "test:frontend": "node scripts/test.js --frontend",
     "test:browser": "node tests/e2e/browser.js",
-    "mcp:server": "node backend/mcp/course-server.js",
-    "mcp:check": "node backend/mcp/check.js",
-    "doctor": "node backend/platform/cli.js doctor",
-    "init": "node backend/platform/cli.js init",
-    "backup": "node backend/platform/cli.js backup",
-    "restore": "node backend/platform/cli.js restore",
-    "export": "node backend/platform/cli.js export",
-    "stop": "node backend/platform/cli.js stop",
+    "mcp:server": "node scripts/run-python.js -m backend.xueya.mcp_server",
+    "mcp:check": "node scripts/run-python.js -m backend.xueya.mcp_server --check",
+    "doctor": "node scripts/run-python.js -m backend.xueya.cli doctor",
+    "init": "node scripts/run-python.js -m backend.xueya.cli init",
+    "backup": "node scripts/run-python.js -m backend.xueya.cli backup",
+    "restore": "node scripts/run-python.js -m backend.xueya.cli restore",
+    "export": "node scripts/run-python.js -m backend.xueya.cli export",
+    "stop": "node scripts/run-python.js -m backend.xueya.cli stop",
     "test:workspace": "node tests/e2e/workspace.js",
     "test:platform": "node tests/e2e/platform.js"
   },
   "engines": {
-    "node": ">=24.4.0"
+    "node": ">=20"
   },
-  "dependencies": {
-    "@modelcontextprotocol/client": "2.3.1",
-    "@modelcontextprotocol/server": "2.3.1",
-    "zod": "4.6.7"
-  }
+  "dependencies": {}
 }

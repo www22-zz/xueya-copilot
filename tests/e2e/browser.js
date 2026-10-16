@@ -4,7 +4,7 @@ const path=require('node:path');
 const http=require('node:http');
 const {pathToFileURL}=require('node:url');
 const assert=require('node:assert/strict');
-const {createApp}=require('../../backend/app.js');
+const {startPython}=require('./python-server.js');
 const {sampleDocx,samplePdf}=require('../fixtures/documents.js');
 const root=path.resolve(__dirname,'../..');
 const outputDirectory=path.join(root,'test-results/browser');
@@ -30,9 +30,8 @@ const outputDirectory=path.join(root,'test-results/browser');
     const response=await model.generate({messages});
     for(let offset=0;offset<response.content.length;offset+=12)yield{type:'content',text:response.content.slice(offset,offset+12),model:'controlled'};
   };
-  const server=http.createServer(createApp({config,model}));
-  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
-  const base='http://127.0.0.1:'+server.address().port;
+  const server=await startPython({model});
+  const base=server.base;
   let browser;
   try{
     const options={headless:true};
@@ -224,6 +223,6 @@ const outputDirectory=path.join(root,'test-results/browser');
     console.log('Browser passed: real MCP workflow, repeated follow-up evidence, stop cancels model, retry after stop, offline and file-preview study plans without saving, TXT/MD/PDF/DOCX, citations, cards, fallback, AI question bank, memory, practice, plan persistence, search and responsive pages.');
   }finally{
     if(browser)await browser.close();
-    await new Promise(resolve=>server.close(resolve));
+    await server.close();
   }
 })().catch(error=>{console.error(error);process.exitCode=1;});

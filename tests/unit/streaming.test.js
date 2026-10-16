@@ -3,8 +3,6 @@ const assert=require('node:assert/strict');
 const {readSSE}=require('../../shared/agent/sse.js');
 const {createChatService}=require('../../frontend/js/services/chat-service.js');
 const {prepareDocument}=require('../../frontend/js/services/library-service.js');
-const {createPracticeTasks}=require('../../backend/agent/practice.js');
-const {createRagService}=require('../../backend/rag/index.js');
 const {createPracticeService}=require('../../frontend/js/services/practice-service.js');
 const L=require('../../shared/learning.js');
 
@@ -63,11 +61,6 @@ test('PDF/DOCX browser service sends binary data, handles empty text and retains
   assert.equal(empty.status,'未识别到文字');
   const local=await prepareDocument(file,{protocol:'file:',fetchImpl:async()=>assert.fail('file preview contacted parse API')});
   assert.equal(local.status,'内容待解析');
-});
-
-test('question validation rejects answers pointing beyond the retained six options',async()=>{
-  const tasks=createPracticeTasks({rag:createRagService(),model:{generate:async()=>({model:'test',content:JSON.stringify([{prompt:'错误题',options:['a','b','c','d','e','f','g'],answer:6}])})}});
-  await assert.rejects(tasks.questions({sources:['source-1']}),/AI_EMPTY/);
 });
 
 test('practice browser service forwards selected topics and fails clearly without HTTP',async()=>{

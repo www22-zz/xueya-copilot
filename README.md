@@ -1,127 +1,72 @@
-# 学涯 Copilot · 新版
+# 学涯 Copilot
 
-新版重新设计品牌首页和学习空间，使用原创动态知识球体、滚动内容呈现、交互演示与轻量状态反馈。没有沿用旧版的侧栏、配色或卡片布局。
+基于课程资料的学习助手：资料问答、原文引用、笔记、出题、错题分析、记忆卡片和复习计划。
 
-[首页预览](docs/images/home-preview.jpg) · [验证记录](docs/verification.md)
+**前端保持 HTML/CSS/JavaScript，后端整体使用 Python/FastAPI。所有 AI 能力永久只调用外部 API，不安装本地模型，不使用 GPU/CUDA。** 语言要求见[当前需求](docs/requirements.md)，分工见[六个大任务](docs/tasks/README.md)。
 
-团队开始开发：[六个大任务与可复制的 AI 指令](docs/tasks/README.md)。直接分配前端、RAG、Agent学习、MCP、工程底座、测试报告六个完整工作包；AI在包内自主分步实现，负责人不逐项派小任务。
+## 启动
 
-详细技术参考：[80项内部规格索引](docs/tasks/完整任务索引.md)。所有条目已归入六个大任务，供AI核对功能与验收；完整方案保留在[长计划书](docs/plans/2026-10-15-学涯Copilot开发计划书.md)。
+安装 Python **3.11 或更新版本**，在项目根目录运行（Windows PowerShell）：
 
-## 运行
-
-当前AI能力永久只调用API，不需要GPU、本地模型、Python或CUDA。见[当前产品约束](docs/requirements.md)。A与D已在E分支集成，本地存储、迁移、后台任务和恢复说明见[本地平台指南](docs/platform-guide.md)。
-
-需要 Node.js 24.4 或更新版本（使用内置SQLite）。首次下载或更新此版本后，先运行 `npm ci` 安装锁定的官方 MCP SDK 依赖。
-
-```text
-node backend/server.js
+```powershell
+python -m venv .venv
+.venv/Scripts/python.exe -m pip install -r requirements.lock
+.venv/Scripts/python.exe -m backend.xueya.cli doctor
+.venv/Scripts/python.exe -m backend.xueya.server
 ```
 
-访问 http://127.0.0.1:4173/ 。服务仅监听当前电脑。
+也可运行 `./scripts/start.ps1`，自动准备虚拟环境、安装锁定依赖并启动。打开 http://127.0.0.1:4173/ 。同一个 Python 服务提供页面和接口，后端启动不需要 Node.js。
 
-已安装 npm 时，也可以在项目根目录使用 `npm start`。启动命令同时提供前端页面和后端接口，不需要分别启动两个服务。环境配置从项目根目录的 `.env` 读取，配置模板是 `.env.example`。
+macOS/Linux 对应命令使用 `.venv/bin/python`。环境变量沿用 `.env.example`，真实配置写入项目根目录 `.env`；MiMo 密钥只由后端读取。已有 npm 的开发者可继续用 `npm start`，它只是调用 Python 的便利入口。
 
-测试学习逻辑、模块接口、工具网关、服务端代理和资源路径：
+停止：`.venv/Scripts/python.exe -m backend.xueya.cli stop`，或 `./scripts/stop.ps1`。启动/停止、浏览器数据迁移、备份恢复详见[平台指南](docs/platform-guide.md)。
 
-```text
-node --test
+## 从旧版本更新
+
+保持原来的项目路径、`.env`、`XUEYA_DATA_DIR` 和浏览器访问地址。先安全停止旧服务，备份数据，再按以上方式启动 Python。旧 SQLite `user_version=3`、workspace v3、原件 hash 路径和来源 ID 保持兼容；不需要清空数据库或浏览器存储。不要把私人 `.env`、`.xueya-data/` 或 `.venv/` 上传 Git。
+
+本次迁移记录和真实验收结果见[Python 迁移交付](docs/delivery/python-backend-migration.md)。迁移提交合并 main 前，团队以 `feat/python-backend` 为新工作基线；合并后统一使用最新 main。旧分支通过合并迁移提交跟进，不能上传整个旧文件夹覆盖。
+
+## 验证
+
+```powershell
+.venv/Scripts/python.exe -m pytest -q
+.venv/Scripts/python.exe -m backend.xueya.mcp_server --check
+npm run test:frontend
 ```
 
-也可以使用 `npm test`。可选的浏览器回归检查为 `npm run test:browser` 或 `node tests/e2e/browser.js`，需要另行准备 Playwright 和浏览器。浏览器测试会自行启动临时服务，使用受控模型验证流程，不调用付费 AI；可通过 `CHROME_PATH` 指定现有 Chrome。截图位于 `test-results/browser/`，不会提交到 Git。
+后端检查使用 pytest；浏览器规则测试才需要 Node。可选的三套 Chrome 回归为 `npm run test:browser`、`npm run test:workspace`、`npm run test:platform`，需要准备 Playwright 和浏览器，可设置 `CHROME_PATH`。测试会启动真实 Python 临时服务，使用受控上游 API，不产生付费模型调用；截图写入被 Git 忽略的 `test-results/`。
 
-### 直接打开页面
+## 目录与分工
 
-也可以双击 `frontend/index.html` 预览首页和学习空间。此时使用本地检索摘录，也可依据本地记录分析薄弱点和预览复习计划，不请求 AI 接口；需要真实 MiMo 问答时，按上面的启动方式运行服务并访问本地地址。直接打开与服务预览的浏览器存储位置不同，学习记录各自保存。
+| 工作包 | 主要代码 | 职责 |
+| --- | --- | --- |
+| A 前端 | `frontend/`、浏览器 `shared/` | 页面、样式、交互、状态与浏览器 API 适配 |
+| B RAG | `backend/xueya/rag.py`、`parse_worker.py` | 资料解析、分段、检索；后续 OCR/Embedding/Rerank API |
+| C Agent | `backend/xueya/agent.py`、`learning.py`、`provider.py` | 工作流、学习规则、提示词、MiMo 与后续多模态 API |
+| D MCP | `backend/xueya/mcp_core.py`、`mcp_server.py`、`mcp_http.py`、`gateway.py`、`actions.py` | 官方 SDK、传输、工具发现、治理与写入确认 |
+| E 工程 | `backend/xueya/app.py`、`server.py`、`config.py`、`common.py`、`platform.py`、`database.py`、`repository.py`、`jobs.py`、`files.py`、`migration.py`、`backup.py`、`cli.py`、`sql/`、根依赖和脚本 | 公共接口、SQLite、任务、恢复、配置和模块接线 |
+| F 质量与报告 | `tests/python/`、`tests/unit/`、`tests/e2e/`、评测与报告文档 | 独立验收、实验和技术报告 |
 
-## 目录结构
+`shared/` 是浏览器离线规则和前端测试代码；Python 后端不导入或执行 JS。学习规则的两种实现由跨语言基线和浏览器测试核对。公共 HTTP 字段保持 camelCase，Python 内部方法采用 snake_case。
 
-```text
-web/
-├── frontend/
-│   ├── index.html                 # 页面入口
-│   ├── css/                       # A：视觉系统与响应式
-│   ├── js/
-│   │   ├── ui/views.js            # A：学习空间页面模板
-│   │   ├── services/
-│   │   │   ├── library-service.js # B：浏览器资料读取
-│   │   │   ├── chat-service.js    # C：流式问答、追问与回退
-│   │   │   └── practice-service.js # C：知识点与出题请求
-│   │   ├── app.js                 # 页面状态、存储、路由和事件
-│   │   └── visual.js / motion.js / pointer.js # A：动效
-│   └── assets/
-├── backend/
-│   ├── rag/                       # B：RAG 服务与 PDF/DOCX 解析器
-│   ├── agent/                     # C：任务路由、学习工作流、提示词、校验与出题
-│   ├── providers/mimo.js          # C：模型 HTTP 适配器
-│   ├── mcp/                       # D：真实 MCP 课程服务、客户端与工具网关
-│   ├── http/                      # 联调：HTTP 与静态资源
-│   ├── config.js                  # 联调：环境配置
-│   ├── app.js                     # 联调：模块装配
-│   └── server.js                  # 服务启动，保持原命令
-├── shared/
-│   ├── contracts/index.js         # 公共数据格式与限制
-│   ├── fixtures/course.js         # 内置课程示例
-│   ├── rag/index.js               # B：前后端通用分段与关键词检索
-│   ├── agent/                     # C：任务规则、追问语境、本地摘录与 SSE 解析
-│   └── learning.js                # 旧接口兼容、练习与计划规则
-├── docs/
-│   ├── tasks/                     # 六个大任务、AI指令与内部技术规格
-│   ├── api-contracts.md           # HTTP 和模块接口约定
-│   ├── agent-mcp-guide.md         # Agent 与真实 MCP 的使用指南
-│   ├── design/                   # 设计与模块整理方案
-│   ├── plans/                    # 实施计划
-│   └── verification.md            # 验证记录
-├── tests/
-│   ├── unit/                     # 学习规则、模块与工具测试
-│   ├── integration/              # HTTP、模型代理与静态路径
-│   └── e2e/browser.js             # 可选的实际浏览器流程测试
-├── .env.example                  # 本地配置模板；真实 .env 不提交
-├── package-lock.json             # 可复现的依赖版本
-└── package.json
-```
+详细接口见[API 契约](docs/api-contracts.md)、[平台契约](docs/contracts/phase1.md)、[Agent 使用](docs/agent-mcp-guide.md)、[MCP 开发](docs/mcp-platform.md)。完整功能与实验规划保留在[长计划书](docs/plans/2026-10-15-学涯Copilot开发计划书.md)，内部细项见[规格索引](docs/tasks/完整任务索引.md)。
 
-服务保留原有接口，并增加 `/api/agent` 与 `/api/agent/stream`，页面默认使用 Agent 学习流程。前端加载可在浏览器与 Node 共用的模块，保留 `/shared/learning.js` 兼容入口。服务不公开后端源码、文档或环境配置。
+## 当前使用流程
 
-## 共同开发
+1. 首页进入学习空间，默认有数据结构示例资料。
+2. 上传 TXT/MD 或文本型 PDF/DOCX，查看原文、整理标签或新增独立版本。
+3. 资料问答先检索、核对原文，再调用 MiMo；引用可回到原文或保存为卡片。
+4. 提取知识点、生成选择题，作答后进入错题、记忆卡片和复习计划。
+5. 直接询问薄弱点或复习计划，Agent 通过 MCP 计算统计和预览；预览不会自动覆盖已保存计划。
+6. “本地数据”中可备份浏览器记录、预览迁移、启用本机 SQLite 同步，并确认 MCP 笔记写入。
 
-先读 [六个大任务与AI指令](docs/tasks/README.md) 和 [模块接口约定](docs/api-contracts.md)。完整技术、Git操作和验收方案见 [长计划书](docs/plans/2026-10-15-学涯Copilot开发计划书.md)。
+仍支持双击 `frontend/index.html` 的离线预览。该模式不请求 HTTP，不能调用 MiMo；与本机 HTTP 页面的浏览器存储来源不同。前端视觉、动效和原有功能不因后端语言迁移重做。
 
-- A：完整前端学习空间，维护 `frontend/`，包括页面、状态与浏览器服务。
-- B：资料库与RAG，维护 `backend/rag/`、`shared/rag/` 与解析/检索Worker。
-- C：Agent与个性化学习，维护模型、工作流和学习业务模块。
-- D：MCP工具平台，维护 `backend/mcp/`，通过业务服务包装工具。
-- E：工程底座与集成，统筹存储、公共契约、启动配置、HTTP路由和模块装配。
-- F：测试评测、技术报告与交付，负责独立回归、实验、报告和演示。
-- 各项从最新 `main` 创建大任务分支，内部自行分步开发、分阶段提交与验收。分支保留完整项目，不上传旧文件夹覆盖队友修改；冲突按业务含义协调解决。
+## 数据与能力边界
 
-已按模块接入队友的液态玻璃界面、PDF/DOCX 解析、流式问答、知识点与 AI 题库、记忆卡片功能。已接入真实的本地课程 MCP 工具服务，Agent 会自动检索并核对原文，也可分析薄弱点、生成复习计划预览。当前未接入向量数据库或额外联网工具。
+默认服务只监听本机，数据在 `.xueya-data/`，支持导出与一致性备份恢复。当前没有多人账号或云同步；团队通过 Git 同步代码，私人数据库不随代码同步。
 
-## Agent 与 MCP
+生成失败时明确回退实际原文，不伪造回答；流式内容只有通过检查的最终 `done` 才保存。当前保留关键词检索和基础学习规则；向量索引、OCR、先修图、真实音视频/图像后端能力仍由 B/C 按任务单实现，受控接口演示不代表已接入真实服务。扫描 PDF 不生成虚假正文。
 
-在资料问答中可以直接问“我有哪些薄弱知识点？”或“帮我安排一份复习计划”。回答会显示处理阶段，完成后可展开处理过程。计划仅预览，不自动覆盖当前计划。使用 `npm run mcp:check` 可独立验证真实 stdio 工具连接。更多说明见 [专项指南](docs/agent-mcp-guide.md)。
-
-## 使用流程
-
-1. 首页点击“进入学习空间”。默认提供 3 份数据结构示例资料。
-2. 在课程资料中添加 TXT / MD 笔记，或由服务解析文本型 PDF / DOCX，分段后加入检索。扫描 PDF 尚无 OCR。
-3. 在资料问答中提问，逐步显示回答；最终引用经过校验。点击引用查看原文，保存为知识卡片。
-4. 进入示例题库练习，或从资料提取知识点并勾选生成 AI 题库。题库与作答记录会保存，答对的错题移出回顾列表。
-5. 查看记忆卡片，答错次数越多提醒越近；在复习计划中设置考试日期和每日时长，更新时优先安排最近错题的知识点。
-6. 完成任务可勾选，资料、卡片、对话、答题和计划记录刷新后恢复。
-
-## AI 与数据
-
-沿用 `.env` 中的 MiMo 配置，密钥只在服务端读取。服务端接收实际文本来源及最近追问上下文，返回的引用必须属于本次提供的资料。界面“MiMo 已配置”仅表示配置存在，成功生成后才显示在线。
-
-模型不可用或响应超时时，回退到明确标识的“本地检索摘录”，仅展示相关原文；不伪装成模型生成。没有检索结果时明确说明资料不足。开放练习模式整理问题与参考内容；选择题既可使用内置示例，也可依据资料生成 AI 题库。
-
-浏览器保留学习副本；在“本地数据”预览迁移后可启用本机SQLite持久化与自动同步。新上传原件/解析结果和后台任务保存到本机服务，支持备份与恢复。当前没有账号、云端同步或向量数据库。TXT / MD 限 1 MB、12 万字符；PDF / DOCX 限 10 MB，由服务端基础解析器读取正文，最多保留 120 万字符。解析不成功时保留待解析记录，未识别到文字时明确说明，不生成虚假原文。直接打开文件时 PDF / DOCX 仍只保存记录。提问、提取知识点和出题时，选定文本片段会发送至配置的 AI 服务；问答还包含近期对话。
-
-## 设计与动效
-
-参考 Apple、OpenAI、Linear、Stripe 的信息层级、产品叙事与交互细节，使用原创图形和产品内容。品牌页的知识球体在不可见或后台时暂停，也有手动暂停按钮；支持 `prefers-reduced-motion`。工具空间使用即时导航和清晰状态，原文与搜索使用原生对话框管理键盘焦点。布局覆盖桌面、平板和手机。
-
-首页交互参考 Xiaomi MiMo：鼠标经过星球会引起局部粒子变化；资料、问答和知识卡片组成动态文字网络，节点可以进入相应功能，悬停或键盘聚焦时突出关联线条与说明。精细鼠标使用圆点和细圆环；输入框、可选中文本、弹窗、键盘导航、触屏和系统减少动态效果时使用适合的原生光标。
-
-新版设计和实施文档分别位于 `docs/design/` 和 `docs/plans/`，验证记录见 `docs/verification.md`。
+TXT/MD 上限 1 MiB，PDF/DOCX 上限 10 MiB，解析最多保留 120 万字符。密钥不会发送给浏览器；选定资料和近期对话会发到配置的模型 API。付费请求结果未知时记录 unknown，不自动重放，不把 Token 用量当作实际账单。

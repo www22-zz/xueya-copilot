@@ -6,3 +6,7 @@ node_modules/
 *.log
 .xueya-data/
 .xueya-backups/
+.venv/
+__pycache__/
+.pytest_cache/
+*.pyc

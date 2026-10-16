@@ -1,6 +1,6 @@
 # 大任务C Agent与个性化学习
 
-> **当前约束更新（2026-10-16）**：所有AI能力永久只调用API，不安装本地模型、CUDA或GPU/Python推理Worker；旧GPU/本地模型候选按[当前产品约束](../../requirements.md)替换为API适配和验证。
+> **统一开发要求（2026-10-16）**：前端保留HTML/CSS/JavaScript；后端全部使用Python/FastAPI，禁止新增Node/JS后端或通过Python转调旧JS实现。AI能力永久仅调用API，Python也只执行普通业务与API适配，不加载本地模型。以[当前需求](../../requirements.md)和[代码入口](../../../README.md)为准。迁移合并main前以feat/python-backend为基线，合并后使用最新main；已开工分支合入迁移提交，不重置队友工作。
 
 **直接整份派给一个主责，由其AI连续完成内部步骤。**主目标：从可信资料回答发展到可执行、可检查、可恢复的完整学习闭环，包括多模态学习。
 
@@ -8,7 +8,7 @@
 你负责xueya-copilot“大任务C：Agent与个性化学习”。请实际交付完整业务模块，自行安排内部步骤、编码、验证、修复，持续推进，不只给一份设计或接一个聊天API。
 
 【先了解项目】
-读取README、backend/agent/、backend/providers/、shared/agent/、shared/learning.js、现有接口与docs/tasks/README.md；检查当前实现和验收证据。保护未提交改动，从开始时最新main建立feat/large-C-agent-learning；内部步骤在此分支分阶段提交。
+读取README、backend/xueya/agent.py 与 learning.py、backend/xueya/provider.py、shared/agent/、shared/learning.js、现有接口与docs/tasks/README.md；检查当前实现和验收证据。保护未提交改动，从包含Python迁移提交的最新main（未合并时用feat/python-backend）建立feat/large-C-agent-learning；内部步骤在此分支分阶段提交。
 详细计划和W卡是内部规格库，先复用已有功能，再补齐完整目标。不要因复杂、工作量或上下文不足把任务缩成演示骨架；通过阶段交付和进度文件持续推进。
 
 【你的完整范围】
@@ -29,13 +29,13 @@
 阶段完成后更新进度并直接进入下一段。B/D/E未就绪时使用可替换适配器、冻结schema和受控Mock完成独立逻辑；真实联调未完成必须单列，不能用Mock结果宣称模型效果。
 
 【主责与协作】
-主要维护backend/agent/、backend/providers/、shared/agent/及学习领域模块与专项测试。B提供资料/检索/定位；D提供MCP网关和工具执行；E提供schema、仓库接口、作业、运行记录与HTTP装配；A提供交互；F负责独立评测与报告。
+主要维护backend/xueya/agent.py 与 learning.py、backend/xueya/provider.py、shared/agent/及学习领域模块与专项测试。B提供资料/检索/定位；D提供MCP网关和工具执行；E提供schema、仓库接口、作业、运行记录与HTTP装配；A提供交互；F负责独立评测与报告。
 不在本模块另建数据库、复制RAG或实现第二套MCP。通过依赖注入调用服务。公共入口/schema/依赖变更交给E协调；图谱归C维护业务，B提供原文证据，A做可视化。
 带费用的远程调用保持可配置预算和实际用量记录；远程超时可能结果未知，不能声称本地幂等键保证供应商不重复扣费。不要自动无限重试付费请求。
 
 【验收】
 真实讲义/截图→有证据回答与整章总结→可编辑学习包→审核题目→作答与错因→可采纳复习计划→复习反馈更新掌握度；重启保留产物与进度，取消不会留下误报完成记录。
-验证缺证据/冲突证据、非法引用、恶意资料指令、工具失败、超时、格式错误、人工订正、多课程隔离、日期边界与重复提交。模型、ASR/TTS、GPU和Mock分别记录实际验证状态。
+验证缺证据/冲突证据、非法引用、恶意资料指令、工具失败、超时、格式错误、人工订正、多课程隔离、日期边界与重复提交。模型API、ASR/TTS API与Mock分别记录实际验证状态。
 保留既有文本问答、题库、复习、本地回退和兼容API；新增能力是可使用业务，不只是提示词文件或返回固定JSON。
 
 【持续执行和交付】

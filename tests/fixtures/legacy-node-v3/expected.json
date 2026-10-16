@@ -1,0 +1,226 @@
+{
+  "baseCommit": "f149b5d",
+  "pending": {
+    "actionId": "ace304f9-0401-4c25-9507-12a2911683b3",
+    "scope": {
+      "userId": "local-user",
+      "courseId": "course-default"
+    },
+    "kind": "note",
+    "entityId": "pending-legacy",
+    "expectedVersion": 0,
+    "before": null,
+    "after": {
+      "title": "Legacy pending",
+      "content": "Pending with source",
+      "sourceIds": [
+        "source-1"
+      ]
+    },
+    "references": [
+      {
+        "sourceId": "source-1",
+        "version": 1,
+        "quoteHash": "547cff473fe502a26fc10727cc02ec7884e4250665edaed25b300f7840090fd0"
+      }
+    ],
+    "expiresAt": 1792133436883,
+    "digest": "d8d772cbc325b81b068e6db5652b94cf3539bb4e17b38b30bbfe85631f161f3e"
+  },
+  "applied": {
+    "actionId": "4b58b161-e5a2-4249-8429-5395f041ce85",
+    "scope": {
+      "userId": "local-user",
+      "courseId": "course-default"
+    },
+    "kind": "note",
+    "entityId": "applied-legacy",
+    "expectedVersion": 0,
+    "before": null,
+    "after": {
+      "title": "Legacy pending",
+      "content": "Pending with source",
+      "sourceIds": [
+        "source-1"
+      ]
+    },
+    "references": [
+      {
+        "sourceId": "source-1",
+        "version": 1,
+        "quoteHash": "547cff473fe502a26fc10727cc02ec7884e4250665edaed25b300f7840090fd0"
+      }
+    ],
+    "expiresAt": 1792133436885,
+    "digest": "45c2b3715f8d75a97a672c755e1bd6a866af9d456ce9b159567bd835e1dc6b4b"
+  },
+  "receipt": {
+    "actionId": "4b58b161-e5a2-4249-8429-5395f041ce85",
+    "version": 1,
+    "auditId": "f3ff4532-7340-4ab0-a575-e6114d494b95"
+  },
+  "records": [
+    {
+      "questionId": "q1",
+      "correct": false,
+      "createdAt": "2026-10-10T02:00:00Z"
+    },
+    {
+      "questionId": "q1",
+      "correct": false,
+      "createdAt": "2026-10-11T02:00:00Z"
+    },
+    {
+      "questionId": "q3",
+      "correct": true,
+      "createdAt": "2026-10-14T02:00:00Z"
+    }
+  ],
+  "base": "2026-10-16",
+  "plan": [
+    {
+      "date": "2026-10-16",
+      "tasks": [
+        {
+          "id": "2026-10-16-树的高度-read",
+          "title": "回顾薄弱点：树的高度",
+          "detail": "阅读课程原文，保存一张重点卡片",
+          "minutes": 27
+        },
+        {
+          "id": "2026-10-16-树的高度-practice",
+          "title": "练习与复述：树的高度",
+          "detail": "完成示例练习，用自己的话解释答案",
+          "minutes": 18
+        }
+      ]
+    },
+    {
+      "date": "2026-10-17",
+      "tasks": [
+        {
+          "id": "2026-10-17-二叉搜索树-read",
+          "title": "理解：二叉搜索树",
+          "detail": "阅读课程原文，保存一张重点卡片",
+          "minutes": 27
+        },
+        {
+          "id": "2026-10-17-二叉搜索树-practice",
+          "title": "练习与复述：二叉搜索树",
+          "detail": "完成示例练习，用自己的话解释答案",
+          "minutes": 18
+        }
+      ]
+    },
+    {
+      "date": "2026-10-18",
+      "tasks": [
+        {
+          "id": "2026-10-18-中序遍历-read",
+          "title": "理解：中序遍历",
+          "detail": "阅读课程原文，保存一张重点卡片",
+          "minutes": 27
+        },
+        {
+          "id": "2026-10-18-中序遍历-practice",
+          "title": "练习与复述：中序遍历",
+          "detail": "完成示例练习，用自己的话解释答案",
+          "minutes": 18
+        }
+      ]
+    },
+    {
+      "date": "2026-10-19",
+      "tasks": [
+        {
+          "id": "2026-10-19-平衡与旋转-read",
+          "title": "理解：平衡与旋转",
+          "detail": "阅读课程原文，保存一张重点卡片",
+          "minutes": 27
+        },
+        {
+          "id": "2026-10-19-平衡与旋转-practice",
+          "title": "练习与复述：平衡与旋转",
+          "detail": "完成示例练习，用自己的话解释答案",
+          "minutes": 18
+        }
+      ]
+    },
+    {
+      "date": "2026-10-20",
+      "tasks": [
+        {
+          "id": "2026-10-20-时间复杂度-read",
+          "title": "理解：时间复杂度",
+          "detail": "阅读课程原文，保存一张重点卡片",
+          "minutes": 27
+        },
+        {
+          "id": "2026-10-20-时间复杂度-practice",
+          "title": "练习与复述：时间复杂度",
+          "detail": "完成示例练习，用自己的话解释答案",
+          "minutes": 18
+        }
+      ]
+    }
+  ],
+  "memory": [
+    {
+      "topic": "树的高度",
+      "sourceId": "source-1",
+      "wrongCount": 2,
+      "lastReviewed": "2026-10-11",
+      "nextReview": "2026-10-13",
+      "due": true
+    },
+    {
+      "topic": "二叉搜索树",
+      "sourceId": "source-2",
+      "wrongCount": 0,
+      "lastReviewed": null,
+      "nextReview": null,
+      "due": false
+    },
+    {
+      "topic": "中序遍历",
+      "sourceId": "source-3",
+      "wrongCount": 0,
+      "lastReviewed": "2026-10-14",
+      "nextReview": "2026-10-21",
+      "due": false
+    },
+    {
+      "topic": "平衡与旋转",
+      "sourceId": "source-2",
+      "wrongCount": 0,
+      "lastReviewed": null,
+      "nextReview": null,
+      "due": false
+    },
+    {
+      "topic": "时间复杂度",
+      "sourceId": "source-3",
+      "wrongCount": 0,
+      "lastReviewed": null,
+      "nextReview": null,
+      "due": false
+    }
+  ],
+  "wrong": [
+    {
+      "id": "q1",
+      "topic": "树的高度",
+      "prompt": "一棵有 15 个节点的满二叉树，查找节点最多需要比较多少次？",
+      "options": [
+        "3 次",
+        "4 次",
+        "7 次",
+        "15 次"
+      ],
+      "answer": 1,
+      "explanation": "15 = 2⁴ − 1，满二叉树共有 4 层。从根到最深的叶节点最多比较 4 次。",
+      "sourceId": "source-1"
+    }
+  ],
+  "importHash": "b5fddf9aec4af17a6b9e538dd795bfd451a8a3723e32f1f908eb4d8855faa4f7"
+}

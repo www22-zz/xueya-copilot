@@ -1,6 +1,6 @@
 # 大任务A 前端与完整学习空间
 
-> **当前约束更新（2026-10-16）**：所有AI能力永久只调用API，不安装本地模型、CUDA或GPU/Python推理Worker；旧GPU/本地模型候选按[当前产品约束](../../requirements.md)替换为API适配和验证。
+> **统一开发要求（2026-10-16）**：前端保留HTML/CSS/JavaScript；后端全部使用Python/FastAPI，禁止新增Node/JS后端或通过Python转调旧JS实现。AI能力永久仅调用API，Python也只执行普通业务与API适配，不加载本地模型。以[当前需求](../../requirements.md)和[代码入口](../../../README.md)为准。迁移合并main前以feat/python-backend为基线，合并后使用最新main；已开工分支合入迁移提交，不重置队友工作。
 
 **直接整份派给一个主责，由其AI连续完成内部步骤。**不需要负责人逐条派小任务。
 

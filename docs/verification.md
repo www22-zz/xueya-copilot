@@ -1,3 +1,5 @@
+> 历史验证记录：以下保留原版本的命令和结果，不能当作本次Python验证。当前启动见[README](../README.md)，新验收见[Python迁移记录](delivery/python-backend-migration.md)。
+
 # 新版验证记录 · 2026-10-14
 
 ## 自动检查

@@ -1,6 +1,6 @@
 # 大任务B 完整资料库与 RAG
 
-> **当前约束更新（2026-10-16）**：所有AI能力永久只调用API，不安装本地模型、CUDA或GPU/Python推理Worker；旧GPU/本地模型候选按[当前产品约束](../../requirements.md)替换为API适配和验证。
+> **统一开发要求（2026-10-16）**：前端保留HTML/CSS/JavaScript；后端全部使用Python/FastAPI，禁止新增Node/JS后端或通过Python转调旧JS实现。AI能力永久仅调用API，Python也只执行普通业务与API适配，不加载本地模型。以[当前需求](../../requirements.md)和[代码入口](../../../README.md)为准。迁移合并main前以feat/python-backend为基线，合并后使用最新main；已开工分支合入迁移提交，不重置队友工作。
 
 **直接整份派发，AI内部逐步完成。**范围包含解析、OCR、分块、向量、混合检索、重排与证据。
 
@@ -8,7 +8,7 @@
 你负责xueya-copilot“大任务B：完整课程资料库与RAG”。请连续完成整个技术模块，自行拆步骤、实现、测试、修复与联调，不只交方案、接口空壳或关键词检索Demo。
 
 【开始】
-检查git改动并保护现有工作，读取README、backend/rag/、shared/rag/、workers/（若已有）、现有解析/引用测试、公共契约与docs/tasks/README.md。以最新main建立feat/large-B-rag，一个大任务分支分阶段提交。
+检查git改动并保护现有工作，读取README、backend/xueya/rag.py 与 parse_worker.py、shared/rag/、workers/（若已有）、现有解析/引用测试、公共契约与docs/tasks/README.md。以包含Python迁移提交的最新main（未合并时用feat/python-backend）建立feat/large-B-rag，一个大任务分支分阶段提交。
 项目已有轻量解析和关键词检索，先核验并复用。详细W卡是AI内部参考，不要求负责人逐条派发。目标机本地Windows、约8GB显存/32GB内存，实际环境先探测。
 
 【完整目标】
@@ -28,13 +28,13 @@
 E存储未就绪时用相同接口的临时适配/Mock推进解析与检索；所需迁移以独立文件交E统一接入，不替换其底座。AI解析、Embedding和Rerank仅接外部API，使用E的API并发/超时/用量记录，不安装本地模型。
 
 【边界与协作】
-主责backend/rag/、shared/rag/及解析/向量Worker和专项测试。C负责生成与学习逻辑，D通过你的服务包装MCP，A负责阅读器界面，E负责数据库/任务和公共API，F负责评测与实验报告。
+主责backend/xueya/rag.py 与 parse_worker.py、shared/rag/及解析/向量Worker和专项测试。C负责生成与学习逻辑，D通过你的服务包装MCP，A负责阅读器界面，E负责数据库/任务和公共API，F负责评测与实验报告。
 文档原文与模型解释分开，课程/有效版本范围在检索和原文读取都检查。请求仅接受受控业务ID；文件、解压、页数、内存和处理时长有边界。
 需要改公共schema/根路由时先给兼容定义和注册模块，E统一集成。不要修改其他队友的前端或模型模块。
 
 【验收】
 真实文本、扫描讲义、图表/表格/公式样例可导入并核对原文；同义、精确术语、多轮、不可答、冲突和删除后问题验证；上传、解析、索引、重启、取消和恢复验证。
-与F共同建立独立于chunk ID的黄金证据；比较关键词、向量、混合、重排和结构分块，在相同证据token预算下记录召回、支持度、延迟、显存/内存和成本。
+与F共同建立独立于chunk ID的黄金证据；比较关键词、向量、混合、重排和结构分块，在相同证据token预算下记录召回、支持度、延迟、内存/API并发和成本。
 真实API、普通CPU解析和Mock结果分开。没有真实资料/依赖时报告缺口并继续独立部分，不编造识别或检索效果。
 
 【持续执行】

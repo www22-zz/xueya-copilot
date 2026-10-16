@@ -1,3 +1,5 @@
+> 历史记录：本文件保留当时的实现与验收证据。当前后端已迁移Python/FastAPI，启动和派工以[README](../../README.md)、[当前需求](../requirements.md)及[Python迁移记录](../delivery/python-backend-migration.md)为准；旧Node命令不再作为开发要求。
+
 # 大任务A：前端与完整学习空间
 
 分支：`feat/large-A-frontend`。起始代码：`0a16b0e`。开始日期：2026-10-16。

@@ -1,3 +1,5 @@
+> 历史记录：本文件保留当时的实现与验收证据。当前后端已迁移Python/FastAPI，启动和派工以[README](../../README.md)、[当前需求](../requirements.md)及[Python迁移记录](../delivery/python-backend-migration.md)为准；旧Node命令不再作为开发要求。
+
 # Agent 连续对话与取消体验优化
 
 本次根据现有实现修复三个可复现的问题：泛指追问在 MCP 再检索时丢失原文；用户无法停止生成；网络或服务断开后学习分析和计划退回普通资料摘录。

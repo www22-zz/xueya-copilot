@@ -1,24 +1,21 @@
 'use strict';
 const {chromium}=require('playwright'),assert=require('node:assert/strict'),http=require('node:http'),fs=require('node:fs'),os=require('node:os'),path=require('node:path');
-const {createApp}=require('../../backend/app.js');
-const {createPlatform}=require('../../backend/platform/index.js');
-const {createRagService}=require('../../backend/rag/index.js');
+const {startPython}=require('./python-server.js');
 (async()=>{
-  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'xueya-e-browser-')),rag=createRagService(),platform=createPlatform({dataDir:dir,rag});
-  const app=createApp({config:{root:path.resolve(__dirname,'../..'),ai:{apiKey:'',model:'no-paid-api'}},rag,platform});
-  const server=http.createServer(app);await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));let browser;
+  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'xueya-e-browser-'));
+  const server=await startPython({platform:true,dataDir:dir});let browser;
   try{
     browser=await chromium.launch({headless:true,...(process.env.CHROME_PATH?{executablePath:process.env.CHROME_PATH}:{})});const page=await browser.newPage({viewport:{width:1440,height:1000}});page.setDefaultTimeout(15000);const errors=[];page.on('pageerror',e=>errors.push(e.message));
     await page.addInitScript(()=>{if(!localStorage.getItem('e-seeded')){localStorage.setItem('e-seeded','1');localStorage.setItem('xueya-copilot-state-v2',JSON.stringify({documents:[],cards:[],messages:Array.from({length:35},(_,i)=>({id:'msg-'+i,role:'user',text:'历史'+i})),records:Array.from({length:350},()=>({questionId:'q1',correct:true,createdAt:new Date().toISOString()}))}));}});
     const base='http://127.0.0.1:'+server.address().port;await page.goto(base+'/#space/overview');await page.locator('#platformData').click();await page.locator('#platformPreview').click();await page.locator('#platformApply:not([hidden])').waitFor();assert.match(await page.locator('#platformPreviewText').textContent(),/350/);await page.locator('#platformApply').click();await page.waitForFunction(()=>document.querySelector('#platformStatus').textContent.includes('迁移完成'));
-    assert.equal(platform.repository.getWorkspace(platform.userId).data.courses[0].data.records.length,350);console.log('E browser: migration retains 35 messages and 350 records');
-    await page.locator('#platformNoteTitle').fill('通过MCP保存的笔记');await page.locator('#platformNoteContent').fill('需要用户确认后才会保存。');await page.locator('#platformNotePreview').click();await page.locator('#platformNoteConfirm:not([hidden])').waitFor();assert.equal(platform.repository.all(platform.scope('course-default'),'note').length,0);
-    await Promise.all([page.waitForEvent('load'),page.locator('#platformNoteConfirm').click()]);await page.locator('#platformData').waitFor();assert.equal(platform.repository.all(platform.scope('course-default'),'note').length,1);assert.equal(platform.db.prepare('SELECT COUNT(*) AS n FROM audits').get().n,1);
+    assert.equal((await server.api('/workspace')).workspace.data.courses[0].data.records.length,350);console.log('E browser: migration retains 35 messages and 350 records');
+    await page.locator('#platformNoteTitle').fill('通过MCP保存的笔记');await page.locator('#platformNoteContent').fill('需要用户确认后才会保存。');await page.locator('#platformNotePreview').click();await page.locator('#platformNoteConfirm:not([hidden])').waitFor();assert.equal((await server.api('/entities?kind=note')).items.length,0);
+    await Promise.all([page.waitForEvent('load'),page.locator('#platformNoteConfirm').click()]);await page.locator('#platformData').waitFor();assert.equal((await server.api('/entities?kind=note')).items.length,1);assert.equal((await server.api('/audit')).audits.length,1);
     assert.ok(await page.evaluate(()=>JSON.parse(localStorage.getItem('xueya-copilot-workspace-v3')).courses[0].data.cards.some(c=>c.title==='通过MCP保存的笔记')));console.log('E browser: actual UI -> MCP preview/confirm -> SQLite/audit -> restored UI');
     await page.goto(base+'/#space/library');await page.locator('#fileInput').setInputFiles({name:'新课程.md',mimeType:'text/markdown',buffer:Buffer.from('叶绿体是光合作用的重要场所。')});await page.waitForFunction(()=>JSON.parse(localStorage.getItem('xueya-copilot-state-v2')||'{}').documents?.some(d=>d.name==='新课程.md'&&d.remote&&d.chunks?.length));
-    await page.waitForFunction(()=>localStorage.getItem('xueya-platform-pending-v1')===null);const doc=platform.repository.all(platform.scope('course-default'),'document').find(d=>d.name==='新课程.md');assert.ok(doc.fileHash);assert.ok(platform.files.read(doc.fileHash).toString().includes('叶绿体'));assert.ok(platform.repository.all(platform.scope('course-default'),'source').some(s=>s.documentId===doc.id));
+    await page.waitForFunction(()=>localStorage.getItem('xueya-platform-pending-v1')===null);const doc=(await server.api('/entities?kind=document')).items.find(d=>d.name==='新课程.md');assert.ok(doc.fileHash);assert.ok(fs.readFileSync(path.join(dir,'files',doc.fileHash.slice(0,2),doc.fileHash),'utf8').includes('叶绿体'));assert.ok((await server.api('/entities?kind=source')).items.some(s=>s.documentId===doc.id));
     await page.reload();await page.locator('#platformData').waitFor();assert.ok(await page.evaluate(()=>JSON.parse(localStorage.getItem('xueya-copilot-workspace-v3')).courses[0].data.documents.some(d=>d.name==='新课程.md')));console.log('E browser: upload -> real job -> originals/chunks -> automatic sync -> reload');
     await page.locator('#platformData').click();await page.locator('#platformClose').click();await page.screenshot({path:path.resolve('test-results/platform-desktop.png'),fullPage:true});
     await page.setViewportSize({width:375,height:812});await page.screenshot({path:path.resolve('test-results/platform-mobile.png'),fullPage:true});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));assert.deepEqual(errors,[]);console.log('E browser: no runtime errors; desktop/mobile verified');
-  }finally{await browser?.close();server.closeAllConnections();await new Promise(resolve=>server.close(resolve));await platform.close();assert.ok(dir.startsWith(path.join(os.tmpdir(),'xueya-e-browser-')));fs.rmSync(dir,{recursive:true,force:true});}
+  }finally{await browser?.close();await server.close();assert.ok(dir.startsWith(path.join(os.tmpdir(),'xueya-e-browser-')));fs.rmSync(dir,{recursive:true,force:true});}
 })().catch(error=>{console.error(error);process.exitCode=1;});

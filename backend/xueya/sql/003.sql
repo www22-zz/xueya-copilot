@@ -1,0 +1,1 @@
+CREATE TABLE confirmations(id TEXT PRIMARY KEY,data TEXT NOT NULL);

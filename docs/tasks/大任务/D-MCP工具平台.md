@@ -1,6 +1,6 @@
 # 大任务D MCP工具平台
 
-> **当前约束更新（2026-10-16）**：所有AI能力永久只调用API，不安装本地模型、CUDA或GPU/Python推理Worker；旧GPU/本地模型候选按[当前产品约束](../../requirements.md)替换为API适配和验证。
+> **统一开发要求（2026-10-16）**：前端保留HTML/CSS/JavaScript；后端全部使用Python/FastAPI，禁止新增Node/JS后端或通过Python转调旧JS实现。AI能力永久仅调用API，Python也只执行普通业务与API适配，不加载本地模型。以[当前需求](../../requirements.md)和[代码入口](../../../README.md)为准。迁移合并main前以feat/python-backend为基线，合并后使用最新main；已开工分支合入迁移提交，不重置队友工作。
 
 **直接整份派给一个主责，由其AI连续完成内部步骤。**主目标：把已有本地MCP扩成可靠、可观察、可扩展的学习工具平台，并与Agent和真实业务接通。
 
@@ -8,8 +8,8 @@
 你负责xueya-copilot“大任务D：MCP工具平台”。请交付真实MCP服务、客户端、工具网关与学习工具集，自己完成内部设计、实现、测试与联调，不只列工具清单。
 
 【先了解项目】
-阅读README、backend/mcp/、backend/agent/调用点、现有工具测试与接口文档、docs/tasks/README.md。当前已有官方SDK的stdio服务和四个只读学习工具，先验证并复用，不能误判为只有伪MCP。
-保护已有改动，从开始时最新main建立feat/large-D-mcp，内部步骤分阶段提交。详细W卡只作内部规格，不逐项等用户派发。
+阅读README、backend/xueya/mcp_core.py、mcp_server.py、mcp_http.py、gateway.py、actions.py、backend/xueya/agent.py 与 learning.py调用点、现有工具测试与接口文档、docs/tasks/README.md。当前已有官方SDK的stdio服务和四个只读学习工具，先验证并复用，不能误判为只有伪MCP。
+保护已有改动，从包含Python迁移提交的最新main（未合并时用feat/python-backend）建立feat/large-D-mcp，内部步骤分阶段提交。详细W卡只作内部规格，不逐项等用户派发。
 
 【你的完整范围】
 1. 工具平台：统一工具描述、输入/输出schema、能力发现、版本、错误类型、结果大小、分页、超时、取消与日志；服务端对所有参数校验，不能只靠模型自觉。
@@ -27,7 +27,7 @@
 依赖B/C/E未交付时按接口使用替身验证协议和边界，继续开发独立能力；真实工具结果待接通，不能冒充已经实现对应业务。
 
 【主责与协作】
-主要维护backend/mcp/与MCP专项测试。C负责流程规划、业务状态与模型；B负责RAG；E负责仓库、公共schema、HTTP/根装配；A展示过程与确认；F做独立评测与报告。
+主要维护backend/xueya/mcp_core.py、mcp_server.py、mcp_http.py、gateway.py、actions.py与MCP专项测试。C负责流程规划、业务状态与模型；B负责RAG；E负责仓库、公共schema、HTTP/根装配；A展示过程与确认；F做独立评测与报告。
 工具依赖通过服务端口注入，避免循环依赖；默认只暴露本地学习工具。公共入口、package/lockfile与schema由E统一协调，不能整文件覆盖其他分支。
 
 【验收】

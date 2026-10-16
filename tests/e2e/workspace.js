@@ -5,14 +5,13 @@ const http=require('node:http');
 const fs=require('node:fs');
 const path=require('node:path');
 const {pathToFileURL}=require('node:url');
-const {createApp}=require('../../backend/app.js');
+const {startPython}=require('./python-server.js');
 const root=path.resolve(__dirname,'../..'),output=path.join(root,'test-results/workspace');
 
 (async()=>{
   fs.mkdirSync(output,{recursive:true});
-  const server=http.createServer(createApp({config:{root,ai:{apiKey:'',model:'no-paid-api'}}}));
-  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
-  const base=`http://127.0.0.1:${server.address().port}`;
+  const server=await startPython();
+  const base=server.base;
   let browser,page;
   try{
     browser=await chromium.launch({headless:true,...(process.env.CHROME_PATH?{executablePath:process.env.CHROME_PATH}:{})});
@@ -129,5 +128,5 @@ const root=path.resolve(__dirname,'../..'),output=path.join(root,'test-results/w
     const filePage=await browser.newPage();const apis=[];filePage.on('pageerror',error=>errors.push(error.message));filePage.on('request',request=>{if(/^https?:/.test(request.url())&&request.url().includes('/api/'))apis.push(request.url());});await filePage.goto(pathToFileURL(path.join(root,'frontend/index.html')).href+'#space/graph');await filePage.locator('.learning-graph').waitFor();await filePage.goto(pathToFileURL(path.join(root,'frontend/index.html')).href+'#space/media');assert.equal(await filePage.locator('[data-media-run=video]').isDisabled(),true);assert.deepEqual(apis,[]);assert.deepEqual(errors,[]);
     console.log('A browser acceptance passed; local functions and controlled optional ports verified separately.');
   }catch(error){if(page)await page.screenshot({path:path.join(output,'failure.png'),fullPage:true}).catch(()=>{});throw error;}
-  finally{if(browser)await browser.close();server.closeAllConnections?.();await new Promise(resolve=>server.close(resolve));}
+  finally{if(browser)await browser.close();await server.close();}
 })().catch(error=>{console.error(error);process.exitCode=1;});

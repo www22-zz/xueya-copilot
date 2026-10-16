@@ -1,112 +1,47 @@
-# Agent 工作流与 MCP 使用指南
+# Agent 与 MCP 使用指南
 
-> 任务D新增的范围绑定业务工具、写入预览/确认、HTTP认证和协议矩阵见[MCP平台指南](mcp-platform.md)及[实际交付证据](delivery/large-D-mcp.md)。本页原四工具流程仍是当前网页默认装配。
+当前后端为 Python/FastAPI，前端保持原样。安装、运行见[README](../README.md)，接口见[API 契约](api-contracts.md)。所有 AI 仅调用外部 API，普通解析和学习规则由 Python 执行。
 
-## 安装与启动
+## 已有功能
 
-需要 Node.js 20 或更新版本。首次下载或同步此版本后，在项目根目录执行：
+资料问答、总结、开放练习：判断任务 → MCP 搜索 → 按来源 ID 读取并核对原文 → 关闭工具连接 → 调用 MiMo → 检查最终 JSON 与引用。
 
-```bash
-npm ci
-npm start
-```
+薄弱点分析、复习计划：MCP 读取作答与题目 → 计算统计 → 按上海日期、考试日期和每日时长生成预览。此流程不需要模型密钥，也不会自动保存计划。
 
-项目锁定官方 MCP Client/Server SDK 和 Zod 依赖，`npm ci` 按 `package-lock.json` 安装。直接使用 `node backend/server.js` 启动也可以，但仍需先安装依赖。现有 `.env` 中的 MiMo 配置继续使用；MCP 本地工具不需要新密钥。
+追问结合近期用户问题和仍有效的上一轮来源；历史回答不能当作原文。来源缺失时明确说明。工具或模型失败时显示降级阶段并使用实际原文/学习规则；主动停止时不保存半段回答。
 
-## 可以直接试的任务
+HTTP 地址仍为 `/api/ai`、`/api/ai/stream`、`/api/agent`、`/api/agent/stream`、`/api/topics`、`/api/questions`、`/api/parse`。流式事件仍为 `workflow/content/reasoning/done/error`。
 
-在资料问答中输入：
+## 两条工具链
 
-- “二叉搜索树的查找复杂度是什么？”——检索、核对原文，再生成带引用的答案。
-- “总结二叉搜索树的查找复杂度。”——检索相关来源并整理知识重点。
-- 使用“开放练习”模式提问——依据原文整理练习与参考内容；原有“AI 题库”仍负责持久化选择题。
-- “我有哪些薄弱知识点？”——从近期作答统计待巩固内容和到期复习项。
-- “帮我安排一份复习计划。”——按当前考试日期、每日时长与近期错题生成计划预览。
-
-回答过程中可以看到处理阶段；完成后展开“查看处理过程”查看已完成或已回退的步骤。计划预览不会自动替换现有计划。统计和日期使用实际学习规则计算，不依赖模型重新计算；考试日期已过时会明确提示更新。
-
-支持连续追问“再解释一下”或点击“继续追问”：检索会参考近期用户问题，并核对当前仍有效的上一轮来源。历史回答不会被当作原文，已从当前资料目录移除的材料不会重新加入检索。
-
-生成过程中可点击“停止生成”。这会取消请求并通知后端停止工具或模型工作；未校验的半段回答不会保存为正式答案，输入框会保留问题，便于修改和重试。超时或网络失败则使用本地回退；网络断开或直接打开 HTML 时，薄弱点分析和复习计划仍可依据浏览器已有记录完成。
-
-## 工作流结构
-
-```text
-浏览器提供有界的课程与学习上下文
-  → 规则路由：问答 / 总结 / 开放练习 / 薄弱点 / 计划
-  → 建立独立 MCP stdio 连接并发现课程工具
-  → 课程任务：搜索资料 → 按 ID 核对原文 → 模型生成 → 来源检查
-  → 学习任务：分析作答 → 生成计划预览 → 返回实际计算结果
-  → 关闭 MCP 连接，清理所属子进程
-```
-
-这是结构化工作流，工具顺序由应用的任务路由控制，不是让模型无限自主调用任意工具。每次请求最多检索一次、读取三个片段，或执行分析和计划两步。将来若引入模型工具循环，应另加轮数、重复调用、总时长和权限边界测试。
-
-## 四个真实 MCP 工具
-
-| 服务工具 | 网关名称 | 作用 |
+| 条件 | 工具链 | 数据 |
 | --- | --- | --- |
-| `search_materials` | `course__search_materials` | 检索本请求中的课程原文 |
-| `read_source` | `course__read_source` | 按稳定 ID 核对原文与位置 |
-| `analyze_progress` | `course__analyze_progress` | 统计近期正确率、薄弱点与到期复习项 |
-| `build_review_plan` | `course__build_review_plan` | 计算最多七天的复习计划预览 |
+| 浏览器尚未启用 SQLite 同步 | 官方 Python MCP SDK 的真实 stdio 进程 | 本次请求的有界资料/学习上下文 |
+| 已保存服务端 workspace | 官方 SDK 的进程内客户端和 scoped 平台工具 | SQLite 中当前课程的来源、题目和记录；保存 Run/Checkpoint |
 
-实现使用官方 SDK 的初始化、工具发现、调用和关闭流程，不是普通函数调用冒充 MCP。服务通过 stdio 的 JSON-RPC 通信，stdout 只用于协议；无文件扫描、文件写入或联网搜索工具。
+进程内调用使用 SDK 官方提供的内存适配，外部 stdio/HTTP 使用真实协议传输。模型不能在工具参数里自行选择用户或课程身份。进入等待用户确认阶段前关闭工具会话，不持续占用连接。
 
-每个请求使用独立服务连接，资料和作答作为本次上下文传入，不在工具服务里持久化。网关绑定上下文，工具参数不能覆盖绑定的资料或学习记录。工具服务不读取项目 `.env`，也不继承 MiMo 密钥。
+## 独立诊断
 
-## 开发入口
+```powershell
+.venv/Scripts/python.exe -m backend.xueya.mcp_server --check
+.venv/Scripts/python.exe -m backend.xueya.mcp_server
+```
 
-| 文件 | 负责人和用途 |
+第一条命令启动真实 stdio 子进程，发现四个工具并检索公开示例，随后关闭；不调用付费 API。第二条用于 MCP 宿主，stdout 只输出协议消息。宿主配置 `command` 为虚拟环境 Python 的绝对路径，`args` 为 `['-X','utf8','-m','backend.xueya.mcp_server']`，`cwd` 为项目根目录。
+
+四个兼容工具名保持 `search_materials/read_source/analyze_progress/build_review_plan`，参数通过发现的 JSON Schema 验证；不能直接读取网页 localStorage。后续 scoped、HTTP 和写入工具见[MCP 开发指南](mcp-platform.md)。
+
+## 修改位置
+
+| 文件 | 主责 |
 | --- | --- |
-| `backend/agent/learning-workflow.js` | C：任务路由、阶段、编排、回退与结果检查 |
-| `backend/mcp/course-server.js` | D：MCP 工具注册、参数验证和工具实现 |
-| `backend/mcp/stdio-client.js` | D：连接、分页发现、调用、取消与关闭 |
-| `backend/mcp/course-session.js` | C/D：工具白名单和请求上下文绑定 |
-| `shared/agent/context.js` | 共同维护：有界课程与学习上下文 |
-| `shared/agent/tasks.js` | C：共享任务路由、追问检索语境、学习统计与计划格式 |
-| `frontend/js/services/chat-service.js` | C：调用 Agent 接口，处理阶段和流式结果 |
-| `frontend/js/ui/views.js` | A：阶段与处理过程的显示 |
+| `backend/xueya/agent.py` | C：路由、追问、编排、回退、出题、结果检查 |
+| `backend/xueya/learning.py` | C：日期、统计和学习规则 |
+| `backend/xueya/provider.py` | C：MiMo API、SSE、取消与用量 |
+| `backend/xueya/mcp_core.py`、`mcp_server.py` | D：注册、会话、发现和 stdio |
+| `backend/xueya/mcp_http.py`、`gateway.py`、`actions.py` | D：HTTP、调用治理、确认流程 |
+| `backend/xueya/app.py`、`platform.py` | E：HTTP 与存储接线 |
+| `shared/agent/`、`shared/learning.js` | A/C 协调维护浏览器离线规则；后端不执行它们 |
 
-原有 `backend/agent/index.js`、题库接口和工具网关继续保留。RAG 的关键词检索规则仍位于 `shared/rag/`；D 修改工具适配时不必修改页面，B 后续接向量检索时应保持来源 ID 与真实原文契约。
-
-## 独立检查 MCP
-
-```bash
-npm run mcp:check
-```
-
-检查会真正启动服务、发现四个工具、检索内置示例并关闭连接。也可用 `node backend/mcp/check.js`。整个检查不调用付费模型。
-
-```bash
-npm run mcp:server
-```
-
-此命令启动等待 MCP 客户端连接的 stdio 服务；通常由应用或其他 MCP 宿主启动，无需在启动网页前手动运行。
-
-若在其他 MCP 宿主中使用，可配置 Node 命令和 `backend/mcp/course-server.js` 的绝对路径。该服务是无状态工具服务，外部客户端需按发现的参数 schema 提供原文或学习记录，不能直接读取网页 localStorage。使用 `connectStdio` 加 `registerServer` 可以适配其他可信 stdio 服务，但当前 Agent 只使用固定的课程工具白名单，不会自动执行新发现的任意工具。
-
-## 接口与边界
-
-- 新接口：`POST /api/agent`、`POST /api/agent/stream`。
-- 原接口：`/api/ai`、`/api/ai/stream`、资料解析和出题接口保持兼容。
-- 默认工具超时 5 秒，可通过 `.env` 的 `MCP_TOOL_TIMEOUT_MS` 调整到 1～10 秒。
-- 上下文最多 48 个候选片段，每段 1500 字符；优先放入浏览器已有检索命中。题目元信息最多 100 条，最近作答最多 120 条，问题和历史继续沿用已有上限。
-- 可选 `context.previousSourceIds` 最多三个，并且必须属于本次 `context.library`。只用于泛指追问检索无命中时的原文核对，不作为访问其他资料的入口。
-- 工具故障会明确回退到本地检索或学习规则；模型失败、超时或引用无效时使用实际原文摘录。
-- 没有资料时明确说明不足，不要求模型补造答案。直接打开 `file:` 页面可使用本地检索、学习分析和计划预览。
-- 当前没有新增向量库、联网搜索、账号、云同步或自动保存计划。
-
-## 验证方法
-
-```bash
-npm test
-npm run test:browser
-```
-
-单元和集成测试覆盖工具握手、发现、参数验证、资料隔离、进程退出、任务路由、生成与引用、模型或工具失败、取消和计划预览。浏览器测试使用真实 MCP 服务和受控模型，验证流程、旧功能与计划不被自动覆盖。
-
-## 官方参考
-
-- [MCP Client](https://github.com/modelcontextprotocol/typescript-sdk/blob/main/docs/get-started/first-client.md)
-- [MCP Server](https://github.com/modelcontextprotocol/typescript-sdk/blob/main/docs/get-started/first-server.md)
+当前基础工作流不等于 C 大任务全部完成，OCR/向量检索/评分/概念图/多模态等增强仍按任务单继续。测试使用受控模型只能证明流程，真实质量由 F 的独立评测报告说明。

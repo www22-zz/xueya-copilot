@@ -1,3 +1,5 @@
+> 历史记录：本文件保留当时的实现与验收证据。当前后端已迁移Python/FastAPI，启动和派工以[README](../../README.md)、[当前需求](../requirements.md)及[Python迁移记录](../delivery/python-backend-migration.md)为准；旧Node命令不再作为开发要求。
+
 # 首页内容与知识星球交互优化
 
 日期：2026-10-15

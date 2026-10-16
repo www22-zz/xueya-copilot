@@ -1,3 +1,5 @@
+> 历史记录：本文件保留当时的实现与验收证据。当前后端已迁移Python/FastAPI，启动和派工以[README](../../README.md)、[当前需求](../requirements.md)及[Python迁移记录](../delivery/python-backend-migration.md)为准；旧Node命令不再作为开发要求。
+
 # 大任务D交付记录：MCP工具平台
 
 日期：2026-10-16。分支：`feat/large-D-mcp`，基于最新main `0a16b0e`。状态：**D平台实现与专项验证完成，待跨任务联调验收**。未合并main，未合入A分支代码，没有替B/C/E实现另一套业务/数据库。
