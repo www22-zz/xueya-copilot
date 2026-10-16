@@ -1,11 +1,6 @@
 """Current deterministic retrieval and ordinary document extraction; no local AI inference."""
 from __future__ import annotations
-import io
 import re
-import zipfile
-from xml.etree import ElementTree
-from pypdf import PdfReader
-from .common import AppError, require
 from .learning import SOURCES
 
 
@@ -37,42 +32,15 @@ def retrieve(question, library):
 
 
 def extract_chunks(text, document):
-    text = text.replace("\r\n", "\n").strip()
-    return [{"id": f"{document['id']}-chunk-{i}", "documentId": document["id"], "title": document["name"], "location": f"文本片段 {i+1}", "quote": text[offset:offset+600], "keywords": [], "sample": False} for i, offset in enumerate(range(0, len(text), 520))]
+    from .rag_parse import assemble, structured_chunks
+    import hashlib
+    text = text.replace("\r\n", "\n")
+    parsed = assemble([{"number": None, "text": text, "method": "utf8", "needsOcr": False}], "md" if document.get("kind") == "md" or document["name"].endswith(".md") else "txt", document.get("fileHash") or hashlib.sha256(text.encode()).hexdigest())
+    return structured_chunks(parsed, document)
 
 
 def parse_document(buffer: bytes, kind: str):
-    require(kind in ("pdf", "docx", "txt", "md"), "UNSUPPORTED_DOCUMENT_TYPE")
-    require(0 < len(buffer) <= 10485760, "FILE_TOO_LARGE")
-    try:
-        if kind in ("txt", "md"):
-            require(len(buffer) <= 1048576, "FILE_TOO_LARGE")
-            text = buffer.decode("utf-8", errors="strict")
-        elif kind == "docx":
-            with zipfile.ZipFile(io.BytesIO(buffer)) as archive:
-                entry = archive.getinfo("word/document.xml")
-                require(entry.file_size <= 24000000, "DOCUMENT_XML_TOO_LARGE")
-                xml = archive.read(entry)
-                require(b"<!DOCTYPE" not in xml.upper() and b"<!ENTITY" not in xml.upper(), "UNSAFE_DOCUMENT_XML")
-                root = ElementTree.fromstring(xml)
-                ns = {"w": "http://schemas.openxmlformats.org/wordprocessingml/2006/main"}
-                text = "\n".join("".join(p.itertext()) for p in root.findall(".//w:p", ns))
-        else:
-            reader = PdfReader(io.BytesIO(buffer), strict=False)
-            require(len(reader.pages) <= 3000, "DOCUMENT_TOO_MANY_PAGES")
-            parts, size = [], 0
-            for page in reader.pages:
-                part = page.extract_text() or ""
-                parts.append(part)
-                size += len(part)
-                if size >= 1200000:
-                    break
-            text = "\n".join(parts)
-        text = text[:1200000]
-        return {"ok": True, "text": text, "kind": kind, **({"empty": True} if not text.strip() else {})}
-    except AppError:
-        raise
-    except UnicodeError as error:
-        raise AppError("INVALID_TEXT_ENCODING") from error
-    except Exception as error:
-        raise AppError("PARSE_FAILED") from error
+    from .rag_parse import parse_structured
+    return parse_structured(buffer, kind)
+
+
