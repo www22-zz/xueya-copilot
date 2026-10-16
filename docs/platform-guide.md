@@ -1,18 +1,19 @@
 # 本地平台运行、迁移和恢复
 
-当前AI架构为**永久只调用外部API**，见[当前产品约束](requirements.md)。不需要GPU、CUDA、Python或本地模型。普通TXT/MD/PDF/DOCX解析在有界Node Worker线程中进行；扫描件OCR等新能力需由B/C接入实际API，当前不会伪造解析成功。
+当前 AI 架构为**只调用外部 API**，见[当前产品约束](requirements.md)。按用户最新要求后端全部使用 Python，不需要 GPU、CUDA 或本地模型。普通 TXT/MD/PDF/DOCX 解析在可取消的独立 Python 子进程中进行；OCR 等能力需接入实际 API，不伪造解析成功。
 
 ## 启动
 
-安装Node.js **24.4或更新版本**，进入项目根目录：
+安装 Python 3.12+，进入项目根目录：
 
 ```powershell
-npm ci
-npm run doctor
-npm start
+py -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.lock
+.\.venv\Scripts\python.exe -m backend.platform.cli doctor
+.\.venv\Scripts\python.exe -m backend.server
 ```
 
-也可运行`scripts/start.ps1`，自动检查Node和缺失依赖。保留原命令`node backend/server.js`。访问终端打印的`http://127.0.0.1:4173`。只监听本机，不开放公网。
+后台启动与停止：`.\.venv\Scripts\python.exe -m backend.platform.cli start` / `stop`。访问 http://127.0.0.1:4173，只监听本机。旧 Node/PowerShell 启动脚本已由 Python CLI 替换。下文 npm 操作名仅作为激活 Python 虚拟环境后的别名，也可使用 `python -m backend.platform.cli 操作名`。
 
 `.env.example`列出MiMo、工具超时、API并发和数据目录选项。真实`.env`不提交。`API_MAX_CONCURRENT=2`是所有模型调用共用的默认并发许可；普通解析CPU并发2。API忙时明确失败/回退，不建立无界等待队列。
 
@@ -34,7 +35,7 @@ server.json            # 当前实例/PID/停止凭据，禁止分享
 npm run stop
 ```
 
-或`scripts/stop.ps1`。停止命令校验实例ID及本地停止凭据，停止接单、取消活动作业、关闭数据库，不按模糊进程名称杀其他Node程序。
+或直接使用 `python -m backend.platform.cli stop`。停止命令校验实例 ID 及本地停止凭据，停止接单、取消活动作业、关闭数据库，不按模糊进程名称杀其他程序。
 
 ## 迁移已有浏览器数据
 
@@ -100,7 +101,7 @@ npm run backup -- C:/Backups/xueya-20261016
 npm run restore -- C:/Backups/xueya-20261016 C:/XueyaRestored
 ```
 
-备份使用SQLite官方backup API生成一致数据库快照，再复制不可变原件、记录SHA256 manifest，不直接复制正在变化的sqlite主文件。[Node SQLite接口](https://nodejs.org/download/release/v24.20.0/docs/api/sqlite.html)、[SQLite备份说明](https://www.sqlite.org/howtocorrupt.html)。
+备份使用 Python sqlite3 的在线 backup API 生成一致快照，再复制不可变原件并记录 SHA256 manifest，不直接复制正在变化的主文件。参见 [SQLite 备份说明](https://www.sqlite.org/howtocorrupt.html)。
 
 恢复先校验manifest、路径、每个文件hash及SQLite integrity_check，写入**全新目录**后原子改名，拒绝覆盖现有目标。然后停止原实例，在`.env`将XUEYA_DATA_DIR切换到新目录并启动；核对课程、资料原件和记录数量。不要同时打开旧/新服务编辑同一份学习状态。
 
@@ -108,8 +109,8 @@ npm run restore -- C:/Backups/xueya-20261016 C:/XueyaRestored
 
 ```powershell
 npm run export -- C:/Backups/xueya-workspace.json
-node backend/platform/cli.js gc
-node backend/platform/cli.js gc unused --apply
+python -m backend.platform.cli gc
+python -m backend.platform.cli gc --apply
 ```
 
 export输出快照；原件与全量数据库恢复请用backup。gc默认仅列出完全未被任何资料修订引用的孤立文件；`--apply`才物理删除这些孤立项。软删除资料仍被修订引用，因此不会被gc误删。当前没有自动销毁私人历史/原件的策略。
@@ -119,10 +120,9 @@ export输出快照；原件与全量数据库恢复请用backup。gc默认仅列
 ## 验证和已知边界
 
 ```powershell
-npm test
-node tests/e2e/browser.js
-node tests/e2e/workspace.js
-node tests/e2e/platform.js
+python -m pytest
+python -m scripts.check_browser
+python -m scripts.check_platform_browser
 ```
 
 浏览器测试需要Playwright和Chrome，可设置CHROME_PATH；专项测试使用临时目录，既不改用户数据库也不调用付费API。`npm run doctor`只报告配置存在性，不输出密钥，也不把有配置等同于付费API成功。

@@ -1,17 +1,16 @@
 # Agent 工作流与 MCP 使用指南
 
-> 任务D新增的范围绑定业务工具、写入预览/确认、HTTP认证和协议矩阵见[MCP平台指南](mcp-platform.md)及[实际交付证据](delivery/large-D-mcp.md)。本页原四工具流程仍是当前网页默认装配。
-
 ## 安装与启动
 
-需要 Node.js 20 或更新版本。首次下载或同步此版本后，在项目根目录执行：
+后端已全部迁移 Python，需要 Python 3.12+。Windows 在项目根目录执行：
 
 ```bash
-npm ci
-npm start
+py -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.lock
+.\.venv\Scripts\python.exe -m backend.server
 ```
 
-项目锁定官方 MCP Client/Server SDK 和 Zod 依赖，`npm ci` 按 `package-lock.json` 安装。直接使用 `node backend/server.js` 启动也可以，但仍需先安装依赖。现有 `.env` 中的 MiMo 配置继续使用；MCP 本地工具不需要新密钥。
+项目使用锁定的官方 Python MCP SDK 及 Python 参数校验。macOS/Linux 将上述解释器换为 .venv/bin/python。现有 .env 中的 MiMo 配置继续使用；MCP 本地工具不需要新密钥。新增后端与测试使用 Python。
 
 ## 可以直接试的任务
 
@@ -59,32 +58,32 @@ npm start
 
 | 文件 | 负责人和用途 |
 | --- | --- |
-| `backend/agent/learning-workflow.js` | C：任务路由、阶段、编排、回退与结果检查 |
-| `backend/mcp/course-server.js` | D：MCP 工具注册、参数验证和工具实现 |
-| `backend/mcp/stdio-client.js` | D：连接、分页发现、调用、取消与关闭 |
-| `backend/mcp/course-session.js` | C/D：工具白名单和请求上下文绑定 |
+| `backend/agent/learning_workflow.py` | C：任务路由、阶段、编排、回退与结果检查 |
+| `backend/mcp/course_server.py` | D：MCP 工具注册、参数验证和工具实现 |
+| `backend/mcp/course_session.py` | C/D：官方 Python SDK stdio 连接、白名单与请求上下文绑定 |
+| `backend/mcp/__init__.py` | D：工具网关、命名空间、超时与取消 |
 | `shared/agent/context.js` | 共同维护：有界课程与学习上下文 |
 | `shared/agent/tasks.js` | C：共享任务路由、追问检索语境、学习统计与计划格式 |
 | `frontend/js/services/chat-service.js` | C：调用 Agent 接口，处理阶段和流式结果 |
 | `frontend/js/ui/views.js` | A：阶段与处理过程的显示 |
 
-原有 `backend/agent/index.js`、题库接口和工具网关继续保留。RAG 的关键词检索规则仍位于 `shared/rag/`；D 修改工具适配时不必修改页面，B 后续接向量检索时应保持来源 ID 与真实原文契约。
+兼容 Agent 位于 backend/agent/agent.py，题库接口和工具网关保留。后端检索位于 backend/rag/，shared/rag/ 仅供浏览器；B 接向量检索时应保持来源 ID 与原文契约。
 
 ## 独立检查 MCP
 
 ```bash
-npm run mcp:check
+.\.venv\Scripts\python.exe -m scripts.check_mcp
 ```
 
-检查会真正启动服务、发现四个工具、检索内置示例并关闭连接。也可用 `node backend/mcp/check.js`。整个检查不调用付费模型。
+检查会真正启动 Python 服务、发现四个工具、检索内置示例并关闭连接，不调用付费模型。
 
 ```bash
-npm run mcp:server
+.\.venv\Scripts\python.exe -m backend.mcp.course_server
 ```
 
 此命令启动等待 MCP 客户端连接的 stdio 服务；通常由应用或其他 MCP 宿主启动，无需在启动网页前手动运行。
 
-若在其他 MCP 宿主中使用，可配置 Node 命令和 `backend/mcp/course-server.js` 的绝对路径。该服务是无状态工具服务，外部客户端需按发现的参数 schema 提供原文或学习记录，不能直接读取网页 localStorage。使用 `connectStdio` 加 `registerServer` 可以适配其他可信 stdio 服务，但当前 Agent 只使用固定的课程工具白名单，不会自动执行新发现的任意工具。
+其他 MCP 宿主可配置虚拟环境 Python 的绝对路径，参数为 -m backend.mcp.course_server，工作目录为项目根。服务无状态，外部客户端按发现的 schema 提供原文或学习记录，不能读取网页 localStorage。当前 Agent 仅使用固定课程工具白名单，不会自动执行任意发现工具；外部宿主的协议版本需另行联调。
 
 ## 接口与边界
 
@@ -94,19 +93,18 @@ npm run mcp:server
 - 上下文最多 48 个候选片段，每段 1500 字符；优先放入浏览器已有检索命中。题目元信息最多 100 条，最近作答最多 120 条，问题和历史继续沿用已有上限。
 - 可选 `context.previousSourceIds` 最多三个，并且必须属于本次 `context.library`。只用于泛指追问检索无命中时的原文核对，不作为访问其他资料的入口。
 - 工具故障会明确回退到本地检索或学习规则；模型失败、超时或引用无效时使用实际原文摘录。
-- 没有资料时明确说明不足，不要求模型补造答案。直接打开 `file:` 页面可使用本地检索、学习分析和计划预览。
+- 普通问题没有相关资料时使用标明的“通用问答”；明确要求基于资料的任务没有证据时说明不足。直接打开 file: 页面可使用本地检索、学习分析和计划预览。
 - 当前没有新增向量库、联网搜索、账号、云同步或自动保存计划。
 
 ## 验证方法
 
 ```bash
-npm test
-npm run test:browser
+.\.venv\Scripts\python.exe -m pytest
+.\.venv\Scripts\python.exe -m scripts.check_browser
 ```
 
 单元和集成测试覆盖工具握手、发现、参数验证、资料隔离、进程退出、任务路由、生成与引用、模型或工具失败、取消和计划预览。浏览器测试使用真实 MCP 服务和受控模型，验证流程、旧功能与计划不被自动覆盖。
 
 ## 官方参考
 
-- [MCP Client](https://github.com/modelcontextprotocol/typescript-sdk/blob/main/docs/get-started/first-client.md)
-- [MCP Server](https://github.com/modelcontextprotocol/typescript-sdk/blob/main/docs/get-started/first-server.md)
+- [官方 Python MCP SDK](https://github.com/modelcontextprotocol/python-sdk)

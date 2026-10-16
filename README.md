@@ -10,25 +10,25 @@
 
 ## 运行
 
-当前AI能力永久只调用API，不需要GPU、本地模型、Python或CUDA。见[当前产品约束](docs/requirements.md)。A与D已在E分支集成，本地存储、迁移、后台任务和恢复说明见[本地平台指南](docs/platform-guide.md)。
-
-需要 Node.js 24.4 或更新版本（使用内置SQLite）。首次下载或更新此版本后，先运行 `npm ci` 安装锁定的官方 MCP SDK 依赖。
+后端已迁移为 Python（2026-10-16 用户要求）；HTTP/SSE、MiMo 图文与语音、MCP 和学习算法均运行于 Python，不依赖 Node.js 后端。浏览器仍使用 HTML/CSS/JavaScript。需要 Python 3.12 或更新版本，本机验证使用 3.14。
 
 ```text
-node backend/server.js
+py -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.lock
+.\.venv\Scripts\python.exe -m backend.server
 ```
 
 访问 http://127.0.0.1:4173/ 。服务仅监听当前电脑。
 
-已安装 npm 时，也可以在项目根目录使用 `npm start`。启动命令同时提供前端页面和后端接口，不需要分别启动两个服务。环境配置从项目根目录的 `.env` 读取，配置模板是 `.env.example`。
+以上为 Windows PowerShell 命令。macOS/Linux 使用 `python3 -m venv .venv`，之后将 `.\.venv\Scripts\python.exe` 换为 `.venv/bin/python`。启动命令同时提供前端页面和后端接口，不需要分别启动两个服务。环境配置仍从项目根目录 `.env` 读取，模板为 `.env.example`；密钥不得上传。
 
 测试学习逻辑、模块接口、工具网关、服务端代理和资源路径：
 
 ```text
-node --test
+.\.venv\Scripts\python.exe -m pytest
 ```
 
-也可以使用 `npm test`。可选的浏览器回归检查为 `npm run test:browser` 或 `node tests/e2e/browser.js`，需要另行准备 Playwright 和浏览器。浏览器测试会自行启动临时服务，使用受控模型验证流程，不调用付费 AI；可通过 `CHROME_PATH` 指定现有 Chrome。截图位于 `test-results/browser/`，不会提交到 Git。
+浏览器回归：`.\.venv\Scripts\python.exe -m scripts.check_browser`，使用 Python Playwright 与现有 Edge（也可通过 `CHROME_PATH` 指定浏览器）。它启动受控 Python 服务和真实 Python MCP，不调用付费模型。截图位于忽略的 `test-results/browser-python/`。激活虚拟环境后，`npm start/test/run test:browser` 仅作为 Python 命令别名；运行项目不需要 npm。
 
 ### 直接打开页面
 
@@ -53,12 +53,13 @@ web/
 ├── backend/
 │   ├── rag/                       # B：RAG 服务与 PDF/DOCX 解析器
 │   ├── agent/                     # C：任务路由、学习工作流、提示词、校验与出题
-│   ├── providers/mimo.js          # C：模型 HTTP 适配器
+│   ├── providers/mimo.py          # C：异步模型 HTTP/SSE 适配器
 │   ├── mcp/                       # D：真实 MCP 课程服务、客户端与工具网关
-│   ├── http/                      # 联调：HTTP 与静态资源
-│   ├── config.js                  # 联调：环境配置
-│   ├── app.js                     # 联调：模块装配
-│   └── server.js                  # 服务启动，保持原命令
+│   ├── platform/                  # E：Python SQLite、原件、异步作业、迁移与备份
+│   ├── contracts.py               # 公共请求格式与限制
+│   ├── config.py                  # 环境配置
+│   ├── app.py                     # FastAPI HTTP/SSE 与静态资源装配
+│   └── server.py                  # Python / Uvicorn 启动入口
 ├── shared/
 │   ├── contracts/index.js         # 公共数据格式与限制
 │   ├── fixtures/course.js         # 内置课程示例
@@ -72,16 +73,15 @@ web/
 │   ├── design/                   # 设计与模块整理方案
 │   ├── plans/                    # 实施计划
 │   └── verification.md            # 验证记录
-├── tests/
-│   ├── unit/                     # 学习规则、模块与工具测试
-│   ├── integration/              # HTTP、模型代理与静态路径
-│   └── e2e/browser.js             # 可选的实际浏览器流程测试
+├── tests_python/                 # Python 领域、HTTP、MCP 与迁移对照测试
+├── scripts/                      # Python 浏览器、模型与实验验证脚本
 ├── .env.example                  # 本地配置模板；真实 .env 不提交
-├── package-lock.json             # 可复现的依赖版本
-└── package.json
+├── requirements.txt              # Python 直接依赖范围
+├── requirements.lock             # 本轮验证锁定的完整依赖
+└── package.json                   # 可选命令别名，无 Node.js 后端依赖
 ```
 
-服务保留原有接口，并增加 `/api/agent` 与 `/api/agent/stream`，页面默认使用 Agent 学习流程。前端加载可在浏览器与 Node 共用的模块，保留 `/shared/learning.js` 兼容入口。服务不公开后端源码、文档或环境配置。
+服务保留 `/api/ai`、`/api/agent`、流式问答、题库和解析接口；日常问题支持通用问答，课程回答区分原文证据。前端继续加载 `/shared/learning.js` 等浏览器脚本；Python 后端使用独立 Python 端口与相同 JSON 数据契约，不调用 JavaScript。服务不公开后端源码、文档或环境配置。迁移与验证见 [Python 迁移记录](docs/delivery/python-migration.md)。
 
 ## 共同开发
 
@@ -99,7 +99,7 @@ web/
 
 ## Agent 与 MCP
 
-在资料问答中可以直接问“我有哪些薄弱知识点？”或“帮我安排一份复习计划”。回答会显示处理阶段，完成后可展开处理过程。计划仅预览，不自动覆盖当前计划。使用 `npm run mcp:check` 可独立验证真实 stdio 工具连接。更多说明见 [专项指南](docs/agent-mcp-guide.md)。
+在资料问答中可以直接问“我有哪些薄弱知识点？”或“帮我安排一份复习计划”。回答会显示处理阶段，完成后可展开处理过程。计划仅预览，不自动覆盖当前计划。使用 `.\.venv\Scripts\python.exe -m scripts.check_mcp` 可独立验证真实 Python stdio 工具连接。更多说明见 [专项指南](docs/agent-mcp-guide.md)。
 
 ## 使用流程
 
@@ -114,9 +114,9 @@ web/
 
 沿用 `.env` 中的 MiMo 配置，密钥只在服务端读取。服务端接收实际文本来源及最近追问上下文，返回的引用必须属于本次提供的资料。界面“MiMo 已配置”仅表示配置存在，成功生成后才显示在线。
 
-模型不可用或响应超时时，回退到明确标识的“本地检索摘录”，仅展示相关原文；不伪装成模型生成。没有检索结果时明确说明资料不足。开放练习模式整理问题与参考内容；选择题既可使用内置示例，也可依据资料生成 AI 题库。
+课程问答中模型不可用或引用未核验时，回退到明确标识的“本地检索摘录”。普通日常问题没有相关资料时使用“MiMo 通用问答”；明确要求根据资料回答却没有依据时说明不足，通用服务失败则说明暂不可用。开放练习模式整理问题与参考内容；选择题可使用示例或依据资料生成 AI 题库。
 
-浏览器保留学习副本；在“本地数据”预览迁移后可启用本机SQLite持久化与自动同步。新上传原件/解析结果和后台任务保存到本机服务，支持备份与恢复。当前没有账号、云端同步或向量数据库。TXT / MD 限 1 MB、12 万字符；PDF / DOCX 限 10 MB，由服务端基础解析器读取正文，最多保留 120 万字符。解析不成功时保留待解析记录，未识别到文字时明确说明，不生成虚假原文。直接打开文件时 PDF / DOCX 仍只保存记录。提问、提取知识点和出题时，选定文本片段会发送至配置的 AI 服务；问答还包含近期对话。
+资料和学习记录使用当前浏览器的本地存储，没有账号、云端同步或向量数据库。TXT / MD 限 1 MB、12 万字符；PDF / DOCX 限 10 MB，由服务端基础解析器读取正文，最多保留 120 万字符。解析不成功时保留待解析记录，未识别到文字时明确说明，不生成虚假原文。直接打开文件时 PDF / DOCX 仍只保存记录。提问、提取知识点和出题时，选定文本片段会发送至配置的 AI 服务；问答还包含近期对话。
 
 ## 设计与动效
 

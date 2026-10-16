@@ -1,5 +1,7 @@
 # MCP工具平台：开发和接线指南
 
+> 2026-10-16：已按用户要求整体迁移 Python，并对接最新 main f149b5d 的本地平台与确认 UI。本文件下方 TypeScript/Node SDK 示例保留为 D 的历史设计记录；当前入口为 backend/mcp/*.py，CLI 为 `python -m scripts.check_mcp`，默认启动为 `python -m backend.server`。业务 schemaVersion 2.0 保留；Python SDK 1.30.0 已验证 stdio、内存传输和 Streamable HTTP，外部 2026-07-28 专属协议模式未宣称兼容。实际交付以 [Python 迁移记录](delivery/python-migration.md) 为准。
+
 本指南对应大任务D。旧网页默认继续使用四工具stdio链路；新增平台模块通过依赖注入接B/C/E，尚未修改应用根装配或增加网页确认路由。已验证范围见[交付记录](delivery/large-D-mcp.md)。
 
 ## 1. 启动和诊断

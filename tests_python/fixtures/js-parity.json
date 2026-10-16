@@ -1,0 +1,1358 @@
+{
+  "origin": "Captured from pre-migration JavaScript implementation; authored synthetic input, no paid APIs",
+  "plans": [
+    {
+      "setting": {
+        "minutes": 30
+      },
+      "expected": {
+        "days": [
+          {
+            "date": "2026-10-15",
+            "budget": 30,
+            "tasks": [
+              {
+                "id": "node:read",
+                "conceptId": "node",
+                "kind": "read",
+                "minutes": 10,
+                "dependsOn": [],
+                "reason": "按先修顺序核对原文",
+                "evidence": [],
+                "sourceEvidence": [
+                  {
+                    "sourceId": "s",
+                    "version": "1",
+                    "quote": "节点是树的组成部分。先理解节点，再学习二叉树。中序遍历按左子树、根、右子树访问。"
+                  }
+                ],
+                "part": 1,
+                "overdue": false
+              },
+              {
+                "id": "node:practice",
+                "conceptId": "node",
+                "kind": "practice",
+                "minutes": 15,
+                "dependsOn": [
+                  "node:read"
+                ],
+                "reason": "尚无充分练习证据，先核对原文再练习",
+                "evidence": [],
+                "sourceEvidence": [
+                  {
+                    "sourceId": "s",
+                    "version": "1",
+                    "quote": "节点是树的组成部分。先理解节点，再学习二叉树。中序遍历按左子树、根、右子树访问。"
+                  }
+                ],
+                "part": 1,
+                "overdue": false
+              },
+              {
+                "id": "node:review",
+                "conceptId": "node",
+                "kind": "review",
+                "minutes": 5,
+                "dependsOn": [
+                  "node:practice"
+                ],
+                "reason": "回顾并自评记忆",
+                "evidence": [],
+                "sourceEvidence": [
+                  {
+                    "sourceId": "s",
+                    "version": "1",
+                    "quote": "节点是树的组成部分。先理解节点，再学习二叉树。中序遍历按左子树、根、右子树访问。"
+                  }
+                ],
+                "part": 1,
+                "overdue": false
+              }
+            ]
+          },
+          {
+            "date": "2026-10-16",
+            "budget": 30,
+            "tasks": [
+              {
+                "id": "tree:read",
+                "conceptId": "tree",
+                "kind": "read",
+                "minutes": 10,
+                "dependsOn": [
+                  "node:practice"
+                ],
+                "reason": "按先修顺序核对原文",
+                "evidence": [],
+                "sourceEvidence": [
+                  {
+                    "sourceId": "s",
+                    "version": "1",
+                    "quote": "节点是树的组成部分。先理解节点，再学习二叉树。中序遍历按左子树、根、右子树访问。"
+                  }
+                ],
+                "part": 1,
+                "overdue": false
+              },
+              {
+                "id": "tree:practice",
+                "conceptId": "tree",
+                "kind": "practice",
+                "minutes": 15,
+                "dependsOn": [
+                  "tree:read"
+                ],
+                "reason": "尚无充分练习证据，先核对原文再练习",
+                "evidence": [],
+                "sourceEvidence": [
+                  {
+                    "sourceId": "s",
+                    "version": "1",
+                    "quote": "节点是树的组成部分。先理解节点，再学习二叉树。中序遍历按左子树、根、右子树访问。"
+                  }
+                ],
+                "part": 1,
+                "overdue": false
+              },
+              {
+                "id": "tree:review",
+                "conceptId": "tree",
+                "kind": "review",
+                "minutes": 5,
+                "dependsOn": [
+                  "tree:practice"
+                ],
+                "reason": "回顾并自评记忆",
+                "evidence": [],
+                "sourceEvidence": [
+                  {
+                    "sourceId": "s",
+                    "version": "1",
+                    "quote": "节点是树的组成部分。先理解节点，再学习二叉树。中序遍历按左子树、根、右子树访问。"
+                  }
+                ],
+                "part": 1,
+                "overdue": false
+              }
+            ]
+          }
+        ],
+        "remaining": [],
+        "completed": [],
+        "skipped": [],
+        "warnings": [],
+        "workload": {
+          "pendingMinutes": 60,
+          "scheduledMinutes": 60,
+          "remainingMinutes": 0
+        },
+        "difference": {
+          "removed": [],
+          "added": [
+            "node:read",
+            "node:practice",
+            "node:review",
+            "tree:read",
+            "tree:practice",
+            "tree:review"
+          ],
+          "moved": []
+        }
+      }
+    },
+    {
+      "setting": {
+        "minutes": 10,
+        "availability": {
+          "2026-10-15": 0,
+          "2026-10-16": 2
+        }
+      },
+      "expected": {
+        "days": [
+          {
+            "date": "2026-10-15",
+            "budget": 0,
+            "tasks": []
+          },
+          {
+            "date": "2026-10-16",
+            "budget": 2,
+            "tasks": [
+              {
+                "id": "node:read",
+                "conceptId": "node",
+                "kind": "read",
+                "minutes": 2,
+                "dependsOn": [],
+                "reason": "按先修顺序核对原文",
+                "evidence": [],
+                "sourceEvidence": [
+                  {
+                    "sourceId": "s",
+                    "version": "1",
+                    "quote": "节点是树的组成部分。先理解节点，再学习二叉树。中序遍历按左子树、根、右子树访问。"
+                  }
+                ],
+                "part": 1,
+                "overdue": false
+              }
+            ]
+          },
+          {
+            "date": "2026-10-17",
+            "budget": 10,
+            "tasks": [
+              {
+                "id": "node:read",
+                "conceptId": "node",
+                "kind": "read",
+                "minutes": 8,
+                "dependsOn": [],
+                "reason": "按先修顺序核对原文",
+                "evidence": [],
+                "sourceEvidence": [
+                  {
+                    "sourceId": "s",
+                    "version": "1",
+                    "quote": "节点是树的组成部分。先理解节点，再学习二叉树。中序遍历按左子树、根、右子树访问。"
+                  }
+                ],
+                "part": 2,
+                "overdue": false
+              },
+              {
+                "id": "node:practice",
+                "conceptId": "node",
+                "kind": "practice",
+                "minutes": 2,
+                "dependsOn": [
+                  "node:read"
+                ],
+                "reason": "尚无充分练习证据，先核对原文再练习",
+                "evidence": [],
+                "sourceEvidence": [
+                  {
+                    "sourceId": "s",
+                    "version": "1",
+                    "quote": "节点是树的组成部分。先理解节点，再学习二叉树。中序遍历按左子树、根、右子树访问。"
+                  }
+                ],
+                "part": 1,
+                "overdue": false
+              }
+            ]
+          },
+          {
+            "date": "2026-10-18",
+            "budget": 10,
+            "tasks": [
+              {
+                "id": "node:practice",
+                "conceptId": "node",
+                "kind": "practice",
+                "minutes": 10,
+                "dependsOn": [
+                  "node:read"
+                ],
+                "reason": "尚无充分练习证据，先核对原文再练习",
+                "evidence": [],
+                "sourceEvidence": [
+                  {
+                    "sourceId": "s",
+                    "version": "1",
+                    "quote": "节点是树的组成部分。先理解节点，再学习二叉树。中序遍历按左子树、根、右子树访问。"
+                  }
+                ],
+                "part": 2,
+                "overdue": false
+              }
+            ]
+          },
+          {
+            "date": "2026-10-19",
+            "budget": 10,
+            "tasks": [
+              {
+                "id": "node:practice",
+                "conceptId": "node",
+                "kind": "practice",
+                "minutes": 3,
+                "dependsOn": [
+                  "node:read"
+                ],
+                "reason": "尚无充分练习证据，先核对原文再练习",
+                "evidence": [],
+                "sourceEvidence": [
+                  {
+                    "sourceId": "s",
+                    "version": "1",
+                    "quote": "节点是树的组成部分。先理解节点，再学习二叉树。中序遍历按左子树、根、右子树访问。"
+                  }
+                ],
+                "part": 3,
+                "overdue": false
+              },
+              {
+                "id": "node:review",
+                "conceptId": "node",
+                "kind": "review",
+                "minutes": 5,
+                "dependsOn": [
+                  "node:practice"
+                ],
+                "reason": "回顾并自评记忆",
+                "evidence": [],
+                "sourceEvidence": [
+                  {
+                    "sourceId": "s",
+                    "version": "1",
+                    "quote": "节点是树的组成部分。先理解节点，再学习二叉树。中序遍历按左子树、根、右子树访问。"
+                  }
+                ],
+                "part": 1,
+                "overdue": false
+              },
+              {
+                "id": "tree:read",
+                "conceptId": "tree",
+                "kind": "read",
+                "minutes": 2,
+                "dependsOn": [
+                  "node:practice"
+                ],
+                "reason": "按先修顺序核对原文",
+                "evidence": [],
+                "sourceEvidence": [
+                  {
+                    "sourceId": "s",
+                    "version": "1",
+                    "quote": "节点是树的组成部分。先理解节点，再学习二叉树。中序遍历按左子树、根、右子树访问。"
+                  }
+                ],
+                "part": 1,
+                "overdue": false
+              }
+            ]
+          },
+          {
+            "date": "2026-10-20",
+            "budget": 10,
+            "tasks": [
+              {
+                "id": "tree:read",
+                "conceptId": "tree",
+                "kind": "read",
+                "minutes": 8,
+                "dependsOn": [
+                  "node:practice"
+                ],
+                "reason": "按先修顺序核对原文",
+                "evidence": [],
+                "sourceEvidence": [
+                  {
+                    "sourceId": "s",
+                    "version": "1",
+                    "quote": "节点是树的组成部分。先理解节点，再学习二叉树。中序遍历按左子树、根、右子树访问。"
+                  }
+                ],
+                "part": 2,
+                "overdue": false
+              },
+              {
+                "id": "tree:practice",
+                "conceptId": "tree",
+                "kind": "practice",
+                "minutes": 2,
+                "dependsOn": [
+                  "tree:read"
+                ],
+                "reason": "尚无充分练习证据，先核对原文再练习",
+                "evidence": [],
+                "sourceEvidence": [
+                  {
+                    "sourceId": "s",
+                    "version": "1",
+                    "quote": "节点是树的组成部分。先理解节点，再学习二叉树。中序遍历按左子树、根、右子树访问。"
+                  }
+                ],
+                "part": 1,
+                "overdue": false
+              }
+            ]
+          },
+          {
+            "date": "2026-10-21",
+            "budget": 10,
+            "tasks": [
+              {
+                "id": "tree:practice",
+                "conceptId": "tree",
+                "kind": "practice",
+                "minutes": 10,
+                "dependsOn": [
+                  "tree:read"
+                ],
+                "reason": "尚无充分练习证据，先核对原文再练习",
+                "evidence": [],
+                "sourceEvidence": [
+                  {
+                    "sourceId": "s",
+                    "version": "1",
+                    "quote": "节点是树的组成部分。先理解节点，再学习二叉树。中序遍历按左子树、根、右子树访问。"
+                  }
+                ],
+                "part": 2,
+                "overdue": false
+              }
+            ]
+          },
+          {
+            "date": "2026-10-22",
+            "budget": 10,
+            "tasks": [
+              {
+                "id": "tree:practice",
+                "conceptId": "tree",
+                "kind": "practice",
+                "minutes": 3,
+                "dependsOn": [
+                  "tree:read"
+                ],
+                "reason": "尚无充分练习证据，先核对原文再练习",
+                "evidence": [],
+                "sourceEvidence": [
+                  {
+                    "sourceId": "s",
+                    "version": "1",
+                    "quote": "节点是树的组成部分。先理解节点，再学习二叉树。中序遍历按左子树、根、右子树访问。"
+                  }
+                ],
+                "part": 3,
+                "overdue": false
+              },
+              {
+                "id": "tree:review",
+                "conceptId": "tree",
+                "kind": "review",
+                "minutes": 5,
+                "dependsOn": [
+                  "tree:practice"
+                ],
+                "reason": "回顾并自评记忆",
+                "evidence": [],
+                "sourceEvidence": [
+                  {
+                    "sourceId": "s",
+                    "version": "1",
+                    "quote": "节点是树的组成部分。先理解节点，再学习二叉树。中序遍历按左子树、根、右子树访问。"
+                  }
+                ],
+                "part": 1,
+                "overdue": false
+              }
+            ]
+          }
+        ],
+        "remaining": [],
+        "completed": [],
+        "skipped": [],
+        "warnings": [],
+        "workload": {
+          "pendingMinutes": 60,
+          "scheduledMinutes": 60,
+          "remainingMinutes": 0
+        },
+        "difference": {
+          "removed": [],
+          "added": [
+            "node:read",
+            "node:practice",
+            "node:review",
+            "tree:read",
+            "tree:practice",
+            "tree:review"
+          ],
+          "moved": []
+        }
+      }
+    },
+    {
+      "setting": {
+        "minutes": 20,
+        "completed": [
+          "node:read"
+        ]
+      },
+      "expected": {
+        "days": [
+          {
+            "date": "2026-10-15",
+            "budget": 20,
+            "tasks": [
+              {
+                "id": "node:practice",
+                "conceptId": "node",
+                "kind": "practice",
+                "minutes": 15,
+                "dependsOn": [
+                  "node:read"
+                ],
+                "reason": "尚无充分练习证据，先核对原文再练习",
+                "evidence": [],
+                "sourceEvidence": [
+                  {
+                    "sourceId": "s",
+                    "version": "1",
+                    "quote": "节点是树的组成部分。先理解节点，再学习二叉树。中序遍历按左子树、根、右子树访问。"
+                  }
+                ],
+                "part": 1,
+                "overdue": false
+              },
+              {
+                "id": "node:review",
+                "conceptId": "node",
+                "kind": "review",
+                "minutes": 5,
+                "dependsOn": [
+                  "node:practice"
+                ],
+                "reason": "回顾并自评记忆",
+                "evidence": [],
+                "sourceEvidence": [
+                  {
+                    "sourceId": "s",
+                    "version": "1",
+                    "quote": "节点是树的组成部分。先理解节点，再学习二叉树。中序遍历按左子树、根、右子树访问。"
+                  }
+                ],
+                "part": 1,
+                "overdue": false
+              }
+            ]
+          },
+          {
+            "date": "2026-10-16",
+            "budget": 20,
+            "tasks": [
+              {
+                "id": "tree:read",
+                "conceptId": "tree",
+                "kind": "read",
+                "minutes": 10,
+                "dependsOn": [
+                  "node:practice"
+                ],
+                "reason": "按先修顺序核对原文",
+                "evidence": [],
+                "sourceEvidence": [
+                  {
+                    "sourceId": "s",
+                    "version": "1",
+                    "quote": "节点是树的组成部分。先理解节点，再学习二叉树。中序遍历按左子树、根、右子树访问。"
+                  }
+                ],
+                "part": 1,
+                "overdue": false
+              },
+              {
+                "id": "tree:practice",
+                "conceptId": "tree",
+                "kind": "practice",
+                "minutes": 10,
+                "dependsOn": [
+                  "tree:read"
+                ],
+                "reason": "尚无充分练习证据，先核对原文再练习",
+                "evidence": [],
+                "sourceEvidence": [
+                  {
+                    "sourceId": "s",
+                    "version": "1",
+                    "quote": "节点是树的组成部分。先理解节点，再学习二叉树。中序遍历按左子树、根、右子树访问。"
+                  }
+                ],
+                "part": 1,
+                "overdue": false
+              }
+            ]
+          },
+          {
+            "date": "2026-10-17",
+            "budget": 20,
+            "tasks": [
+              {
+                "id": "tree:practice",
+                "conceptId": "tree",
+                "kind": "practice",
+                "minutes": 5,
+                "dependsOn": [
+                  "tree:read"
+                ],
+                "reason": "尚无充分练习证据，先核对原文再练习",
+                "evidence": [],
+                "sourceEvidence": [
+                  {
+                    "sourceId": "s",
+                    "version": "1",
+                    "quote": "节点是树的组成部分。先理解节点，再学习二叉树。中序遍历按左子树、根、右子树访问。"
+                  }
+                ],
+                "part": 2,
+                "overdue": false
+              },
+              {
+                "id": "tree:review",
+                "conceptId": "tree",
+                "kind": "review",
+                "minutes": 5,
+                "dependsOn": [
+                  "tree:practice"
+                ],
+                "reason": "回顾并自评记忆",
+                "evidence": [],
+                "sourceEvidence": [
+                  {
+                    "sourceId": "s",
+                    "version": "1",
+                    "quote": "节点是树的组成部分。先理解节点，再学习二叉树。中序遍历按左子树、根、右子树访问。"
+                  }
+                ],
+                "part": 1,
+                "overdue": false
+              }
+            ]
+          }
+        ],
+        "remaining": [],
+        "completed": [
+          "node:read"
+        ],
+        "skipped": [],
+        "warnings": [],
+        "workload": {
+          "pendingMinutes": 50,
+          "scheduledMinutes": 50,
+          "remainingMinutes": 0
+        },
+        "difference": {
+          "removed": [],
+          "added": [
+            "node:practice",
+            "node:review",
+            "tree:read",
+            "tree:practice",
+            "tree:review"
+          ],
+          "moved": []
+        }
+      }
+    },
+    {
+      "setting": {
+        "minutes": 20,
+        "completed": [
+          {
+            "id": "node:read",
+            "part": 1,
+            "minutes": 5,
+            "date": "2026-10-14"
+          }
+        ]
+      },
+      "expected": {
+        "days": [
+          {
+            "date": "2026-10-15",
+            "budget": 20,
+            "tasks": [
+              {
+                "id": "node:read",
+                "conceptId": "node",
+                "kind": "read",
+                "minutes": 5,
+                "dependsOn": [],
+                "reason": "按先修顺序核对原文",
+                "evidence": [],
+                "sourceEvidence": [
+                  {
+                    "sourceId": "s",
+                    "version": "1",
+                    "quote": "节点是树的组成部分。先理解节点，再学习二叉树。中序遍历按左子树、根、右子树访问。"
+                  }
+                ],
+                "part": 2,
+                "overdue": false
+              },
+              {
+                "id": "node:practice",
+                "conceptId": "node",
+                "kind": "practice",
+                "minutes": 15,
+                "dependsOn": [
+                  "node:read"
+                ],
+                "reason": "尚无充分练习证据，先核对原文再练习",
+                "evidence": [],
+                "sourceEvidence": [
+                  {
+                    "sourceId": "s",
+                    "version": "1",
+                    "quote": "节点是树的组成部分。先理解节点，再学习二叉树。中序遍历按左子树、根、右子树访问。"
+                  }
+                ],
+                "part": 1,
+                "overdue": false
+              }
+            ]
+          },
+          {
+            "date": "2026-10-16",
+            "budget": 20,
+            "tasks": [
+              {
+                "id": "node:review",
+                "conceptId": "node",
+                "kind": "review",
+                "minutes": 5,
+                "dependsOn": [
+                  "node:practice"
+                ],
+                "reason": "回顾并自评记忆",
+                "evidence": [],
+                "sourceEvidence": [
+                  {
+                    "sourceId": "s",
+                    "version": "1",
+                    "quote": "节点是树的组成部分。先理解节点，再学习二叉树。中序遍历按左子树、根、右子树访问。"
+                  }
+                ],
+                "part": 1,
+                "overdue": false
+              },
+              {
+                "id": "tree:read",
+                "conceptId": "tree",
+                "kind": "read",
+                "minutes": 10,
+                "dependsOn": [
+                  "node:practice"
+                ],
+                "reason": "按先修顺序核对原文",
+                "evidence": [],
+                "sourceEvidence": [
+                  {
+                    "sourceId": "s",
+                    "version": "1",
+                    "quote": "节点是树的组成部分。先理解节点，再学习二叉树。中序遍历按左子树、根、右子树访问。"
+                  }
+                ],
+                "part": 1,
+                "overdue": false
+              },
+              {
+                "id": "tree:practice",
+                "conceptId": "tree",
+                "kind": "practice",
+                "minutes": 5,
+                "dependsOn": [
+                  "tree:read"
+                ],
+                "reason": "尚无充分练习证据，先核对原文再练习",
+                "evidence": [],
+                "sourceEvidence": [
+                  {
+                    "sourceId": "s",
+                    "version": "1",
+                    "quote": "节点是树的组成部分。先理解节点，再学习二叉树。中序遍历按左子树、根、右子树访问。"
+                  }
+                ],
+                "part": 1,
+                "overdue": false
+              }
+            ]
+          },
+          {
+            "date": "2026-10-17",
+            "budget": 20,
+            "tasks": [
+              {
+                "id": "tree:practice",
+                "conceptId": "tree",
+                "kind": "practice",
+                "minutes": 10,
+                "dependsOn": [
+                  "tree:read"
+                ],
+                "reason": "尚无充分练习证据，先核对原文再练习",
+                "evidence": [],
+                "sourceEvidence": [
+                  {
+                    "sourceId": "s",
+                    "version": "1",
+                    "quote": "节点是树的组成部分。先理解节点，再学习二叉树。中序遍历按左子树、根、右子树访问。"
+                  }
+                ],
+                "part": 2,
+                "overdue": false
+              },
+              {
+                "id": "tree:review",
+                "conceptId": "tree",
+                "kind": "review",
+                "minutes": 5,
+                "dependsOn": [
+                  "tree:practice"
+                ],
+                "reason": "回顾并自评记忆",
+                "evidence": [],
+                "sourceEvidence": [
+                  {
+                    "sourceId": "s",
+                    "version": "1",
+                    "quote": "节点是树的组成部分。先理解节点，再学习二叉树。中序遍历按左子树、根、右子树访问。"
+                  }
+                ],
+                "part": 1,
+                "overdue": false
+              }
+            ]
+          }
+        ],
+        "remaining": [],
+        "completed": [
+          {
+            "id": "node:read",
+            "part": 1,
+            "minutes": 5,
+            "date": "2026-10-14"
+          }
+        ],
+        "skipped": [],
+        "warnings": [],
+        "workload": {
+          "pendingMinutes": 55,
+          "scheduledMinutes": 55,
+          "remainingMinutes": 0
+        },
+        "difference": {
+          "removed": [],
+          "added": [
+            "node:read",
+            "node:practice",
+            "node:review",
+            "tree:read",
+            "tree:practice",
+            "tree:review"
+          ],
+          "moved": []
+        }
+      }
+    },
+    {
+      "setting": {
+        "minutes": 30,
+        "skipped": [
+          "node:read"
+        ]
+      },
+      "expected": {
+        "days": [
+          {
+            "date": "2026-10-15",
+            "budget": 30,
+            "tasks": [
+              {
+                "id": "node:practice",
+                "conceptId": "node",
+                "kind": "practice",
+                "minutes": 15,
+                "dependsOn": [
+                  "node:read"
+                ],
+                "reason": "尚无充分练习证据，先核对原文再练习",
+                "evidence": [],
+                "sourceEvidence": [
+                  {
+                    "sourceId": "s",
+                    "version": "1",
+                    "quote": "节点是树的组成部分。先理解节点，再学习二叉树。中序遍历按左子树、根、右子树访问。"
+                  }
+                ],
+                "part": 1,
+                "overdue": false
+              },
+              {
+                "id": "node:review",
+                "conceptId": "node",
+                "kind": "review",
+                "minutes": 5,
+                "dependsOn": [
+                  "node:practice"
+                ],
+                "reason": "回顾并自评记忆",
+                "evidence": [],
+                "sourceEvidence": [
+                  {
+                    "sourceId": "s",
+                    "version": "1",
+                    "quote": "节点是树的组成部分。先理解节点，再学习二叉树。中序遍历按左子树、根、右子树访问。"
+                  }
+                ],
+                "part": 1,
+                "overdue": false
+              },
+              {
+                "id": "tree:read",
+                "conceptId": "tree",
+                "kind": "read",
+                "minutes": 10,
+                "dependsOn": [
+                  "node:practice"
+                ],
+                "reason": "按先修顺序核对原文",
+                "evidence": [],
+                "sourceEvidence": [
+                  {
+                    "sourceId": "s",
+                    "version": "1",
+                    "quote": "节点是树的组成部分。先理解节点，再学习二叉树。中序遍历按左子树、根、右子树访问。"
+                  }
+                ],
+                "part": 1,
+                "overdue": false
+              }
+            ]
+          },
+          {
+            "date": "2026-10-16",
+            "budget": 30,
+            "tasks": [
+              {
+                "id": "tree:practice",
+                "conceptId": "tree",
+                "kind": "practice",
+                "minutes": 15,
+                "dependsOn": [
+                  "tree:read"
+                ],
+                "reason": "尚无充分练习证据，先核对原文再练习",
+                "evidence": [],
+                "sourceEvidence": [
+                  {
+                    "sourceId": "s",
+                    "version": "1",
+                    "quote": "节点是树的组成部分。先理解节点，再学习二叉树。中序遍历按左子树、根、右子树访问。"
+                  }
+                ],
+                "part": 1,
+                "overdue": false
+              },
+              {
+                "id": "tree:review",
+                "conceptId": "tree",
+                "kind": "review",
+                "minutes": 5,
+                "dependsOn": [
+                  "tree:practice"
+                ],
+                "reason": "回顾并自评记忆",
+                "evidence": [],
+                "sourceEvidence": [
+                  {
+                    "sourceId": "s",
+                    "version": "1",
+                    "quote": "节点是树的组成部分。先理解节点，再学习二叉树。中序遍历按左子树、根、右子树访问。"
+                  }
+                ],
+                "part": 1,
+                "overdue": false
+              }
+            ]
+          }
+        ],
+        "remaining": [],
+        "completed": [],
+        "skipped": [
+          "node:read"
+        ],
+        "warnings": [
+          "SKIPPED_NOT_COMPLETED"
+        ],
+        "workload": {
+          "pendingMinutes": 50,
+          "scheduledMinutes": 50,
+          "remainingMinutes": 0
+        },
+        "difference": {
+          "removed": [],
+          "added": [
+            "node:practice",
+            "node:review",
+            "tree:read",
+            "tree:practice",
+            "tree:review"
+          ],
+          "moved": []
+        }
+      }
+    },
+    {
+      "setting": {
+        "examDate": "2026-10-14"
+      },
+      "expected": {
+        "days": [],
+        "remaining": [
+          {
+            "id": "node:read",
+            "conceptId": "node",
+            "kind": "read",
+            "minutes": 10,
+            "dependsOn": [],
+            "reason": "按先修顺序核对原文",
+            "evidence": [],
+            "sourceEvidence": [
+              {
+                "sourceId": "s",
+                "version": "1",
+                "quote": "节点是树的组成部分。先理解节点，再学习二叉树。中序遍历按左子树、根、右子树访问。"
+              }
+            ],
+            "part": 1,
+            "overdue": false
+          },
+          {
+            "id": "node:practice",
+            "conceptId": "node",
+            "kind": "practice",
+            "minutes": 15,
+            "dependsOn": [
+              "node:read"
+            ],
+            "reason": "尚无充分练习证据，先核对原文再练习",
+            "evidence": [],
+            "sourceEvidence": [
+              {
+                "sourceId": "s",
+                "version": "1",
+                "quote": "节点是树的组成部分。先理解节点，再学习二叉树。中序遍历按左子树、根、右子树访问。"
+              }
+            ],
+            "part": 1,
+            "overdue": false
+          },
+          {
+            "id": "node:review",
+            "conceptId": "node",
+            "kind": "review",
+            "minutes": 5,
+            "dependsOn": [
+              "node:practice"
+            ],
+            "reason": "回顾并自评记忆",
+            "evidence": [],
+            "sourceEvidence": [
+              {
+                "sourceId": "s",
+                "version": "1",
+                "quote": "节点是树的组成部分。先理解节点，再学习二叉树。中序遍历按左子树、根、右子树访问。"
+              }
+            ],
+            "part": 1,
+            "overdue": false
+          },
+          {
+            "id": "tree:read",
+            "conceptId": "tree",
+            "kind": "read",
+            "minutes": 10,
+            "dependsOn": [
+              "node:practice"
+            ],
+            "reason": "按先修顺序核对原文",
+            "evidence": [],
+            "sourceEvidence": [
+              {
+                "sourceId": "s",
+                "version": "1",
+                "quote": "节点是树的组成部分。先理解节点，再学习二叉树。中序遍历按左子树、根、右子树访问。"
+              }
+            ],
+            "part": 1,
+            "overdue": false
+          },
+          {
+            "id": "tree:practice",
+            "conceptId": "tree",
+            "kind": "practice",
+            "minutes": 15,
+            "dependsOn": [
+              "tree:read"
+            ],
+            "reason": "尚无充分练习证据，先核对原文再练习",
+            "evidence": [],
+            "sourceEvidence": [
+              {
+                "sourceId": "s",
+                "version": "1",
+                "quote": "节点是树的组成部分。先理解节点，再学习二叉树。中序遍历按左子树、根、右子树访问。"
+              }
+            ],
+            "part": 1,
+            "overdue": false
+          },
+          {
+            "id": "tree:review",
+            "conceptId": "tree",
+            "kind": "review",
+            "minutes": 5,
+            "dependsOn": [
+              "tree:practice"
+            ],
+            "reason": "回顾并自评记忆",
+            "evidence": [],
+            "sourceEvidence": [
+              {
+                "sourceId": "s",
+                "version": "1",
+                "quote": "节点是树的组成部分。先理解节点，再学习二叉树。中序遍历按左子树、根、右子树访问。"
+              }
+            ],
+            "part": 1,
+            "overdue": false
+          }
+        ],
+        "completed": [],
+        "skipped": [],
+        "warnings": [
+          "EXAM_DATE_PASSED",
+          "INSUFFICIENT_CAPACITY"
+        ],
+        "workload": {
+          "pendingMinutes": 60,
+          "scheduledMinutes": 0,
+          "remainingMinutes": 60
+        },
+        "difference": {
+          "removed": [],
+          "added": [],
+          "moved": []
+        }
+      }
+    }
+  ],
+  "mastery": [
+    {
+      "conceptId": "node",
+      "status": "estimated",
+      "estimate": 0.797221114309983,
+      "confidence": "low",
+      "samples": 3,
+      "evidence": [
+        "old-event-0",
+        "old-event-1",
+        "old-event-2"
+      ],
+      "algorithm": "latest-question-beta-decay-v1",
+      "baseDate": "2026-10-15",
+      "limitation": "描述近期练习证据，不等同真实能力或已证明学习效果"
+    },
+    {
+      "conceptId": "tree",
+      "status": "estimated",
+      "estimate": 0.2027788856900171,
+      "confidence": "low",
+      "samples": 3,
+      "evidence": [
+        "old-event-3",
+        "old-event-4",
+        "old-event-5"
+      ],
+      "algorithm": "latest-question-beta-decay-v1",
+      "baseDate": "2026-10-15",
+      "limitation": "描述近期练习证据，不等同真实能力或已证明学习效果"
+    }
+  ],
+  "daily": {
+    "budget": 30,
+    "allocatedMinutes": 30,
+    "items": [
+      {
+        "id": "node:read",
+        "kind": "read",
+        "conceptId": "node",
+        "minutes": 10,
+        "reason": "按先修顺序核对原文",
+        "evidence": [
+          "old-event-0",
+          "old-event-1",
+          "old-event-2"
+        ],
+        "sourceEvidence": [
+          {
+            "sourceId": "s",
+            "version": "1",
+            "quote": "节点是树的组成部分。先理解节点，再学习二叉树。中序遍历按左子树、根、右子树访问。"
+          }
+        ],
+        "partial": false
+      },
+      {
+        "id": "new-node",
+        "kind": "practice",
+        "questionId": "new-node",
+        "questionVersion": "1",
+        "minutes": 5,
+        "reason": "保留不同知识点的探索练习，避免只刷错题",
+        "evidence": [
+          "old-event-0",
+          "old-event-1",
+          "old-event-2"
+        ],
+        "conceptIds": [
+          "node"
+        ],
+        "partial": false
+      },
+      {
+        "id": "node:practice",
+        "kind": "self-explanation",
+        "conceptId": "node",
+        "minutes": 10,
+        "reason": "练习后回到原文复述并核对",
+        "evidence": [
+          "old-event-0",
+          "old-event-1",
+          "old-event-2"
+        ],
+        "sourceEvidence": [
+          {
+            "sourceId": "s",
+            "version": "1",
+            "quote": "节点是树的组成部分。先理解节点，再学习二叉树。中序遍历按左子树、根、右子树访问。"
+          }
+        ],
+        "partial": false
+      },
+      {
+        "id": "node:review",
+        "kind": "review",
+        "conceptId": "node",
+        "minutes": 5,
+        "reason": "回顾并自评记忆",
+        "evidence": [
+          "old-event-0",
+          "old-event-1",
+          "old-event-2"
+        ],
+        "sourceEvidence": [
+          {
+            "sourceId": "s",
+            "version": "1",
+            "quote": "节点是树的组成部分。先理解节点，再学习二叉树。中序遍历按左子树、根、右子树访问。"
+          }
+        ],
+        "partial": false
+      }
+    ]
+  },
+  "practice": {
+    "courseId": "course",
+    "items": [
+      {
+        "question": {
+          "id": "new-tree-1",
+          "courseId": "course",
+          "version": "1",
+          "type": "single",
+          "prompt": "合成练习 new-tree-1：以下哪项符合资料？",
+          "options": [
+            "符合原文的选项",
+            "不符合原文的选项"
+          ],
+          "answer": 0,
+          "explanation": "根据给定合成资料核对。",
+          "sourceId": "s",
+          "sourceVersion": "1",
+          "evidenceQuote": "节点是树的组成部分。先理解节点，再学习二叉树。中序遍历按左子树、根、右子树访问。",
+          "conceptIds": [
+            "tree"
+          ],
+          "difficulty": "easy",
+          "status": "approved"
+        },
+        "reason": "优先补充近期薄弱知识点的练习证据",
+        "evidence": [
+          "old-event-3",
+          "old-event-4",
+          "old-event-5"
+        ]
+      },
+      {
+        "question": {
+          "id": "new-tree-2",
+          "courseId": "course",
+          "version": "1",
+          "type": "single",
+          "prompt": "合成练习 new-tree-2：以下哪项符合资料？",
+          "options": [
+            "符合原文的选项",
+            "不符合原文的选项"
+          ],
+          "answer": 0,
+          "explanation": "根据给定合成资料核对。",
+          "sourceId": "s",
+          "sourceVersion": "1",
+          "evidenceQuote": "节点是树的组成部分。先理解节点，再学习二叉树。中序遍历按左子树、根、右子树访问。",
+          "conceptIds": [
+            "tree"
+          ],
+          "difficulty": "easy",
+          "status": "approved"
+        },
+        "reason": "优先补充近期薄弱知识点的练习证据",
+        "evidence": [
+          "old-event-3",
+          "old-event-4",
+          "old-event-5"
+        ]
+      },
+      {
+        "question": {
+          "id": "new-node",
+          "courseId": "course",
+          "version": "1",
+          "type": "single",
+          "prompt": "合成练习 new-node：以下哪项符合资料？",
+          "options": [
+            "符合原文的选项",
+            "不符合原文的选项"
+          ],
+          "answer": 0,
+          "explanation": "根据给定合成资料核对。",
+          "sourceId": "s",
+          "sourceVersion": "1",
+          "evidenceQuote": "节点是树的组成部分。先理解节点，再学习二叉树。中序遍历按左子树、根、右子树访问。",
+          "conceptIds": [
+            "node"
+          ],
+          "difficulty": "easy",
+          "status": "approved"
+        },
+        "reason": "保留不同知识点的探索练习，避免只刷错题",
+        "evidence": [
+          "old-event-0",
+          "old-event-1",
+          "old-event-2"
+        ]
+      }
+    ],
+    "requested": 3,
+    "available": 3,
+    "stop": null,
+    "algorithm": "weakness-with-exploration-v1"
+  }
+}

@@ -4,5 +4,10 @@ node_modules/
 .env.*
 !.env.example
 *.log
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.migration-backup/
 .xueya-data/
-.xueya-backups/
+backups/

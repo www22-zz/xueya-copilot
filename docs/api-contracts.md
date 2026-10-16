@@ -1,5 +1,7 @@
 # 模块接口约定
 
+> 2026-10-16：后端已按用户要求全部迁移 Python。HTTP/JSON/SSE 字段保持兼容；下文旧 JS 模块导入示例为迁移前记录。实际 Python 类、端口、启动与验证以 [Python 迁移记录](delivery/python-migration.md) 为准。新增后端与测试使用 Python；浏览器 shared/*.js 保留。
+
 本文件与 `shared/contracts/index.js` 一起维护。公共格式变更应由相关负责人共同检查，不能只改发送端或接收端。
 
 ## 1. 课程来源 Source（A/B/C）

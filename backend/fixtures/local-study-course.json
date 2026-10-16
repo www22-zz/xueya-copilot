@@ -1,0 +1,364 @@
+{
+  "courseId": "course",
+  "sources": [
+    {
+      "id": "s",
+      "courseId": "course",
+      "documentId": "chapter",
+      "version": "1",
+      "title": "合成课程：树",
+      "quote": "节点是树的组成部分。先理解节点，再学习二叉树。中序遍历按左子树、根、右子树访问。"
+    }
+  ],
+  "graph": {
+    "courseId": "course",
+    "concepts": [
+      {
+        "id": "node",
+        "name": "节点",
+        "courseId": "course",
+        "status": "confirmed",
+        "evidence": [
+          {
+            "sourceId": "s",
+            "version": "1",
+            "quote": "节点是树的组成部分。先理解节点，再学习二叉树。中序遍历按左子树、根、右子树访问。"
+          }
+        ]
+      },
+      {
+        "id": "tree",
+        "name": "树",
+        "courseId": "course",
+        "status": "confirmed",
+        "evidence": [
+          {
+            "sourceId": "s",
+            "version": "1",
+            "quote": "节点是树的组成部分。先理解节点，再学习二叉树。中序遍历按左子树、根、右子树访问。"
+          }
+        ]
+      }
+    ],
+    "edges": [
+      {
+        "from": "node",
+        "to": "tree",
+        "type": "prerequisite",
+        "status": "confirmed",
+        "evidence": [
+          {
+            "sourceId": "s",
+            "version": "1",
+            "quote": "节点是树的组成部分。先理解节点，再学习二叉树。中序遍历按左子树、根、右子树访问。"
+          }
+        ]
+      }
+    ]
+  },
+  "questions": [
+    {
+      "id": "old-node-0",
+      "courseId": "course",
+      "version": "1",
+      "type": "single",
+      "prompt": "合成练习 old-node-0：以下哪项符合资料？",
+      "options": [
+        "符合原文的选项",
+        "不符合原文的选项"
+      ],
+      "answer": 0,
+      "explanation": "根据给定合成资料核对。",
+      "sourceId": "s",
+      "sourceVersion": "1",
+      "evidenceQuote": "节点是树的组成部分。先理解节点，再学习二叉树。中序遍历按左子树、根、右子树访问。",
+      "conceptIds": [
+        "node"
+      ],
+      "difficulty": "easy",
+      "status": "approved"
+    },
+    {
+      "id": "old-node-1",
+      "courseId": "course",
+      "version": "1",
+      "type": "single",
+      "prompt": "合成练习 old-node-1：以下哪项符合资料？",
+      "options": [
+        "符合原文的选项",
+        "不符合原文的选项"
+      ],
+      "answer": 0,
+      "explanation": "根据给定合成资料核对。",
+      "sourceId": "s",
+      "sourceVersion": "1",
+      "evidenceQuote": "节点是树的组成部分。先理解节点，再学习二叉树。中序遍历按左子树、根、右子树访问。",
+      "conceptIds": [
+        "node"
+      ],
+      "difficulty": "easy",
+      "status": "approved"
+    },
+    {
+      "id": "old-node-2",
+      "courseId": "course",
+      "version": "1",
+      "type": "single",
+      "prompt": "合成练习 old-node-2：以下哪项符合资料？",
+      "options": [
+        "符合原文的选项",
+        "不符合原文的选项"
+      ],
+      "answer": 0,
+      "explanation": "根据给定合成资料核对。",
+      "sourceId": "s",
+      "sourceVersion": "1",
+      "evidenceQuote": "节点是树的组成部分。先理解节点，再学习二叉树。中序遍历按左子树、根、右子树访问。",
+      "conceptIds": [
+        "node"
+      ],
+      "difficulty": "easy",
+      "status": "approved"
+    },
+    {
+      "id": "old-tree-0",
+      "courseId": "course",
+      "version": "1",
+      "type": "single",
+      "prompt": "合成练习 old-tree-0：以下哪项符合资料？",
+      "options": [
+        "符合原文的选项",
+        "不符合原文的选项"
+      ],
+      "answer": 0,
+      "explanation": "根据给定合成资料核对。",
+      "sourceId": "s",
+      "sourceVersion": "1",
+      "evidenceQuote": "节点是树的组成部分。先理解节点，再学习二叉树。中序遍历按左子树、根、右子树访问。",
+      "conceptIds": [
+        "tree"
+      ],
+      "difficulty": "easy",
+      "status": "approved"
+    },
+    {
+      "id": "old-tree-1",
+      "courseId": "course",
+      "version": "1",
+      "type": "single",
+      "prompt": "合成练习 old-tree-1：以下哪项符合资料？",
+      "options": [
+        "符合原文的选项",
+        "不符合原文的选项"
+      ],
+      "answer": 0,
+      "explanation": "根据给定合成资料核对。",
+      "sourceId": "s",
+      "sourceVersion": "1",
+      "evidenceQuote": "节点是树的组成部分。先理解节点，再学习二叉树。中序遍历按左子树、根、右子树访问。",
+      "conceptIds": [
+        "tree"
+      ],
+      "difficulty": "easy",
+      "status": "approved"
+    },
+    {
+      "id": "old-tree-2",
+      "courseId": "course",
+      "version": "1",
+      "type": "single",
+      "prompt": "合成练习 old-tree-2：以下哪项符合资料？",
+      "options": [
+        "符合原文的选项",
+        "不符合原文的选项"
+      ],
+      "answer": 0,
+      "explanation": "根据给定合成资料核对。",
+      "sourceId": "s",
+      "sourceVersion": "1",
+      "evidenceQuote": "节点是树的组成部分。先理解节点，再学习二叉树。中序遍历按左子树、根、右子树访问。",
+      "conceptIds": [
+        "tree"
+      ],
+      "difficulty": "easy",
+      "status": "approved"
+    },
+    {
+      "id": "new-node",
+      "courseId": "course",
+      "version": "1",
+      "type": "single",
+      "prompt": "合成练习 new-node：以下哪项符合资料？",
+      "options": [
+        "符合原文的选项",
+        "不符合原文的选项"
+      ],
+      "answer": 0,
+      "explanation": "根据给定合成资料核对。",
+      "sourceId": "s",
+      "sourceVersion": "1",
+      "evidenceQuote": "节点是树的组成部分。先理解节点，再学习二叉树。中序遍历按左子树、根、右子树访问。",
+      "conceptIds": [
+        "node"
+      ],
+      "difficulty": "easy",
+      "status": "approved"
+    },
+    {
+      "id": "new-tree-1",
+      "courseId": "course",
+      "version": "1",
+      "type": "single",
+      "prompt": "合成练习 new-tree-1：以下哪项符合资料？",
+      "options": [
+        "符合原文的选项",
+        "不符合原文的选项"
+      ],
+      "answer": 0,
+      "explanation": "根据给定合成资料核对。",
+      "sourceId": "s",
+      "sourceVersion": "1",
+      "evidenceQuote": "节点是树的组成部分。先理解节点，再学习二叉树。中序遍历按左子树、根、右子树访问。",
+      "conceptIds": [
+        "tree"
+      ],
+      "difficulty": "easy",
+      "status": "approved"
+    },
+    {
+      "id": "new-tree-2",
+      "courseId": "course",
+      "version": "1",
+      "type": "single",
+      "prompt": "合成练习 new-tree-2：以下哪项符合资料？",
+      "options": [
+        "符合原文的选项",
+        "不符合原文的选项"
+      ],
+      "answer": 0,
+      "explanation": "根据给定合成资料核对。",
+      "sourceId": "s",
+      "sourceVersion": "1",
+      "evidenceQuote": "节点是树的组成部分。先理解节点，再学习二叉树。中序遍历按左子树、根、右子树访问。",
+      "conceptIds": [
+        "tree"
+      ],
+      "difficulty": "easy",
+      "status": "approved"
+    }
+  ],
+  "events": [
+    {
+      "id": "old-event-0",
+      "courseId": "course",
+      "questionId": "old-node-0",
+      "questionVersion": "1",
+      "sourceId": "s",
+      "sourceVersion": "1",
+      "conceptIds": [
+        "node"
+      ],
+      "createdAt": "2026-10-14T01:00:00Z",
+      "grade": {
+        "status": "graded",
+        "score": 1,
+        "maxScore": 1
+      },
+      "answer": 0
+    },
+    {
+      "id": "old-event-1",
+      "courseId": "course",
+      "questionId": "old-node-1",
+      "questionVersion": "1",
+      "sourceId": "s",
+      "sourceVersion": "1",
+      "conceptIds": [
+        "node"
+      ],
+      "createdAt": "2026-10-14T01:00:00Z",
+      "grade": {
+        "status": "graded",
+        "score": 1,
+        "maxScore": 1
+      },
+      "answer": 0
+    },
+    {
+      "id": "old-event-2",
+      "courseId": "course",
+      "questionId": "old-node-2",
+      "questionVersion": "1",
+      "sourceId": "s",
+      "sourceVersion": "1",
+      "conceptIds": [
+        "node"
+      ],
+      "createdAt": "2026-10-14T01:00:00Z",
+      "grade": {
+        "status": "graded",
+        "score": 1,
+        "maxScore": 1
+      },
+      "answer": 0
+    },
+    {
+      "id": "old-event-3",
+      "courseId": "course",
+      "questionId": "old-tree-0",
+      "questionVersion": "1",
+      "sourceId": "s",
+      "sourceVersion": "1",
+      "conceptIds": [
+        "tree"
+      ],
+      "createdAt": "2026-10-14T01:00:00Z",
+      "grade": {
+        "status": "graded",
+        "score": 0,
+        "maxScore": 1
+      },
+      "answer": 1
+    },
+    {
+      "id": "old-event-4",
+      "courseId": "course",
+      "questionId": "old-tree-1",
+      "questionVersion": "1",
+      "sourceId": "s",
+      "sourceVersion": "1",
+      "conceptIds": [
+        "tree"
+      ],
+      "createdAt": "2026-10-14T01:00:00Z",
+      "grade": {
+        "status": "graded",
+        "score": 0,
+        "maxScore": 1
+      },
+      "answer": 1
+    },
+    {
+      "id": "old-event-5",
+      "courseId": "course",
+      "questionId": "old-tree-2",
+      "questionVersion": "1",
+      "sourceId": "s",
+      "sourceVersion": "1",
+      "conceptIds": [
+        "tree"
+      ],
+      "createdAt": "2026-10-14T01:00:00Z",
+      "grade": {
+        "status": "graded",
+        "score": 0,
+        "maxScore": 1
+      },
+      "answer": 1
+    }
+  ],
+  "baseDate": "2026-10-15",
+  "examDate": "2026-10-22",
+  "minutes": 30,
+  "practiceCount": 3
+}
