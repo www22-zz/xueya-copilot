@@ -10,7 +10,7 @@ const {createActionAuthority}=require('../mcp/actions.js');
 const {createBusinessPorts}=require('../mcp/business-ports.js');
 const L=require('../../shared/learning.js');
 
-function createPlatform({dataDir,rag,userId='local-user',apiSlots=2,startJobs=true}={}){
+function createPlatform({dataDir,rag,userId='local-user',apiSlots=2,startJobs=true,parseArtifact=require('./file-worker.js').parseArtifact}={}){
   dataDir=path.resolve(dataDir);const db=openDatabase(path.join(dataDir,'workspace.sqlite'));
   const repository=createRepository(db),files=createFileStore(path.join(dataDir,'files')),resources=createResources({apiSlots});
   if(!repository.courses(userId).length)repository.ensureCourse(userId,{id:'course-default',name:'数据结构'});
@@ -24,9 +24,7 @@ function createPlatform({dataDir,rag,userId='local-user',apiSlots=2,startJobs=tr
   jobs.register('parse-document',async({scope:s,input},{signal,progress,checkpoint,commit})=>{
     const doc=document(s,input.documentId);if(doc.status==='已解析，可检索')return{documentId:doc.id,version:doc.version};
     signal.throwIfAborted();progress({percent:10,label:'正在读取原件'});const buffer=files.read(doc.fileHash);checkpoint({documentId:doc.id,fileHash:doc.fileHash});
-    let text;if(['txt','md'].includes(doc.kind))text=new TextDecoder('utf-8',{fatal:true}).decode(buffer);else text=(await rag.parseDocument({buffer,kind:doc.kind,signal})).text;
-    if(!text.trim())throw new Error('NO_EXTRACTABLE_TEXT');if(text.length>1200000)throw new Error('TEXT_TOO_LARGE');progress({percent:60,label:'正在分段与建立检索记录'});
-    const ingested=await rag.ingest({text,document:{id:doc.id,name:doc.name},signal});signal.throwIfAborted();
+    const ingested=await parseArtifact({buffer,kind:doc.kind,document:{id:doc.id,name:doc.name}},{signal});signal.throwIfAborted();progress({percent:80,label:'正在保存原文与检索记录'});
     const save=()=>{const current=document(s,doc.id);if(current.status==='已解析，可检索')return{documentId:doc.id,version:current.version};if(current.version!==doc.version)throw new Error('VERSION_CONFLICT');
       for(const source of ingested.sources)repository.put({scope:s,kind:'source',entityId:source.id,value:{...source,documentId:doc.id}});
       const saved=repository.put({scope:s,kind:'document',entityId:doc.id,expectedVersion:doc.version,value:{...doc,status:'已解析，可检索',chunks:ingested.sources,meta:ingested.sources.length+'个原文片段',originalAvailable:true}});return{documentId:doc.id,version:saved.version};};

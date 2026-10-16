@@ -66,3 +66,9 @@ test('active cancellation fences business writes and API slots remain bounded wi
   const {createTrackedProvider}=require('../../backend/platform/api-provider.js');let release;const waiting=new Promise(resolve=>release=resolve),provider=createTrackedProvider({platform:p,scope:p.scope('course-default'),model:{generate:async()=>{await waiting;return{content:'result',usage:{total_tokens:20}};}}});
   const first=provider.generate({messages:[]}),second=provider.generate({messages:[]});await assert.rejects(provider.generate({messages:[]}),/API_BUSY/);release();await Promise.all([first,second]);assert.equal(p.resources.stats().active.api,0);assert.equal(JSON.parse(p.db.prepare('SELECT usage_json FROM invocations LIMIT 1').get().usage_json).total_tokens,20);
 });
+
+test('ordinary Node parsing worker handles invalid encoding and terminates on cancellation without a model runtime',async()=>{
+  const {parseArtifact}=require('../../backend/platform/file-worker.js');
+  await assert.rejects(parseArtifact({buffer:Buffer.from([255]),kind:'txt',document:{id:'d',name:'bad.txt'}}),/INVALID_TEXT_ENCODING/);
+  const controller=new AbortController(),running=parseArtifact({buffer:Buffer.from('plain text'),kind:'md',document:{id:'d',name:'cancel.md'}},{signal:controller.signal});controller.abort();await assert.rejects(running,error=>error.name==='AbortError');
+});
