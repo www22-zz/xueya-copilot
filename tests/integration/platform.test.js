@@ -37,9 +37,9 @@ test('real SQLite MCP confirmation atomically saves audit/receipt and updates br
   assert.throws(()=>p.repository.saveWorkspace(p.userId,workspace(),1),/VERSION_CONFLICT/);
 });
 test('backup/restore retains SQLite and originals and rejects corrupted or existing destinations',async t=>{
-  const {p,dir}=await fixture(t);p.repository.saveWorkspace(p.userId,workspace(),0);const file=p.files.put(Buffer.from('recoverable original'));const backup=path.join(dir,'backup'),restore=path.join(dir,'restored');await createBackup(p,backup);restoreBackup(backup,restore);
+  const {p,dir}=await fixture(t);p.repository.saveWorkspace(p.userId,workspace(),0);const file=p.files.put(Buffer.from('recoverable original'));const backup=path.join(dir,'backup'),restore=path.join(dir,'restored');await createBackup(p,backup);await restoreBackup(backup,restore);
   const restored=createPlatform({dataDir:restore,rag:createRagService(),startJobs:false});try{assert.equal(restored.files.read(file.hash).toString(),'recoverable original');assert.equal(restored.repository.getWorkspace(p.userId).data.courses[0].data.messages.length,40);}finally{await restored.close();}
-  assert.throws(()=>restoreBackup(backup,restore),/RESTORE_REQUIRES_NEW_DIRECTORY/);fs.appendFileSync(path.join(backup,'workspace.sqlite'),'tamper');assert.throws(()=>restoreBackup(backup,path.join(dir,'bad')),/BACKUP_CHECKSUM_MISMATCH/);
+  await assert.rejects(restoreBackup(backup,restore),/RESTORE_REQUIRES_NEW_DIRECTORY/);fs.appendFileSync(path.join(backup,'workspace.sqlite'),'tamper');await assert.rejects(restoreBackup(backup,path.join(dir,'bad')),/BACKUP_CHECKSUM_MISMATCH/);
 });
 test('persistent queue retries CPU work, checkpoints, recovers leases, cancels, and never retries unknown paid API results',async t=>{
   const {p}=await fixture(t);let attempts=0;p.jobs.register('retry-cpu',async(_,ctx)=>{ctx.checkpoint({phase:++attempts});if(attempts===1)throw new Error('RETRYABLE');return{done:true};});const j=p.jobs.submit(p.userId,{type:'retry-cpu',courseId:'course-default',idempotencyKey:'cpu'});assert.equal((await waitJob(p,j.id)).status,'succeeded');assert.equal(attempts,2);
@@ -71,4 +71,11 @@ test('ordinary Node parsing worker handles invalid encoding and terminates on ca
   const {parseArtifact}=require('../../backend/platform/file-worker.js');
   await assert.rejects(parseArtifact({buffer:Buffer.from([255]),kind:'txt',document:{id:'d',name:'bad.txt'}}),/INVALID_TEXT_ENCODING/);
   const controller=new AbortController(),running=parseArtifact({buffer:Buffer.from('plain text'),kind:'md',document:{id:'d',name:'cancel.md'}},{signal:controller.signal});controller.abort();await assert.rejects(running,error=>error.name==='AbortError');
+});
+
+test('pending confirmations persist across restart; uncertain commit recovery reads receipt without replay',async t=>{
+  const f=await fixture(t),s=f.p.scope('course-default'),preview=await f.p.authority.prepare(s,{kind:'note',entityId:'durable-note',expectedVersion:0,after:{title:'Durable',content:'Saved once',sourceIds:[]}});
+  await f.restart();assert.equal(f.p.authority.preview(s,preview.actionId).digest,preview.digest);f.p.authority.confirm(s,preview);const receipt=await f.p.authority.apply(s,preview.actionId);
+  const row=JSON.parse(f.p.db.prepare('SELECT data FROM confirmations WHERE id=?').get(preview.actionId).data);row.state='executing';delete row.receipt;f.p.db.prepare('UPDATE confirmations SET data=? WHERE id=?').run(JSON.stringify(row),preview.actionId);
+  await f.restart();assert.deepEqual(await f.p.authority.apply(s,preview.actionId),receipt);assert.equal(f.p.db.prepare('SELECT COUNT(*) AS n FROM audits').get().n,1);
 });

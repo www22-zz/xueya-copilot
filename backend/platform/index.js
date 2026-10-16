@@ -18,7 +18,7 @@ function createPlatform({dataDir,rag,userId='local-user',apiSlots=2,startJobs=tr
     if(!course.archived)repository.put({scope:{userId,courseId:course.id},kind:'run',entityId:run.id,value:{...run,status:'interrupted',recoveredAt:new Date().toISOString()}});
   }
   if(startJobs)db.prepare("UPDATE invocations SET status='unknown' WHERE status='pending'").run();
-  const jobs=createJobQueue({repository,resources}),authority=createActionAuthority({repository}),migration=createBrowserMigration(repository);
+  const jobs=createJobQueue({repository,resources}),authority=createActionAuthority({repository,store:require('./action-store.js').createActionStore(db,{recover:startJobs})}),migration=createBrowserMigration(repository);
   function scope(courseId){const s={userId,courseId};repository.requireCourse(s);return s;}
   function document(s,id){const row=repository.read({scope:s,kind:'document',entityId:id});if(!row)throw new Error('DOCUMENT_NOT_FOUND');return{...row.value,id,version:row.version};}
   jobs.register('parse-document',async({scope:s,input},{signal,progress,checkpoint,commit})=>{

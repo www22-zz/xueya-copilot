@@ -14,9 +14,9 @@ const digest=value=>createHash('sha256').update(canonical(value)).digest('hex');
 const same=(a,b)=>a.userId===b.userId&&a.courseId===b.courseId;
 
 /** Repository owns CAS + data + audit + receipt in ONE transaction. No storage engine here. */
-function createActionAuthority({repository,ttlMs=300000,now=Date.now,maxPending=100}={}){
+function createActionAuthority({repository,ttlMs=300000,now=Date.now,maxPending=100,store=new Map()}={}){
   if(!repository||!['read','applyConfirmed'].every(k=>typeof repository[k]==='function'))throw new Error('WRITE_REPOSITORY_REQUIRED');
-  const actions=new Map();let preparing=0;
+  const actions=store;let preparing=0;
   function get(scope,actionId){scope=scopeSchema.parse(scope);const a=actions.get(actionId);if(!a||!same(a.scope,scope))throw new Error('ACTION_NOT_FOUND');return a;}
   function live(a){if(a.expiresAt<=now())throw new Error('ACTION_EXPIRED');if(!['preview','confirmed'].includes(a.state))throw new Error('ACTION_NOT_PENDING');}
   return{
@@ -46,18 +46,18 @@ function createActionAuthority({repository,ttlMs=300000,now=Date.now,maxPending=
     },
     preview(scope,actionId){const a=get(scope,actionId);live(a);const{state,...preview}=a;return structuredClone(preview);},
     // HOST ONLY: call from an authenticated explicit UI confirmation route, NEVER register as a model tool.
-    confirm(scope,{actionId,digest:expectedDigest}){const a=get(scope,actionId);live(a);if(a.state!=='preview')throw new Error('ACTION_ALREADY_CONFIRMED');if(a.digest!==expectedDigest)throw new Error('ACTION_CHANGED');a.state='confirmed';return{actionId,state:'confirmed'};},
-    cancel(scope,actionId){const a=get(scope,actionId);live(a);a.state='cancelled';return{actionId,state:'cancelled'};},
+    confirm(scope,{actionId,digest:expectedDigest}){const a=get(scope,actionId);live(a);if(a.state!=='preview')throw new Error('ACTION_ALREADY_CONFIRMED');if(a.digest!==expectedDigest)throw new Error('ACTION_CHANGED');a.state='confirmed';actions.set(actionId,a);return{actionId,state:'confirmed'};},
+    cancel(scope,actionId){const a=get(scope,actionId);live(a);a.state='cancelled';actions.set(actionId,a);return{actionId,state:'cancelled'};},
     async apply(scope,actionId,{signal}={}){
       const a=get(scope,actionId);
       if(a.state==='applied')return structuredClone(a.receipt);
       live(a);if(a.state!=='confirmed')throw new Error('ACTION_CONFIRMATION_REQUIRED');
-      signal?.throwIfAborted();a.state='executing';
+      signal?.throwIfAborted();a.state='executing';actions.set(actionId,a);
       try{
         const receipt=await repository.applyConfirmed({scope:structuredClone(a.scope),actionId,kind:a.kind,entityId:a.entityId,expectedVersion:a.expectedVersion,after:structuredClone(a.after),references:structuredClone(a.references),audit:{actionId,digest:a.digest,actor:a.scope.userId,courseId:a.scope.courseId,kind:a.kind,entityId:a.entityId,at:new Date(now()).toISOString()}},{signal});
         if(!receipt||receipt.actionId!==actionId||receipt.version!==a.expectedVersion+1||receipt.auditId==null)throw new Error('INVALID_WRITE_RECEIPT');
-        a.receipt=structuredClone(receipt);a.state='applied';return structuredClone(receipt);
-      }catch(error){a.state='uncertain';throw error;}
+        a.receipt=structuredClone(receipt);a.state='applied';actions.set(actionId,a);return structuredClone(receipt);
+      }catch(error){a.state='uncertain';actions.set(actionId,a);throw error;}
     }
   };
 }

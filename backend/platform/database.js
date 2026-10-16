@@ -15,7 +15,8 @@ CREATE INDEX jobs_queue ON jobs(status,available_at,created_at);
 CREATE TABLE job_events(seq INTEGER PRIMARY KEY AUTOINCREMENT,job_id TEXT NOT NULL,event TEXT NOT NULL,at TEXT NOT NULL);
 CREATE TABLE invocations(id TEXT PRIMARY KEY,user_id TEXT NOT NULL,course_id TEXT NOT NULL,status TEXT NOT NULL,provider TEXT NOT NULL,request_hash TEXT NOT NULL,at TEXT NOT NULL,updated_at TEXT NOT NULL);
 `, `ALTER TABLE invocations ADD COLUMN usage_json TEXT;
-ALTER TABLE invocations ADD COLUMN billing_status TEXT NOT NULL DEFAULT 'not_reported';`];
+ALTER TABLE invocations ADD COLUMN billing_status TEXT NOT NULL DEFAULT 'not_reported';`,
+`CREATE TABLE confirmations(id TEXT PRIMARY KEY,data TEXT NOT NULL);`];
 function openDatabase(filename){
   if(filename!==':memory:')fs.mkdirSync(path.dirname(path.resolve(filename)),{recursive:true});
   const db=new DatabaseSync(filename);db.exec('PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; PRAGMA foreign_keys=ON; PRAGMA busy_timeout=5000;');
