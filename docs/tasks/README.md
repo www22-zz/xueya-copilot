@@ -55,7 +55,7 @@
 | A | 当前AI | 前端实现完成，待联调验收 | `feat/large-A-frontend` · [交付与接口](../delivery/large-A-frontend.md) |
 | B | 待领取 | 待领取 | — |
 | C | 待领取 | 待领取 | — |
-| D | 待领取 | 待领取 | — |
+| D | AI执行 | 待验收（平台完成，待B/C/E/A联调） | feat/large-D-mcp；[交付记录](../delivery/large-D-mcp.md)；86项测试通过 |
 | E | 待领取 | 待领取 | — |
 | F | 待领取 | 待领取 | — |
 

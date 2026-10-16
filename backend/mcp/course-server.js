@@ -4,6 +4,7 @@ const {McpServer}=require('@modelcontextprotocol/server');
 const {serveStdio}=require('@modelcontextprotocol/server/stdio');
 const z=require('zod');
 const L=require('../../shared/learning.js');
+const rag=require('../rag/index.js').createRagService();
 
 const source=z.object({id:z.string().min(1).max(150),title:z.string().max(200),location:z.string().max(150),quote:z.string().min(1).max(1500),keywords:z.array(z.string().max(30)).max(12).optional(),sample:z.boolean().optional()}).strict();
 const sources=z.array(source).max(48);
@@ -20,7 +21,7 @@ function createCourseServer(){
   server.registerTool('search_materials',{
     description:'检索本次请求提供的课程原文，返回可引用的实际片段。',annotations,
     inputSchema:z.object({query:z.string().min(1).max(4000),sources,limit:z.number().int().min(1).max(6).default(4)}).strict()
-  },async({query,sources,limit})=>result({sources:L.retrieve(query,sources).slice(0,limit)}));
+  },async({query,sources,limit},ctx)=>result({sources:(await rag.retrieve({question:query,sources,signal:ctx.mcpReq.signal})).slice(0,limit)}));
   server.registerTool('read_source',{
     description:'按稳定的来源 ID 查看本次请求中的原文。',annotations,
     inputSchema:z.object({sourceId:z.string().min(1).max(150),sources}).strict()

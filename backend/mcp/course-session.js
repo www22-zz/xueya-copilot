@@ -13,12 +13,12 @@ const argumentsByTool={
   build_review_plan:z.object({}).strict()
 };
 
-async function createCourseSession(input,{signal,timeoutMs=5000,connect=connectStdio}={}){
+async function createCourseSession(input,{signal,timeoutMs=5000,connect=connectStdio,onTrace}={}){
   const context=normalizeContext(input);
   const adapter=await connect({command:process.execPath,args:[path.join(__dirname,'course-server.js')],cwd:path.resolve(__dirname,'../..'),timeoutMs,signal});
   try{
     const available=await adapter.listTools();
-    const gateway=createToolGateway({timeoutMs});
+    const gateway=createToolGateway({timeoutMs,onTrace});
     for(const [name,schema] of Object.entries(argumentsByTool)){
       const remote=available.find(tool=>tool.name===name);
       if(!remote)throw new Error('MCP_TOOL_MISSING');
@@ -33,6 +33,7 @@ async function createCourseSession(input,{signal,timeoutMs=5000,connect=connectS
     return{
       get pid(){return adapter.pid;},
       listTools:gateway.listTools,
+      stats:gateway.stats,
       async call(name,args={}){
         const response=await gateway.callTool('course__'+name,args,{signal});
         if(response.isError)throw new Error('MCP_TOOL_FAILED');
