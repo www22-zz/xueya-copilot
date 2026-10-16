@@ -1,0 +1,2 @@
+# Install the shared, tested Python environment.
+-r requirements.lock

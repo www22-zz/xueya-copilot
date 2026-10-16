@@ -1,3 +1,5 @@
+> 2026-10-17：已整合 B（RAG）和 C（Agent 学习服务）。统一启动仍是 `python -m backend.xueya.server`（`npm start` 等价）；`python -m backend.server` 也转到该入口。默认主服务同时注册 `/api/platform/rag/*` 和 `/api/learning/*`，共用现有 SQLite、任务队列和 API 账本。C 高级服务的页面入口仍需后续前端接线，不能把服务测试通过等同于所有高级功能已在页面开放。接入方式和验证记录见 [B/C 合并说明](docs/delivery/main-C-integration.md)。
+
 # 学涯 Copilot
 
 基于课程资料的学习助手：资料问答、原文引用、笔记、出题、错题分析、记忆卡片和复习计划。

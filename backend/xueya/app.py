@@ -306,4 +306,9 @@ def create_app(config: Config | None = None, *, provider=None, start_jobs=True):
         if not target.is_relative_to(root.resolve()) or not target.is_file():
             return PlainTextResponse("Not found", status_code=404)
         return FileResponse(target, headers={"Cache-Control": "no-cache"})
+    if config.platform_enabled:
+        from .rag_http import install_rag
+        from .learning_integration import install_learning
+        install_rag(app)
+        install_learning(app)
     return app

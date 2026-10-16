@@ -16,13 +16,18 @@
     function success(payload,hits){
       if(payload?.ok!==true||typeof payload.answer!=='string'||!payload.answer.trim()||!Array.isArray(payload.sources))throw new Error('AI_UNAVAILABLE');
       const local=payload.engine==='local-workflow';
-      return{answer:payload.answer,sources:[...new Set(payload.sources)].map(id=>hits.find(source=>source.id===id)).filter(Boolean),engine:local?'本地学习流程':'MiMo 资料问答',online:!local,knowledgePoints:payload.knowledgePoints||[],model:payload.model,...(payload.workflow?{workflow:payload.workflow}:{}),...(payload.artifacts?{artifacts:payload.artifacts}:{})};
+      return{answer:payload.answer,sources:[...new Set(payload.sources)].map(id=>hits.find(source=>source.id===id)).filter(Boolean),engine:local?'本地学习流程':payload.engine==='general-chat'?'MiMo 通用问答':'MiMo 资料问答',online:!local,knowledgePoints:payload.knowledgePoints||[],model:payload.model,...(payload.workflow?{workflow:payload.workflow}:{}),...(payload.artifacts?{artifacts:payload.artifacts}:{})};
     }
     function fallback(request,hits,context){
+      const greeting=Tasks.conversationReply(request.question,request.mode);
+      if(greeting)return{answer:greeting,sources:[],reasoning:'',engine:'本地学习流程',online:false,knowledgePoints:[]};
       const intent=context?Tasks.routeTask(request.question,request.mode):request.mode;
       if(context&&(intent==='plan'||intent==='review')){
         const {progress,plan}=Tasks.localStudy(context,intent);
         return{answer:Tasks.studyText(intent,progress,plan,context.baseDate),sources:[],reasoning:'',engine:'本地学习流程',online:false,knowledgePoints:[],workflow:{intent,steps:[{stage:'tools',label:'连接暂不可用，已使用本地学习记录',status:'degraded'},{stage:'validate',label:'已核对作答统计和计划设置',status:'completed'}]},artifacts:{progress,...(plan?{plan}:{})}};
+      }
+      if(context&&intent==='ask'&&!hits.length&&!Tasks.requiresCourseEvidence(request.question,request.mode)&&!context.previousSourceIds.length){
+        return{answer:'通用问答服务暂时不可用，请检查项目是否已启动或稍后重试。',sources:[],reasoning:'',engine:'通用问答暂不可用',online:false,knowledgePoints:[]};
       }
       return{answer:L.localAnswer(request.question,intent,hits),sources:hits,reasoning:'',engine:'本地检索摘录',online:false,knowledgePoints:[]};
     }

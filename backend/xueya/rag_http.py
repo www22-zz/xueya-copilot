@@ -40,15 +40,20 @@ def configured_service(platform, root):
 
 
 def install_rag(app, *, service_factory=None):
-    require(not getattr(app.state, "rag_installed", False), "RAG_ALREADY_INSTALLED")
+    if getattr(app.state, "rag_installed", False):
+        if service_factory:
+            app.state.rag_service_factory = service_factory
+        return app
     app.state.rag_installed = True
+    app.state.rag_service_factory = service_factory
     previous = app.router.lifespan_context
 
     @asynccontextmanager
     async def lifespan(host):
         async with previous(host):
             require(host.state.platform is not None, "RAG_REQUIRES_PLATFORM")
-            host.state.rag = service_factory(host.state.platform) if service_factory else configured_service(host.state.platform, host.state.config.root)
+            factory = host.state.rag_service_factory
+            host.state.rag = factory(host.state.platform) if factory else configured_service(host.state.platform, host.state.config.root)
             yield
     app.router.lifespan_context = lifespan
     router = APIRouter(prefix="/api/platform/rag")

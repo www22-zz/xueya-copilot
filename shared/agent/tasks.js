@@ -2,13 +2,27 @@
 (function(root,factory){if(typeof module==='object'&&module.exports)module.exports=factory(require('../learning.js'));else root.XueyaTasks=factory(root.XueyaLearning);})(typeof globalThis!=='undefined'?globalThis:this,function(L){
   'use strict';
 
+  function conversationReply(question,mode='ask'){
+    if(mode!=='ask')return null;
+    const greeting=String(question).trim().replace(/[，,。.!！?？~～\s]+$/gu,'');
+    if(/^(?:你好|您好|你们好|嗨|哈喽|早上好|下午好|晚上好|hi|hello)(?:呀|啊|哇|哦)?$/iu.test(greeting)){
+      return'你好！我是学涯 Copilot。你可以上传课程资料后向我提问，也可以让我整理重点、生成练习或查看学习情况。你想先学什么？';
+    }
+    return null;
+  }
+
   function routeTask(question,mode='ask'){
     if(mode==='summarize'||mode==='quiz')return mode;
+    if(conversationReply(question,mode))return'conversation';
     if(/(?:复习|学习|备考).{0,10}(?:计划|安排)|(?:计划|安排).{0,10}(?:复习|学习|备考)/.test(question))return'plan';
     if(/薄弱|弱项|掌握情况|错题分析|学习情况|学习进度|复习重点/.test(question))return'review';
     if(/总结|归纳|整理.{0,6}(?:重点|知识)/.test(question))return'summarize';
     if(/(?:出|生成).{0,4}(?:练习|题目|题)|练习题|测验/.test(question))return'quiz';
     return'ask';
+  }
+
+  function requiresCourseEvidence(question,mode='ask'){
+    return mode!=='ask'||/(?:根据|依据|按照|结合|参照).{0,16}(?:资料|文档|讲义|课件|原文|笔记|教材)|(?:资料|文档|讲义|课件|原文|笔记|教材).{0,12}(?:里|中|说|提到|记载)|第.{1,6}页/.test(question);
   }
 
   function refersToPrevious(question){
@@ -41,5 +55,5 @@
       +'\n\n'+summary+'\n\n这是一份预览，尚未修改你已有的复习计划。';
   }
 
-  return{routeTask,refersToPrevious,retrievalQuery,localStudy,studyText};
+  return{routeTask,conversationReply,requiresCourseEvidence,refersToPrevious,retrievalQuery,localStudy,studyText};
 });
