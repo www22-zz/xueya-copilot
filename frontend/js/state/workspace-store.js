@@ -46,6 +46,7 @@ function createStore({storage,learning:L,id=()=>globalThis.crypto.randomUUID(),n
     try{storage.setItem(KEY,JSON.stringify({version:3,activeId,courses}));}catch{error='浏览器空间不足或禁止保存。请先导出备份，本次修改暂未持久保存。';return false;}
     // Preserve the legacy key and full history for existing integrations; v3 is authoritative.
     try{storage.setItem(LEGACY,JSON.stringify(snapshot()));}catch{/* A compatibility mirror must not invalidate the durable v3 save. */}
+    if(typeof globalThis.dispatchEvent==='function')globalThis.dispatchEvent(new Event('xueya:workspace-save'));
     return true;
   }
   function switchCourse(courseId){

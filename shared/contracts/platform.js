@@ -1,0 +1,10 @@
+'use strict';
+const z=require('zod');
+const id=z.string().min(1).max(150).regex(/^[\p{L}\p{N}_.:-]+$/u);
+const scope=z.object({userId:id,courseId:id}).strict();
+const kind=z.enum(['document','source','note','question','attempt','event','concept','plan','review','session','run','checkpoint','artifact','vector']);
+const entity=z.object({id,kind,version:z.number().int().positive(),createdAt:z.string().datetime(),updatedAt:z.string().datetime(),data:z.record(z.string(),z.unknown())});
+const workspace=z.object({version:z.literal(3),activeId:id,courses:z.array(z.object({id,name:z.string().min(1).max(100),archived:z.boolean().default(false),data:z.record(z.string(),z.unknown())}).passthrough()).min(1).max(100)}).passthrough();
+const job=z.object({type:id,courseId:id,input:z.record(z.string(),z.unknown()).default({}),idempotencyKey:id,resource:z.enum(['cpu','api']).default('cpu'),maxAttempts:z.number().int().min(1).max(5).default(3)}).strict();
+const now=()=>new Date().toISOString();
+module.exports={VERSION:'1.0',id,scope,kind,entity,workspace,job,now};

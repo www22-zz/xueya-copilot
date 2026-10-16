@@ -13,6 +13,7 @@ function loadConfig(root=path.resolve(__dirname,'..')){
   }
   return{
     root,port:Number(process.env.PORT||4173),
+    platform:{enabled:true,dataDir:path.resolve(process.env.XUEYA_DATA_DIR||path.join(root,'.xueya-data')),userId:'local-user',apiSlots:Math.max(1,Math.min(8,Number(process.env.API_MAX_CONCURRENT)||2))},
     agent:{toolTimeoutMs:Math.max(1000,Math.min(10000,Number(process.env.MCP_TOOL_TIMEOUT_MS)||5000))},
     ai:{apiKey:process.env.MIMO_API_KEY||'',baseURL:process.env.MIMO_BASE_URL||'https://api.xiaomimimo.com/v1',model:process.env.MIMO_MODEL||'mimo-v2.6-flash'}
   };

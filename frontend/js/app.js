@@ -1,11 +1,13 @@
-(() => {
+(async() => {
   'use strict';
+  await window.XueyaPlatform?.initialize();
   const L=window.XueyaLearning,$=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
   const icons=()=>window.XueyaIcons?.();
   const e=window.XueyaRich.escape;
   const icon=name=>`<span data-icon="${name}"></span>`;
   let storage;try{storage=window.localStorage;}catch{storage={getItem(){return null;},setItem(){throw new Error('STORAGE_UNAVAILABLE');}};}
   const store=window.XueyaWorkspaceStore.createStore({storage,learning:L}),state=store.state;
+  window.XueyaPlatform?.attach({store,state,toast,render});
   const viewLearning=Object.create(L);
   for(const key of ['documents','sources','questions'])Object.defineProperty(viewLearning,key,{get:()=>state.courseId==='course-default'?L[key]:[]});
   const courseQuestions=()=>viewLearning.questions;
@@ -73,7 +75,7 @@
   function upload(files){return workspace.upload(files);}
   function searchResults(query){const q=query.trim().toLowerCase();const items=Object.entries(titles).map(([view,title])=>({title,type:'页面',view}));state.documents.forEach(d=>items.push({title:d.name,type:'资料',document:d.id}));state.cards.forEach(c=>items.push({title:c.title,type:'卡片',view:'cards',query:c.title}));const found=items.filter(item=>!q||item.title.toLowerCase().includes(q)).slice(0,12);$('#searchResults').innerHTML=found.length?found.map(item=>`<button type="button" class="search-result" ${item.document?`data-search-document="${e(item.document)}"`:`data-search-view="${item.view}"`} data-query="${e(item.query||'')}">${icon(item.type==='资料'?'file':item.type==='卡片'?'bookmark':'arrow')} ${e(item.title)}<span>${item.type}</span></button>`).join(''):'<div class="empty-state"><p>没有找到结果。试试文件名、知识点或页面名称。</p></div>';icons();}
   function showDocument(id){const doc=state.documents.find(d=>d.id===id);if(!doc)return;const source=doc.chunks?.[0]||viewLearning.sources.find(s=>s.documentId===id);openSource(source||{id:doc.id,documentId:doc.id,title:doc.name,location:doc.status,quote:'',sample:false});}
-  document.addEventListener('DOMContentLoaded',()=>{
+  function mount(){
     workspace.mount();practiceUI.mount();route();window.addEventListener('hashchange',route);
     if(location.protocol==='file:')$('#engineStatus').textContent='本地检索模式';
     else fetch('/api/health',{signal:AbortSignal.timeout(5000)}).then(r=>r.json()).then(p=>{$('#engineStatus').textContent=p.engine==='xiaomi-mimo'?'MiMo 已配置':'本地检索模式';}).catch(()=>{$('#engineStatus').textContent='本地检索模式';});
@@ -107,5 +109,6 @@
     const originalDemo=$('#demoContent').innerHTML;const demoViews={ask:originalDemo,card:`<div class="demo-big-card"><small>属于你的知识卡片</small><h3>二叉搜索树的查找</h3><p>复杂度取决于树高 h。平衡时为 O(log n)，退化成链时为 O(n)。<br>记忆提示：每一次比较，只走向一棵子树。</p><div class="demo-card-footer"><span>讲义 · p.42</span><span>${icon('bookmark')} 已保存重点</span></div></div><a class="demo-compose" href="#space/cards">建立自己的知识卡片 ${icon('arrow')}</a>`,practice:`<div class="demo-big-card"><small>用一道题，检验理解</small><h3>什么时候会退化为 O(n)？</h3><p>节点按顺序插入，且不进行平衡调整时，二叉搜索树可能退化成链。<br>理解树高，就理解了查找复杂度。</p><div class="demo-card-footer"><span>期中复习题 · p.8</span><span>${icon('check')} 把重点，练扎实</span></div></div><a class="demo-compose" href="#space/practice">去完成一组示例练习 ${icon('arrow')}</a>`};
     function changeDemo(b){$$('[data-demo]').forEach(tab=>{tab.classList.toggle('active',tab===b);tab.setAttribute('aria-selected',String(tab===b));tab.tabIndex=tab===b?0:-1;});$('#demoPanel').setAttribute('aria-labelledby',b.id);$('#demoContent').innerHTML=demoViews[b.dataset.demo];icons();if(!matchMedia('(prefers-reduced-motion: reduce)').matches)$('#demoContent').animate([{opacity:.35,transform:'translateY(5px)'},{opacity:1,transform:'translateY(0)'}],{duration:220,easing:'cubic-bezier(.23,1,.32,1)'});}
     $$('[data-demo]').forEach(b=>{b.addEventListener('click',()=>changeDemo(b));b.addEventListener('keydown',event=>{if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;event.preventDefault();const tabs=$$('[data-demo]'),index=tabs.indexOf(b),next=event.key==='Home'?0:event.key==='End'?2:(index+(event.key==='ArrowRight'?1:2))%3;changeDemo(tabs[next]);tabs[next].focus();});});
-  });
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mount,{once:true});else mount();
 })();

@@ -29,7 +29,7 @@ function createMimoProvider({apiKey,baseURL,model,timeoutMs=25000},fetchImpl=glo
         const payload=await response.json();
         const content=payload?.choices?.[0]?.message?.content;
         if(typeof content!=='string')throw new Error('AI_INVALID_RESPONSE');
-        return{content,model};
+        return{content,model,...(payload.usage?{usage:payload.usage}:{})};
       }finally{control.cleanup();}
     },
     async *stream({messages,signal,timeoutMs:limit=60000}){
@@ -41,6 +41,7 @@ function createMimoProvider({apiKey,baseURL,model,timeoutMs=25000},fetchImpl=glo
           if(data==='[DONE]')break;
           let payload;
           try{payload=JSON.parse(data);}catch{continue;}
+          if(payload.usage)yield{type:'usage',usage:payload.usage,model};
           const delta=payload?.choices?.[0]?.delta;
           if(typeof delta?.reasoning_content==='string'&&delta.reasoning_content)yield{type:'reasoning',text:delta.reasoning_content,model};
           if(typeof delta?.content==='string'&&delta.content)yield{type:'content',text:delta.content,model};

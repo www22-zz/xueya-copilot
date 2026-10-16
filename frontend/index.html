@@ -19,6 +19,7 @@
   <script src="js/state/workspace-store.js" defer></script>
   <script src="js/services/workspace-service.js" defer></script>
   <script src="js/services/file-cache.js" defer></script>
+  <script src="js/services/platform-client.js" defer></script>
   <script src="js/ui/rich-content.js" defer></script>
   <script src="js/ui/views.js" defer></script>
   <script src="js/ui/workspace-views.js" defer></script>
@@ -80,7 +81,7 @@
         <div class="rhythm-grid"><a class="rhythm-card card-practice reveal" href="#space/practice"><div class="rhythm-card-head"><span>练习与错题</span><span data-icon="external"></span></div><div class="practice-art"><div class="art-question">平衡树查找的时间复杂度是？</div><div class="art-option">A <span>O(n)</span></div><div class="art-option art-correct">B <span>O(log n)</span><span data-icon="check"></span></div><div class="art-success"><span class="mini-dot"></span> 理解，经过了验证。</div></div><h3>会了，还是以为会了？</h3><p>用一道练习检验理解。错过的重点，再学一次。</p></a>
         <a class="rhythm-card card-plan reveal" href="#space/plan"><div class="rhythm-card-head"><span>你的复习计划</span><span data-icon="external"></span></div><div class="plan-art"><div class="art-week"><span>一</span><span>二</span><span class="today">三</span><span>四</span><span>五</span><span>六</span><span>日</span></div><div class="art-task"><span class="art-check" data-icon="check"></span><div>读懂树与二叉树<small>把基础，掌握得更稳。</small></div><span>20 min</span></div><div class="art-task"><span class="art-check empty"></span><div>再练一次薄弱点<small>留一点时间，给真正的理解。</small></div><span>15 min</span></div></div><h3>少一点焦虑，多一点有序。</h3><p>设定考试日期，让复习任务变成每天的小目标。</p></a></div>
       </section>
-      <section class="closing-section section-width reveal"><span class="closing-star">✳</span><span class="eyebrow">YOUR NEXT CHAPTER</span><h2>下一次豁然开朗，<br>从这里开始。</h2><a class="button button-blue" href="#space/overview">进入我的学习空间 <span data-icon="arrow"></span></a><p>无需注册 · 学习记录保存在当前浏览器</p></section>
+      <section class="closing-section section-width reveal"><span class="closing-star">✳</span><span class="eyebrow">YOUR NEXT CHAPTER</span><h2>下一次豁然开朗，<br>从这里开始。</h2><a class="button button-blue" href="#space/overview">进入我的学习空间 <span data-icon="arrow"></span></a><p>无需注册 · 浏览器副本与可选本机持久化</p></section>
       <footer class="site-footer section-width"><a class="brand" href="#home"><img src="assets/mark.svg" alt="" width="28" height="28"><strong>学涯<span>Copilot</span></strong></a><span>让知识，真正连起来。</span><small>© 2026 学涯 Copilot</small><a href="#space/library">开始整理资料 <span data-icon="arrow"></span></a></footer>
     </div>
     <div id="spacePage" hidden>
@@ -89,7 +90,7 @@
       <div id="activityBanner" class="activity-banner section-width" role="status" hidden><span id="activityLabel"></span><button type="button" class="button button-outline button-small" data-stop-practice>停止等待</button></div>
       <div id="storageNotice" class="storage-notice section-width" role="alert" hidden><span>本次修改尚未保存。请先导出记录，避免关闭页面后丢失。</span><button type="button" class="button button-outline button-small" data-export-workspace>导出记录</button></div>
       <div class="space-content section-width" id="spaceContent" tabindex="-1"></div>
-      <footer class="space-footer section-width"><span><span class="mini-dot"></span> 学习记录保存在当前浏览器</span><a href="#home">回到首页 <span data-icon="external"></span></a></footer>
+      <footer class="space-footer section-width"><span><span class="mini-dot"></span> 浏览器保留副本 · 可启用本机持久化</span><a href="#home">回到首页 <span data-icon="external"></span></a></footer>
     </div>
   </main>
   <dialog id="sourceDialog" class="source-dialog" aria-label="资料原文"><div class="dialog-head"><span class="eyebrow">回到原文</span><button type="button" class="icon-button" data-close-dialog aria-label="关闭原文"><span data-icon="close"></span></button></div><div id="sourceContent"></div><div class="source-dialog-footer"><button class="button button-blue" type="button" id="sourceSave"><span data-icon="bookmark"></span> 保存为知识卡片</button></div></dialog>
