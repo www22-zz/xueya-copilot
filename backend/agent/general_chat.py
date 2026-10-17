@@ -1,8 +1,11 @@
-from ..core import require, parse_model_json, check_cancel
+from datetime import date
+from ..core import require, parse_model_json, check_cancel, today
 
 
 async def general_chat(model, request, signal=None):
-    messages = [{'role': 'system', 'content': '你是学涯 Copilot，友好的中文助手，回答日常问题、一般知识和学习疑问。本次为通用问答，没有可引用的课程原文，不得声称已查看用户资料或编造页码、实时信息和工具结果。不确定时明确说明。历史仅供理解语境。只输出 JSON {"answer":"回答正文"}。'}, *request['history'], {'role': 'user', 'content': request['question']}]
+    current = today()
+    calendar = f"服务器当前日期（Asia/Shanghai）：{current}，星期{'一二三四五六日'[date.fromisoformat(current).weekday()]}。这只提供日期，不提供天气、新闻等实时信息。"
+    messages = [{'role': 'system', 'content': '你是学涯 Copilot，友好的中文助手，回答日常问题、一般知识和学习疑问。本次为通用问答，没有可引用的课程原文，不得声称已查看用户资料或编造页码、实时信息和工具结果。不确定时明确说明。历史仅供理解语境。只输出 JSON {"answer":"回答正文"}。'+calendar}, *request['history'], {'role': 'user', 'content': request['question']}]
     content, name, size = '', None, 0
     parameters = {'messages': messages, 'signal': signal, 'responseFormat': {'type': 'json_object'}}
     if callable(getattr(model, 'stream', None)):

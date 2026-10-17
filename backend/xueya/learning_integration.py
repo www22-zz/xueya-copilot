@@ -130,7 +130,7 @@ class LearningHost:
                 model_id=self.app.state.config.model, checkpoint=self.checkpoints, verify_snapshot=self.verify_snapshot)
         return self.services[course]
 
-    async def sources(self, value):
+    async def sources(self, value, *, catalog=False):
         scope = self.p.scope(value["courseId"])
         selection = value.get("selection") or {}
         require(isinstance(selection, dict) and not set(selection)-{"documentIds", "section", "sourceIds"}, "INVALID_SELECTION")
@@ -157,6 +157,10 @@ class LearningHost:
             doc = documents.get(source.get("documentId"), {})
             result.append({**source, "courseId": scope.course_id, "documentId": source.get("documentId") or "legacy-"+source["id"], "version": str(source.get("documentRevision", doc.get("contentRevision", source["version"]))), "quote": source.get("quote", source.get("text", ""))})
         require(result, "NO_SOURCES")
+        if catalog:
+            # The page catalog must remain accessible even when a whole course
+            # exceeds a generation budget. Commands still load complete evidence.
+            return [{**s, 'quote': s['quote'][:1500]} for s in result[:256]]
         require(sum(len(s["quote"]) for s in result) <= 384000, "CHAPTER_BUDGET_EXCEEDED")
         version = evidence_package({"courseId": scope.course_id, "sources": result})["version"]
         await self.snapshots.put(scope.course_id, version, {"sourceIds": [s["id"] for s in result]})
@@ -270,6 +274,8 @@ def install_learning(app):
     async def lifespan(host):
         async with previous(host):
             host.state.learning = LearningHost(host) if host.state.platform else None
+            host.state.agent.rag = getattr(host.state, 'rag', None)
+            host.state.agent.learning = host.state.learning
             if host.state.learning:
                 learning = host.state.learning
                 for course in learning.p.repo.courses(learning.p.user_id):

@@ -15,8 +15,8 @@
     }
     function success(payload,hits){
       if(payload?.ok!==true||typeof payload.answer!=='string'||!payload.answer.trim()||!Array.isArray(payload.sources))throw new Error('AI_UNAVAILABLE');
-      const local=payload.engine==='local-workflow';
-      return{answer:payload.answer,sources:[...new Set(payload.sources)].map(id=>hits.find(source=>source.id===id)).filter(Boolean),engine:local?'本地学习流程':payload.engine==='general-chat'?'MiMo 通用问答':'MiMo 资料问答',online:!local,knowledgePoints:payload.knowledgePoints||[],model:payload.model,...(payload.workflow?{workflow:payload.workflow}:{}),...(payload.artifacts?{artifacts:payload.artifacts}:{})};
+      const local=payload.engine==='local-workflow',unavailable=payload.engine==='general-chat-unavailable';
+      return{answer:payload.answer,sources:[...new Set(payload.sources)].map(id=>hits.find(source=>source.id===id)).filter(Boolean),engine:unavailable?'通用问答暂不可用':local?'本地学习流程':payload.engine==='general-chat'?'MiMo 通用问答':'MiMo 资料问答',online:!local&&!unavailable,knowledgePoints:payload.knowledgePoints||[],model:payload.model,...(payload.workflow?{workflow:payload.workflow}:{}),...(payload.artifacts?{artifacts:payload.artifacts}:{})};
     }
     function fallback(request,hits,context){
       const greeting=Tasks.conversationReply(request.question,request.mode);

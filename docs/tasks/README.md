@@ -2,7 +2,9 @@
 
 > 后端统一Python 3.11+/FastAPI，前端保持HTML/CSS/JS。后端不再使用Node/JS，也不转调旧JS；Python不等于本地模型。所有AI能力仅调用API，不接入本地模型。见[当前产品约束](../requirements.md)，该约束覆盖旧计划中的GPU和本地推理建议。
 
-**代码基线**：迁移合并main前，领取任务时以`feat/python-backend`为基线；合并后用最新main。已开工分支合入迁移提交并跑回归，不强推重置。后端接口和代码位置以根README的分工表为准。
+**代码基线**：Python 迁移与 B/C 页面接入已合入 main，领取新任务使用最新 main。已开工分支通过正常合并跟进，不强推重置。后端接口和代码位置以根 README 的分工表为准。
+
+**当前验收状态**：见 [A～E 整体验收与剩余工作](../delivery/AE-integration-audit.md)。历史任务单是完整范围，不能把“代码已合并”理解为真实模型质量、研究和报告已全部完成。
 
 **负责人只分配A～F六个完整工作包；每包里的小任务、开发顺序和验证由队友的AI自行推进。**不需要你读完长计划、从80项里选下一项，或每完成一点重新派活。
 
@@ -56,12 +58,12 @@
 
 | 大任务 | 主责 | 状态 | 分支/PR、进度文件和验收证据 |
 | --- | --- | --- | --- |
-| A | 当前AI | 前端实现完成，待联调验收 | `feat/large-A-frontend` · [交付与接口](../delivery/large-A-frontend.md) |
-| B | 待领取 | 待领取 | — |
-| C | 待领取 | 待领取 | — |
-| D | AI执行 | 已接E存储与A确认页，待B/C增强及验收 | feat/large-D-mcp；[D记录](../delivery/large-D-mcp.md)；[E接线](../delivery/large-E-platform.md) |
-| E | 当前AI | 底座与当前模块集成完成，待验收 | feat/large-E-platform；[交付与验证](../delivery/large-E-platform.md)；旧Node基线107项；Python迁移证据见迁移记录 |
-| F | 待领取 | 待领取 | — |
+| A | 已交付 | 页面与进阶学习服务已接，继续统一新旧入口和人工易用性验收 | [A记录](../delivery/large-A-frontend.md)、[当前验收](../delivery/AE-integration-audit.md) |
+| B | 已交付 | 默认上传与检索已接；真实 OCR/向量/重排质量待独立验收 | [B记录](../delivery/large-B-rag.md)、[当前验收](../delivery/AE-integration-audit.md) |
+| C | 已交付 | 学习闭环已接；真实课程评测与研究增强待完成 | [C记录](../delivery/large-C-agent-learning.md)、[页面交付](../delivery/C-learning-ui.md) |
+| D | 已交付 | SDK/确认写入已接；本轮补 B/C 查询；远程部署另按需求 | [D记录](../delivery/large-D-mcp.md)、[当前验收](../delivery/AE-integration-audit.md) |
+| E | 已交付 | Python 底座/备份/一键启动可用；CI 与规模验收待完善 | [Python迁移](../delivery/python-backend-migration.md)、[当前验收](../delivery/AE-integration-audit.md) |
+| F | 待继续 | 独立黄金集、真实 API 效果、研究实验、报告与演示 | [F任务](大任务/F-测试评测技术报告与交付.md) |
 
 状态使用“待领取、进行中、待验收、已完成”；每项只看当前成果、依赖缺口和下一步。AI在各自的`docs/delivery/large-*.md`维护内部细项，你不用再维护80行派工表。创建任务单不表示功能已实现。
 

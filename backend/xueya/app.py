@@ -211,6 +211,9 @@ def create_app(config: Config | None = None, *, provider=None, start_jobs=True):
             repo.ensure_course(user_id, value)
             return success(courses=repo.courses(user_id))
         if path == "/documents/upload" and method == "POST":
+            rag = getattr(app.state, "rag", None)
+            if rag:
+                return success(job=rag.upload(scope(), value["buffer"], query.get("name", ""), request.headers.get("idempotency-key"), previous_document_id=query.get("previousDocumentId")))
             return success(job=p.upload(scope(), value["buffer"], query.get("name", ""), request.headers.get("idempotency-key"), query.get("previousDocumentId")))
         if path == "/documents/import-original" and method == "POST":
             doc = p.document(scope(), query.get("documentId"))
@@ -228,10 +231,13 @@ def create_app(config: Config | None = None, *, provider=None, start_jobs=True):
             doc, changes = p.document(scope(), value.get("documentId")), value.get("changes")
             require(isinstance(changes, dict) and isinstance(changes.get("name"), str) and bool(changes["name"].strip()), "INVALID_DOCUMENT")
             tags = [str(t) for t in changes["tags"][:30]] if isinstance(changes.get("tags"), list) else doc.get("tags", [])
-            saved = repo.put(scope(), "document", doc["id"], {**doc, "name": changes["name"][:200], "tags": tags}, value.get("version"))
+            saved = repo.put(scope(), "document", doc["id"], {**doc, "name": changes["name"][:200], "tags": tags, "chapter": str(changes.get("chapter", doc.get("chapter", "")))[:200]}, value.get("version"))
             return success(document={**saved["value"], "version": saved["version"]})
         if path == "/documents/remove" and method == "POST":
             require(type(value.get("version")) is int and value["version"] > 0, "INVALID_VERSION")
+            rag = getattr(app.state, "rag", None)
+            if rag and p.document(scope(), value.get("documentId")).get("activeArtifact"):
+                return success(**rag.remove(scope(), value.get("documentId"), value["version"]))
             with db.transaction():
                 doc = p.document(scope(), value.get("documentId"))
                 repo.put(scope(), "document", doc["id"], doc, value.get("version"), deleted=True)
@@ -269,11 +275,11 @@ def create_app(config: Config | None = None, *, provider=None, start_jobs=True):
                     await asyncio.sleep(.3)
             return StreamingResponse(events(), media_type="text/event-stream", headers={"Cache-Control": "no-store", "X-Accel-Buffering": "no"})
         if path == "/tools" and method == "GET":
-            async with open_session(platform_registry(p, scope())) as session:
+            async with open_session(platform_registry(p, scope(), rag=getattr(app.state, 'rag', None), learning=getattr(app.state, 'learning', None))) as session:
                 return success(tools=await session.list_tools(namespace=True))
         if path == "/tools/call" and method == "POST":
             async def call():
-                async with open_session(platform_registry(p, scope())) as session:
+                async with open_session(platform_registry(p, scope(), rag=getattr(app.state, 'rag', None), learning=getattr(app.state, 'learning', None))) as session:
                     return success(data=await session.call(value.get("name"), value.get("arguments") or {}))
             return await connected_work(request, call())
         if path == "/actions/confirm" and method == "POST":

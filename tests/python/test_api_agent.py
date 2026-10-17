@@ -95,7 +95,7 @@ def test_generation_failure_or_forged_only_citations_use_actual_excerpt(mode):
 def test_no_evidence_does_not_call_model_and_plan_never_writes():
     provider = FakeProvider()
     agent = Agent(provider)
-    result = asyncio.run(collect(agent.workflow({"question": "法国首都在哪里？", "sources": SOURCES})))[-1]
+    result = asyncio.run(collect(agent.workflow({"question": "根据课程资料，法国首都在哪里？", "sources": SOURCES})))[-1]
     assert not result["sources"] and provider.calls == 0
     assert "没有找到足够依据" in result["answer"]
     plan = asyncio.run(collect(agent.workflow({"question": "帮我安排复习计划", "sources": SOURCES})))[-1]
@@ -268,10 +268,10 @@ def test_real_http_disconnect_cancels_upstream_model(tmp_path):
 
 
 @pytest.mark.parametrize("task,content,expected", [
-    ("topics", [{"name": "树高", "sourceId": "source-1"}, {"name": "树高", "sourceId": "source-1"}, {"name": "遍历", "sourceId": "forged"}], 2),
-    ("questions", [{"prompt": "有效题", "options": ["a", "b"], "answer": 1, "sourceId": "forged"}, {"prompt": "非法下标", "options": ["a", "b", "c", "d", "e", "f", "g"], "answer": 6}], 1),
+    ("topics", [{"name": "树高", "sourceId": "source-1"}, {"name": "树高", "sourceId": "source-1"}, {"name": "遍历", "sourceId": "forged"}], 1),
+    ("questions", [{"prompt": "有效题", "options": ["a", "b"], "answer": 1, "sourceId": "source-1"}, {"prompt": "伪造引用题", "options": ["a", "b"], "answer": 1, "sourceId": "forged"}, {"prompt": "非法下标", "options": ["a", "b", "c", "d", "e", "f", "g"], "answer": 6}], 1),
 ])
-def test_practice_validation_preserves_existing_topic_and_question_behavior(task, content, expected):
+def test_practice_validation_rejects_forged_citations_and_invalid_questions(task, content, expected):
     provider = FakeProvider(dumps(content))
     result = asyncio.run(Agent(provider).practice(task, {"sources": ["source-1"], "count": 5}))
     assert len(result[task]) == expected

@@ -83,7 +83,7 @@ function createWorkspace(ctx){
     openEditor('核对并纠正原文',`<p class="panel-description">对照原件修改。服务未接通时保存为草稿，检索仍使用原文。</p>`+field('纠正后的片段','text',source.quote||'',{textarea:true,required:true}),async data=>{
       const correction={id:id(),sourceId:source.id,text:String(data.get('text')).trim(),createdAt:new Date().toISOString(),applied:false};
       if(service.capabilities.correctOCR){await service.call('correctOCR',{courseId:state.courseId,documentId:doc.id,version:doc.version||1,correction});correction.applied=true;}
-      doc.corrections=doc.corrections||[];doc.corrections.push(correction);persist();toast(correction.applied?'纠错已提交，请等待服务端重建完成。':'纠错草稿已保存，尚未替换检索原文。');
+      doc.corrections=doc.corrections||[];doc.corrections.push(correction);persist();render();toast(correction.applied?'纠错已保存并重建原文，请重新打开资料核对。':'纠错草稿已保存，尚未替换检索原文。');
     });
   }
   function courses(){openEditor('管理课程',`<p class="panel-description">每门课程的资料、会话、笔记、练习和计划分别保存；归档后仍可恢复。</p><div class="course-list">${store.courses.map(c=>`<div><strong>${e(c.name)}</strong>${c.archived?newButton('恢复',`data-restore-course="${e(c.id)}"`):newButton(c.id===state.courseId?'当前课程':'切换',`data-select-course="${e(c.id)}"`)}${!c.archived?newButton('归档',`data-archive-course="${e(c.id)}"`):''}</div>`).join('')}</div>`+field('新课程名称','name','',{required:true}),data=>{if(busy())return false;const course=store.addCourse(data.get('name'));if(course){resetTransient();render();}},{submit:'创建课程'});}

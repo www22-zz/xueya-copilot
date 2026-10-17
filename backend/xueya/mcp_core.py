@@ -163,33 +163,87 @@ def course_registry(context=None):
     return registry
 
 
-def platform_registry(platform, scope, *, context=None, reference=False):
+def platform_registry(platform, scope, *, context=None, reference=False, rag=None, learning=None):
     repo, registry = platform.repo, Registry()
     registry.bound_scope = scope
     repo.require_course(scope)
 
     def library():
-        return context["library"] if context is not None else repo.all(scope, "source")
+        if context is None:
+            return repo.all(scope, 'source')
+        result = []
+        for source in context['library']:
+            row = repo.read(scope, 'source', source['id'])
+            if row:
+                result.append({**row['value'], **source})
+        return result
 
     def read(a):
         source = next((s for s in library() if s["id"] == a["sourceId"]), None)
         require(source is not None, "SOURCE_NOT_FOUND")
+        if rag and source.get('documentId'):
+            doc = repo.read(scope, 'document', source['documentId'])
+            if doc and doc['value'].get('activeArtifact'):
+                rag.read(scope, source['id'])
         return {"source": source}
-    registry.add("search_materials", obj({"query": string(4000), "limit": {"type": "integer", "minimum": 1, "maximum": 6}}, ["query"]), lambda a: {"sources": retrieve(a["query"], library())[:a.get("limit", 4)]})
+
+    async def search(a):
+        available = library()
+        if not rag:
+            return {'sources': retrieve(a['query'], available)[:a.get('limit', 4)]}
+        ids = {s['id']: s for s in available}
+        documents = list({s['documentId'] for s in available if s.get('documentId')})
+        found = await rag.search(scope, a['query'], document_ids=documents if context is not None else None, limit=6, budget=9000)
+        hits = [ids[s['id']] for s in found['sources'] if s['id'] in ids]
+        hits += [s for s in retrieve(a['query'], available) if s['id'] not in {h['id'] for h in hits}]
+        return {'sources': hits[:a.get('limit', 4)], 'warnings': found['warnings']}
+
+    registry.add("search_materials", obj({"query": string(4000), "limit": {"type": "integer", "minimum": 1, "maximum": 6}}, ["query"]), search)
     registry.add("read_source", obj({"sourceId": ID}, ["sourceId"]), read)
+    def business_page(a, kind):
+        if not learning:
+            return repo.list(scope, kind, a.get('cursor'), a.get('limit', 20))
+        mapping = {'note': {'note'}, 'question': {'question-draft'}, 'attempt': {'attempt'},
+                   'review': {'memory-card'}, 'plan': {'plan'}, 'concept': {'concept-graph'}}
+        items = repo.all(scope, kind)
+        for row in learning.repo.all(scope.course_id):
+            if row.get('kind') in mapping[kind]:
+                if kind == 'concept':
+                    items.extend(row['content']['concepts'])
+                else:
+                    items.append(row)
+        unique = {item['id']: item for item in items}
+        return repo.page_items(scope, list(unique.values()), 'learning:'+kind, a.get('cursor'), a.get('limit', 20))
+
     for name, kind in [("list_notes", "note"), ("list_question_drafts", "question"), ("list_attempts", "attempt"), ("list_reviews", "review"), ("list_plans", "plan"), ("list_concepts", "concept")]:
-        registry.add(name, PAGE, lambda a, kind=kind: repo.list(scope, kind, a.get("cursor"), a.get("limit", 20)))
+        registry.add(name, PAGE, lambda a, kind=kind: business_page(a, kind))
     registry.add("list_sections", PAGE, lambda a: repo.page_items(scope, [d for d in repo.all(scope, "document") if not d.get("superseded")], "sections", a.get("cursor"), a.get("limit", 20)))
     registry.add("read_section", obj({**PAGE["properties"], "sectionId": ID}, ["sectionId"]), lambda a: repo.page_items(scope, [s for s in repo.all(scope, "source") if s.get("documentId") == a["sectionId"]], "section:"+a["sectionId"], a.get("cursor"), a.get("limit", 20)))
-    registry.add("list_wrong_questions", PAGE, lambda a: repo.page_items(scope, L.wrong_questions(repo.all(scope, "attempt"), repo.all(scope, "question")), "wrong-questions", a.get("cursor"), a.get("limit", 20)))
+    def wrong(a):
+        c = study_context()
+        return repo.page_items(scope, L.wrong_questions(c['records'], c['questions']), 'wrong-questions', a.get('cursor'), a.get('limit', 20))
+    registry.add('list_wrong_questions', PAGE, wrong)
 
     def study_context():
-        if context is not None:
+        if context is not None and not learning:
             return context
         ws = repo.get_workspace(scope.user_id)
         course = next((c for c in ws["data"]["courses"] if c["id"] == scope.course_id), None) if ws else None
         data = course["data"] if course else {}
-        return {"questions": repo.all(scope, "question"), "records": repo.all(scope, "attempt"), "baseDate": L.today(), "examDate": data.get("examDate") or L.add_days(L.today(), 21), "minutes": data.get("minutes") or 30}
+        questions = {q['id']: {**q, 'topic': q.get('topic') or q.get('prompt', '')[:80]} for q in repo.all(scope, 'question')}
+        records = repo.all(scope, 'attempt')
+        if learning:
+            for row in sorted(learning.repo.all(scope.course_id), key=lambda r: r.get('updatedAt', '')):
+                if row.get('kind') != 'attempt':
+                    continue
+                for question in row['content'].get('questionSnapshots', []):
+                    questions[question['id']] = {**question, 'topic': question.get('topic') or question['prompt'][:80]}
+                for event in row['content'].get('events', []):
+                    grade = event.get('grade', {})
+                    if grade.get('status') == 'graded':
+                        records.append({'questionId': event['questionId'], 'createdAt': event['createdAt'],
+                                        'correct': grade['score'] == grade['maxScore']})
+        return {"questions": list(questions.values()), "records": sorted(records, key=lambda r: r.get('createdAt', '')), "baseDate": L.today(), "examDate": data.get("examDate") or L.add_days(L.today(), 21), "minutes": data.get("minutes") or 30}
 
     def analyze(a):
         c = study_context()
@@ -200,6 +254,12 @@ def platform_registry(platform, scope, *, context=None, reference=False):
         return {"examDate": c["examDate"], "minutes": c["minutes"], "days": L.build_plan(c["examDate"], c["minutes"], c["records"], c["baseDate"], c["questions"])}
     registry.add("analyze_progress", obj(), analyze)
     registry.add("build_review_plan", obj(), plan)
+    if learning:
+        async def review_queue(a):
+            ids = [r['id'] for r in learning.repo.all(scope.course_id) if r.get('kind') == 'memory-card']
+            return await learning.service(scope.course_id).reviews.queue({'courseId': scope.course_id, 'cardIds': ids})
+        registry.add('get_review_queue', obj(), review_queue)
+        registry.add('get_course_graph', obj(), lambda a: learning.pages.graph(scope.course_id))
     registry.add("prepare_action", PREPARE, lambda a: platform.authority.prepare(scope, a), risk="write")
     registry.add("preview_action", ACTION_ID, lambda a: platform.authority.preview(scope, a["actionId"]))
     registry.add("apply_action", ACTION_ID, lambda a: platform.authority.apply(scope, a["actionId"]), risk="write")

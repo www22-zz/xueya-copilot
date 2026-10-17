@@ -14,7 +14,7 @@ def test_python_cli_clean_start_stop_backup_restore_and_gc(tmp_path):
     env = {**os.environ, "PYTHONUTF8": "1", "XUEYA_DATA_DIR": str(directory), "PORT": "0", "MIMO_API_KEY": "", "XUEYA_PLATFORM_ENABLED": "1"}
 
     def cli(*args):
-        result = subprocess.run([sys.executable, "-X", "utf8", "-m", "backend.xueya.cli", *map(str, args)], cwd=ROOT, env=env, capture_output=True, text=True, timeout=15)
+        result = subprocess.run([sys.executable, "-X", "utf8", "-m", "backend.xueya.cli", *map(str, args)], cwd=ROOT, env=env, capture_output=True, text=True, encoding="utf-8", timeout=15)
         assert result.returncode == 0, result.stderr
         return result.stdout
 
