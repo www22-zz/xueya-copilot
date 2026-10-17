@@ -2,6 +2,8 @@
 
 后端统一Python/FastAPI，前端保持原代码；本文件、`backend/xueya/common.py`与浏览器`shared/contracts/index.js`一起维护。下面JS对象是HTTP字段示意，不要求后端使用JavaScript。公共格式变更应由相关负责人共同检查，不能只改发送端或接收端。
 
+2026-10-17 兼容补充：`GET /api/learning/workspace` 与 `artifacts` 支持可选 `kinds`（逗号分隔，最多 10 类），先过滤再分页；workspace 的 `documentIds` 为 JSON 数组字符串，仅过滤原文预览。旧请求不带这些字段时保持原行为。workspace 新增 `documents` 与 `ragCapabilities`，sources 为最多 256 段、每段最多 1500 字符的页面预览；生成/证据校验继续读取完整服务端原文。原 HTTP/SSE 字段、确认与取消语义保留。默认 `/api/platform/documents/upload` 已委派 B 的 `rag-parse`，响应仍是持久化 job。
+
 ## 1. 课程来源 Source（A/B/C）
 
 ```js

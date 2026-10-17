@@ -117,17 +117,24 @@ class LearningPages:
         async def execute():
             if path == 'workspace':
                 try:
-                    sources = await self.sources(course)
+                    selection = {'documentIds': json.loads(query['documentIds'])} if query.get('documentIds') else None
+                    sources = await self.h.sources({'courseId': course, 'selection': selection}, catalog=True)
                 except DomainError as error:
                     if error.code != 'NO_SOURCES':
                         raise
                     sources = []
                 rows = self.h.repo.all(course)
+                if query.get('kinds'):
+                    kinds = query['kinds'].split(',')
+                    require(len(kinds) <= 10, 'INVALID_FILTER')
+                    rows = [r for r in rows if r.get('kind') in kinds]
                 rows.sort(key=lambda r: r['id'])
                 config = self.h.app.state.config
                 return {'artifacts': rows[:20], 'hasMore': len(rows) > 20, 'nextArtifact': rows[19]['id'] if len(rows) > 20 else None, 'sources': sources,
                     'runs': sorted(self.h.runs.all(course), key=lambda r: r['updatedAt'], reverse=True)[:30],
                     'graph': await self.graph(course), 'feedback': await service.feedback.get(course),
+                    'documents': [d for d in self.p.repo.all(scope, 'document') if not d.get('superseded')],
+                    'ragCapabilities': {'ocr': bool(getattr(self.h.app.state.rag, 'ocr', None)), 'embedding': bool(getattr(self.h.app.state.rag, 'embedding', None))},
                     'capabilities': {'model': bool(config.api_key), 'image': bool(config.api_key and MODELS.get(config.model, {}).get('image')),
                                      'speech': bool(config.api_key), 'mediaTestAdapter': bool(getattr(self.h.app.state, 'learning_media_factory', None))}}
             if path == 'artifacts':
@@ -139,6 +146,10 @@ class LearningPages:
                 rows = sorted(self.h.repo.all(course), key=lambda r: r['id'])
                 after, kind = query.get('after', ''), query.get('kind')
                 rows = [r for r in rows if r['id'] > after and (not kind or r.get('kind') == kind)]
+                if query.get('kinds'):
+                    kinds = query['kinds'].split(',')
+                    require(len(kinds) <= 10, 'INVALID_FILTER')
+                    rows = [r for r in rows if r.get('kind') in kinds]
                 return {'items': rows[:20], 'next': rows[19]['id'] if len(rows) > 20 else None}
             if path == 'draft':
                 draft = await self.h.previews.get(course, query.get('id', ''))

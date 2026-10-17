@@ -101,8 +101,7 @@ class Browser:
         raise AssertionError('Browser condition timed out: '+expression+'\n'+str(self.evaluate('document.body.innerText.slice(-4500)')))
 
     def click(self, selector):
-        self.wait(f'!!document.querySelector({json.dumps(selector)})')
-        self.evaluate(f'document.querySelector({json.dumps(selector)}).click()')
+        self.wait(f'(()=>{{const el=document.querySelector({json.dumps(selector)});if(!el||el.disabled||el.closest("dialog:not([open])"))return false;el.click();return true;}})()')
 
     def fill(self, selector, value):
         self.evaluate(f'''(()=>{{const el=document.querySelector({json.dumps(selector)});if(!el)throw Error('Missing field');el.value={json.dumps(str(value))};el.dispatchEvent(new Event('input',{{bubbles:true}}));el.dispatchEvent(new Event('change',{{bubbles:true}}));}})()''')
@@ -113,7 +112,8 @@ class Browser:
 
     def route(self, view):
         self.evaluate(f'location.hash="space/{view}"')
-        self.wait(f'!!document.querySelector("#cLearning [data-c-form]") || !!document.querySelector("#cLearning [data-c-action=chapter]")')
+        form = {'practice': 'generate', 'memory': 'memory-preview', 'graph': 'concept-new', 'plan': 'plan-preview', 'cards': 'note-new', 'media': 'media-image'}.get(view)
+        self.wait(f'!!document.querySelector("#cLearning [data-c-form={form}]")' if form else '!!document.querySelector("#cLearning [data-c-action=chapter]")')
 
     def file(self, selector, file):
         root = self.call('DOM.getDocument')['root']['nodeId']
@@ -253,6 +253,30 @@ def main():
                 browser.click('#cLearningDialog [data-c-action=close]')
                 print('C browser: native image API, recognition correction, audio transcription, no billed calls', flush=True)
 
+                browser.route('library')
+                material = directory/'correction.md'
+                material.write_text('🌿 '+'A test leaf converts sunlight into sugar. '*20, encoding='utf-8')
+                browser.file('#fileInput', material)
+                browser.wait('JSON.parse(localStorage.getItem("xueya-copilot-workspace-v3")).courses[0].data.documents.some(d=>d.name==="correction.md"&&d.chunks?.length)')
+                doc_id = browser.evaluate('JSON.parse(localStorage.getItem("xueya-copilot-workspace-v3")).courses[0].data.documents.find(d=>d.name==="correction.md").id')
+                previous = app.state.rag.document(app.state.platform.scope(), doc_id)
+                original = app.state.rag.artifact(app.state.platform.scope(), previous)['text']
+                first_chunk = previous['chunks'][0]
+                browser.click('[data-document="'+doc_id+'"]')
+                browser.click('[data-correct-source="'+doc_id+'"]')
+                browser.fill('#workspaceForm [name=text]', 'A verified leaf converts sunlight into sugar.')
+                browser.evaluate('document.querySelector("#workspaceForm").requestSubmit()')
+                browser.wait('!document.querySelector("#workspaceDialog").open')
+                current = app.state.rag.document(app.state.platform.scope(), doc_id)
+                assert current['contentRevision'] == 2 and 'verified leaf' in current['chunks'][0]['quote']
+                assert app.state.rag.artifact(app.state.platform.scope(), current)['text'] == original[:first_chunk['start']]+'A verified leaf converts sunlight into sugar.'+original[first_chunk['end']:]
+                browser.click('#sourceDialog [data-close-dialog]')
+                browser.click('[data-c-action=refresh]')
+                browser.wait('!!document.querySelector("[data-c-form=rag-job]")')
+                assert browser.evaluate('!document.querySelector("[data-c-form=rag-job] [name=confirmed]").checked')
+                browser.screenshot(output/'library-rag-desktop.png')
+                print('B/A browser: default upload -> structured artifact -> correction -> new source revision; paid work requires confirmation', flush=True)
+
                 browser.call('Emulation.setDeviceMetricsOverride', width=390, height=844, deviceScaleFactor=1, mobile=True)
                 browser.evaluate('document.querySelector("#cLearning").scrollIntoView()')
                 assert browser.evaluate('document.documentElement.scrollWidth <= innerWidth+1')
@@ -264,7 +288,7 @@ def main():
                 browser.evaluate('document.querySelector("#cLearning").scrollIntoView()')
                 browser.screenshot(output/'overview-desktop.png')
                 assert not browser.errors, browser.errors
-                report = {'status': 'passed', 'runtimeErrors': 0, 'paidApiCalls': 0, 'checks': ['chapter-confirm-reload', 'question-review-quiz-correction', 'memory-fsrs', 'graph-plan-replan', 'notes', 'image-correction', 'audio-transcription', 'mobile-overflow']}
+                report = {'status': 'passed', 'runtimeErrors': 0, 'paidApiCalls': 0, 'checks': ['chapter-confirm-reload', 'question-review-quiz-correction', 'memory-fsrs', 'graph-plan-replan', 'notes', 'image-correction', 'audio-transcription', 'default-upload-and-source-correction', 'rag-config-and-confirmation', 'mobile-overflow']}
                 (output/'report.json').write_text(json.dumps(report, indent=2), encoding='utf-8')
                 print('C browser acceptance passed: desktop/mobile, no runtime errors.', flush=True)
             except BaseException:

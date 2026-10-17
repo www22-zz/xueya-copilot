@@ -1,3 +1,5 @@
+> 当前状态补充（2026-10-17）：默认 Python 宿主的 A～E 接线、修复与剩余工作以 [整体验收记录](AE-integration-audit.md) 为准。下文保留原阶段证据。
+
 > 历史记录：本文件保留当时的实现与验收证据。当前后端已迁移Python/FastAPI，启动和派工以[README](../../README.md)、[当前需求](../requirements.md)及[Python迁移记录](../delivery/python-backend-migration.md)为准；旧Node命令不再作为开发要求。
 
 # 大任务E交付记录：本地工程底座与集成

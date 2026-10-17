@@ -19,6 +19,8 @@ async with open_session(platform_registry(platform, scope)) as session:
 
 ## 工具与范围
 
+默认 HTTP 宿主向 `platform_registry` 注入 B 的 `rag` 和 C 的 `learning`。资料检索使用 B；学习查询合并旧实体与 C 产物，`analyze_progress` / `list_wrong_questions` 纳入已评分 C 测验。新工具 `get_review_queue` 返回 C 的实际 FSRS 到期队列，`get_course_graph` 返回课程图谱。直接调用工厂时可显式传入 `rag=...`、`learning=...`；未注入时保留兼容行为。
+
 | 工具 | 参数 |
 | --- | --- |
 | `search_materials` | query、limit 默认 4/最大 6 |

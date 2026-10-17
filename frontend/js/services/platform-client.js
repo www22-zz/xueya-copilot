@@ -25,6 +25,17 @@ const adapter={
   },
   async listDocuments({courseId},options){await ensureCourse(courseId);return request('/documents?'+new URLSearchParams({courseId}),options);},
   async updateDocument(input,options){const result=await request('/documents/update',{...options,method:'POST',body:{...input,changes:input.metadata}});const doc=context?.state.documents.find(d=>d.id===input.documentId);if(doc)doc.version=result.document.version;return result;},
+  async correctOCR({courseId,documentId,version,correction},{signal}={}){
+    const source=await request('/rag/read?'+new URLSearchParams({courseId,sourceId:correction.sourceId}),{signal});
+    const start=source.source.start-source.parent.start,end=source.source.end-source.parent.start;
+    // B offsets count Unicode code points; JS string indices count UTF-16 units.
+    const characters=Array.from(source.parent.text);
+    const replacement=characters.slice(0,start).join('')+correction.text+characters.slice(end).join('');
+    await request('/rag/correct',{method:'POST',signal,body:{courseId,documentId,version,blockId:source.parent.id,replacement,reason:'学习者对照原件核对纠错'}});
+    const documents=(await request('/documents?'+new URLSearchParams({courseId}),{signal})).documents;
+    const doc=context?.state.documents.find(d=>d.id===documentId),updated=documents.find(d=>d.id===documentId);
+    if(doc&&updated)Object.assign(doc,updated);return{corrected:true};
+  },
   removeDocument:(input,options)=>request('/documents/remove',{...options,method:'POST',body:input}),
   original:(input,options)=>request('/documents/original?'+new URLSearchParams(input),options)
 };
@@ -57,6 +68,7 @@ function attach(ctx){
   window.addEventListener('xueya:workspace-save',changed);if(enabled&&localStorage.getItem(PENDING))void flush().catch(()=>{});
 }
 window.XueyaPlatform={
+  async ragRequest(path,body,{signal}={}){await ensureCourse(body.courseId);return request('/rag/'+path,{method:'POST',body,signal});},
   async learningRequest(path,{courseId='course-default',method='GET',body,signal,headers={}}={}){
     if(!bootstrap)throw Object.assign(new Error('请先启动本地服务，再刷新页面使用学习功能。'),{code:'SERVICE_UNAVAILABLE'});
     await ensureCourse(courseId);

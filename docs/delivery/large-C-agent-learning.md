@@ -1,3 +1,5 @@
+> 当前状态补充（2026-10-17）：默认 Python 宿主的 A～E 接线、修复与剩余工作以 [整体验收记录](AE-integration-audit.md) 为准。下文保留原阶段证据。
+
 > **2026-10-17 main 合并更新**：本文保留 C 分支交付时的设计和测试记录。当前统一入口、Python 路径、MCP 2.3 依赖、B/C 数据适配和实际开放范围以 [main-C-integration.md](main-C-integration.md) 为准。下文旧 JS/Zod/ts-fsrs 命令及“未提交”描述属于历史记录，不作为当前执行指令。
 
 # C：Agent 与个性化学习交付进度
