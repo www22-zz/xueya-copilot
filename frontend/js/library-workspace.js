@@ -5,7 +5,7 @@ window.XueyaLibraryWorkspace={create({state,store,toast}){
  const e=window.XueyaRich.escape,uid=()=>crypto.randomUUID();let course='',catalog=null,epoch=0,loading=false,reader=null,readerData=null,activeURL=null,controller=null;
  const errors={PRIVATE_URL_FORBIDDEN:'网址解析到了内网或保留地址，已拒绝抓取。请核对公开链接和本机 DNS/代理。',URL_NOT_ACCESSIBLE:'网页无法公开访问，可能需要登录或已失效；可改用粘贴文字。',URL_FETCH_FAILED:'网页连接失败，请核对网络或改用粘贴文字。',URL_CONTENT_UNSUPPORTED:'该网址不是普通网页或文字，请下载文件后导入。',URL_TOO_LARGE:'网页正文超过 1MB，请选择较短文章或分段粘贴。',VERSION_CONFLICT:'资料或设置已更新，请刷新后重新核对。',DOCUMENT_ARCHIVED:'资料已归档，请先恢复。',INVALID_PAGE:'这份资料没有该实际页码；文字资料请留空页码。',INVALID_MEDIA_LOCATION:'片段时间必须在原件时长内，且结束晚于开始。'};
  const $=s=>document.querySelector(s),btn=(label,action,id='',extra='')=>`<button type="button" class="button button-outline button-small" data-lib="${action}" data-id="${e(id)}" ${extra}>${e(label)}</button>`;
- const input=(label,name,value='',type='text')=>`<label class="form-field">${e(label)}<input name="${name}" type="${type}" value="${e(value)}" maxlength="4000"></label>`;
+ const input=(label,name,value='',type='text')=>`<label class="form-field">${e(label)}<input name="${name}" type="${type}" ${type==='number'?'step="any"':''} value="${e(value)}" maxlength="4000"></label>`;
  const area=(label,name,value='')=>`<label class="form-field">${e(label)}<textarea name="${name}" rows="4">${e(value)}</textarea></label>`;
  const chapter=()=>input('所属章节或课次（可空）','chapter');
  const form=(kind,body,label)=>`<form data-lib-form="${kind}" class="c-form">${body}<button class="button button-blue button-small">${e(label)}</button></form>`;

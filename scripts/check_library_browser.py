@@ -2,6 +2,7 @@
 import json
 from pathlib import Path
 import tempfile
+import wave
 from unittest.mock import patch
 from .check_learning_browser import Browser, server
 
@@ -34,6 +35,24 @@ def main():
                 browser.evaluate('document.querySelector("[data-lib-form=url] [name=confirmed]").checked=true')
                 browser.click('[data-lib-form=url] button')
                 browser.wait('document.querySelector("#libraryRows")?.innerText.includes("Web lecture")')
+                audio = directory/'lecture.wav'
+                with wave.open(str(audio), 'wb') as sound:
+                    sound.setnchannels(1)
+                    sound.setsampwidth(2)
+                    sound.setframerate(16000)
+                    sound.writeframes(b'\x00\x00'*3200)
+                browser.evaluate('document.querySelector("[data-lib-form=media]").closest("details").open=true')
+                browser.file('[data-lib-form=media] [name=file]', audio)
+                browser.click('[data-lib-form=media] button')
+                browser.wait('!!document.querySelector("[data-lib=media]")')
+                browser.click('[data-lib=link]')
+                browser.fill('[data-lib-form=link] [name=startMs]', '.05')
+                browser.click('[data-lib-form=link] button')
+                browser.wait('!document.querySelector("#libraryReader").open')
+                browser.click('[data-lib=linked-media]')
+                browser.wait('!!document.querySelector("#libraryReader audio") && document.querySelector("#libraryReader audio").readyState >= 1')
+                browser.wait('document.querySelector("#libraryReader audio").currentTime >= .04')
+                browser.click('#libraryReader [data-lib=close]')
                 browser.click('#libraryRows [data-lib=archive]')
                 browser.click('[data-lib-form=organize] button')
                 browser.wait('!document.querySelector("#libraryReader").open')
@@ -51,7 +70,7 @@ def main():
                 assert browser.evaluate('document.documentElement.scrollWidth <= innerWidth+1')
                 browser.screenshot(output/'library-mobile.png')
                 assert not browser.errors, browser.errors
-                (output/'report.json').write_text(json.dumps({'status': 'passed', 'paidApiCalls': 0, 'checks': ['text-import', 'web-snapshot-import-controlled', 'reader-search', 'archive-confirm', 'restore', 'reload', 'selected-material-to-chat', 'mobile']}), encoding='utf-8')
+                (output/'report.json').write_text(json.dumps({'status': 'passed', 'paidApiCalls': 0, 'checks': ['text-import', 'web-snapshot-import-controlled', 'reader-search', 'media-original-upload', 'confirmed-media-link', 'actual-player-seek', 'archive-confirm', 'restore', 'reload', 'selected-material-to-chat', 'mobile']}), encoding='utf-8')
                 print('G2 browser passed: imports, reader, archive/restore, reload, learning handoff and mobile. Paid calls: 0.')
             except BaseException:
                 browser.screenshot(output/'failure.png')
