@@ -2,7 +2,7 @@
 
 日期：2026-10-17。基线：`dfe7004`（一键启动已推送 main）。修复分支：`codex/ae-integration-audit`。
 
-代码提交：`22a885b`；[修复 PR #3](https://github.com/www22-zz/xueya-copilot/pull/3) 为待审查草稿，尚未合并 main。本机已正常重启修复后的服务，健康检查通过。
+代码提交：`22a885b`；[修复 PR #3](https://github.com/www22-zz/xueya-copilot/pull/3) 已经用户授权合入 main，合并提交 `c3b6af6`。本机已同步 main；修复后的服务健康检查通过。
 
 ## 验收方法
 
