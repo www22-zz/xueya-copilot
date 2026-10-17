@@ -121,11 +121,16 @@ class Repository:
                         continue
                     entity_id = str(item.get("id") or f"{kind}-{digest(item)[:30]}-{i}")
                     seen.add(entity_id)
-                    old = self.read(scope, kind, entity_id)
+                    old = self.read(scope, kind, entity_id, include_deleted=True)
+                    # Browser workspace snapshots do not own C-approved questions
+                    # or B's authoritative, revision-bound evidence records.
+                    if old and (old['value'].get('learningManaged') or kind == 'source' and old['value'].get('documentRevision') is not None):
+                        continue
+                    item = {k: v for k, v in item.items() if k != 'learningManaged'}
                     if not old or digest(old["value"]) != digest(item):
                         self.put(scope, kind, entity_id, item)
                 for previous in self.all(scope, kind):
-                    if previous["id"] not in seen:
+                    if previous["id"] not in seen and not previous.get('learningManaged') and not (kind == 'source' and previous.get('documentRevision') is not None):
                         self.put(scope, kind, previous["id"], previous, deleted=True)
             for document in data.get("documents", []):
                 if document.get("remote") or not document.get("id"):

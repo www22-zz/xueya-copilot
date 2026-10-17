@@ -1,6 +1,7 @@
 """Optional authenticated learning API, mounted only with E's real ports."""
 import re
 import uuid
+import asyncio
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 from ..core import require, clone, resolve, DomainError
@@ -18,6 +19,25 @@ def http_status(code):
 
 def identifier(value):
     return isinstance(value, str) and bool(re.fullmatch(r'[\w:.-]{1,160}', value))
+
+
+async def connected_dispatch(request, operation):
+    """The JSON body is already consumed before monitoring disconnects."""
+    async def disconnected():
+        while True:
+            if (await request.receive())['type'] == 'http.disconnect':
+                return
+    work, monitor = asyncio.create_task(operation), asyncio.create_task(disconnected())
+    try:
+        done, _ = await asyncio.wait([work, monitor], return_when=asyncio.FIRST_COMPLETED)
+        if work in done:
+            return work.result()
+        raise asyncio.CancelledError()
+    finally:
+        monitor.cancel()
+        if not work.done():
+            work.cancel()
+        await asyncio.gather(work, monitor, return_exceptions=True)
 
 
 class LearningHandler:
@@ -57,7 +77,8 @@ class LearningHandler:
             course = context.get('courseId')
             require(isinstance(course, str) and course, 'COURSE_SCOPE_REQUIRED')
             require('courseId' not in body or body['courseId'] == course, 'COURSE_MISMATCH')
-            result, status = await self.dispatch(path, body, context)
+            operation = self.dispatch(path, body, context)
+            result, status = await operation if read else await connected_dispatch(request, operation)
             return JSONResponse({'ok': True, 'result': result}, status_code=status)
         except DomainError as error:
             return JSONResponse({'ok': False, 'error': error.code}, status_code=413 if error.code == 'REQUEST_TOO_LARGE' else http_status(error.code))
@@ -83,7 +104,10 @@ class LearningHandler:
             questions = await resolve(self.resolve_questions({'courseId': course, 'ids': body['questionIds']}))
             result = await self._preview(course, await learning.preview_quiz({**fields('id', 'count', 'conceptIds', 'expectedRevision'), 'questions': questions, 'sources': await evidence()}))
         elif path in ('study/session', 'package/preview', 'plan/preview', 'plan/replan'):
-            value = {**await actual(), **fields('id', 'expectedRevision', 'examDate', 'minutes', 'availability', 'practiceCount'), 'sources': await evidence()}
+            sources, study = await evidence(), await actual()
+            if context.get('scopeStudyContext'):
+                study = context['scopeStudyContext'](study, sources)
+            value = {**study, **fields('id', 'expectedRevision', 'examDate', 'minutes', 'availability', 'practiceCount'), 'sources': sources}
             if path == 'study/session':
                 result = await learning.study_session(value)
             else:
@@ -105,7 +129,10 @@ class LearningHandler:
             require(self.enqueue, 'QUEUE_NOT_CONFIGURED')
             require(identifier(body.get('id')) and identifier(body.get('artifactId')), 'INVALID_RUN')
             study = await actual() if context.get('loadStudyContext') else {}
-            result = await learning.start_chapter({**study, **fields('id', 'artifactId', 'expectedRevision'), 'sources': await evidence()})
+            sources = await evidence()
+            if context.get('scopeStudyContext'):
+                study = context['scopeStudyContext'](study, sources)
+            result = await learning.start_chapter({**study, **fields('id', 'artifactId', 'expectedRevision', 'examDate', 'minutes', 'availability'), 'sources': sources})
             await resolve(self.enqueue({'courseId': course, 'runId': result['id']}))
             status = 202
         elif path == 'runs/resume':

@@ -118,6 +118,8 @@ class LearningHost:
         self.snapshots = StoredValues(self.p, "snapshot")
         self.checkpoints = StoredValues(self.p, "checkpoint")
         self.services = {}
+        from .learning_ui_api import LearningPages
+        self.pages = LearningPages(self)
         self.p.jobs.register("learning-chapter", self.execute)
 
     def service(self, course):
@@ -143,7 +145,7 @@ class LearningHost:
             doc = documents.get(source.get("documentId"))
             if source["id"] in {s["id"] for s in found} or doc and (doc.get("activeArtifact") or doc.get("superseded") or doc.get("deleted")):
                 continue
-            if selection.get("documentIds") is not None and source.get("documentId") not in selection["documentIds"]:
+            if selection.get("documentIds") is not None and (source.get("documentId") or "legacy-"+source["id"]) not in selection["documentIds"]:
                 continue
             if selection.get("section") and selection["section"] not in source.get("sectionPath", []) and selection["section"] != source.get("section"):
                 continue
@@ -153,7 +155,7 @@ class LearningHost:
             if selected is not None and source["id"] not in selected:
                 continue
             doc = documents.get(source.get("documentId"), {})
-            result.append({**source, "courseId": scope.course_id, "version": str(source.get("documentRevision", doc.get("contentRevision", source["version"]))), "quote": source.get("quote", source.get("text", ""))})
+            result.append({**source, "courseId": scope.course_id, "documentId": source.get("documentId") or "legacy-"+source["id"], "version": str(source.get("documentRevision", doc.get("contentRevision", source["version"]))), "quote": source.get("quote", source.get("text", ""))})
         require(result, "NO_SOURCES")
         require(sum(len(s["quote"]) for s in result) <= 384000, "CHAPTER_BUDGET_EXCEEDED")
         version = evidence_package({"courseId": scope.course_id, "sources": result})["version"]
@@ -172,6 +174,18 @@ class LearningHost:
 
     async def validate_draft(self, course, draft):
         content = draft["content"]
+        if draft['kind'] in ('concept-graph', 'quiz'):
+            try:
+                sources = [] if draft['kind'] == 'concept-graph' and not content['concepts'] and not content['edges'] else await self.sources({'courseId': course})
+                if draft['kind'] == 'concept-graph':
+                    from backend.agent.concepts import validate_graph
+                    validate_graph(content, sources)
+                else:
+                    from backend.agent.assessment import validate_question
+                    for question in content['questions']:
+                        validate_question(question, sources)
+            except DomainError:
+                raise DomainError('STALE_EVIDENCE') from None
         snapshot = content.get("evidenceVersion") if isinstance(content, dict) else None
         if snapshot:
             require(await self.verify_snapshot(course, snapshot), "STALE_EVIDENCE")
@@ -186,11 +200,34 @@ class LearningHost:
         scope = self.p.scope(course)
         artifacts = self.repo.all(course)
         attempts = [r["content"] for r in artifacts if r.get("kind") == "attempt"]
-        concepts = self.p.repo.all(scope, "concept")
-        return {"courseId": course, "graph": {"courseId": course, "concepts": concepts, "edges": []},
+        graph = (await self.pages.graph(course))["content"]
+        return {"courseId": course, "graph": graph,
             "questions": self.p.repo.all(scope, "question"), "events": [e for a in attempts for e in a.get("events", [])],
             "diagnoses": [d for a in attempts for d in a.get("diagnoses", [])],
             "cardIds": [r["id"] for r in artifacts if r.get("kind") == "memory-card"]}
+
+    @staticmethod
+    def scope_study_context(value, sources):
+        """A selected chapter must not inherit unrelated or retired graph evidence."""
+        by_id = {s['id']: s for s in sources}
+        graph = clone(value['graph'])
+        def supported(ref):
+            source = by_id.get(ref.get('sourceId'))
+            return source and source['version'] == ref.get('version') and ref.get('quote') and ref['quote'] in source['quote']
+        concepts = []
+        for item in graph['concepts']:
+            refs = [r for r in item.get('evidence', []) if supported(r)]
+            if refs and item.get('status') != 'rejected':
+                concepts.append({**item, 'evidence': refs})
+        ids = {c['id'] for c in concepts}
+        edges = []
+        for item in graph['edges']:
+            refs = [r for r in item.get('evidence', []) if supported(r)]
+            if item['from'] in ids and item['to'] in ids and (refs or item.get('inferred') and item.get('reason')):
+                edges.append({**item, 'evidence': refs})
+        filtered = len(concepts) != len(graph['concepts']) or len(edges) != len(graph['edges'])
+        return {**value, 'graph': {**graph, 'concepts': concepts, 'edges': edges},
+                'contextWarnings': ['GRAPH_OUTSIDE_SELECTED_EVIDENCE'] if filtered else []}
 
     async def enqueue(self, value):
         run = await self.service(value["courseId"]).workflow.get(value["courseId"], value["runId"])
@@ -207,9 +244,12 @@ class LearningHost:
         require(secrets.compare_digest(request.headers.get("x-xueya-token", ""), self.app.state.token), "AUTH_REQUIRED")
         course = request.query_params.get("courseId", "course-default")
         self.p.scope(course)
+        extended = await self.pages.dispatch(path, request, course)
+        if extended is not None:
+            return extended
 
         async def context(_):
-            return {"courseId": course, "userId": self.p.user_id, "loadStudyContext": lambda: self.study_context(course)}
+            return {"courseId": course, "userId": self.p.user_id, "loadStudyContext": lambda: self.study_context(course), 'scopeStudyContext': self.scope_study_context}
 
         async def questions(value):
             result = []
@@ -244,7 +284,9 @@ def install_learning(app):
 
     async def domain_error(request, error):
         from .app import error_response
-        return error_response(error.code)
+        from backend.agent.http_handler import http_status
+        status = 403 if 'AUTH' in error.code or 'ORIGIN' in error.code else 413 if 'TOO_LARGE' in error.code else http_status(error.code)
+        return error_response(error.code, status)
 
     app.add_exception_handler(DomainError, domain_error)
 

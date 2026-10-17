@@ -96,4 +96,4 @@ def build_study_session(value):
     return {'courseId': course, 'baseDate': base, 'evidenceVersion': pack['version'], 'estimates': estimates, 'path': path, 'practice': practice, 'diagnosticActions': actions, 'plan': plan, 'feedbackRevision': value.get('feedbackRevision', 0),
             'daily': {'budget': budget, 'allocatedMinutes': used, 'items': daily}, 'unavailableQuestions': unavailable, 'excludedEvents': excluded,
             'waitingCards': [{'id': c['id'], 'readyAt': c['eligibleAt'], 'reason': '今天稍后到期，暂不重复推荐'} for c in cards if c.get('eligibleDate', base) <= base and waiting(c)],
-            'version': fingerprint({'evidence': pack['version'], 'input': value, 'daily': daily}), 'warnings': (['QUESTION_VERSIONS_UNAVAILABLE'] if unavailable else [])+(['HISTORICAL_EVIDENCE_EXCLUDED'] if excluded else []), 'algorithm': 'local-study-loop-v1'}
+            'version': fingerprint({'evidence': pack['version'], 'input': value, 'daily': daily}), 'warnings': value.get('contextWarnings', [])+(['QUESTION_VERSIONS_UNAVAILABLE'] if unavailable else [])+(['HISTORICAL_EVIDENCE_EXCLUDED'] if excluded else []), 'algorithm': 'local-study-loop-v1'}

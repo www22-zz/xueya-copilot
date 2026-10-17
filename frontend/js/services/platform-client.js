@@ -57,6 +57,13 @@ function attach(ctx){
   window.addEventListener('xueya:workspace-save',changed);if(enabled&&localStorage.getItem(PENDING))void flush().catch(()=>{});
 }
 window.XueyaPlatform={
+  async learningRequest(path,{courseId='course-default',method='GET',body,signal,headers={}}={}){
+    if(!bootstrap)throw Object.assign(new Error('请先启动本地服务，再刷新页面使用学习功能。'),{code:'SERVICE_UNAVAILABLE'});
+    await ensureCourse(courseId);
+    const separator=path.includes('?')?'&':'?';
+    const response=await fetch('/api/learning/'+path+separator+new URLSearchParams({courseId}),{method,signal,headers:{'X-Xueya-Token':token,...(body!==undefined&&!(body instanceof Blob)?{'Content-Type':'application/json'}:{}),...headers},body:body===undefined?undefined:body instanceof Blob?body:JSON.stringify(body)});
+    let result;try{result=await response.json();}catch{throw Object.assign(new Error('当前服务尚未启用课程学习接口，请使用最新版后端启动后刷新。'),{code:'SERVICE_UNAVAILABLE'});}if(!response.ok||!result.ok)throw Object.assign(new Error(result.error||'学习操作未完成'),{code:result.error});return result.result;
+  },
   get isRestoring(){return restoring;},
   async initialize(){try{bootstrap=await request('/bootstrap',{signal:AbortSignal.timeout(3000)});token=bootstrap.token;let marker;try{marker=JSON.parse(localStorage.getItem(MARK));}catch{}enabled=!!marker?.enabled;etag=marker?.version||0;if(enabled&&bootstrap.workspace&&!localStorage.getItem(PENDING)){localStorage.setItem(KEY,JSON.stringify(bootstrap.workspace.data));etag=bootstrap.workspace.version;mark();}if(!window.XueyaWorkspaceBackend)window.XueyaWorkspaceBackend=adapter;}catch{bootstrap=null;}},attach,flush
 };

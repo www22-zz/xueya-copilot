@@ -76,6 +76,8 @@ def create_app(config: Config | None = None, *, provider=None, start_jobs=True):
         platform = Platform(config.data_dir, config.api_slots) if config.platform_enabled else None
         app.state.platform = platform
         app.state.provider = provider or MimoProvider(config, platform)
+        if isinstance(app.state.provider, MimoProvider):
+            app.state.provider.platform = platform
         app.state.agent = Agent(app.state.provider, platform)
         app.state.token = secrets.token_hex(32)
         if platform and start_jobs:
