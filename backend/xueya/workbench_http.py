@@ -50,7 +50,8 @@ SAFE_LOCAL_JOBS = frozenset(('rag-parse', 'parse-document', 'library-web-import'
 def task_projection(p, learning, course, all_courses=False):
     courses = {c['id']: c for c in p.repo.courses(p.user_id)}
     require(course in courses, 'COURSE_NOT_FOUND')
-    jobs = [j for j in p.jobs.list(p.user_id) if all_courses or j['courseId'] == course]
+    jobs = p.jobs.list(p.user_id) if all_courses else [p.jobs.get(r['id'], p.user_id) for r in p.db.all(
+        'SELECT id FROM jobs WHERE user_id=? AND course_id=? ORDER BY created_at DESC LIMIT 100', (p.user_id, course))]
     tasks = []
     for j in jobs:
         safe_retry = j['resource'] == 'cpu' and j['type'] in SAFE_LOCAL_JOBS and j['status'] in ('failed', 'cancelled')
