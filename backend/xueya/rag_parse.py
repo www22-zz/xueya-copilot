@@ -136,8 +136,10 @@ def office_pages(buffer, kind):
                         block_type = "code"
                 if not part:
                     continue
+                math_nodes = list(node.iter(M+"oMath"))
                 blocks.append({"type": block_type, "text": part, "start": position, "end": position+len(part), "page": None,
-                               "bbox": None, "method": "ooxml", "confidence": None, **({"level": level} if level else {})})
+                               "bbox": None, "method": "ooxml", "confidence": None, **({"level": level} if level else {}),
+                               **({"mathXml": [ET.tostring(n, encoding="unicode") for n in math_nodes], "mathRepresentation": "ooxml-original; text-is-linearized"} if math_nodes else {})})
                 parts.append(part)
                 position += len(part)+1
             # DOCX has no stable rendered page numbers. Use section/offset, never guessed pages.
@@ -150,8 +152,24 @@ def office_pages(buffer, kind):
             target = targets.get(slide.get("{http://schemas.openxmlformats.org/officeDocument/2006/relationships}id"), "")
             require(bool(re.fullmatch(r"(?:/ppt/)?slides/slide\d+\.xml", target)), "INVALID_SLIDE_TARGET")
             root = safe_xml(archive, target.lstrip("/") if target.startswith("/") else "ppt/"+target)
-            parts = ["".join(n.text or "" for n in p.iter(A+"t")) for p in root.iter(A+"p")]
-            pages.append({"number": len(pages)+1, "method": "ooxml-slide-order", "text": "\n".join(parts)})
+            shape_tree = root.find(".//{http://schemas.openxmlformats.org/presentationml/2006/main}spTree")
+            blocks, parts, position = [], [], 0
+            # OOXML shape order is retained; it is not a claim about arbitrary visual columns.
+            for shape in list(shape_tree) if shape_tree is not None else [root]:
+                table = shape.find(".//"+A+"tbl")
+                if table is not None:
+                    rows = [["".join(n.text or "" for n in cell.iter(A+"t")) for cell in row.findall(A+"tc")] for row in table.findall(A+"tr")]
+                    values = [("table", "\n".join(" | ".join(row) for row in rows))]
+                else:
+                    values = [("paragraph", "".join(n.text or "" for n in p.iter(A+"t"))) for p in shape.iter(A+"p")]
+                for block_type, part in values:
+                    if not part:
+                        continue
+                    blocks.append({"type": block_type, "text": part, "start": position, "end": position+len(part), "page": len(pages)+1,
+                                   "bbox": None, "method": "ooxml-slide-order", "confidence": None})
+                    parts.append(part)
+                    position += len(part)+1
+            pages.append({"number": len(pages)+1, "method": "ooxml-slide-order", "text": "\n".join(parts), "blocks": blocks})
             require(len(pages) <= 3000, "DOCUMENT_TOO_MANY_PAGES")
         return pages
 
@@ -181,6 +199,7 @@ def parse_structured(buffer: bytes, kind: str):
                 objects = objects.get_object() if hasattr(objects, "get_object") else objects
                 has_image = any(obj.get_object().get("/Subtype") == "/Image" for obj in objects.values())
                 pages.append({"number": number, "method": "pypdf-layout", "text": part,
+                              "hasImages": has_image, "readingOrder": "layout-heuristic",
                               "needsOcr": not part.strip() or quality(part) < .85 or has_image and len(part.strip()) < 40,
                               "width": float(page.mediabox.width), "height": float(page.mediabox.height)})
         return assemble(pages, kind, hashlib.sha256(buffer).hexdigest())

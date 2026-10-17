@@ -42,5 +42,3 @@ def extract_chunks(text, document):
 def parse_document(buffer: bytes, kind: str):
     from .rag_parse import parse_structured
     return parse_structured(buffer, kind)
-
-

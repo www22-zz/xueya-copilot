@@ -115,9 +115,12 @@ class JobQueue:
                     self.event(job_id, {"status": status, "error": code})
         finally:
             heartbeat.cancel()
-            await asyncio.gather(heartbeat, return_exceptions=True)
-            self.active.pop(job_id, None)
-            release()
+            try:
+                await asyncio.gather(heartbeat, return_exceptions=True)
+            finally:
+                # stop() may cancel again while a cancelled job is draining its heartbeat.
+                self.active.pop(job_id, None)
+                release()
 
     async def tick(self):
         if self.stopped:

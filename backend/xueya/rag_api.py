@@ -10,6 +10,7 @@ from contextlib import contextmanager
 from contextvars import ContextVar
 from dataclasses import dataclass, field
 import json
+import math
 from urllib.parse import urlsplit
 from uuid import uuid4
 
@@ -49,6 +50,10 @@ class ApiSettings:
 class ApiClient:
     def __init__(self, platform, settings: ApiSettings, *, transport=None, name="rag-api"):
         self.platform, self.settings, self.transport, self.name = platform, settings, transport, name
+
+    @property
+    def identity(self):
+        return {"provider": self.settings.base_url, "model": self.settings.model, "revision": self.settings.revision}
 
     async def post(self, scope, path, payload):
         require(self.settings.key and self.settings.model, "NOT_SENT")
@@ -94,6 +99,7 @@ class EmbeddingProvider(ApiClient):
         require(isinstance(texts, list) and 1 <= len(texts) <= 32 and all(isinstance(t, str) and 0 < len(t.encode()) <= 24_000 for t in texts), "INVALID_EMBEDDING_INPUT")
         data = await self.post(scope, "/embeddings", {"input": texts, "task": "retrieval.query" if query else "retrieval.passage",
                                                    "dimensions": self.settings.dimension, "normalized": True, "embedding_type": "float"})
+        require(data.get("model", self.settings.model) == self.settings.model, "EMBEDDING_MODEL_MISMATCH")
         rows = data.get("data")
         require(isinstance(rows, list) and len(rows) == len(texts), "INVALID_EMBEDDING")
         require(all(isinstance(row, dict) and type(row.get("index")) is int for row in rows), "INVALID_EMBEDDING")
@@ -111,7 +117,6 @@ class RerankProvider(ApiClient):
         rows = data.get("results")
         require(isinstance(rows, list) and len(rows) <= min(limit, len(sources)), "INVALID_RERANK")
         result, seen = [], set()
-        import math
         for row in rows:
             require(isinstance(row, dict), "INVALID_RERANK")
             index, score = row.get("index"), row.get("relevance_score")
@@ -132,7 +137,18 @@ class OcrProvider(ApiClient):
         for row in rows:
             require(isinstance(row, dict) and type(row.get("index")) is int and row["index"]+1 in pages and row["index"]+1 not in result and isinstance(row.get("markdown"), str) and len(row["markdown"]) <= 1_200_000, "INVALID_OCR_RESPONSE")
             # Full-page text has no asserted bbox/confidence unless supplied by a validated adapter.
+            dimensions = row.get("dimensions", {})
+            images = row.get("images", [])
+            require(isinstance(dimensions, dict) and isinstance(images, list) and len(images) <= 1000, "INVALID_OCR_RESPONSE")
+            located = []
+            for image in images:
+                require(isinstance(image, dict) and isinstance(image.get("id"), str) and len(image["id"]) <= 200, "INVALID_OCR_RESPONSE")
+                box = [image.get(k) for k in ("top_left_x", "top_left_y", "bottom_right_x", "bottom_right_y")]
+                require(all(type(v) in (int, float) and math.isfinite(v) and v >= 0 for v in box) and box[0] < box[2] and box[1] < box[3], "INVALID_OCR_RESPONSE")
+                require(type(dimensions.get("width")) in (int, float) and type(dimensions.get("height")) in (int, float) and box[2] <= dimensions["width"] and box[3] <= dimensions["height"], "INVALID_OCR_RESPONSE")
+                located.append({"id": image["id"], "bbox": box, "coordinateSystem": "ocr-page-pixels"})
             result[row["index"]+1] = {"text": row["markdown"], "method": "ocr-api:"+self.settings.model,
-                                      "confidence": None, "bbox": None}
+                                      "confidence": None, "bbox": None, "images": located,
+                                      "dimensions": {k: dimensions[k] for k in ("width", "height", "dpi") if k in dimensions}}
         require(set(result) == set(pages), "OCR_PAGES_MISSING")
         return result

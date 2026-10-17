@@ -8,6 +8,7 @@ from dataclasses import replace
 import httpx
 import pytest
 from docx import Document
+from docx.oxml import OxmlElement
 from fastapi.testclient import TestClient
 from pypdf import PdfWriter
 
@@ -85,10 +86,17 @@ def test_real_docx_heading_table_formula_and_no_invented_pages():
     for row, values in zip(table.rows, [["名称", "位置"], ["光反应", "类囊体"]]):
         for cell, value in zip(row.cells, values):
             cell.text = value
+    paragraph = doc.add_paragraph()
+    math_node, run, text = OxmlElement("m:oMath"), OxmlElement("m:r"), OxmlElement("m:t")
+    text.text = "x+y"
+    run.append(text)
+    math_node.append(run)
+    paragraph._p.append(math_node)
     doc.save(output)
     parsed = parse_document(output.getvalue(), "docx")
     assert parsed["blocks"][0]["type"] == "heading"
-    assert parsed["blocks"][-1]["type"] == "table"
+    assert any(b["type"] == "table" for b in parsed["blocks"])
+    assert parsed["blocks"][-1]["type"] == "formula" and "x+y" in parsed["blocks"][-1]["mathXml"][0]
     assert "名称 | 位置\n光反应 | 类囊体" in parsed["text"]
     assert all(p["number"] is None for p in parsed["pages"])
 
@@ -321,3 +329,141 @@ def test_rag_http_registration_auth_scope_and_jobs(tmp_path):
         source = evidence["sources"][0]
         assert c.post("/api/platform/rag/validate", headers=h, json={"citation": source}).json()["valid"]
         assert c.get("/api/platform/rag/original?documentId="+source["documentId"], headers=h).content == "光合作用发生在叶绿体。".encode()
+
+
+def test_one_api_slot_does_not_double_acquire(platform):
+    async def run():
+        platform.resources.limits["api"] = 1
+        rag = RagService(platform)
+        calls = embedding(rag)
+        doc = await ingest(rag, "光合作用发生在叶绿体。")
+        state = await completed(platform, rag.submit(platform.scope(), "rag-index", doc["id"], "single-slot"))
+        assert state["status"] == "succeeded" and len(calls) == 1
+        assert platform.resources.active["api"] == 0
+    asyncio.run(run())
+
+
+def test_cancelled_index_keeps_prior_model_and_reuses_completed_batch(platform):
+    async def run():
+        rag, scope = RagService(platform), platform.scope()
+        doc = await ingest(rag, "\n\n".join(f"光合作用样例{i}。" for i in range(20)))
+        embedding(rag)
+        assert (await completed(platform, rag.submit(scope, "rag-index", doc["id"], "first")))["status"] == "succeeded"
+        entered, calls = asyncio.Event(), []
+        embedding(rag, revision="2")
+        async def slow(request):
+            data = json.loads(request.content)
+            calls.append(data)
+            if len(calls) == 2:
+                entered.set()
+                await asyncio.Event().wait()
+            return httpx.Response(200, json={"data": [{"index": i, "embedding": [1, 0]} for i, _ in enumerate(data["input"])]})
+        rag.embedding.transport = httpx.MockTransport(slow)
+        job = rag.submit(scope, "rag-index", doc["id"], "migration")
+        await platform.jobs.tick()
+        await asyncio.wait_for(entered.wait(), 3)
+        platform.jobs.cancel(job["id"], platform.user_id)
+        state = await completed(platform, job)
+        assert state["status"] == "unknown"
+        assert rag.document(scope, doc["id"])["embeddingIdentity"]["revision"] == "1"
+        resumed = embedding(rag, revision="2")
+        state = await completed(platform, rag.submit(scope, "rag-index", doc["id"], "explicit-resume"))
+        assert state["status"] == "succeeded" and state["result"]["computed"] == 4
+        assert len(resumed[0]["input"]) == 4
+    asyncio.run(run())
+
+
+@pytest.mark.parametrize("response", [
+    {"data": [{"index": 0, "embedding": [1]}]},
+    {"data": [{"index": 0, "embedding": [0, 0]}]},
+    {"data": [{"index": 1, "embedding": [1, 0]}]},
+    {"model": "wrong-model", "data": [{"index": 0, "embedding": [1, 0]}]}
+], ids=["dimension", "zero", "wrong-index", "model"])
+def test_bad_embedding_response_does_not_publish_index(platform, response):
+    async def run():
+        rag = RagService(platform)
+        embedding(rag, handler=lambda request, data: httpx.Response(200, json=response))
+        doc = await ingest(rag, "光合作用发生在叶绿体。")
+        result = await completed(platform, rag.submit(platform.scope(), "rag-index", doc["id"], "bad-upstream"))
+        assert result["status"] == "unknown"
+        assert rag.document(platform.scope(), doc["id"])["embeddingIdentity"] is None
+        assert not platform.repo.all(platform.scope(), "vector")
+        assert (await rag.search(platform.scope(), "光合作用", mode="lexical"))["sources"]
+    asyncio.run(run())
+
+
+def test_extract_budget_preserves_table_and_conflicts_are_explicit(platform):
+    async def run():
+        rag = RagService(platform)
+        await ingest(rag, "# 条件\n\n实验允许使用计算器。", name="allow.md", key="allow")
+        await ingest(rag, "# 条件\n\n实验不允许使用计算器。", name="deny.md", key="deny")
+        result = await rag.search(platform.scope(), "实验允许使用计算器吗", mode="lexical", budget=200)
+        assert result["status"] == "conflict" and not result["supportChecked"]
+        assert result["budget"]["used"] <= 200
+        source = {"id": "table", "documentId": "d", "start": 0, "end": 100, "quote": "x"*100, "blockType": "table"}
+        assert compress("x", [(1, source)], budget=32) == ([], 0)
+        # Invalid budgets are rejected before invoking an external API.
+        with pytest.raises(AppError, match="INVALID_BUDGET"):
+            await rag.search(platform.scope(), "x", budget=-1)
+    asyncio.run(run())
+
+
+def test_queued_model_change_is_rejected_before_send_and_submission_is_idempotent(platform):
+    async def run():
+        rag, scope = RagService(platform), platform.scope()
+        calls = embedding(rag)
+        doc = await ingest(rag, "光合作用发生在叶绿体。")
+        job = rag.submit(scope, "rag-index", doc["id"], "queued", expected_version=doc["version"])
+        new_calls = embedding(rag, revision="2")
+        state = await completed(platform, job)
+        assert state["status"] == "failed" and state["error"] == "NOT_SENT"
+        assert not calls and not new_calls
+        job = rag.submit(scope, "rag-index", doc["id"], "v2", expected_version=doc["version"])
+        assert (await completed(platform, job))["status"] == "succeeded"
+        assert rag.submit(scope, "rag-index", doc["id"], "v2", expected_version=doc["version"])["id"] == job["id"]
+        assert rag.upload(scope, "光合作用发生在叶绿体。".encode(), "course.md", "upload")["status"] == "succeeded"
+    asyncio.run(run())
+
+
+def test_tampered_stored_source_never_enters_retrieval_or_paid_index(platform):
+    async def run():
+        rag, scope = RagService(platform), platform.scope()
+        doc = await ingest(rag, "光合作用发生在叶绿体。")
+        source = rag.sources(scope)[0]
+        platform.repo.put(scope, "source", source["id"], {**source, "quote": "伪造原文", "start": "0"}, source["version"])
+        assert not rag.sources(scope)
+        assert not (await rag.search(scope, "伪造原文", mode="lexical"))["sources"]
+        with pytest.raises(AppError, match="SOURCE_CONTENT_MISMATCH"):
+            rag.read(scope, source["id"])
+        calls = embedding(rag)
+        state = await completed(platform, rag.submit(scope, "rag-index", doc["id"], "tampered"))
+        assert state["status"] == "unknown" and not calls
+    asyncio.run(run())
+
+
+def test_repeated_cancel_during_heartbeat_cleanup_releases_shared_queue_permit(platform):
+    async def run():
+        ready, draining = asyncio.Event(), asyncio.Event()
+        async def heartbeat(job_id, execution):
+            try:
+                await asyncio.Event().wait()
+            finally:
+                draining.set()
+                await asyncio.Event().wait()
+        async def handler(scope, args, **ctx):
+            ready.set()
+            await asyncio.Event().wait()
+        platform.jobs._heartbeat = heartbeat
+        platform.jobs.register("rag-cancel-regression", handler)
+        platform.jobs.stopped = False
+        job = platform.jobs.submit(platform.user_id, {"type": "rag-cancel-regression", "courseId": "course-default", "idempotencyKey": "double-cancel", "resource": "api"})
+        await platform.jobs.tick()
+        await asyncio.wait_for(ready.wait(), 2)
+        platform.jobs.cancel(job["id"], platform.user_id)
+        await asyncio.wait_for(draining.wait(), 2)
+        await platform.jobs.stop()
+        assert not platform.jobs.active
+        assert platform.resources.active["api"] == 0
+        assert platform.jobs.get(job["id"], platform.user_id)["status"] == "unknown"
+        await platform.jobs.stop()
+    asyncio.run(run())

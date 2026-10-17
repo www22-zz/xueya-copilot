@@ -16,7 +16,7 @@ import httpx
 from .common import AppError, digest, identifier, require, utc_now
 from .parse_worker import parse_artifact
 from .rag_api import borrowed_api_permit
-from .rag_parse import KINDS, assemble, structured_chunks, text_blocks
+from .rag_parse import KINDS, assemble, quality, structured_chunks, text_blocks
 from .rag_search import compress, conflicts, exact, fuse, lexical, normalize, rewrite_query
 
 
@@ -43,6 +43,14 @@ class RagService:
 
     def submit(self, scope, job_type, document_id, key, *, expected_version=None):
         self.repo.require_course(scope)
+        identifier(key)
+        identifier(document_id)
+        prior = self.p.db.one("SELECT id,input FROM jobs WHERE user_id=? AND course_id=? AND type=? AND idempotency_key=?", (scope.user_id, scope.course_id, job_type, key))
+        if prior:
+            import json
+            original = json.loads(prior["input"])
+            require(original.get("documentId") == document_id and (expected_version is None or expected_version == original.get("expectedVersion")), "IDEMPOTENCY_CONFLICT")
+            return self.p.jobs.get(prior["id"], scope.user_id)
         doc = self.document(scope, document_id, active=True)
         require(expected_version is None or doc["version"] == expected_version, "VERSION_CONFLICT")
         resource = "cpu" if job_type == "rag-parse" else "api"
@@ -51,9 +59,11 @@ class RagService:
             require(self.ocr is not None and self.ocr.settings.key, "OCR_UNAVAILABLE")
         if job_type == "rag-index":
             require(self.embedding is not None and self.embedding.settings.key, "EMBEDDING_UNAVAILABLE")
+        provider = self.embedding if job_type == "rag-index" else self.ocr if job_type == "rag-ocr" else None
         return self.p.jobs.submit(scope.user_id, {"type": job_type, "courseId": scope.course_id, "resource": resource,
                                                 "maxAttempts": 1 if resource == "api" else 3, "idempotencyKey": identifier(key),
-                                                "input": {"documentId": document_id, "expectedVersion": doc["version"], "jobKey": key}})
+                                                "input": {"documentId": document_id, "expectedVersion": doc["version"], "jobKey": key,
+                                                          **({"providerIdentity": provider.identity} if provider else {})}})
 
     def upload(self, scope, buffer, name, key, *, previous_document_id=None, tags=None):
         self.repo.require_course(scope)
@@ -81,10 +91,13 @@ class RagService:
             return self.submit(scope, "rag-parse", document_id, key)
 
     def _job_doc(self, scope, args, job_type, *, paid=False):
-        require(isinstance(args, dict) and not set(args)-{"documentId", "expectedVersion", "jobKey"}, "INVALID_JOB")
+        require(isinstance(args, dict) and not set(args)-{"documentId", "expectedVersion", "jobKey", "providerIdentity"}, "INVALID_JOB")
         # Public generic queue cannot accidentally run paid work as a retryable CPU job.
         row = self.p.db.one("SELECT resource,max_attempts,status FROM jobs WHERE user_id=? AND course_id=? AND type=? AND idempotency_key=?", (scope.user_id, scope.course_id, job_type, args.get("jobKey")))
         require(row is not None and row["status"] == "running" and (not paid or row["resource"] == "api" and row["max_attempts"] == 1), "NOT_SENT")
+        if paid:
+            provider = self.embedding if job_type == "rag-index" else self.ocr
+            require(provider is not None and args.get("providerIdentity") == provider.identity, "NOT_SENT")
         doc = self.document(scope, args.get("documentId"), active=True)
         require(doc["version"] == args.get("expectedVersion"), "VERSION_CONFLICT")
         return doc
@@ -148,7 +161,8 @@ class RagService:
             replacement = recognized.get(number)
             part = replacement["text"] if replacement else old["text"][page["start"]:page["end"]]
             rebuilt.append({**page, "text": part, "method": replacement["method"] if replacement else page["method"],
-                            "needsOcr": not part.strip() if replacement else page["needsOcr"],
+                            "needsOcr": not part.strip() or quality(part) < .85 if replacement else page["needsOcr"],
+                            **({"images": replacement.get("images", []), "ocrDimensions": replacement.get("dimensions", {})} if replacement else {}),
                             "blocks": text_blocks(part, number, markdown=bool(replacement), method=replacement["method"] if replacement else page["method"])})
         parsed = assemble(rebuilt, doc["kind"], doc["fileHash"])
         checkpoint({"documentId": doc["id"], "stage": "ocr-returned"})
@@ -177,7 +191,7 @@ class RagService:
         require(document_ids is None or isinstance(document_ids, list) and len(document_ids) <= 100 and all(isinstance(d, str) for d in document_ids), "INVALID_FILTER")
         require(section is None or isinstance(section, str) and len(section) <= 200, "INVALID_FILTER")
         documents = {d["id"]: d for d in self.repo.all(scope, "document") if not d.get("deleted") and not d.get("superseded")}
-        result = []
+        result, artifacts = [], {}
         for source in self.repo.all(scope, "source"):
             doc = documents.get(source.get("documentId"))
             if doc is None or document_ids is not None and doc["id"] not in document_ids:
@@ -185,6 +199,12 @@ class RagService:
             if source.get("documentRevision") != doc.get("contentRevision") or not doc.get("activeArtifact"):
                 continue
             if section is not None and section not in source.get("sectionPath", []):
+                continue
+            try:
+                if doc["id"] not in artifacts:
+                    artifacts[doc["id"]] = self.artifact(scope, doc)
+                self._check_source(source, doc, artifacts[doc["id"]])
+            except AppError:
                 continue
             result.append(source)
         return result
@@ -194,15 +214,20 @@ class RagService:
         row = self.repo.read(scope, "source", source_id)
         require(row is not None, "SOURCE_NOT_FOUND")
         source = {**row["value"], "id": source_id, "version": row["version"]}
-        doc = self.document(scope, source["documentId"], active=True)
+        doc = self.document(scope, source.get("documentId"), active=True)
         require(source.get("documentRevision") == doc.get("contentRevision"), "SOURCE_VERSION_CONFLICT")
         artifact = self.artifact(scope, doc)
+        self._check_source(source, doc, artifact)
+        return source
+
+    @staticmethod
+    def _check_source(source, doc, artifact):
+        require(type(source.get("start")) is int and type(source.get("end")) is int and isinstance(source.get("quote"), str), "SOURCE_CONTENT_MISMATCH")
         block = next((b for b in artifact["blocks"] if b["id"] == source.get("blockId")), None)
         require(block is not None and source.get("page") == block["page"] and block["start"] <= source.get("start", -1) < source.get("end", -1) <= block["end"], "SOURCE_CONTENT_MISMATCH")
         token = f"{doc['id']}:{doc['contentRevision']}:{artifact['textHash']}:{source['start']}:{source['end']}"
-        require(source_id == "chunk-"+hashlib.sha256(token.encode()).hexdigest()[:40], "SOURCE_CONTENT_MISMATCH")
+        require(source["id"] == "chunk-"+hashlib.sha256(token.encode()).hexdigest()[:40], "SOURCE_CONTENT_MISMATCH")
         require(artifact["text"][source["start"]:source["end"]] == source["quote"] and source.get("fileHash") == doc["fileHash"] and source.get("textHash") == artifact["textHash"], "SOURCE_CONTENT_MISMATCH")
-        return source
 
     def validate(self, scope, citation):
         require(isinstance(citation, dict), "INVALID_CITATION")
@@ -225,7 +250,16 @@ class RagService:
         require(bool(sources), "NO_SOURCES")
         require(all(len(s["quote"].encode()) <= 24_000 for s in sources), "EMBEDDING_BLOCK_TOO_LARGE")
         unique = {self._cache_id(identity, s["quote"]): s["quote"] for s in sources}
-        missing = [(key, text) for key, text in unique.items() if self.repo.read(scope, "vector", key) is None]
+        def cached(key, text):
+            row = self.repo.read(scope, "vector", key)
+            if not row or row["value"].get("identity") != identity or row["value"].get("textHash") != digest(text):
+                return False
+            try:
+                normalize(row["value"].get("values"), identity["dimension"])
+                return True
+            except AppError:
+                return False
+        missing = [(key, text) for key, text in unique.items() if not cached(key, text)]
         for offset in range(0, len(missing), 16):
             batch = missing[offset:offset+16]
             with borrowed_api_permit(self.p):
@@ -249,6 +283,7 @@ class RagService:
 
     async def search(self, scope, query, *, history=(), new_topic=False, document_ids=None, section=None, mode="hybrid", budget=2000, limit=6):
         require(mode in ("lexical", "vector", "hybrid", "rerank"), "INVALID_SEARCH_MODE")
+        require(type(budget) is int and 32 <= budget <= 16000 and type(limit) is int and 1 <= limit <= 20, "INVALID_BUDGET")
         started = time.perf_counter()
         rewritten = rewrite_query(query, history, new_topic=new_topic)
         sources = self.sources(scope, document_ids=document_ids, section=section)
@@ -313,11 +348,18 @@ class RagService:
     def _prune_vectors(self, scope):
         sources = self.sources(scope)
         # Keep partial batches reusable across explicit retries/model migration.
+        allowed = {}
+        identities = {digest(d["embeddingIdentity"]) for d in self.repo.all(scope, "document") if d.get("embeddingIdentity") and not d.get("superseded") and not d.get("deleted")}
+        if self.embedding:
+            identities.add(digest(self.embedding.identity))
         for vector in self.repo.all(scope, "vector"):
             if not vector["id"].startswith("vec-"):
                 continue
             identity = vector.get("identity")
-            if not any(self._cache_id(identity, s["quote"]) == vector["id"] for s in sources):
+            model_key = digest(identity)
+            if model_key not in allowed:
+                allowed[model_key] = {self._cache_id(identity, s["quote"]) for s in sources}
+            if model_key not in identities or vector["id"] not in allowed[model_key]:
                 self.repo.put(scope, "vector", vector["id"], vector, vector["version"], deleted=True)
 
     def remove(self, scope, document_id, expected_version):
