@@ -1,0 +1,23 @@
+{
+  "description": "B 作者自编、可公开的课程微型冒烟集；不是 F 独立评测或真实教材。黄金依据为文档名和原文摘录，不绑定 chunk ID。",
+  "documents": [
+    {"name": "植物.md", "text": "# 植物能量\n\n光合作用发生在叶绿体。光反应产生 ATP 和 NADPH。\n\n## 呼吸\n\n细胞呼吸分解有机物并释放能量。"},
+    {"name": "算法.md", "text": "# 数据结构\n\n二叉搜索树的查找复杂度为 O(h)，h 是树高。\n\n## 遍历\n\n广度优先使用队列，按层访问结点。深度优先可以使用栈。\n\n## 查找表\n\n| 操作 | 期望时间 |\n| --- | --- |\n| 哈希查找 | O(1) |\n| 顺序查找 | O(n) |\n\n```python\nqueue.append(node)\n```\n\n$$T(n)=T(n/2)+1$$"},
+    {"name": "勘误A.md", "text": "# 条件\n\n实验允许使用计算器。"},
+    {"name": "勘误B.md", "text": "# 条件\n\n实验不允许使用计算器。"}
+  ],
+  "questions": [
+    {"query": "光合作用发生在哪里", "document": "植物.md", "quote": "光合作用发生在叶绿体。"},
+    {"query": "photosynthesis", "document": "植物.md", "quote": "光合作用发生在叶绿体。"},
+    {"query": "光反应的产物", "document": "植物.md", "quote": "光反应产生 ATP 和 NADPH。"},
+    {"query": "细胞呼吸", "document": "植物.md", "quote": "细胞呼吸分解有机物并释放能量。"},
+    {"query": "BST复杂度", "document": "算法.md", "quote": "二叉搜索树的查找复杂度为 O(h)，h 是树高。"},
+    {"query": "BFS", "document": "算法.md", "quote": "广度优先使用队列，按层访问结点。"},
+    {"query": "深度优先可以使用什么", "document": "算法.md", "quote": "深度优先可以使用栈。"},
+    {"query": "哈希查找的期望时间", "document": "算法.md", "quote": "哈希查找 | O(1)"},
+    {"query": "为什么呢", "history": [{"role": "user", "content": "BST查找"}], "document": "算法.md", "quote": "二叉搜索树的查找复杂度为 O(h)，h 是树高。"},
+    {"query": "实验允许使用计算器吗", "conflict": true, "quotes": ["实验允许使用计算器。", "实验不允许使用计算器。"]},
+    {"query": "火星的猫有多少只", "unanswerable": true},
+    {"query": "巴黎的天气如何", "unanswerable": true}
+  ]
+}
