@@ -20,11 +20,12 @@ def test_task_projection_scope_redaction_unknown_and_safe_retry(client):
     p, headers = client.platform, client.platform_headers
     async def handler(*args, **kwargs):
         return {}
-    p.jobs.register('g1-test', handler)
+    if 'parse-document' not in p.jobs.handlers:
+        p.jobs.register('parse-document', handler)
     for course in ['course-default', 'other']:
         p.repo.ensure_course(p.user_id, {'id': course, 'name': course})
-    job = p.jobs.submit(p.user_id, {'type': 'g1-test', 'courseId': 'course-default', 'idempotencyKey': 'cpu', 'resource': 'cpu'})
-    other = p.jobs.submit(p.user_id, {'type': 'g1-test', 'courseId': 'other', 'idempotencyKey': 'api', 'resource': 'api'})
+    job = p.jobs.submit(p.user_id, {'type': 'parse-document', 'courseId': 'course-default', 'idempotencyKey': 'cpu', 'resource': 'cpu'})
+    other = p.jobs.submit(p.user_id, {'type': 'parse-document', 'courseId': 'other', 'idempotencyKey': 'api', 'resource': 'api'})
     p.db.execute("UPDATE jobs SET status='unknown',error=? WHERE id=?", ('private-secret-body', other['id']))
     result = client.get('/api/platform/workbench/tasks', headers=headers).json()
     assert {j['id'] for j in result['tasks']} == {job['id']}

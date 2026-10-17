@@ -27,13 +27,16 @@ def capabilities(app):
             for name, label, configured, model, prefix in values]
 
 
+SAFE_LOCAL_JOBS = frozenset(('rag-parse', 'parse-document', 'library-web-import'))
+
+
 def task_projection(p, learning, course, all_courses=False):
     courses = {c['id']: c for c in p.repo.courses(p.user_id)}
     require(course in courses, 'COURSE_NOT_FOUND')
     jobs = [j for j in p.jobs.list(p.user_id) if all_courses or j['courseId'] == course]
     tasks = []
     for j in jobs:
-        safe_retry = j['resource'] == 'cpu' and j['status'] in ('failed', 'cancelled')
+        safe_retry = j['resource'] == 'cpu' and j['type'] in SAFE_LOCAL_JOBS and j['status'] in ('failed', 'cancelled')
         tasks.append({k: j[k] for k in ('id', 'courseId', 'type', 'status', 'attempts', 'resource', 'createdAt', 'updatedAt')} |
                      {'canCancel': j['status'] in ('queued', 'running', 'cancelling'), 'canRetry': safe_retry,
                       'hasCheckpoint': bool(j['checkpoint']), 'hasResult': j['result'] is not None,
@@ -57,7 +60,7 @@ def task_projection(p, learning, course, all_courses=False):
     for row in rows:
         usage = json.loads(row['usage_json']) if row['usage_json'] else None
         # Suppliers can return arbitrary payloads: expose numeric usage units only.
-        usage = {k: v for k, v in (usage or {}).items() if re.fullmatch(r'[a-zA-Z_]{1,50}', k) and type(v) in (int, float) and v >= 0}
+        usage = {k: v for k, v in (usage if isinstance(usage, dict) else {}).items() if re.fullmatch(r'[a-zA-Z_]{1,50}', k) and type(v) in (int, float) and v >= 0}
         calls.append({'id': row['id'], 'courseId': row['course_id'], 'status': row['status'], 'at': row['at'],
                       'usage': usage or None, 'billingStatus': row['billing_status']})
     return {'tasks': tasks, 'pending': pending[:100], 'invocations': calls, 'limit': 100,
@@ -92,7 +95,7 @@ def install_workbench(app):
             require(job and job['courseId'] == course, 'JOB_NOT_FOUND')
             require(value.get('action') in ('cancel', 'retry'), 'INVALID_TASK_ACTION')
             if value['action'] == 'retry':
-                require(job['resource'] == 'cpu' and job['status'] in ('failed', 'cancelled'), 'JOB_NOT_SAFE_TO_RETRY')
+                require(job['resource'] == 'cpu' and job['type'] in SAFE_LOCAL_JOBS and job['status'] in ('failed', 'cancelled'), 'JOB_NOT_SAFE_TO_RETRY')
             job = (p.jobs.cancel if value['action'] == 'cancel' else p.jobs.retry)(job['id'], p.user_id)
             return success(id=job['id'], status=job['status'])
         require(False, 'NOT_FOUND')
