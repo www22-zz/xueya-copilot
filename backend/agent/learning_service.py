@@ -104,7 +104,9 @@ class LearningService:
         graph = validate_graph(value['graph'], value['sources'])
         hydrated = await self._study_input(value)
         estimates = mastery(value['events'], {'courseId': value['courseId'], 'baseDate': hydrated['baseDate']})
-        return await self.artifacts.preview({**value, 'kind': 'plan', 'content': plan_study({**hydrated, 'graph': graph, 'estimates': estimates})})
+        content = plan_study({**hydrated, 'graph': graph, 'estimates': estimates})
+        content['evidenceVersion'] = evidence_package(value)['version']
+        return await self.artifacts.preview({**value, 'kind': 'plan', 'content': content})
 
     async def preview_plan_change(self, value):
         row = await self._load(value['courseId'], value['id'], 'plan')
@@ -117,7 +119,9 @@ class LearningService:
         hydrated = await self._study_input(value)
         graph = validate_graph(value['graph'], value['sources'])
         estimates = mastery(value.get('events', []), {'courseId': value['courseId'], 'baseDate': hydrated['baseDate']})
-        return await self.artifacts.preview({**value, 'kind': 'plan', 'content': replan_study(row['content'], {**hydrated, 'graph': graph, 'estimates': estimates})})
+        content = replan_study(row['content'], {**hydrated, 'graph': graph, 'estimates': estimates})
+        content['evidenceVersion'] = evidence_package(value)['version']
+        return await self.artifacts.preview({**value, 'kind': 'plan', 'content': content})
 
     async def preview_learning_package(self, value, **options):
         content = await self.content.learning_package(await self._study_input(value), **options)
