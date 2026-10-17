@@ -13,7 +13,7 @@
   const courseQuestions=()=>viewLearning.questions;
   if(state.quizFilter==='wrong')state.quizPool=L.wrongQuestions(state.records,[...courseQuestions(),...state.bank]);
   if(!state.plan.length&&courseQuestions().length)state.plan=L.buildPlan(state.examDate,state.minutes,state.records,L.today(),[...courseQuestions(),...state.bank]);
-  const allSources=()=>[...viewLearning.sources,...state.documents.filter(d=>!d.superseded).flatMap(d=>Array.isArray(d.chunks)?d.chunks:[])];
+  const allSources=()=>[...viewLearning.sources,...state.documents.filter(d=>!d.superseded&&!d.archived).flatMap(d=>Array.isArray(d.chunks)?d.chunks:[])];
   function persist(){const saved=store.persist();$('#storageNotice')?.toggleAttribute('hidden',saved);if(!saved)toast(store.error);return saved;}
   let toastTimer;function toast(text){$('#toast').textContent=text;$('#toast').classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('#toast').classList.remove('show'),3500);}
   const workspace=window.XueyaWorkspace.createWorkspace({state,L:viewLearning,store,e,icon,persist,toast,render,sourceById,allSources,libraryService:window.XueyaLibrary});
@@ -23,11 +23,12 @@
   const practiceUI=window.XueyaPracticeUI.create({state,allSources,persist,toast,render,e});
   const learningUI=window.XueyaLearningUI?.create({state,store,toast});
   const workbench=window.XueyaWorkbench?.create({state,store,toast});
+  const libraryUI=window.XueyaLibraryWorkspace?.create({state,store,toast});
   const {addQuestions,openBankDialog,generateBank,renderBankTopics,updateBankCount,generateFromTopics}=practiceUI;
   function render(){
     const prior=$('#chatThread'),sameSession=prior?.dataset.sessionId===state.sessionId,scrollTop=prior?.scrollTop||0,nearBottom=!prior||prior.scrollHeight-prior.scrollTop-prior.clientHeight<90;
     const pool=currentQuestions();if(state.quizIndex>=pool.length)state.quizIndex=0;
-    workspace.beforeRender();$('#spaceContent').innerHTML=renders[state.view]();$('#documentCount').textContent=state.documents.filter(d=>!d.superseded).length;icons();workspace.afterRender();workbench?.prepare();learningUI?.mount();workbench?.mount();
+    workspace.beforeRender();$('#spaceContent').innerHTML=renders[state.view]();$('#documentCount').textContent=state.documents.filter(d=>!d.superseded).length;icons();workspace.afterRender();workbench?.prepare();libraryUI?.mount();learningUI?.mount();workbench?.mount();
     const thread=$('#chatThread');if(thread)thread.scrollTop=!sameSession||nearBottom?thread.scrollHeight:scrollTop;
   }
   let initialRoute=true;function route(){const parts=location.hash.replace(/^#/,'').split('/');const space=parts[0]==='space';$('#homePage').hidden=space;$('#spacePage').hidden=!space;document.body.classList.toggle('in-space',space);if(space){state.view=titles[parts[1]]?parts[1]:'overview';$$('[data-view]').forEach(a=>{a.classList.toggle('active',a.dataset.view===state.view);a.dataset.view===state.view?a.setAttribute('aria-current','page'):a.removeAttribute('aria-current');});render();document.title=`${titles[state.view]} · 学涯 Copilot`;if(!initialRoute){scrollTo({top:0,behavior:'instant'});$('#spaceContent').focus({preventScroll:true});}}else{document.title='学涯 Copilot — 让知识，真正连起来';if(['possibilities','evidence','rhythm'].includes(parts[0]))requestAnimationFrame(()=>document.getElementById(parts[0]).scrollIntoView());else if(!initialRoute)scrollTo({top:0,behavior:'instant'});}initialRoute=false;}
@@ -39,6 +40,7 @@
     const {history,previousSources}=workspace.historyFor(clean);
     const sources=state.selectedDocuments.length?allSources().filter(s=>state.selectedDocuments.includes(s.documentId)):allSources();
     const request={courseId:state.courseId,question:clean,mode:state.mode,sources,history,previousSources,learning:{questions:[...courseQuestions(),...state.bank],records:state.records,examDate:state.examDate,minutes:state.minutes}};
+    try{const scope=JSON.parse(localStorage.getItem('xueya-c-learning:'+state.courseId+':scope:'+state.sessionId));if(Array.isArray(scope))request.documentIds=scope;else if(state.selectedDocuments.length)request.documentIds=[...state.selectedDocuments];}catch{}
     const ai={id:crypto.randomUUID(),role:'ai',text:'',reasoning:'',sources:[],engine:'正在回答',title:clean,createdAt:new Date().toISOString()};
     const controller=new AbortController();activeChat=controller;
     state.draft='';state.followupIndex=null;state.pending=true;state.messages.push({id:crypto.randomUUID(),role:'user',text:clean,imageNames:workspace.attachments.map(a=>a.file.name)},ai);persist();

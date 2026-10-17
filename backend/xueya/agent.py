@@ -81,17 +81,26 @@ class Agent:
         if not self.platform:
             return prepare_sources(supplied), None
         scope = self.platform.scope(value.get('courseId') or 'course-default')
-        stored = self.platform.repo.all(scope, 'source')
-        if stored or self.platform.repo.get_workspace(self.platform.user_id) or scope.course_id != 'course-default':
+        stored = self.current_library(scope)
+        if stored or self.platform.repo.all(scope, 'document') or self.platform.repo.get_workspace(self.platform.user_id) or scope.course_id != 'course-default':
             ids = {s['id'] for s in supplied}
             supplied = [s for s in stored if s['id'] in ids]
         return prepare_sources(supplied), scope
+
+    def current_library(self, scope):
+        documents = {d['id']: d for d in self.platform.repo.all(scope, 'document')}
+        return [s for s in self.platform.repo.all(scope, 'source')
+                if not any(documents.get(s.get('documentId'), {}).get(flag) for flag in ('archived', 'deleted', 'superseded'))]
 
     def evidence_current(self, scope, sources):
         if not self.platform or scope is None:
             return True
         for source in sources:
             row = self.platform.repo.read(scope, 'source', source['id'])
+            if row and row['value'].get('documentId'):
+                doc = self.platform.repo.read(scope, 'document', row['value']['documentId'])
+                if doc and any(doc['value'].get(flag) for flag in ('archived', 'deleted', 'superseded')):
+                    return False
             if not row or not row['value'].get('quote', '').startswith(source['quote']):
                 return False
         return True
@@ -134,13 +143,18 @@ class Agent:
         if self.platform:
             ws = self.platform.repo.get_workspace(self.platform.user_id)
             scope = self.platform.scope(value.get('courseId') or (ws['data']['activeId'] if ws else 'course-default'))
-            library = self.platform.repo.all(scope, "source")
-            if ws or library:
+            library = self.current_library(scope)
+            if ws or library or self.platform.repo.all(scope, 'document') or scope.course_id != 'course-default':
                 course = next((c for c in ws['data']['courses'] if c['id'] == scope.course_id), None) if ws else None
                 course_data = course['data'] if course else {}
                 selected = (value.get("context") or {}).get("library", request["sources"])
                 selected_ids = {s if isinstance(s, str) else s.get("id") for s in selected if isinstance(s, (str, dict))} if isinstance(selected, list) else set()
-                library = [s for s in library if s["id"] in selected_ids] if selected_ids else library
+                document_ids = value.get('documentIds')
+                require(document_ids is None or isinstance(document_ids, list) and len(document_ids) <= 100 and all(isinstance(i, str) for i in document_ids), 'INVALID_FILTER')
+                if document_ids is not None:
+                    library = [s for s in library if s.get('documentId') in document_ids]
+                else:
+                    library = [s for s in library if s["id"] in selected_ids] if selected_ids else library
                 # Keep current question hits ahead of the bounded browser context.
                 if not selected_ids:
                     hits = retrieve(request['question'], library)

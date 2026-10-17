@@ -133,7 +133,7 @@ class LearningPages:
                 return {'artifacts': rows[:20], 'hasMore': len(rows) > 20, 'nextArtifact': rows[19]['id'] if len(rows) > 20 else None, 'sources': sources,
                     'runs': sorted(self.h.runs.all(course), key=lambda r: r['updatedAt'], reverse=True)[:30],
                     'graph': await self.graph(course), 'feedback': await service.feedback.get(course),
-                    'documents': [d for d in self.p.repo.all(scope, 'document') if not d.get('superseded')],
+                    'documents': [d for d in self.p.repo.all(scope, 'document') if not d.get('superseded') and not d.get('archived')],
                     'ragCapabilities': {'ocr': bool(getattr(self.h.app.state.rag, 'ocr', None)), 'embedding': bool(getattr(self.h.app.state.rag, 'embedding', None))},
                     'capabilities': {'model': bool(config.api_key), 'image': bool(config.api_key and MODELS.get(config.model, {}).get('image')),
                                      'speech': bool(config.api_key), 'mediaTestAdapter': bool(getattr(self.h.app.state, 'learning_media_factory', None))}}
@@ -251,10 +251,10 @@ class LearningPages:
                 require(kind and data and len(data) <= (8*1024*1024 if kind == 'image' else 7*1024*1024 if kind == 'audio' else 50*1024*1024), 'INVALID_MEDIA')
                 key, file = str(uuid4()), self.p.files.put(data)
                 media = {'courseId': course, 'id': key, 'version': '1', 'kind': kind, 'mime': mime, 'fileHash': file['hash'], 'name': query.get('name', '学习文件')[:200]}
-                if kind == 'audio':
+                if kind == 'audio' or kind == 'video' and query.get('durationMs'):
                     duration = int(query.get('durationMs', 0))
                     require(0 < duration <= 1800000, 'INVALID_AUDIO_TIMELINE')
-                    media.update(startMs=0, endMs=duration)
+                    media.update(startMs=0, endMs=duration, durationMs=duration)
                 await self.commit(course, 'media:'+key, 'media', media, {'expectedRevision': 0, 'operationId': 'upload:'+key})
                 return media
             media_service = self.media(course)
