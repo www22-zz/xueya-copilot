@@ -33,6 +33,8 @@ macOS/Linux 对应命令使用 `.venv/bin/python`。环境变量沿用 `.env.exa
 
 当前 A～E 接线、已修复问题与未完成工作见 [整体验收记录](docs/delivery/AE-integration-audit.md)。
 
+下一轮整包派工与队友给 AI 的提示见 [派工说明](docs/tasks/下一轮派工与AI执行说明.md)。F 的 [技术报告](docs/reports/学涯Copilot技术报告.md)、[原创验收集与实际结果](evals/acceptance/README.md)、[演示指南](docs/demo/演示与验收指南.md)及[待验证清单](docs/delivery/F-问题与待验证清单.md)分别记录实现、证据、操作与限制；真实模型效果和人工审核尚未全部验收。
+
 ## 验证
 
 ```powershell
