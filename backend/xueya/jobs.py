@@ -91,6 +91,8 @@ class JobQueue:
 
     async def _execute(self, row, release):
         job_id = row["id"]
+        from .invocation_context import active_job
+        job_context = active_job.set({'id': job_id, 'userId': row['user_id'], 'courseId': row['course_id']})
         heartbeat = asyncio.create_task(self._heartbeat(job_id, asyncio.current_task()))
         try:
             scope = Scope(user_id=row["user_id"], course_id=row["course_id"])
@@ -120,6 +122,7 @@ class JobQueue:
             finally:
                 # stop() may cancel again while a cancelled job is draining its heartbeat.
                 self.active.pop(job_id, None)
+                active_job.reset(job_context)
                 release()
 
     async def tick(self):
