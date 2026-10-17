@@ -10,6 +10,7 @@ from .common import require, utc_now
 
 def capabilities(app):
     config, rag = app.state.config, app.state.rag
+    from .invocation_context import configuration_identity
     # Never return credentials, endpoints, file contents or Config's repr.
     from backend.providers.mimo import MODELS
     image = bool(config.api_key and MODELS.get(config.model, {}).get('image'))
@@ -20,11 +21,27 @@ def capabilities(app):
     for name, label in [('embedding', '向量检索'), ('rerank', '检索重排'), ('ocr', '扫描件识别')]:
         provider = getattr(rag, name, None)
         values.append((name, label, bool(provider and provider.settings.key), provider.settings.model if provider else '', 'RAG_'+name.upper()))
-    return [{'id': name, 'label': label, 'configured': configured, 'model': model,
+    result = [{'id': name, 'label': label, 'configured': configured, 'model': model,
              'status': 'configured_unverified' if configured else 'unconfigured',
              'connectionVerified': False, 'configurationPrefix': prefix,
              'note': '已有配置；尚无本中心的真实连接验证' if configured else '未配置；可在 .env 中配置并重启'}
             for name, label, configured, model, prefix in values]
+    recent = app.state.platform.db.all("SELECT i.status,i.at,m.value FROM invocations i JOIN meta m ON m.key='invocation-context:'||i.id WHERE i.user_id=? ORDER BY i.at DESC LIMIT 1000", (app.state.platform.user_id,))
+    for capability in result:
+        name = capability['id']
+        provider = getattr(rag, name, None)
+        identity = configuration_identity(provider.settings.base_url, capability['model'], provider.settings.key) if provider else configuration_identity(config.base_url, capability['model'], config.api_key)
+        matching = [row for row in recent if json.loads(row['value']).get('capability') == name and json.loads(row['value']).get('configurationIdentity') == identity]
+        if capability['configured'] and matching:
+            last = matching[0]
+            capability['lastAttemptAt'] = last['at']
+            capability['lastAttemptStatus'] = last['status']
+            if last['status'] == 'succeeded':
+                capability.update(status='connection_verified', connectionVerified=True,
+                                  note='当前配置已有成功调用记录；不代表课程质量或学习效果验收。')
+            elif last['status'] == 'unknown':
+                capability.update(status='last_outcome_unknown', note='当前配置最近一次调用结果不明，请核对任务与用量。')
+    return result
 
 
 SAFE_LOCAL_JOBS = frozenset(('rag-parse', 'parse-document', 'library-web-import'))
@@ -61,8 +78,13 @@ def task_projection(p, learning, course, all_courses=False):
         usage = json.loads(row['usage_json']) if row['usage_json'] else None
         # Suppliers can return arbitrary payloads: expose numeric usage units only.
         usage = {k: v for k, v in (usage if isinstance(usage, dict) else {}).items() if re.fullmatch(r'[a-zA-Z_]{1,50}', k) and type(v) in (int, float) and v >= 0}
+        metadata = p.db.one('SELECT value FROM meta WHERE key=?', ('invocation-context:'+row['id'],))
+        context = json.loads(metadata['value']) if metadata else {}
         calls.append({'id': row['id'], 'courseId': row['course_id'], 'status': row['status'], 'at': row['at'],
+                      'jobId': context.get('jobId'), 'capability': context.get('capability'),
                       'usage': usage or None, 'billingStatus': row['billing_status']})
+    for task in tasks:
+        task['invocationIds'] = [call['id'] for call in calls if call.get('jobId') == task['id']]
     return {'tasks': tasks, 'pending': pending[:100], 'invocations': calls, 'limit': 100,
             'usageScope': '最近100条调用，非完整账单', 'currencyEstimate': None}
 
