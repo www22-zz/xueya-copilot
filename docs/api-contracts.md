@@ -213,3 +213,6 @@ async with open_session(platform_registry(platform, trusted_scope)) as session:
 未启用持久数据时使用官方SDK真实stdio四工具；启用后工具读取SQLite中可信宿主选择的课程。模型不能覆盖userId/courseId。宿主确认路由不注册为工具。公共平台HTTP接口与错误/CAS/迁移语义见[平台指南](platform-guide.md)及[统一契约](contracts/phase1.md)。
 
 模块装配统一在`backend/xueya/app.py`、`platform.py`；不再保留Node后端或Python到Node桥接。客户端JSON字段仍为camelCase，Python内部方法使用snake_case，不要求前端随语言迁移改名。
+# G1/G2 增量接口
+
+新增工作台能力/任务投影与课程资料导入/阅读接口，旧 HTTP/SSE 保持。兼容定义、鉴权、字段、调用关联和操作流程见 [工作台与资料接线](contracts/workbench-library.md)。
