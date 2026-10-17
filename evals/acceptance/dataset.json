@@ -1,0 +1,928 @@
+{
+  "version": "F-acceptance-v1",
+  "description": "60 original acceptance cases; 14 dev / 46 test; 24 facts have two correlated phrasings; not a blind human-labelled benchmark",
+  "documents": [
+    {
+      "id": "linear",
+      "name": "linear.md",
+      "text": "# 线性结构\n\n## 知识点 1\n\n栈遵循后进先出，最后压入栈的元素最先弹出。\n\n## 知识点 2\n\n队列遵循先进先出，最早进入队列的元素最先离开。\n\n## 知识点 3\n\nPython 列表可以用 append 在末尾压栈，用不带下标的 pop 从末尾出栈。\n\n## 知识点 4\n\nPython 的 collections.deque 可以在右端 append，并在左端 popleft，实现先进先出队列。\n\n## 知识点 5\n\n顺序存储通过下标定位元素；链式存储通过节点之间的链接连接元素。\n\n## 知识点 6\n\n在单链表中删除已知节点的后继，需要修改该节点的 next 链接。\n",
+      "kind": "teaching",
+      "origin": "AI-assisted-original; human review pending"
+    },
+    {
+      "id": "search",
+      "name": "search.md",
+      "text": "# 查找与堆\n\n## 知识点 1\n\n二分查找的前提是待查序列按照比较规则有序。\n\n## 知识点 2\n\n每轮二分查找把候选区间缩小到原来的一半，查找次数随规模呈对数增长。\n\n## 知识点 3\n\nPython 的 bisect_left 返回保持有序的最左插入位置，不是插入操作本身。\n\n## 知识点 4\n\nPython 的 insort 先定位插入点，再移动列表元素完成插入；定位快不代表整体插入是对数时间。\n\n## 知识点 5\n\n小根堆要求每个父节点的值不大于其子节点，根节点保存最小值。\n\n## 知识点 6\n\nPython 的 heapq.heappop 从小根堆移除并返回最小元素。\n",
+      "kind": "teaching",
+      "origin": "AI-assisted-original; human review pending"
+    },
+    {
+      "id": "trees",
+      "name": "trees.md",
+      "text": "# 二叉树与搜索树\n\n## 知识点 1\n\n二叉树的每个节点最多有两个子节点，分别称为左孩子和右孩子。\n\n## 知识点 2\n\n先序遍历按照根节点、左子树、右子树的顺序访问。\n\n## 知识点 3\n\n中序遍历按照左子树、根节点、右子树的顺序访问。\n\n## 知识点 4\n\n后序遍历按照左子树、右子树、根节点的顺序访问。\n\n## 知识点 5\n\n在键互不重复的二叉搜索树中，左子树的键小于根，右子树的键大于根。\n\n## 知识点 6\n\n二叉搜索树的查找代价取决于树高；退化为链时可能逐个比较所有节点。\n",
+      "kind": "teaching",
+      "origin": "AI-assisted-original; human review pending"
+    },
+    {
+      "id": "graphs",
+      "name": "graphs.md",
+      "text": "# 图与遍历\n\n## 知识点 1\n\n邻接表按顶点保存相邻顶点列表，适合表示稀疏图。\n\n## 知识点 2\n\n邻接矩阵用二维表记录顶点对之间的连接关系。\n\n## 知识点 3\n\n广度优先搜索使用队列，按照从起点逐层扩展的顺序访问节点。\n\n## 知识点 4\n\n深度优先搜索可以使用递归或显式栈，沿一条路径深入后再回溯。\n\n## 知识点 5\n\n无权图中，从起点执行广度优先搜索可得到到可达顶点的最少边数路径。\n\n## 知识点 6\n\n拓扑排序只适用于有向无环图；存在有向环时不存在拓扑序。\n",
+      "kind": "teaching",
+      "origin": "AI-assisted-original; human review pending"
+    },
+    {
+      "id": "conflict-a",
+      "name": "conflict-a.md",
+      "text": "冲突验收声明：课程符号 Z 表示栈。",
+      "kind": "intentionally-conflicting",
+      "origin": "original-adversarial-fixture"
+    },
+    {
+      "id": "conflict-b",
+      "name": "conflict-b.md",
+      "text": "冲突验收声明：课程符号 Z 不表示栈。",
+      "kind": "intentionally-conflicting",
+      "origin": "original-adversarial-fixture"
+    }
+  ],
+  "cases": [
+    {
+      "id": "linear-1-1",
+      "split": "dev",
+      "group": "linear-1",
+      "category": "direct",
+      "query": "栈按照什么次序移除元素？",
+      "gold": [
+        {
+          "document": "linear.md",
+          "quote": "栈遵循后进先出，最后压入栈的元素最先弹出。"
+        }
+      ],
+      "referenceAnswer": "栈遵循后进先出，最后压入栈的元素最先弹出。",
+      "reviewStatus": "needs-human-review"
+    },
+    {
+      "id": "linear-1-2",
+      "split": "dev",
+      "group": "linear-1",
+      "category": "paraphrase",
+      "query": "LIFO 对应的线性结构是什么？",
+      "gold": [
+        {
+          "document": "linear.md",
+          "quote": "栈遵循后进先出，最后压入栈的元素最先弹出。"
+        }
+      ],
+      "referenceAnswer": "栈遵循后进先出，最后压入栈的元素最先弹出。",
+      "reviewStatus": "needs-human-review"
+    },
+    {
+      "id": "linear-2-1",
+      "split": "dev",
+      "group": "linear-2",
+      "category": "direct",
+      "query": "队列按照什么次序移除元素？",
+      "gold": [
+        {
+          "document": "linear.md",
+          "quote": "队列遵循先进先出，最早进入队列的元素最先离开。"
+        }
+      ],
+      "referenceAnswer": "队列遵循先进先出，最早进入队列的元素最先离开。",
+      "reviewStatus": "needs-human-review"
+    },
+    {
+      "id": "linear-2-2",
+      "split": "dev",
+      "group": "linear-2",
+      "category": "paraphrase",
+      "query": "FIFO 对应哪种线性结构？",
+      "gold": [
+        {
+          "document": "linear.md",
+          "quote": "队列遵循先进先出，最早进入队列的元素最先离开。"
+        }
+      ],
+      "referenceAnswer": "队列遵循先进先出，最早进入队列的元素最先离开。",
+      "reviewStatus": "needs-human-review"
+    },
+    {
+      "id": "linear-3-1",
+      "split": "dev",
+      "group": "linear-3",
+      "category": "direct",
+      "query": "Python 列表如何压栈和出栈？",
+      "gold": [
+        {
+          "document": "linear.md",
+          "quote": "Python 列表可以用 append 在末尾压栈，用不带下标的 pop 从末尾出栈。"
+        }
+      ],
+      "referenceAnswer": "Python 列表可以用 append 在末尾压栈，用不带下标的 pop 从末尾出栈。",
+      "reviewStatus": "needs-human-review"
+    },
+    {
+      "id": "linear-3-2",
+      "split": "dev",
+      "group": "linear-3",
+      "category": "paraphrase",
+      "query": "append 与不带参数的 pop 如何模拟栈？",
+      "gold": [
+        {
+          "document": "linear.md",
+          "quote": "Python 列表可以用 append 在末尾压栈，用不带下标的 pop 从末尾出栈。"
+        }
+      ],
+      "referenceAnswer": "Python 列表可以用 append 在末尾压栈，用不带下标的 pop 从末尾出栈。",
+      "reviewStatus": "needs-human-review"
+    },
+    {
+      "id": "linear-4-1",
+      "split": "dev",
+      "group": "linear-4",
+      "category": "direct",
+      "query": "deque 如何实现先进先出？",
+      "gold": [
+        {
+          "document": "linear.md",
+          "quote": "Python 的 collections.deque 可以在右端 append，并在左端 popleft，实现先进先出队列。"
+        }
+      ],
+      "referenceAnswer": "Python 的 collections.deque 可以在右端 append，并在左端 popleft，实现先进先出队列。",
+      "reviewStatus": "needs-human-review"
+    },
+    {
+      "id": "linear-4-2",
+      "split": "dev",
+      "group": "linear-4",
+      "category": "paraphrase",
+      "query": "popleft 与 append 配合用于什么队列操作？",
+      "gold": [
+        {
+          "document": "linear.md",
+          "quote": "Python 的 collections.deque 可以在右端 append，并在左端 popleft，实现先进先出队列。"
+        }
+      ],
+      "referenceAnswer": "Python 的 collections.deque 可以在右端 append，并在左端 popleft，实现先进先出队列。",
+      "reviewStatus": "needs-human-review"
+    },
+    {
+      "id": "linear-5-1",
+      "split": "dev",
+      "group": "linear-5",
+      "category": "direct",
+      "query": "顺序存储和链式存储如何定位元素？",
+      "gold": [
+        {
+          "document": "linear.md",
+          "quote": "顺序存储通过下标定位元素；链式存储通过节点之间的链接连接元素。"
+        }
+      ],
+      "referenceAnswer": "顺序存储通过下标定位元素；链式存储通过节点之间的链接连接元素。",
+      "reviewStatus": "needs-human-review"
+    },
+    {
+      "id": "linear-5-2",
+      "split": "dev",
+      "group": "linear-5",
+      "category": "paraphrase",
+      "query": "下标与节点链接分别对应哪种存储？",
+      "gold": [
+        {
+          "document": "linear.md",
+          "quote": "顺序存储通过下标定位元素；链式存储通过节点之间的链接连接元素。"
+        }
+      ],
+      "referenceAnswer": "顺序存储通过下标定位元素；链式存储通过节点之间的链接连接元素。",
+      "reviewStatus": "needs-human-review"
+    },
+    {
+      "id": "linear-6-1",
+      "split": "dev",
+      "group": "linear-6",
+      "category": "direct",
+      "query": "单链表怎样删除已知节点的后继？",
+      "gold": [
+        {
+          "document": "linear.md",
+          "quote": "在单链表中删除已知节点的后继，需要修改该节点的 next 链接。"
+        }
+      ],
+      "referenceAnswer": "在单链表中删除已知节点的后继，需要修改该节点的 next 链接。",
+      "reviewStatus": "needs-human-review"
+    },
+    {
+      "id": "linear-6-2",
+      "split": "dev",
+      "group": "linear-6",
+      "category": "paraphrase",
+      "query": "删除后继时为什么需要修改 next？",
+      "gold": [
+        {
+          "document": "linear.md",
+          "quote": "在单链表中删除已知节点的后继，需要修改该节点的 next 链接。"
+        }
+      ],
+      "referenceAnswer": "在单链表中删除已知节点的后继，需要修改该节点的 next 链接。",
+      "reviewStatus": "needs-human-review"
+    },
+    {
+      "id": "search-1-1",
+      "split": "test",
+      "group": "search-1",
+      "category": "direct",
+      "query": "二分查找需要什么前提？",
+      "gold": [
+        {
+          "document": "search.md",
+          "quote": "二分查找的前提是待查序列按照比较规则有序。"
+        }
+      ],
+      "referenceAnswer": "二分查找的前提是待查序列按照比较规则有序。",
+      "reviewStatus": "needs-human-review"
+    },
+    {
+      "id": "search-1-2",
+      "split": "test",
+      "group": "search-1",
+      "category": "paraphrase",
+      "query": "无序数据能否直接使用讲义中的二分查找？",
+      "gold": [
+        {
+          "document": "search.md",
+          "quote": "二分查找的前提是待查序列按照比较规则有序。"
+        }
+      ],
+      "referenceAnswer": "二分查找的前提是待查序列按照比较规则有序。",
+      "reviewStatus": "needs-human-review"
+    },
+    {
+      "id": "search-2-1",
+      "split": "test",
+      "group": "search-2",
+      "category": "direct",
+      "query": "二分查找每轮怎样缩小区间？",
+      "gold": [
+        {
+          "document": "search.md",
+          "quote": "每轮二分查找把候选区间缩小到原来的一半，查找次数随规模呈对数增长。"
+        }
+      ],
+      "referenceAnswer": "每轮二分查找把候选区间缩小到原来的一半，查找次数随规模呈对数增长。",
+      "reviewStatus": "needs-human-review"
+    },
+    {
+      "id": "search-2-2",
+      "split": "test",
+      "group": "search-2",
+      "category": "paraphrase",
+      "query": "二分查找次数为何呈对数增长？",
+      "gold": [
+        {
+          "document": "search.md",
+          "quote": "每轮二分查找把候选区间缩小到原来的一半，查找次数随规模呈对数增长。"
+        }
+      ],
+      "referenceAnswer": "每轮二分查找把候选区间缩小到原来的一半，查找次数随规模呈对数增长。",
+      "reviewStatus": "needs-human-review"
+    },
+    {
+      "id": "search-3-1",
+      "split": "test",
+      "group": "search-3",
+      "category": "direct",
+      "query": "bisect_left 返回什么？",
+      "gold": [
+        {
+          "document": "search.md",
+          "quote": "Python 的 bisect_left 返回保持有序的最左插入位置，不是插入操作本身。"
+        }
+      ],
+      "referenceAnswer": "Python 的 bisect_left 返回保持有序的最左插入位置，不是插入操作本身。",
+      "reviewStatus": "needs-human-review"
+    },
+    {
+      "id": "search-3-2",
+      "split": "test",
+      "group": "search-3",
+      "category": "paraphrase",
+      "query": "bisect_left 会直接修改序列吗？",
+      "gold": [
+        {
+          "document": "search.md",
+          "quote": "Python 的 bisect_left 返回保持有序的最左插入位置，不是插入操作本身。"
+        }
+      ],
+      "referenceAnswer": "Python 的 bisect_left 返回保持有序的最左插入位置，不是插入操作本身。",
+      "reviewStatus": "needs-human-review"
+    },
+    {
+      "id": "search-4-1",
+      "split": "test",
+      "group": "search-4",
+      "category": "direct",
+      "query": "insort 为什么仍可能较慢？",
+      "gold": [
+        {
+          "document": "search.md",
+          "quote": "Python 的 insort 先定位插入点，再移动列表元素完成插入；定位快不代表整体插入是对数时间。"
+        }
+      ],
+      "referenceAnswer": "Python 的 insort 先定位插入点，再移动列表元素完成插入；定位快不代表整体插入是对数时间。",
+      "reviewStatus": "needs-human-review"
+    },
+    {
+      "id": "search-4-2",
+      "split": "test",
+      "group": "search-4",
+      "category": "paraphrase",
+      "query": "二分定位能否让列表插入整体变成对数时间？",
+      "gold": [
+        {
+          "document": "search.md",
+          "quote": "Python 的 insort 先定位插入点，再移动列表元素完成插入；定位快不代表整体插入是对数时间。"
+        }
+      ],
+      "referenceAnswer": "Python 的 insort 先定位插入点，再移动列表元素完成插入；定位快不代表整体插入是对数时间。",
+      "reviewStatus": "needs-human-review"
+    },
+    {
+      "id": "search-5-1",
+      "split": "test",
+      "group": "search-5",
+      "category": "direct",
+      "query": "小根堆的父子大小关系是什么？",
+      "gold": [
+        {
+          "document": "search.md",
+          "quote": "小根堆要求每个父节点的值不大于其子节点，根节点保存最小值。"
+        }
+      ],
+      "referenceAnswer": "小根堆要求每个父节点的值不大于其子节点，根节点保存最小值。",
+      "reviewStatus": "needs-human-review"
+    },
+    {
+      "id": "search-5-2",
+      "split": "test",
+      "group": "search-5",
+      "category": "paraphrase",
+      "query": "小根堆最小元素位于哪里？",
+      "gold": [
+        {
+          "document": "search.md",
+          "quote": "小根堆要求每个父节点的值不大于其子节点，根节点保存最小值。"
+        }
+      ],
+      "referenceAnswer": "小根堆要求每个父节点的值不大于其子节点，根节点保存最小值。",
+      "reviewStatus": "needs-human-review"
+    },
+    {
+      "id": "search-6-1",
+      "split": "test",
+      "group": "search-6",
+      "category": "direct",
+      "query": "heappop 返回哪个元素？",
+      "gold": [
+        {
+          "document": "search.md",
+          "quote": "Python 的 heapq.heappop 从小根堆移除并返回最小元素。"
+        }
+      ],
+      "referenceAnswer": "Python 的 heapq.heappop 从小根堆移除并返回最小元素。",
+      "reviewStatus": "needs-human-review"
+    },
+    {
+      "id": "search-6-2",
+      "split": "test",
+      "group": "search-6",
+      "category": "paraphrase",
+      "query": "使用 heapq 如何取出最小元素？",
+      "gold": [
+        {
+          "document": "search.md",
+          "quote": "Python 的 heapq.heappop 从小根堆移除并返回最小元素。"
+        }
+      ],
+      "referenceAnswer": "Python 的 heapq.heappop 从小根堆移除并返回最小元素。",
+      "reviewStatus": "needs-human-review"
+    },
+    {
+      "id": "trees-1-1",
+      "split": "test",
+      "group": "trees-1",
+      "category": "direct",
+      "query": "二叉树节点最多有几个孩子？",
+      "gold": [
+        {
+          "document": "trees.md",
+          "quote": "二叉树的每个节点最多有两个子节点，分别称为左孩子和右孩子。"
+        }
+      ],
+      "referenceAnswer": "二叉树的每个节点最多有两个子节点，分别称为左孩子和右孩子。",
+      "reviewStatus": "needs-human-review"
+    },
+    {
+      "id": "trees-1-2",
+      "split": "test",
+      "group": "trees-1",
+      "category": "paraphrase",
+      "query": "二叉树的左右孩子指什么？",
+      "gold": [
+        {
+          "document": "trees.md",
+          "quote": "二叉树的每个节点最多有两个子节点，分别称为左孩子和右孩子。"
+        }
+      ],
+      "referenceAnswer": "二叉树的每个节点最多有两个子节点，分别称为左孩子和右孩子。",
+      "reviewStatus": "needs-human-review"
+    },
+    {
+      "id": "trees-2-1",
+      "split": "test",
+      "group": "trees-2",
+      "category": "direct",
+      "query": "先序遍历的顺序是什么？",
+      "gold": [
+        {
+          "document": "trees.md",
+          "quote": "先序遍历按照根节点、左子树、右子树的顺序访问。"
+        }
+      ],
+      "referenceAnswer": "先序遍历按照根节点、左子树、右子树的顺序访问。",
+      "reviewStatus": "needs-human-review"
+    },
+    {
+      "id": "trees-2-2",
+      "split": "test",
+      "group": "trees-2",
+      "category": "paraphrase",
+      "query": "根左右是哪种遍历？",
+      "gold": [
+        {
+          "document": "trees.md",
+          "quote": "先序遍历按照根节点、左子树、右子树的顺序访问。"
+        }
+      ],
+      "referenceAnswer": "先序遍历按照根节点、左子树、右子树的顺序访问。",
+      "reviewStatus": "needs-human-review"
+    },
+    {
+      "id": "trees-3-1",
+      "split": "test",
+      "group": "trees-3",
+      "category": "direct",
+      "query": "中序遍历的顺序是什么？",
+      "gold": [
+        {
+          "document": "trees.md",
+          "quote": "中序遍历按照左子树、根节点、右子树的顺序访问。"
+        }
+      ],
+      "referenceAnswer": "中序遍历按照左子树、根节点、右子树的顺序访问。",
+      "reviewStatus": "needs-human-review"
+    },
+    {
+      "id": "trees-3-2",
+      "split": "test",
+      "group": "trees-3",
+      "category": "paraphrase",
+      "query": "左根右是哪种遍历？",
+      "gold": [
+        {
+          "document": "trees.md",
+          "quote": "中序遍历按照左子树、根节点、右子树的顺序访问。"
+        }
+      ],
+      "referenceAnswer": "中序遍历按照左子树、根节点、右子树的顺序访问。",
+      "reviewStatus": "needs-human-review"
+    },
+    {
+      "id": "trees-4-1",
+      "split": "test",
+      "group": "trees-4",
+      "category": "direct",
+      "query": "后序遍历的顺序是什么？",
+      "gold": [
+        {
+          "document": "trees.md",
+          "quote": "后序遍历按照左子树、右子树、根节点的顺序访问。"
+        }
+      ],
+      "referenceAnswer": "后序遍历按照左子树、右子树、根节点的顺序访问。",
+      "reviewStatus": "needs-human-review"
+    },
+    {
+      "id": "trees-4-2",
+      "split": "test",
+      "group": "trees-4",
+      "category": "paraphrase",
+      "query": "左右根是哪种遍历？",
+      "gold": [
+        {
+          "document": "trees.md",
+          "quote": "后序遍历按照左子树、右子树、根节点的顺序访问。"
+        }
+      ],
+      "referenceAnswer": "后序遍历按照左子树、右子树、根节点的顺序访问。",
+      "reviewStatus": "needs-human-review"
+    },
+    {
+      "id": "trees-5-1",
+      "split": "test",
+      "group": "trees-5",
+      "category": "direct",
+      "query": "不重复键的二叉搜索树有什么大小关系？",
+      "gold": [
+        {
+          "document": "trees.md",
+          "quote": "在键互不重复的二叉搜索树中，左子树的键小于根，右子树的键大于根。"
+        }
+      ],
+      "referenceAnswer": "在键互不重复的二叉搜索树中，左子树的键小于根，右子树的键大于根。",
+      "reviewStatus": "needs-human-review"
+    },
+    {
+      "id": "trees-5-2",
+      "split": "test",
+      "group": "trees-5",
+      "category": "paraphrase",
+      "query": "BST 如何组织根与左右子树的键？",
+      "gold": [
+        {
+          "document": "trees.md",
+          "quote": "在键互不重复的二叉搜索树中，左子树的键小于根，右子树的键大于根。"
+        }
+      ],
+      "referenceAnswer": "在键互不重复的二叉搜索树中，左子树的键小于根，右子树的键大于根。",
+      "reviewStatus": "needs-human-review"
+    },
+    {
+      "id": "trees-6-1",
+      "split": "test",
+      "group": "trees-6",
+      "category": "direct",
+      "query": "二叉搜索树退化后查找会怎样？",
+      "gold": [
+        {
+          "document": "trees.md",
+          "quote": "二叉搜索树的查找代价取决于树高；退化为链时可能逐个比较所有节点。"
+        }
+      ],
+      "referenceAnswer": "二叉搜索树的查找代价取决于树高；退化为链时可能逐个比较所有节点。",
+      "reviewStatus": "needs-human-review"
+    },
+    {
+      "id": "trees-6-2",
+      "split": "test",
+      "group": "trees-6",
+      "category": "paraphrase",
+      "query": "BST 查找代价为什么与树高有关？",
+      "gold": [
+        {
+          "document": "trees.md",
+          "quote": "二叉搜索树的查找代价取决于树高；退化为链时可能逐个比较所有节点。"
+        }
+      ],
+      "referenceAnswer": "二叉搜索树的查找代价取决于树高；退化为链时可能逐个比较所有节点。",
+      "reviewStatus": "needs-human-review"
+    },
+    {
+      "id": "graphs-1-1",
+      "split": "test",
+      "group": "graphs-1",
+      "category": "direct",
+      "query": "稀疏图可以选哪种表示？",
+      "gold": [
+        {
+          "document": "graphs.md",
+          "quote": "邻接表按顶点保存相邻顶点列表，适合表示稀疏图。"
+        }
+      ],
+      "referenceAnswer": "邻接表按顶点保存相邻顶点列表，适合表示稀疏图。",
+      "reviewStatus": "needs-human-review"
+    },
+    {
+      "id": "graphs-1-2",
+      "split": "test",
+      "group": "graphs-1",
+      "category": "paraphrase",
+      "query": "邻接表按什么组织邻居？",
+      "gold": [
+        {
+          "document": "graphs.md",
+          "quote": "邻接表按顶点保存相邻顶点列表，适合表示稀疏图。"
+        }
+      ],
+      "referenceAnswer": "邻接表按顶点保存相邻顶点列表，适合表示稀疏图。",
+      "reviewStatus": "needs-human-review"
+    },
+    {
+      "id": "graphs-2-1",
+      "split": "test",
+      "group": "graphs-2",
+      "category": "direct",
+      "query": "邻接矩阵记录什么？",
+      "gold": [
+        {
+          "document": "graphs.md",
+          "quote": "邻接矩阵用二维表记录顶点对之间的连接关系。"
+        }
+      ],
+      "referenceAnswer": "邻接矩阵用二维表记录顶点对之间的连接关系。",
+      "reviewStatus": "needs-human-review"
+    },
+    {
+      "id": "graphs-2-2",
+      "split": "test",
+      "group": "graphs-2",
+      "category": "paraphrase",
+      "query": "二维表如何表示图的边？",
+      "gold": [
+        {
+          "document": "graphs.md",
+          "quote": "邻接矩阵用二维表记录顶点对之间的连接关系。"
+        }
+      ],
+      "referenceAnswer": "邻接矩阵用二维表记录顶点对之间的连接关系。",
+      "reviewStatus": "needs-human-review"
+    },
+    {
+      "id": "graphs-3-1",
+      "split": "test",
+      "group": "graphs-3",
+      "category": "direct",
+      "query": "BFS 使用什么结构？",
+      "gold": [
+        {
+          "document": "graphs.md",
+          "quote": "广度优先搜索使用队列，按照从起点逐层扩展的顺序访问节点。"
+        }
+      ],
+      "referenceAnswer": "广度优先搜索使用队列，按照从起点逐层扩展的顺序访问节点。",
+      "reviewStatus": "needs-human-review"
+    },
+    {
+      "id": "graphs-3-2",
+      "split": "test",
+      "group": "graphs-3",
+      "category": "paraphrase",
+      "query": "广度优先为什么是逐层扩展？",
+      "gold": [
+        {
+          "document": "graphs.md",
+          "quote": "广度优先搜索使用队列，按照从起点逐层扩展的顺序访问节点。"
+        }
+      ],
+      "referenceAnswer": "广度优先搜索使用队列，按照从起点逐层扩展的顺序访问节点。",
+      "reviewStatus": "needs-human-review"
+    },
+    {
+      "id": "graphs-4-1",
+      "split": "test",
+      "group": "graphs-4",
+      "category": "direct",
+      "query": "DFS 可以怎样实现？",
+      "gold": [
+        {
+          "document": "graphs.md",
+          "quote": "深度优先搜索可以使用递归或显式栈，沿一条路径深入后再回溯。"
+        }
+      ],
+      "referenceAnswer": "深度优先搜索可以使用递归或显式栈，沿一条路径深入后再回溯。",
+      "reviewStatus": "needs-human-review"
+    },
+    {
+      "id": "graphs-4-2",
+      "split": "test",
+      "group": "graphs-4",
+      "category": "paraphrase",
+      "query": "深度优先何时回溯？",
+      "gold": [
+        {
+          "document": "graphs.md",
+          "quote": "深度优先搜索可以使用递归或显式栈，沿一条路径深入后再回溯。"
+        }
+      ],
+      "referenceAnswer": "深度优先搜索可以使用递归或显式栈，沿一条路径深入后再回溯。",
+      "reviewStatus": "needs-human-review"
+    },
+    {
+      "id": "graphs-5-1",
+      "split": "test",
+      "group": "graphs-5",
+      "category": "direct",
+      "query": "无权图的最少边数路径可用什么算法？",
+      "gold": [
+        {
+          "document": "graphs.md",
+          "quote": "无权图中，从起点执行广度优先搜索可得到到可达顶点的最少边数路径。"
+        }
+      ],
+      "referenceAnswer": "无权图中，从起点执行广度优先搜索可得到到可达顶点的最少边数路径。",
+      "reviewStatus": "needs-human-review"
+    },
+    {
+      "id": "graphs-5-2",
+      "split": "test",
+      "group": "graphs-5",
+      "category": "paraphrase",
+      "query": "BFS 求得的是哪种图上的最少边数路径？",
+      "gold": [
+        {
+          "document": "graphs.md",
+          "quote": "无权图中，从起点执行广度优先搜索可得到到可达顶点的最少边数路径。"
+        }
+      ],
+      "referenceAnswer": "无权图中，从起点执行广度优先搜索可得到到可达顶点的最少边数路径。",
+      "reviewStatus": "needs-human-review"
+    },
+    {
+      "id": "graphs-6-1",
+      "split": "test",
+      "group": "graphs-6",
+      "category": "direct",
+      "query": "拓扑排序适用于什么图？",
+      "gold": [
+        {
+          "document": "graphs.md",
+          "quote": "拓扑排序只适用于有向无环图；存在有向环时不存在拓扑序。"
+        }
+      ],
+      "referenceAnswer": "拓扑排序只适用于有向无环图；存在有向环时不存在拓扑序。",
+      "reviewStatus": "needs-human-review"
+    },
+    {
+      "id": "graphs-6-2",
+      "split": "test",
+      "group": "graphs-6",
+      "category": "paraphrase",
+      "query": "有向环为什么使拓扑序不存在？",
+      "gold": [
+        {
+          "document": "graphs.md",
+          "quote": "拓扑排序只适用于有向无环图；存在有向环时不存在拓扑序。"
+        }
+      ],
+      "referenceAnswer": "拓扑排序只适用于有向无环图；存在有向环时不存在拓扑序。",
+      "reviewStatus": "needs-human-review"
+    },
+    {
+      "id": "conflict-1",
+      "split": "test",
+      "group": "conflict-Z",
+      "category": "conflict",
+      "query": "课程符号 Z 是否表示栈？",
+      "gold": [
+        {
+          "document": "conflict-a.md",
+          "quote": "冲突验收声明：课程符号 Z 表示栈。"
+        },
+        {
+          "document": "conflict-b.md",
+          "quote": "冲突验收声明：课程符号 Z 不表示栈。"
+        }
+      ],
+      "referenceAnswer": "两份材料相互矛盾，需要核对来源，不能任选一份当作事实。",
+      "reviewStatus": "needs-human-review"
+    },
+    {
+      "id": "conflict-2",
+      "split": "test",
+      "group": "conflict-Z",
+      "category": "conflict",
+      "query": "两份声明对 Z 的解释一致吗？",
+      "gold": [
+        {
+          "document": "conflict-a.md",
+          "quote": "冲突验收声明：课程符号 Z 表示栈。"
+        },
+        {
+          "document": "conflict-b.md",
+          "quote": "冲突验收声明：课程符号 Z 不表示栈。"
+        }
+      ],
+      "referenceAnswer": "两份材料相互矛盾，需要核对来源，不能任选一份当作事实。",
+      "reviewStatus": "needs-human-review"
+    },
+    {
+      "id": "conflict-3",
+      "split": "test",
+      "group": "conflict-Z",
+      "category": "conflict",
+      "query": "请比较 Z 表示栈的声明",
+      "gold": [
+        {
+          "document": "conflict-a.md",
+          "quote": "冲突验收声明：课程符号 Z 表示栈。"
+        },
+        {
+          "document": "conflict-b.md",
+          "quote": "冲突验收声明：课程符号 Z 不表示栈。"
+        }
+      ],
+      "referenceAnswer": "两份材料相互矛盾，需要核对来源，不能任选一份当作事实。",
+      "reviewStatus": "needs-human-review"
+    },
+    {
+      "id": "conflict-4",
+      "split": "test",
+      "group": "conflict-Z",
+      "category": "conflict",
+      "query": "冲突验收声明有没有相反说法？",
+      "gold": [
+        {
+          "document": "conflict-a.md",
+          "quote": "冲突验收声明：课程符号 Z 表示栈。"
+        },
+        {
+          "document": "conflict-b.md",
+          "quote": "冲突验收声明：课程符号 Z 不表示栈。"
+        }
+      ],
+      "referenceAnswer": "两份材料相互矛盾，需要核对来源，不能任选一份当作事实。",
+      "reviewStatus": "needs-human-review"
+    },
+    {
+      "id": "negative-1",
+      "split": "dev",
+      "group": "negative-1",
+      "category": "out-of-domain",
+      "query": "火星明天的温度是多少？",
+      "gold": [],
+      "referenceAnswer": "给定课程资料没有提供答案。",
+      "reviewStatus": "needs-human-review"
+    },
+    {
+      "id": "negative-2",
+      "split": "dev",
+      "group": "negative-2",
+      "category": "out-of-domain",
+      "query": "海豚睡眠时的脑电波频率是多少？",
+      "gold": [],
+      "referenceAnswer": "给定课程资料没有提供答案。",
+      "reviewStatus": "needs-human-review"
+    },
+    {
+      "id": "negative-3",
+      "split": "test",
+      "group": "negative-3",
+      "category": "out-of-domain",
+      "query": "梵高出生在哪个城市？",
+      "gold": [],
+      "referenceAnswer": "给定课程资料没有提供答案。",
+      "reviewStatus": "needs-human-review"
+    },
+    {
+      "id": "negative-4",
+      "split": "test",
+      "group": "negative-4",
+      "category": "out-of-domain",
+      "query": "光合作用的化学方程式是什么？",
+      "gold": [],
+      "referenceAnswer": "给定课程资料没有提供答案。",
+      "reviewStatus": "needs-human-review"
+    },
+    {
+      "id": "negative-5",
+      "split": "test",
+      "group": "negative-5",
+      "category": "missing-detail",
+      "query": "课程指定的栈容量上限是多少？",
+      "gold": [],
+      "referenceAnswer": "给定课程资料没有提供答案。",
+      "reviewStatus": "needs-human-review"
+    },
+    {
+      "id": "negative-6",
+      "split": "test",
+      "group": "negative-6",
+      "category": "missing-detail",
+      "query": "这门课二叉树考试在哪一天？",
+      "gold": [],
+      "referenceAnswer": "给定课程资料没有提供答案。",
+      "reviewStatus": "needs-human-review"
+    },
+    {
+      "id": "negative-7",
+      "split": "test",
+      "group": "negative-7",
+      "category": "missing-detail",
+      "query": "图论老师的电话号码是什么？",
+      "gold": [],
+      "referenceAnswer": "给定课程资料没有提供答案。",
+      "reviewStatus": "needs-human-review"
+    },
+    {
+      "id": "negative-8",
+      "split": "test",
+      "group": "negative-8",
+      "category": "missing-detail",
+      "query": "这份讲义要求的队列作业截止时间是什么？",
+      "gold": [],
+      "referenceAnswer": "给定课程资料没有提供答案。",
+      "reviewStatus": "needs-human-review"
+    }
+  ],
+  "humanReview": "not-performed",
+  "externalApi": false
+}

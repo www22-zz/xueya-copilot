@@ -1,0 +1,3893 @@
+{
+  "schema": "f-quality-1",
+  "datasetVersion": "F-acceptance-v1",
+  "datasetSha256": "24f7815d71d5ca6f6eeeb0f85803785a7dacd0cc84408aafc6d2bb94e6a06815",
+  "split": "test",
+  "totalDatasetCases": 60,
+  "evaluatedCases": 46,
+  "repeats": 3,
+  "sourceCommit": "b3d23bef9ff58cbacf0c6db0bc437c6e1007affa",
+  "workingTreeChanged": true,
+  "python": "3.13.9",
+  "os": "Windows",
+  "dependencies": {
+    "fastapi": "0.143.2",
+    "mcp": "2.3.0",
+    "pypdf": "6.20.1",
+    "fsrs": "6.3.2"
+  },
+  "budget": {
+    "unit": "utf8Bytes",
+    "limit": 2000,
+    "topK": 6
+  },
+  "importMs": 9908.951699999307,
+  "apiInvocations": 0,
+  "modelQuality": "not_evaluated",
+  "humanReview": "not_performed",
+  "cost": "no_provider_calls",
+  "notes": [
+    "Original AI-assisted fixtures, not a human-labelled real-course benchmark.",
+    "Paraphrase pairs are correlated; no statistical superiority claim.",
+    "No-evidence rate measures retrieval abstention, not generated-answer refusal.",
+    "Fixed baseline does not include the structured service database/version checks. Latencies are not isolated algorithm comparisons.",
+    "CPU document import time includes spawned parser processes; query timings are local warm queries."
+  ],
+  "results": {
+    "fixed-lexical": {
+      "status": "evaluated",
+      "summary": {
+        "cases": 46,
+        "passed": 43,
+        "allEvidenceRecallAt6": 1.0,
+        "excerptRecallAt6": 1.0,
+        "mrrAt6": 0.975,
+        "noEvidenceRateOnUnanswerable": 0.5,
+        "p50Ms": 0.9658999988459982,
+        "p95Ms": 1.6842000004544389,
+        "invalidLocations": 0,
+        "overBudget": 0,
+        "byCategory": {
+          "conflict": {
+            "passed": 4,
+            "count": 4
+          },
+          "direct": {
+            "passed": 18,
+            "count": 18
+          },
+          "missing-detail": {
+            "passed": 1,
+            "count": 4
+          },
+          "out-of-domain": {
+            "passed": 2,
+            "count": 2
+          },
+          "paraphrase": {
+            "passed": 18,
+            "count": 18
+          }
+        }
+      },
+      "rows": [
+        {
+          "id": "search-1-1",
+          "group": "search-1",
+          "category": "direct",
+          "query": "二分查找需要什么前提？",
+          "passed": true,
+          "matchedGold": 1,
+          "goldCount": 1,
+          "reciprocalRank": 1.0,
+          "returnedCount": 3,
+          "budgetBytes": 2000,
+          "usedBytes": 1897,
+          "validLocations": true,
+          "conflictFlag": false,
+          "latencyMs": [
+            3.7671999998565298,
+            1.0160999991057906,
+            0.9559999998600688
+          ],
+          "returned": [
+            {
+              "document": "search.md",
+              "quote": "# 查找与堆\n\n## 知识点 1\n\n二分查找的前提是待查序列按照比较规则有序。\n\n## 知识点 2\n\n每轮二分查找把候选区间缩小到原来的一半，查找次数随规模呈对数增长。\n\n## 知识点 3\n\nPython 的 bisect_left 返回保持有序的最左插入位置，不是插入操作本身。\n\n## 知识点 4\n\nPython 的 insort 先定位插入点，再移动列表元素完成插入；定位快不代表整体插入是对数时间。\n\n## 知识点 5\n\n小根堆要求每个父节点的值不大于其子节点，根节点保存最小值。\n\n## 知识点 6\n\nPython 的 heapq.heappop 从小根堆移除并返回最小元素。\n",
+              "start": 0,
+              "end": 294
+            },
+            {
+              "document": "linear.md",
+              "quote": "# 线性结构\n\n## 知识点 1\n\n栈遵循后进先出，最后压入栈的元素最先弹出。\n\n## 知识点 2\n\n队列遵循先进先出，最早进入队列的元素最先离开。\n\n## 知识点 3\n\nPython 列表可以用 append 在末尾压栈，用不带下标的 pop 从末尾出栈。\n\n## 知识点 4\n\nPython 的 collections.deque 可以在右端 append，并在左端 popleft，实现先进先出队列。\n\n## 知识点 5\n\n顺序存储通过下标定位元素；链式存储通过节点之间的链接连接元素。\n\n## 知识点 6\n\n在单链表中删除已知节点的后继，需要修改该节点的 next 链接。\n",
+              "start": 0,
+              "end": 291
+            },
+            {
+              "document": "trees.md",
+              "quote": "# 二叉树与搜索树\n\n## 知识点 1\n\n二叉树的每个节点最多有两个子节点，分别称为左孩子和右孩子。\n\n## 知识点 2\n\n先序遍历按照根节点、左子树、右子树的顺序访问。\n\n## 知识点 3\n\n中序遍历按照左子树、根节点、右子树的顺序访问。\n\n## 知识点 4\n\n后序遍历按照左子树、右子树、根节点的顺序访问。\n\n## 知识点 5\n\n在键互不重复的二叉搜索树中，左子树的键小于根，右子树的键大于根。\n\n## 知识点 6\n\n二叉搜索树的查找代价取决于树高；退化为链时可能逐个比较所有节点。\n",
+              "start": 0,
+              "end": 244
+            }
+          ]
+        },
+        {
+          "id": "search-1-2",
+          "group": "search-1",
+          "category": "paraphrase",
+          "query": "无序数据能否直接使用讲义中的二分查找？",
+          "passed": true,
+          "matchedGold": 1,
+          "goldCount": 1,
+          "reciprocalRank": 1.0,
+          "returnedCount": 3,
+          "budgetBytes": 2000,
+          "usedBytes": 1875,
+          "validLocations": true,
+          "conflictFlag": false,
+          "latencyMs": [
+            1.174099998024758,
+            0.9973000014724676,
+            0.9699000002001412
+          ],
+          "returned": [
+            {
+              "document": "search.md",
+              "quote": "# 查找与堆\n\n## 知识点 1\n\n二分查找的前提是待查序列按照比较规则有序。\n\n## 知识点 2\n\n每轮二分查找把候选区间缩小到原来的一半，查找次数随规模呈对数增长。\n\n## 知识点 3\n\nPython 的 bisect_left 返回保持有序的最左插入位置，不是插入操作本身。\n\n## 知识点 4\n\nPython 的 insort 先定位插入点，再移动列表元素完成插入；定位快不代表整体插入是对数时间。\n\n## 知识点 5\n\n小根堆要求每个父节点的值不大于其子节点，根节点保存最小值。\n\n## 知识点 6\n\nPython 的 heapq.heappop 从小根堆移除并返回最小元素。\n",
+              "start": 0,
+              "end": 294
+            },
+            {
+              "document": "trees.md",
+              "quote": "# 二叉树与搜索树\n\n## 知识点 1\n\n二叉树的每个节点最多有两个子节点，分别称为左孩子和右孩子。\n\n## 知识点 2\n\n先序遍历按照根节点、左子树、右子树的顺序访问。\n\n## 知识点 3\n\n中序遍历按照左子树、根节点、右子树的顺序访问。\n\n## 知识点 4\n\n后序遍历按照左子树、右子树、根节点的顺序访问。\n\n## 知识点 5\n\n在键互不重复的二叉搜索树中，左子树的键小于根，右子树的键大于根。\n\n## 知识点 6\n\n二叉搜索树的查找代价取决于树高；退化为链时可能逐个比较所有节点。\n",
+              "start": 0,
+              "end": 244
+            },
+            {
+              "document": "graphs.md",
+              "quote": "# 图与遍历\n\n## 知识点 1\n\n邻接表按顶点保存相邻顶点列表，适合表示稀疏图。\n\n## 知识点 2\n\n邻接矩阵用二维表记录顶点对之间的连接关系。\n\n## 知识点 3\n\n广度优先搜索使用队列，按照从起点逐层扩展的顺序访问节点。\n\n## 知识点 4\n\n深度优先搜索可以使用递归或显式栈，沿一条路径深入后再回溯。\n\n## 知识点 5\n\n无权图中，从起点执行广度优先搜索可得到到可达顶点的最少边数路径。\n\n## 知识点 6\n\n拓扑排序只适用于有向无环图；存在有向环时不存在拓扑序。\n",
+              "start": 0,
+              "end": 239
+            }
+          ]
+        },
+        {
+          "id": "search-2-1",
+          "group": "search-2",
+          "category": "direct",
+          "query": "二分查找每轮怎样缩小区间？",
+          "passed": true,
+          "matchedGold": 1,
+          "goldCount": 1,
+          "reciprocalRank": 1.0,
+          "returnedCount": 2,
+          "budgetBytes": 2000,
+          "usedBytes": 1272,
+          "validLocations": true,
+          "conflictFlag": false,
+          "latencyMs": [
+            1.0962000014842488,
+            1.184699998702854,
+            0.9957000002032146
+          ],
+          "returned": [
+            {
+              "document": "search.md",
+              "quote": "# 查找与堆\n\n## 知识点 1\n\n二分查找的前提是待查序列按照比较规则有序。\n\n## 知识点 2\n\n每轮二分查找把候选区间缩小到原来的一半，查找次数随规模呈对数增长。\n\n## 知识点 3\n\nPython 的 bisect_left 返回保持有序的最左插入位置，不是插入操作本身。\n\n## 知识点 4\n\nPython 的 insort 先定位插入点，再移动列表元素完成插入；定位快不代表整体插入是对数时间。\n\n## 知识点 5\n\n小根堆要求每个父节点的值不大于其子节点，根节点保存最小值。\n\n## 知识点 6\n\nPython 的 heapq.heappop 从小根堆移除并返回最小元素。\n",
+              "start": 0,
+              "end": 294
+            },
+            {
+              "document": "trees.md",
+              "quote": "# 二叉树与搜索树\n\n## 知识点 1\n\n二叉树的每个节点最多有两个子节点，分别称为左孩子和右孩子。\n\n## 知识点 2\n\n先序遍历按照根节点、左子树、右子树的顺序访问。\n\n## 知识点 3\n\n中序遍历按照左子树、根节点、右子树的顺序访问。\n\n## 知识点 4\n\n后序遍历按照左子树、右子树、根节点的顺序访问。\n\n## 知识点 5\n\n在键互不重复的二叉搜索树中，左子树的键小于根，右子树的键大于根。\n\n## 知识点 6\n\n二叉搜索树的查找代价取决于树高；退化为链时可能逐个比较所有节点。\n",
+              "start": 0,
+              "end": 244
+            }
+          ]
+        },
+        {
+          "id": "search-2-2",
+          "group": "search-2",
+          "category": "paraphrase",
+          "query": "二分查找次数为何呈对数增长？",
+          "passed": true,
+          "matchedGold": 1,
+          "goldCount": 1,
+          "reciprocalRank": 1.0,
+          "returnedCount": 2,
+          "budgetBytes": 2000,
+          "usedBytes": 1272,
+          "validLocations": true,
+          "conflictFlag": false,
+          "latencyMs": [
+            0.9681999981694389,
+            0.9334000023955014,
+            1.061800001480151
+          ],
+          "returned": [
+            {
+              "document": "search.md",
+              "quote": "# 查找与堆\n\n## 知识点 1\n\n二分查找的前提是待查序列按照比较规则有序。\n\n## 知识点 2\n\n每轮二分查找把候选区间缩小到原来的一半，查找次数随规模呈对数增长。\n\n## 知识点 3\n\nPython 的 bisect_left 返回保持有序的最左插入位置，不是插入操作本身。\n\n## 知识点 4\n\nPython 的 insort 先定位插入点，再移动列表元素完成插入；定位快不代表整体插入是对数时间。\n\n## 知识点 5\n\n小根堆要求每个父节点的值不大于其子节点，根节点保存最小值。\n\n## 知识点 6\n\nPython 的 heapq.heappop 从小根堆移除并返回最小元素。\n",
+              "start": 0,
+              "end": 294
+            },
+            {
+              "document": "trees.md",
+              "quote": "# 二叉树与搜索树\n\n## 知识点 1\n\n二叉树的每个节点最多有两个子节点，分别称为左孩子和右孩子。\n\n## 知识点 2\n\n先序遍历按照根节点、左子树、右子树的顺序访问。\n\n## 知识点 3\n\n中序遍历按照左子树、根节点、右子树的顺序访问。\n\n## 知识点 4\n\n后序遍历按照左子树、右子树、根节点的顺序访问。\n\n## 知识点 5\n\n在键互不重复的二叉搜索树中，左子树的键小于根，右子树的键大于根。\n\n## 知识点 6\n\n二叉搜索树的查找代价取决于树高；退化为链时可能逐个比较所有节点。\n",
+              "start": 0,
+              "end": 244
+            }
+          ]
+        },
+        {
+          "id": "search-3-1",
+          "group": "search-3",
+          "category": "direct",
+          "query": "bisect_left 返回什么？",
+          "passed": true,
+          "matchedGold": 1,
+          "goldCount": 1,
+          "reciprocalRank": 1.0,
+          "returnedCount": 1,
+          "budgetBytes": 2000,
+          "usedBytes": 654,
+          "validLocations": true,
+          "conflictFlag": false,
+          "latencyMs": [
+            0.9035000002768356,
+            0.8839000001898967,
+            0.888999999006046
+          ],
+          "returned": [
+            {
+              "document": "search.md",
+              "quote": "# 查找与堆\n\n## 知识点 1\n\n二分查找的前提是待查序列按照比较规则有序。\n\n## 知识点 2\n\n每轮二分查找把候选区间缩小到原来的一半，查找次数随规模呈对数增长。\n\n## 知识点 3\n\nPython 的 bisect_left 返回保持有序的最左插入位置，不是插入操作本身。\n\n## 知识点 4\n\nPython 的 insort 先定位插入点，再移动列表元素完成插入；定位快不代表整体插入是对数时间。\n\n## 知识点 5\n\n小根堆要求每个父节点的值不大于其子节点，根节点保存最小值。\n\n## 知识点 6\n\nPython 的 heapq.heappop 从小根堆移除并返回最小元素。\n",
+              "start": 0,
+              "end": 294
+            }
+          ]
+        },
+        {
+          "id": "search-3-2",
+          "group": "search-3",
+          "category": "paraphrase",
+          "query": "bisect_left 会直接修改序列吗？",
+          "passed": true,
+          "matchedGold": 1,
+          "goldCount": 1,
+          "reciprocalRank": 1.0,
+          "returnedCount": 2,
+          "budgetBytes": 2000,
+          "usedBytes": 1279,
+          "validLocations": true,
+          "conflictFlag": false,
+          "latencyMs": [
+            0.9621000026527327,
+            0.9248999995179474,
+            1.1969000006502029
+          ],
+          "returned": [
+            {
+              "document": "search.md",
+              "quote": "# 查找与堆\n\n## 知识点 1\n\n二分查找的前提是待查序列按照比较规则有序。\n\n## 知识点 2\n\n每轮二分查找把候选区间缩小到原来的一半，查找次数随规模呈对数增长。\n\n## 知识点 3\n\nPython 的 bisect_left 返回保持有序的最左插入位置，不是插入操作本身。\n\n## 知识点 4\n\nPython 的 insort 先定位插入点，再移动列表元素完成插入；定位快不代表整体插入是对数时间。\n\n## 知识点 5\n\n小根堆要求每个父节点的值不大于其子节点，根节点保存最小值。\n\n## 知识点 6\n\nPython 的 heapq.heappop 从小根堆移除并返回最小元素。\n",
+              "start": 0,
+              "end": 294
+            },
+            {
+              "document": "linear.md",
+              "quote": "# 线性结构\n\n## 知识点 1\n\n栈遵循后进先出，最后压入栈的元素最先弹出。\n\n## 知识点 2\n\n队列遵循先进先出，最早进入队列的元素最先离开。\n\n## 知识点 3\n\nPython 列表可以用 append 在末尾压栈，用不带下标的 pop 从末尾出栈。\n\n## 知识点 4\n\nPython 的 collections.deque 可以在右端 append，并在左端 popleft，实现先进先出队列。\n\n## 知识点 5\n\n顺序存储通过下标定位元素；链式存储通过节点之间的链接连接元素。\n\n## 知识点 6\n\n在单链表中删除已知节点的后继，需要修改该节点的 next 链接。\n",
+              "start": 0,
+              "end": 291
+            }
+          ]
+        },
+        {
+          "id": "search-4-1",
+          "group": "search-4",
+          "category": "direct",
+          "query": "insort 为什么仍可能较慢？",
+          "passed": true,
+          "matchedGold": 1,
+          "goldCount": 1,
+          "reciprocalRank": 0.5,
+          "returnedCount": 2,
+          "budgetBytes": 2000,
+          "usedBytes": 1272,
+          "validLocations": true,
+          "conflictFlag": false,
+          "latencyMs": [
+            0.9279000005335547,
+            1.04750000173226,
+            0.9129999998549465
+          ],
+          "returned": [
+            {
+              "document": "trees.md",
+              "quote": "# 二叉树与搜索树\n\n## 知识点 1\n\n二叉树的每个节点最多有两个子节点，分别称为左孩子和右孩子。\n\n## 知识点 2\n\n先序遍历按照根节点、左子树、右子树的顺序访问。\n\n## 知识点 3\n\n中序遍历按照左子树、根节点、右子树的顺序访问。\n\n## 知识点 4\n\n后序遍历按照左子树、右子树、根节点的顺序访问。\n\n## 知识点 5\n\n在键互不重复的二叉搜索树中，左子树的键小于根，右子树的键大于根。\n\n## 知识点 6\n\n二叉搜索树的查找代价取决于树高；退化为链时可能逐个比较所有节点。\n",
+              "start": 0,
+              "end": 244
+            },
+            {
+              "document": "search.md",
+              "quote": "# 查找与堆\n\n## 知识点 1\n\n二分查找的前提是待查序列按照比较规则有序。\n\n## 知识点 2\n\n每轮二分查找把候选区间缩小到原来的一半，查找次数随规模呈对数增长。\n\n## 知识点 3\n\nPython 的 bisect_left 返回保持有序的最左插入位置，不是插入操作本身。\n\n## 知识点 4\n\nPython 的 insort 先定位插入点，再移动列表元素完成插入；定位快不代表整体插入是对数时间。\n\n## 知识点 5\n\n小根堆要求每个父节点的值不大于其子节点，根节点保存最小值。\n\n## 知识点 6\n\nPython 的 heapq.heappop 从小根堆移除并返回最小元素。\n",
+              "start": 0,
+              "end": 294
+            }
+          ]
+        },
+        {
+          "id": "search-4-2",
+          "group": "search-4",
+          "category": "paraphrase",
+          "query": "二分定位能否让列表插入整体变成对数时间？",
+          "passed": true,
+          "matchedGold": 1,
+          "goldCount": 1,
+          "reciprocalRank": 1.0,
+          "returnedCount": 3,
+          "budgetBytes": 2000,
+          "usedBytes": 1882,
+          "validLocations": true,
+          "conflictFlag": false,
+          "latencyMs": [
+            1.0054999984276947,
+            0.9540000028209761,
+            1.0742000013124198
+          ],
+          "returned": [
+            {
+              "document": "search.md",
+              "quote": "# 查找与堆\n\n## 知识点 1\n\n二分查找的前提是待查序列按照比较规则有序。\n\n## 知识点 2\n\n每轮二分查找把候选区间缩小到原来的一半，查找次数随规模呈对数增长。\n\n## 知识点 3\n\nPython 的 bisect_left 返回保持有序的最左插入位置，不是插入操作本身。\n\n## 知识点 4\n\nPython 的 insort 先定位插入点，再移动列表元素完成插入；定位快不代表整体插入是对数时间。\n\n## 知识点 5\n\n小根堆要求每个父节点的值不大于其子节点，根节点保存最小值。\n\n## 知识点 6\n\nPython 的 heapq.heappop 从小根堆移除并返回最小元素。\n",
+              "start": 0,
+              "end": 294
+            },
+            {
+              "document": "linear.md",
+              "quote": "# 线性结构\n\n## 知识点 1\n\n栈遵循后进先出，最后压入栈的元素最先弹出。\n\n## 知识点 2\n\n队列遵循先进先出，最早进入队列的元素最先离开。\n\n## 知识点 3\n\nPython 列表可以用 append 在末尾压栈，用不带下标的 pop 从末尾出栈。\n\n## 知识点 4\n\nPython 的 collections.deque 可以在右端 append，并在左端 popleft，实现先进先出队列。\n\n## 知识点 5\n\n顺序存储通过下标定位元素；链式存储通过节点之间的链接连接元素。\n\n## 知识点 6\n\n在单链表中删除已知节点的后继，需要修改该节点的 next 链接。\n",
+              "start": 0,
+              "end": 291
+            },
+            {
+              "document": "graphs.md",
+              "quote": "# 图与遍历\n\n## 知识点 1\n\n邻接表按顶点保存相邻顶点列表，适合表示稀疏图。\n\n## 知识点 2\n\n邻接矩阵用二维表记录顶点对之间的连接关系。\n\n## 知识点 3\n\n广度优先搜索使用队列，按照从起点逐层扩展的顺序访问节点。\n\n## 知识点 4\n\n深度优先搜索可以使用递归或显式栈，沿一条路径深入后再回溯。\n\n## 知识点 5\n\n无权图中，从起点执行广度优先搜索可得到到可达顶点的最少边数路径。\n\n## 知识点 6\n\n拓扑排序只适用于有向无环图；存在有向环时不存在拓扑序。\n",
+              "start": 0,
+              "end": 239
+            }
+          ]
+        },
+        {
+          "id": "search-5-1",
+          "group": "search-5",
+          "category": "direct",
+          "query": "小根堆的父子大小关系是什么？",
+          "passed": true,
+          "matchedGold": 1,
+          "goldCount": 1,
+          "reciprocalRank": 1.0,
+          "returnedCount": 2,
+          "budgetBytes": 2000,
+          "usedBytes": 1257,
+          "validLocations": true,
+          "conflictFlag": false,
+          "latencyMs": [
+            1.032899999700021,
+            1.1486999974295031,
+            1.1937999988731463
+          ],
+          "returned": [
+            {
+              "document": "search.md",
+              "quote": "# 查找与堆\n\n## 知识点 1\n\n二分查找的前提是待查序列按照比较规则有序。\n\n## 知识点 2\n\n每轮二分查找把候选区间缩小到原来的一半，查找次数随规模呈对数增长。\n\n## 知识点 3\n\nPython 的 bisect_left 返回保持有序的最左插入位置，不是插入操作本身。\n\n## 知识点 4\n\nPython 的 insort 先定位插入点，再移动列表元素完成插入；定位快不代表整体插入是对数时间。\n\n## 知识点 5\n\n小根堆要求每个父节点的值不大于其子节点，根节点保存最小值。\n\n## 知识点 6\n\nPython 的 heapq.heappop 从小根堆移除并返回最小元素。\n",
+              "start": 0,
+              "end": 294
+            },
+            {
+              "document": "graphs.md",
+              "quote": "# 图与遍历\n\n## 知识点 1\n\n邻接表按顶点保存相邻顶点列表，适合表示稀疏图。\n\n## 知识点 2\n\n邻接矩阵用二维表记录顶点对之间的连接关系。\n\n## 知识点 3\n\n广度优先搜索使用队列，按照从起点逐层扩展的顺序访问节点。\n\n## 知识点 4\n\n深度优先搜索可以使用递归或显式栈，沿一条路径深入后再回溯。\n\n## 知识点 5\n\n无权图中，从起点执行广度优先搜索可得到到可达顶点的最少边数路径。\n\n## 知识点 6\n\n拓扑排序只适用于有向无环图；存在有向环时不存在拓扑序。\n",
+              "start": 0,
+              "end": 239
+            }
+          ]
+        },
+        {
+          "id": "search-5-2",
+          "group": "search-5",
+          "category": "paraphrase",
+          "query": "小根堆最小元素位于哪里？",
+          "passed": true,
+          "matchedGold": 1,
+          "goldCount": 1,
+          "reciprocalRank": 1.0,
+          "returnedCount": 2,
+          "budgetBytes": 2000,
+          "usedBytes": 1279,
+          "validLocations": true,
+          "conflictFlag": false,
+          "latencyMs": [
+            0.9619999982533045,
+            0.9133000021392945,
+            0.9103999982471578
+          ],
+          "returned": [
+            {
+              "document": "search.md",
+              "quote": "# 查找与堆\n\n## 知识点 1\n\n二分查找的前提是待查序列按照比较规则有序。\n\n## 知识点 2\n\n每轮二分查找把候选区间缩小到原来的一半，查找次数随规模呈对数增长。\n\n## 知识点 3\n\nPython 的 bisect_left 返回保持有序的最左插入位置，不是插入操作本身。\n\n## 知识点 4\n\nPython 的 insort 先定位插入点，再移动列表元素完成插入；定位快不代表整体插入是对数时间。\n\n## 知识点 5\n\n小根堆要求每个父节点的值不大于其子节点，根节点保存最小值。\n\n## 知识点 6\n\nPython 的 heapq.heappop 从小根堆移除并返回最小元素。\n",
+              "start": 0,
+              "end": 294
+            },
+            {
+              "document": "linear.md",
+              "quote": "# 线性结构\n\n## 知识点 1\n\n栈遵循后进先出，最后压入栈的元素最先弹出。\n\n## 知识点 2\n\n队列遵循先进先出，最早进入队列的元素最先离开。\n\n## 知识点 3\n\nPython 列表可以用 append 在末尾压栈，用不带下标的 pop 从末尾出栈。\n\n## 知识点 4\n\nPython 的 collections.deque 可以在右端 append，并在左端 popleft，实现先进先出队列。\n\n## 知识点 5\n\n顺序存储通过下标定位元素；链式存储通过节点之间的链接连接元素。\n\n## 知识点 6\n\n在单链表中删除已知节点的后继，需要修改该节点的 next 链接。\n",
+              "start": 0,
+              "end": 291
+            }
+          ]
+        },
+        {
+          "id": "search-6-1",
+          "group": "search-6",
+          "category": "direct",
+          "query": "heappop 返回哪个元素？",
+          "passed": true,
+          "matchedGold": 1,
+          "goldCount": 1,
+          "reciprocalRank": 1.0,
+          "returnedCount": 2,
+          "budgetBytes": 2000,
+          "usedBytes": 1279,
+          "validLocations": true,
+          "conflictFlag": false,
+          "latencyMs": [
+            0.8957999998528976,
+            1.1349000014888588,
+            0.9310999994340818
+          ],
+          "returned": [
+            {
+              "document": "search.md",
+              "quote": "# 查找与堆\n\n## 知识点 1\n\n二分查找的前提是待查序列按照比较规则有序。\n\n## 知识点 2\n\n每轮二分查找把候选区间缩小到原来的一半，查找次数随规模呈对数增长。\n\n## 知识点 3\n\nPython 的 bisect_left 返回保持有序的最左插入位置，不是插入操作本身。\n\n## 知识点 4\n\nPython 的 insort 先定位插入点，再移动列表元素完成插入；定位快不代表整体插入是对数时间。\n\n## 知识点 5\n\n小根堆要求每个父节点的值不大于其子节点，根节点保存最小值。\n\n## 知识点 6\n\nPython 的 heapq.heappop 从小根堆移除并返回最小元素。\n",
+              "start": 0,
+              "end": 294
+            },
+            {
+              "document": "linear.md",
+              "quote": "# 线性结构\n\n## 知识点 1\n\n栈遵循后进先出，最后压入栈的元素最先弹出。\n\n## 知识点 2\n\n队列遵循先进先出，最早进入队列的元素最先离开。\n\n## 知识点 3\n\nPython 列表可以用 append 在末尾压栈，用不带下标的 pop 从末尾出栈。\n\n## 知识点 4\n\nPython 的 collections.deque 可以在右端 append，并在左端 popleft，实现先进先出队列。\n\n## 知识点 5\n\n顺序存储通过下标定位元素；链式存储通过节点之间的链接连接元素。\n\n## 知识点 6\n\n在单链表中删除已知节点的后继，需要修改该节点的 next 链接。\n",
+              "start": 0,
+              "end": 291
+            }
+          ]
+        },
+        {
+          "id": "search-6-2",
+          "group": "search-6",
+          "category": "paraphrase",
+          "query": "使用 heapq 如何取出最小元素？",
+          "passed": true,
+          "matchedGold": 1,
+          "goldCount": 1,
+          "reciprocalRank": 1.0,
+          "returnedCount": 3,
+          "budgetBytes": 2000,
+          "usedBytes": 1882,
+          "validLocations": true,
+          "conflictFlag": false,
+          "latencyMs": [
+            1.0006999982579146,
+            0.9303000006184448,
+            1.027900001645321
+          ],
+          "returned": [
+            {
+              "document": "search.md",
+              "quote": "# 查找与堆\n\n## 知识点 1\n\n二分查找的前提是待查序列按照比较规则有序。\n\n## 知识点 2\n\n每轮二分查找把候选区间缩小到原来的一半，查找次数随规模呈对数增长。\n\n## 知识点 3\n\nPython 的 bisect_left 返回保持有序的最左插入位置，不是插入操作本身。\n\n## 知识点 4\n\nPython 的 insort 先定位插入点，再移动列表元素完成插入；定位快不代表整体插入是对数时间。\n\n## 知识点 5\n\n小根堆要求每个父节点的值不大于其子节点，根节点保存最小值。\n\n## 知识点 6\n\nPython 的 heapq.heappop 从小根堆移除并返回最小元素。\n",
+              "start": 0,
+              "end": 294
+            },
+            {
+              "document": "graphs.md",
+              "quote": "# 图与遍历\n\n## 知识点 1\n\n邻接表按顶点保存相邻顶点列表，适合表示稀疏图。\n\n## 知识点 2\n\n邻接矩阵用二维表记录顶点对之间的连接关系。\n\n## 知识点 3\n\n广度优先搜索使用队列，按照从起点逐层扩展的顺序访问节点。\n\n## 知识点 4\n\n深度优先搜索可以使用递归或显式栈，沿一条路径深入后再回溯。\n\n## 知识点 5\n\n无权图中，从起点执行广度优先搜索可得到到可达顶点的最少边数路径。\n\n## 知识点 6\n\n拓扑排序只适用于有向无环图；存在有向环时不存在拓扑序。\n",
+              "start": 0,
+              "end": 239
+            },
+            {
+              "document": "linear.md",
+              "quote": "# 线性结构\n\n## 知识点 1\n\n栈遵循后进先出，最后压入栈的元素最先弹出。\n\n## 知识点 2\n\n队列遵循先进先出，最早进入队列的元素最先离开。\n\n## 知识点 3\n\nPython 列表可以用 append 在末尾压栈，用不带下标的 pop 从末尾出栈。\n\n## 知识点 4\n\nPython 的 collections.deque 可以在右端 append，并在左端 popleft，实现先进先出队列。\n\n## 知识点 5\n\n顺序存储通过下标定位元素；链式存储通过节点之间的链接连接元素。\n\n## 知识点 6\n\n在单链表中删除已知节点的后继，需要修改该节点的 next 链接。\n",
+              "start": 0,
+              "end": 291
+            }
+          ]
+        },
+        {
+          "id": "trees-1-1",
+          "group": "trees-1",
+          "category": "direct",
+          "query": "二叉树节点最多有几个孩子？",
+          "passed": true,
+          "matchedGold": 1,
+          "goldCount": 1,
+          "reciprocalRank": 1.0,
+          "returnedCount": 4,
+          "budgetBytes": 2000,
+          "usedBytes": 1981,
+          "validLocations": true,
+          "conflictFlag": false,
+          "latencyMs": [
+            2.2028999992471654,
+            2.107699998305179,
+            1.9741000032809097
+          ],
+          "returned": [
+            {
+              "document": "trees.md",
+              "quote": "# 二叉树与搜索树\n\n## 知识点 1\n\n二叉树的每个节点最多有两个子节点，分别称为左孩子和右孩子。\n\n## 知识点 2\n\n先序遍历按照根节点、左子树、右子树的顺序访问。\n\n## 知识点 3\n\n中序遍历按照左子树、根节点、右子树的顺序访问。\n\n## 知识点 4\n\n后序遍历按照左子树、右子树、根节点的顺序访问。\n\n## 知识点 5\n\n在键互不重复的二叉搜索树中，左子树的键小于根，右子树的键大于根。\n\n## 知识点 6\n\n二叉搜索树的查找代价取决于树高；退化为链时可能逐个比较所有节点。\n",
+              "start": 0,
+              "end": 244
+            },
+            {
+              "document": "linear.md",
+              "quote": "# 线性结构\n\n## 知识点 1\n\n栈遵循后进先出，最后压入栈的元素最先弹出。\n\n## 知识点 2\n\n队列遵循先进先出，最早进入队列的元素最先离开。\n\n## 知识点 3\n\nPython 列表可以用 append 在末尾压栈，用不带下标的 pop 从末尾出栈。\n\n## 知识点 4\n\nPython 的 collections.deque 可以在右端 append，并在左端 popleft，实现先进先出队列。\n\n## 知识点 5\n\n顺序存储通过下标定位元素；链式存储通过节点之间的链接连接元素。\n\n## 知识点 6\n\n在单链表中删除已知节点的后继，需要修改该节点的 next 链接。\n",
+              "start": 0,
+              "end": 291
+            },
+            {
+              "document": "search.md",
+              "quote": "# 查找与堆\n\n## 知识点 1\n\n二分查找的前提是待查序列按照比较规则有序。\n\n## 知识点 2\n\n每轮二分查找把候选区间缩小到原来的一半，查找次数随规模呈对数增长。\n\n## 知识点 3\n\nPython 的 bisect_left 返回保持有序的最左插入位置，不是插入操作本身。\n\n## 知识点 4\n\nPython 的 insort 先定位插入点，再移动列表元素完成插入；定位快不代表整体插入是对数时间。\n\n## 知识点 5\n\n小根堆要求每个父节点的值不大于其子节点，根节点保存最小值。\n\n## 知识点 6\n\nPython 的 heapq.heappop 从小根堆移除并返回最小元素。\n",
+              "start": 0,
+              "end": 294
+            },
+            {
+              "document": "graphs.md",
+              "quote": "广度优先搜索使用队列，按照从起点逐层扩展的顺序访问节点。",
+              "start": 86,
+              "end": 114
+            }
+          ]
+        },
+        {
+          "id": "trees-1-2",
+          "group": "trees-1",
+          "category": "paraphrase",
+          "query": "二叉树的左右孩子指什么？",
+          "passed": true,
+          "matchedGold": 1,
+          "goldCount": 1,
+          "reciprocalRank": 1.0,
+          "returnedCount": 1,
+          "budgetBytes": 2000,
+          "usedBytes": 618,
+          "validLocations": true,
+          "conflictFlag": false,
+          "latencyMs": [
+            0.9539999991829973,
+            0.9012999980768654,
+            0.8982999970612582
+          ],
+          "returned": [
+            {
+              "document": "trees.md",
+              "quote": "# 二叉树与搜索树\n\n## 知识点 1\n\n二叉树的每个节点最多有两个子节点，分别称为左孩子和右孩子。\n\n## 知识点 2\n\n先序遍历按照根节点、左子树、右子树的顺序访问。\n\n## 知识点 3\n\n中序遍历按照左子树、根节点、右子树的顺序访问。\n\n## 知识点 4\n\n后序遍历按照左子树、右子树、根节点的顺序访问。\n\n## 知识点 5\n\n在键互不重复的二叉搜索树中，左子树的键小于根，右子树的键大于根。\n\n## 知识点 6\n\n二叉搜索树的查找代价取决于树高；退化为链时可能逐个比较所有节点。\n",
+              "start": 0,
+              "end": 244
+            }
+          ]
+        },
+        {
+          "id": "trees-2-1",
+          "group": "trees-2",
+          "category": "direct",
+          "query": "先序遍历的顺序是什么？",
+          "passed": true,
+          "matchedGold": 1,
+          "goldCount": 1,
+          "reciprocalRank": 1.0,
+          "returnedCount": 3,
+          "budgetBytes": 2000,
+          "usedBytes": 1846,
+          "validLocations": true,
+          "conflictFlag": false,
+          "latencyMs": [
+            0.924300002225209,
+            0.9242999985872302,
+            0.9152999991783872
+          ],
+          "returned": [
+            {
+              "document": "trees.md",
+              "quote": "# 二叉树与搜索树\n\n## 知识点 1\n\n二叉树的每个节点最多有两个子节点，分别称为左孩子和右孩子。\n\n## 知识点 2\n\n先序遍历按照根节点、左子树、右子树的顺序访问。\n\n## 知识点 3\n\n中序遍历按照左子树、根节点、右子树的顺序访问。\n\n## 知识点 4\n\n后序遍历按照左子树、右子树、根节点的顺序访问。\n\n## 知识点 5\n\n在键互不重复的二叉搜索树中，左子树的键小于根，右子树的键大于根。\n\n## 知识点 6\n\n二叉搜索树的查找代价取决于树高；退化为链时可能逐个比较所有节点。\n",
+              "start": 0,
+              "end": 244
+            },
+            {
+              "document": "graphs.md",
+              "quote": "# 图与遍历\n\n## 知识点 1\n\n邻接表按顶点保存相邻顶点列表，适合表示稀疏图。\n\n## 知识点 2\n\n邻接矩阵用二维表记录顶点对之间的连接关系。\n\n## 知识点 3\n\n广度优先搜索使用队列，按照从起点逐层扩展的顺序访问节点。\n\n## 知识点 4\n\n深度优先搜索可以使用递归或显式栈，沿一条路径深入后再回溯。\n\n## 知识点 5\n\n无权图中，从起点执行广度优先搜索可得到到可达顶点的最少边数路径。\n\n## 知识点 6\n\n拓扑排序只适用于有向无环图；存在有向环时不存在拓扑序。\n",
+              "start": 0,
+              "end": 239
+            },
+            {
+              "document": "linear.md",
+              "quote": "# 线性结构\n\n## 知识点 1\n\n栈遵循后进先出，最后压入栈的元素最先弹出。\n\n## 知识点 2\n\n队列遵循先进先出，最早进入队列的元素最先离开。\n\n## 知识点 3\n\nPython 列表可以用 append 在末尾压栈，用不带下标的 pop 从末尾出栈。\n\n## 知识点 4\n\nPython 的 collections.deque 可以在右端 append，并在左端 popleft，实现先进先出队列。\n\n## 知识点 5\n\n顺序存储通过下标定位元素；链式存储通过节点之间的链接连接元素。\n\n## 知识点 6\n\n在单链表中删除已知节点的后继，需要修改该节点的 next 链接。\n",
+              "start": 0,
+              "end": 291
+            }
+          ]
+        },
+        {
+          "id": "trees-2-2",
+          "group": "trees-2",
+          "category": "paraphrase",
+          "query": "根左右是哪种遍历？",
+          "passed": true,
+          "matchedGold": 1,
+          "goldCount": 1,
+          "reciprocalRank": 1.0,
+          "returnedCount": 2,
+          "budgetBytes": 2000,
+          "usedBytes": 1221,
+          "validLocations": true,
+          "conflictFlag": false,
+          "latencyMs": [
+            1.004300000204239,
+            0.9411999999429099,
+            1.070499998604646
+          ],
+          "returned": [
+            {
+              "document": "trees.md",
+              "quote": "# 二叉树与搜索树\n\n## 知识点 1\n\n二叉树的每个节点最多有两个子节点，分别称为左孩子和右孩子。\n\n## 知识点 2\n\n先序遍历按照根节点、左子树、右子树的顺序访问。\n\n## 知识点 3\n\n中序遍历按照左子树、根节点、右子树的顺序访问。\n\n## 知识点 4\n\n后序遍历按照左子树、右子树、根节点的顺序访问。\n\n## 知识点 5\n\n在键互不重复的二叉搜索树中，左子树的键小于根，右子树的键大于根。\n\n## 知识点 6\n\n二叉搜索树的查找代价取决于树高；退化为链时可能逐个比较所有节点。\n",
+              "start": 0,
+              "end": 244
+            },
+            {
+              "document": "graphs.md",
+              "quote": "# 图与遍历\n\n## 知识点 1\n\n邻接表按顶点保存相邻顶点列表，适合表示稀疏图。\n\n## 知识点 2\n\n邻接矩阵用二维表记录顶点对之间的连接关系。\n\n## 知识点 3\n\n广度优先搜索使用队列，按照从起点逐层扩展的顺序访问节点。\n\n## 知识点 4\n\n深度优先搜索可以使用递归或显式栈，沿一条路径深入后再回溯。\n\n## 知识点 5\n\n无权图中，从起点执行广度优先搜索可得到到可达顶点的最少边数路径。\n\n## 知识点 6\n\n拓扑排序只适用于有向无环图；存在有向环时不存在拓扑序。\n",
+              "start": 0,
+              "end": 239
+            }
+          ]
+        },
+        {
+          "id": "trees-3-1",
+          "group": "trees-3",
+          "category": "direct",
+          "query": "中序遍历的顺序是什么？",
+          "passed": true,
+          "matchedGold": 1,
+          "goldCount": 1,
+          "reciprocalRank": 1.0,
+          "returnedCount": 3,
+          "budgetBytes": 2000,
+          "usedBytes": 1846,
+          "validLocations": true,
+          "conflictFlag": false,
+          "latencyMs": [
+            0.9633999979996588,
+            0.9472000019741245,
+            1.2581999981193803
+          ],
+          "returned": [
+            {
+              "document": "trees.md",
+              "quote": "# 二叉树与搜索树\n\n## 知识点 1\n\n二叉树的每个节点最多有两个子节点，分别称为左孩子和右孩子。\n\n## 知识点 2\n\n先序遍历按照根节点、左子树、右子树的顺序访问。\n\n## 知识点 3\n\n中序遍历按照左子树、根节点、右子树的顺序访问。\n\n## 知识点 4\n\n后序遍历按照左子树、右子树、根节点的顺序访问。\n\n## 知识点 5\n\n在键互不重复的二叉搜索树中，左子树的键小于根，右子树的键大于根。\n\n## 知识点 6\n\n二叉搜索树的查找代价取决于树高；退化为链时可能逐个比较所有节点。\n",
+              "start": 0,
+              "end": 244
+            },
+            {
+              "document": "graphs.md",
+              "quote": "# 图与遍历\n\n## 知识点 1\n\n邻接表按顶点保存相邻顶点列表，适合表示稀疏图。\n\n## 知识点 2\n\n邻接矩阵用二维表记录顶点对之间的连接关系。\n\n## 知识点 3\n\n广度优先搜索使用队列，按照从起点逐层扩展的顺序访问节点。\n\n## 知识点 4\n\n深度优先搜索可以使用递归或显式栈，沿一条路径深入后再回溯。\n\n## 知识点 5\n\n无权图中，从起点执行广度优先搜索可得到到可达顶点的最少边数路径。\n\n## 知识点 6\n\n拓扑排序只适用于有向无环图；存在有向环时不存在拓扑序。\n",
+              "start": 0,
+              "end": 239
+            },
+            {
+              "document": "linear.md",
+              "quote": "# 线性结构\n\n## 知识点 1\n\n栈遵循后进先出，最后压入栈的元素最先弹出。\n\n## 知识点 2\n\n队列遵循先进先出，最早进入队列的元素最先离开。\n\n## 知识点 3\n\nPython 列表可以用 append 在末尾压栈，用不带下标的 pop 从末尾出栈。\n\n## 知识点 4\n\nPython 的 collections.deque 可以在右端 append，并在左端 popleft，实现先进先出队列。\n\n## 知识点 5\n\n顺序存储通过下标定位元素；链式存储通过节点之间的链接连接元素。\n\n## 知识点 6\n\n在单链表中删除已知节点的后继，需要修改该节点的 next 链接。\n",
+              "start": 0,
+              "end": 291
+            }
+          ]
+        },
+        {
+          "id": "trees-3-2",
+          "group": "trees-3",
+          "category": "paraphrase",
+          "query": "左根右是哪种遍历？",
+          "passed": true,
+          "matchedGold": 1,
+          "goldCount": 1,
+          "reciprocalRank": 1.0,
+          "returnedCount": 2,
+          "budgetBytes": 2000,
+          "usedBytes": 1221,
+          "validLocations": true,
+          "conflictFlag": false,
+          "latencyMs": [
+            0.9697000023152214,
+            1.3040999983786605,
+            1.0588000004645437
+          ],
+          "returned": [
+            {
+              "document": "trees.md",
+              "quote": "# 二叉树与搜索树\n\n## 知识点 1\n\n二叉树的每个节点最多有两个子节点，分别称为左孩子和右孩子。\n\n## 知识点 2\n\n先序遍历按照根节点、左子树、右子树的顺序访问。\n\n## 知识点 3\n\n中序遍历按照左子树、根节点、右子树的顺序访问。\n\n## 知识点 4\n\n后序遍历按照左子树、右子树、根节点的顺序访问。\n\n## 知识点 5\n\n在键互不重复的二叉搜索树中，左子树的键小于根，右子树的键大于根。\n\n## 知识点 6\n\n二叉搜索树的查找代价取决于树高；退化为链时可能逐个比较所有节点。\n",
+              "start": 0,
+              "end": 244
+            },
+            {
+              "document": "graphs.md",
+              "quote": "# 图与遍历\n\n## 知识点 1\n\n邻接表按顶点保存相邻顶点列表，适合表示稀疏图。\n\n## 知识点 2\n\n邻接矩阵用二维表记录顶点对之间的连接关系。\n\n## 知识点 3\n\n广度优先搜索使用队列，按照从起点逐层扩展的顺序访问节点。\n\n## 知识点 4\n\n深度优先搜索可以使用递归或显式栈，沿一条路径深入后再回溯。\n\n## 知识点 5\n\n无权图中，从起点执行广度优先搜索可得到到可达顶点的最少边数路径。\n\n## 知识点 6\n\n拓扑排序只适用于有向无环图；存在有向环时不存在拓扑序。\n",
+              "start": 0,
+              "end": 239
+            }
+          ]
+        },
+        {
+          "id": "trees-4-1",
+          "group": "trees-4",
+          "category": "direct",
+          "query": "后序遍历的顺序是什么？",
+          "passed": true,
+          "matchedGold": 1,
+          "goldCount": 1,
+          "reciprocalRank": 1.0,
+          "returnedCount": 3,
+          "budgetBytes": 2000,
+          "usedBytes": 1846,
+          "validLocations": true,
+          "conflictFlag": false,
+          "latencyMs": [
+            0.9442999980819877,
+            0.9217000006174203,
+            1.4774000010220334
+          ],
+          "returned": [
+            {
+              "document": "trees.md",
+              "quote": "# 二叉树与搜索树\n\n## 知识点 1\n\n二叉树的每个节点最多有两个子节点，分别称为左孩子和右孩子。\n\n## 知识点 2\n\n先序遍历按照根节点、左子树、右子树的顺序访问。\n\n## 知识点 3\n\n中序遍历按照左子树、根节点、右子树的顺序访问。\n\n## 知识点 4\n\n后序遍历按照左子树、右子树、根节点的顺序访问。\n\n## 知识点 5\n\n在键互不重复的二叉搜索树中，左子树的键小于根，右子树的键大于根。\n\n## 知识点 6\n\n二叉搜索树的查找代价取决于树高；退化为链时可能逐个比较所有节点。\n",
+              "start": 0,
+              "end": 244
+            },
+            {
+              "document": "graphs.md",
+              "quote": "# 图与遍历\n\n## 知识点 1\n\n邻接表按顶点保存相邻顶点列表，适合表示稀疏图。\n\n## 知识点 2\n\n邻接矩阵用二维表记录顶点对之间的连接关系。\n\n## 知识点 3\n\n广度优先搜索使用队列，按照从起点逐层扩展的顺序访问节点。\n\n## 知识点 4\n\n深度优先搜索可以使用递归或显式栈，沿一条路径深入后再回溯。\n\n## 知识点 5\n\n无权图中，从起点执行广度优先搜索可得到到可达顶点的最少边数路径。\n\n## 知识点 6\n\n拓扑排序只适用于有向无环图；存在有向环时不存在拓扑序。\n",
+              "start": 0,
+              "end": 239
+            },
+            {
+              "document": "linear.md",
+              "quote": "# 线性结构\n\n## 知识点 1\n\n栈遵循后进先出，最后压入栈的元素最先弹出。\n\n## 知识点 2\n\n队列遵循先进先出，最早进入队列的元素最先离开。\n\n## 知识点 3\n\nPython 列表可以用 append 在末尾压栈，用不带下标的 pop 从末尾出栈。\n\n## 知识点 4\n\nPython 的 collections.deque 可以在右端 append，并在左端 popleft，实现先进先出队列。\n\n## 知识点 5\n\n顺序存储通过下标定位元素；链式存储通过节点之间的链接连接元素。\n\n## 知识点 6\n\n在单链表中删除已知节点的后继，需要修改该节点的 next 链接。\n",
+              "start": 0,
+              "end": 291
+            }
+          ]
+        },
+        {
+          "id": "trees-4-2",
+          "group": "trees-4",
+          "category": "paraphrase",
+          "query": "左右根是哪种遍历？",
+          "passed": true,
+          "matchedGold": 1,
+          "goldCount": 1,
+          "reciprocalRank": 1.0,
+          "returnedCount": 2,
+          "budgetBytes": 2000,
+          "usedBytes": 1221,
+          "validLocations": true,
+          "conflictFlag": false,
+          "latencyMs": [
+            1.060999999026535,
+            1.3729999991483055,
+            0.9141000009549316
+          ],
+          "returned": [
+            {
+              "document": "trees.md",
+              "quote": "# 二叉树与搜索树\n\n## 知识点 1\n\n二叉树的每个节点最多有两个子节点，分别称为左孩子和右孩子。\n\n## 知识点 2\n\n先序遍历按照根节点、左子树、右子树的顺序访问。\n\n## 知识点 3\n\n中序遍历按照左子树、根节点、右子树的顺序访问。\n\n## 知识点 4\n\n后序遍历按照左子树、右子树、根节点的顺序访问。\n\n## 知识点 5\n\n在键互不重复的二叉搜索树中，左子树的键小于根，右子树的键大于根。\n\n## 知识点 6\n\n二叉搜索树的查找代价取决于树高；退化为链时可能逐个比较所有节点。\n",
+              "start": 0,
+              "end": 244
+            },
+            {
+              "document": "graphs.md",
+              "quote": "# 图与遍历\n\n## 知识点 1\n\n邻接表按顶点保存相邻顶点列表，适合表示稀疏图。\n\n## 知识点 2\n\n邻接矩阵用二维表记录顶点对之间的连接关系。\n\n## 知识点 3\n\n广度优先搜索使用队列，按照从起点逐层扩展的顺序访问节点。\n\n## 知识点 4\n\n深度优先搜索可以使用递归或显式栈，沿一条路径深入后再回溯。\n\n## 知识点 5\n\n无权图中，从起点执行广度优先搜索可得到到可达顶点的最少边数路径。\n\n## 知识点 6\n\n拓扑排序只适用于有向无环图；存在有向环时不存在拓扑序。\n",
+              "start": 0,
+              "end": 239
+            }
+          ]
+        },
+        {
+          "id": "trees-5-1",
+          "group": "trees-5",
+          "category": "direct",
+          "query": "不重复键的二叉搜索树有什么大小关系？",
+          "passed": true,
+          "matchedGold": 1,
+          "goldCount": 1,
+          "reciprocalRank": 1.0,
+          "returnedCount": 2,
+          "budgetBytes": 2000,
+          "usedBytes": 1221,
+          "validLocations": true,
+          "conflictFlag": false,
+          "latencyMs": [
+            0.9263000029022805,
+            1.0491999964870047,
+            1.6179000012925826
+          ],
+          "returned": [
+            {
+              "document": "trees.md",
+              "quote": "# 二叉树与搜索树\n\n## 知识点 1\n\n二叉树的每个节点最多有两个子节点，分别称为左孩子和右孩子。\n\n## 知识点 2\n\n先序遍历按照根节点、左子树、右子树的顺序访问。\n\n## 知识点 3\n\n中序遍历按照左子树、根节点、右子树的顺序访问。\n\n## 知识点 4\n\n后序遍历按照左子树、右子树、根节点的顺序访问。\n\n## 知识点 5\n\n在键互不重复的二叉搜索树中，左子树的键小于根，右子树的键大于根。\n\n## 知识点 6\n\n二叉搜索树的查找代价取决于树高；退化为链时可能逐个比较所有节点。\n",
+              "start": 0,
+              "end": 244
+            },
+            {
+              "document": "graphs.md",
+              "quote": "# 图与遍历\n\n## 知识点 1\n\n邻接表按顶点保存相邻顶点列表，适合表示稀疏图。\n\n## 知识点 2\n\n邻接矩阵用二维表记录顶点对之间的连接关系。\n\n## 知识点 3\n\n广度优先搜索使用队列，按照从起点逐层扩展的顺序访问节点。\n\n## 知识点 4\n\n深度优先搜索可以使用递归或显式栈，沿一条路径深入后再回溯。\n\n## 知识点 5\n\n无权图中，从起点执行广度优先搜索可得到到可达顶点的最少边数路径。\n\n## 知识点 6\n\n拓扑排序只适用于有向无环图；存在有向环时不存在拓扑序。\n",
+              "start": 0,
+              "end": 239
+            }
+          ]
+        },
+        {
+          "id": "trees-5-2",
+          "group": "trees-5",
+          "category": "paraphrase",
+          "query": "BST 如何组织根与左右子树的键？",
+          "passed": true,
+          "matchedGold": 1,
+          "goldCount": 1,
+          "reciprocalRank": 1.0,
+          "returnedCount": 1,
+          "budgetBytes": 2000,
+          "usedBytes": 618,
+          "validLocations": true,
+          "conflictFlag": false,
+          "latencyMs": [
+            0.9403000003658235,
+            1.1195000006409828,
+            0.9074000008695293
+          ],
+          "returned": [
+            {
+              "document": "trees.md",
+              "quote": "# 二叉树与搜索树\n\n## 知识点 1\n\n二叉树的每个节点最多有两个子节点，分别称为左孩子和右孩子。\n\n## 知识点 2\n\n先序遍历按照根节点、左子树、右子树的顺序访问。\n\n## 知识点 3\n\n中序遍历按照左子树、根节点、右子树的顺序访问。\n\n## 知识点 4\n\n后序遍历按照左子树、右子树、根节点的顺序访问。\n\n## 知识点 5\n\n在键互不重复的二叉搜索树中，左子树的键小于根，右子树的键大于根。\n\n## 知识点 6\n\n二叉搜索树的查找代价取决于树高；退化为链时可能逐个比较所有节点。\n",
+              "start": 0,
+              "end": 244
+            }
+          ]
+        },
+        {
+          "id": "trees-6-1",
+          "group": "trees-6",
+          "category": "direct",
+          "query": "二叉搜索树退化后查找会怎样？",
+          "passed": true,
+          "matchedGold": 1,
+          "goldCount": 1,
+          "reciprocalRank": 1.0,
+          "returnedCount": 3,
+          "budgetBytes": 2000,
+          "usedBytes": 1875,
+          "validLocations": true,
+          "conflictFlag": false,
+          "latencyMs": [
+            0.9410999991814606,
+            1.0817999973369297,
+            0.9989000027417205
+          ],
+          "returned": [
+            {
+              "document": "trees.md",
+              "quote": "# 二叉树与搜索树\n\n## 知识点 1\n\n二叉树的每个节点最多有两个子节点，分别称为左孩子和右孩子。\n\n## 知识点 2\n\n先序遍历按照根节点、左子树、右子树的顺序访问。\n\n## 知识点 3\n\n中序遍历按照左子树、根节点、右子树的顺序访问。\n\n## 知识点 4\n\n后序遍历按照左子树、右子树、根节点的顺序访问。\n\n## 知识点 5\n\n在键互不重复的二叉搜索树中，左子树的键小于根，右子树的键大于根。\n\n## 知识点 6\n\n二叉搜索树的查找代价取决于树高；退化为链时可能逐个比较所有节点。\n",
+              "start": 0,
+              "end": 244
+            },
+            {
+              "document": "search.md",
+              "quote": "# 查找与堆\n\n## 知识点 1\n\n二分查找的前提是待查序列按照比较规则有序。\n\n## 知识点 2\n\n每轮二分查找把候选区间缩小到原来的一半，查找次数随规模呈对数增长。\n\n## 知识点 3\n\nPython 的 bisect_left 返回保持有序的最左插入位置，不是插入操作本身。\n\n## 知识点 4\n\nPython 的 insort 先定位插入点，再移动列表元素完成插入；定位快不代表整体插入是对数时间。\n\n## 知识点 5\n\n小根堆要求每个父节点的值不大于其子节点，根节点保存最小值。\n\n## 知识点 6\n\nPython 的 heapq.heappop 从小根堆移除并返回最小元素。\n",
+              "start": 0,
+              "end": 294
+            },
+            {
+              "document": "graphs.md",
+              "quote": "# 图与遍历\n\n## 知识点 1\n\n邻接表按顶点保存相邻顶点列表，适合表示稀疏图。\n\n## 知识点 2\n\n邻接矩阵用二维表记录顶点对之间的连接关系。\n\n## 知识点 3\n\n广度优先搜索使用队列，按照从起点逐层扩展的顺序访问节点。\n\n## 知识点 4\n\n深度优先搜索可以使用递归或显式栈，沿一条路径深入后再回溯。\n\n## 知识点 5\n\n无权图中，从起点执行广度优先搜索可得到到可达顶点的最少边数路径。\n\n## 知识点 6\n\n拓扑排序只适用于有向无环图；存在有向环时不存在拓扑序。\n",
+              "start": 0,
+              "end": 239
+            }
+          ]
+        },
+        {
+          "id": "trees-6-2",
+          "group": "trees-6",
+          "category": "paraphrase",
+          "query": "BST 查找代价为什么与树高有关？",
+          "passed": true,
+          "matchedGold": 1,
+          "goldCount": 1,
+          "reciprocalRank": 1.0,
+          "returnedCount": 2,
+          "budgetBytes": 2000,
+          "usedBytes": 1272,
+          "validLocations": true,
+          "conflictFlag": false,
+          "latencyMs": [
+            0.9635999995225575,
+            0.915000000532018,
+            0.9083000004466157
+          ],
+          "returned": [
+            {
+              "document": "trees.md",
+              "quote": "# 二叉树与搜索树\n\n## 知识点 1\n\n二叉树的每个节点最多有两个子节点，分别称为左孩子和右孩子。\n\n## 知识点 2\n\n先序遍历按照根节点、左子树、右子树的顺序访问。\n\n## 知识点 3\n\n中序遍历按照左子树、根节点、右子树的顺序访问。\n\n## 知识点 4\n\n后序遍历按照左子树、右子树、根节点的顺序访问。\n\n## 知识点 5\n\n在键互不重复的二叉搜索树中，左子树的键小于根，右子树的键大于根。\n\n## 知识点 6\n\n二叉搜索树的查找代价取决于树高；退化为链时可能逐个比较所有节点。\n",
+              "start": 0,
+              "end": 244
+            },
+            {
+              "document": "search.md",
+              "quote": "# 查找与堆\n\n## 知识点 1\n\n二分查找的前提是待查序列按照比较规则有序。\n\n## 知识点 2\n\n每轮二分查找把候选区间缩小到原来的一半，查找次数随规模呈对数增长。\n\n## 知识点 3\n\nPython 的 bisect_left 返回保持有序的最左插入位置，不是插入操作本身。\n\n## 知识点 4\n\nPython 的 insort 先定位插入点，再移动列表元素完成插入；定位快不代表整体插入是对数时间。\n\n## 知识点 5\n\n小根堆要求每个父节点的值不大于其子节点，根节点保存最小值。\n\n## 知识点 6\n\nPython 的 heapq.heappop 从小根堆移除并返回最小元素。\n",
+              "start": 0,
+              "end": 294
+            }
+          ]
+        },
+        {
+          "id": "graphs-1-1",
+          "group": "graphs-1",
+          "category": "direct",
+          "query": "稀疏图可以选哪种表示？",
+          "passed": true,
+          "matchedGold": 1,
+          "goldCount": 1,
+          "reciprocalRank": 1.0,
+          "returnedCount": 3,
+          "budgetBytes": 2000,
+          "usedBytes": 702,
+          "validLocations": true,
+          "conflictFlag": true,
+          "latencyMs": [
+            0.9088000006158836,
+            0.9000999998534098,
+            0.962399997661123
+          ],
+          "returned": [
+            {
+              "document": "graphs.md",
+              "quote": "# 图与遍历\n\n## 知识点 1\n\n邻接表按顶点保存相邻顶点列表，适合表示稀疏图。\n\n## 知识点 2\n\n邻接矩阵用二维表记录顶点对之间的连接关系。\n\n## 知识点 3\n\n广度优先搜索使用队列，按照从起点逐层扩展的顺序访问节点。\n\n## 知识点 4\n\n深度优先搜索可以使用递归或显式栈，沿一条路径深入后再回溯。\n\n## 知识点 5\n\n无权图中，从起点执行广度优先搜索可得到到可达顶点的最少边数路径。\n\n## 知识点 6\n\n拓扑排序只适用于有向无环图；存在有向环时不存在拓扑序。\n",
+              "start": 0,
+              "end": 239
+            },
+            {
+              "document": "conflict-a.md",
+              "quote": "冲突验收声明：课程符号 Z 表示栈。",
+              "start": 0,
+              "end": 18
+            },
+            {
+              "document": "conflict-b.md",
+              "quote": "冲突验收声明：课程符号 Z 不表示栈。",
+              "start": 0,
+              "end": 19
+            }
+          ]
+        },
+        {
+          "id": "graphs-1-2",
+          "group": "graphs-1",
+          "category": "paraphrase",
+          "query": "邻接表按什么组织邻居？",
+          "passed": true,
+          "matchedGold": 1,
+          "goldCount": 1,
+          "reciprocalRank": 1.0,
+          "returnedCount": 1,
+          "budgetBytes": 2000,
+          "usedBytes": 603,
+          "validLocations": true,
+          "conflictFlag": false,
+          "latencyMs": [
+            1.0339000000385568,
+            0.9123999989242293,
+            1.4994000011938624
+          ],
+          "returned": [
+            {
+              "document": "graphs.md",
+              "quote": "# 图与遍历\n\n## 知识点 1\n\n邻接表按顶点保存相邻顶点列表，适合表示稀疏图。\n\n## 知识点 2\n\n邻接矩阵用二维表记录顶点对之间的连接关系。\n\n## 知识点 3\n\n广度优先搜索使用队列，按照从起点逐层扩展的顺序访问节点。\n\n## 知识点 4\n\n深度优先搜索可以使用递归或显式栈，沿一条路径深入后再回溯。\n\n## 知识点 5\n\n无权图中，从起点执行广度优先搜索可得到到可达顶点的最少边数路径。\n\n## 知识点 6\n\n拓扑排序只适用于有向无环图；存在有向环时不存在拓扑序。\n",
+              "start": 0,
+              "end": 239
+            }
+          ]
+        },
+        {
+          "id": "graphs-2-1",
+          "group": "graphs-2",
+          "category": "direct",
+          "query": "邻接矩阵记录什么？",
+          "passed": true,
+          "matchedGold": 1,
+          "goldCount": 1,
+          "reciprocalRank": 1.0,
+          "returnedCount": 1,
+          "budgetBytes": 2000,
+          "usedBytes": 603,
+          "validLocations": true,
+          "conflictFlag": false,
+          "latencyMs": [
+            1.2061000015819445,
+            0.8999999990919605,
+            1.0230000007140916
+          ],
+          "returned": [
+            {
+              "document": "graphs.md",
+              "quote": "# 图与遍历\n\n## 知识点 1\n\n邻接表按顶点保存相邻顶点列表，适合表示稀疏图。\n\n## 知识点 2\n\n邻接矩阵用二维表记录顶点对之间的连接关系。\n\n## 知识点 3\n\n广度优先搜索使用队列，按照从起点逐层扩展的顺序访问节点。\n\n## 知识点 4\n\n深度优先搜索可以使用递归或显式栈，沿一条路径深入后再回溯。\n\n## 知识点 5\n\n无权图中，从起点执行广度优先搜索可得到到可达顶点的最少边数路径。\n\n## 知识点 6\n\n拓扑排序只适用于有向无环图；存在有向环时不存在拓扑序。\n",
+              "start": 0,
+              "end": 239
+            }
+          ]
+        },
+        {
+          "id": "graphs-2-2",
+          "group": "graphs-2",
+          "category": "paraphrase",
+          "query": "二维表如何表示图的边？",
+          "passed": true,
+          "matchedGold": 1,
+          "goldCount": 1,
+          "reciprocalRank": 1.0,
+          "returnedCount": 3,
+          "budgetBytes": 2000,
+          "usedBytes": 702,
+          "validLocations": true,
+          "conflictFlag": true,
+          "latencyMs": [
+            1.6842000004544389,
+            1.7164000018965453,
+            1.5965000020514708
+          ],
+          "returned": [
+            {
+              "document": "graphs.md",
+              "quote": "# 图与遍历\n\n## 知识点 1\n\n邻接表按顶点保存相邻顶点列表，适合表示稀疏图。\n\n## 知识点 2\n\n邻接矩阵用二维表记录顶点对之间的连接关系。\n\n## 知识点 3\n\n广度优先搜索使用队列，按照从起点逐层扩展的顺序访问节点。\n\n## 知识点 4\n\n深度优先搜索可以使用递归或显式栈，沿一条路径深入后再回溯。\n\n## 知识点 5\n\n无权图中，从起点执行广度优先搜索可得到到可达顶点的最少边数路径。\n\n## 知识点 6\n\n拓扑排序只适用于有向无环图；存在有向环时不存在拓扑序。\n",
+              "start": 0,
+              "end": 239
+            },
+            {
+              "document": "conflict-a.md",
+              "quote": "冲突验收声明：课程符号 Z 表示栈。",
+              "start": 0,
+              "end": 18
+            },
+            {
+              "document": "conflict-b.md",
+              "quote": "冲突验收声明：课程符号 Z 不表示栈。",
+              "start": 0,
+              "end": 19
+            }
+          ]
+        },
+        {
+          "id": "graphs-3-1",
+          "group": "graphs-3",
+          "category": "direct",
+          "query": "BFS 使用什么结构？",
+          "passed": true,
+          "matchedGold": 1,
+          "goldCount": 1,
+          "reciprocalRank": 1.0,
+          "returnedCount": 2,
+          "budgetBytes": 2000,
+          "usedBytes": 1228,
+          "validLocations": true,
+          "conflictFlag": false,
+          "latencyMs": [
+            1.6758999990997836,
+            1.7645000007178169,
+            1.4527999992424157
+          ],
+          "returned": [
+            {
+              "document": "graphs.md",
+              "quote": "# 图与遍历\n\n## 知识点 1\n\n邻接表按顶点保存相邻顶点列表，适合表示稀疏图。\n\n## 知识点 2\n\n邻接矩阵用二维表记录顶点对之间的连接关系。\n\n## 知识点 3\n\n广度优先搜索使用队列，按照从起点逐层扩展的顺序访问节点。\n\n## 知识点 4\n\n深度优先搜索可以使用递归或显式栈，沿一条路径深入后再回溯。\n\n## 知识点 5\n\n无权图中，从起点执行广度优先搜索可得到到可达顶点的最少边数路径。\n\n## 知识点 6\n\n拓扑排序只适用于有向无环图；存在有向环时不存在拓扑序。\n",
+              "start": 0,
+              "end": 239
+            },
+            {
+              "document": "linear.md",
+              "quote": "# 线性结构\n\n## 知识点 1\n\n栈遵循后进先出，最后压入栈的元素最先弹出。\n\n## 知识点 2\n\n队列遵循先进先出，最早进入队列的元素最先离开。\n\n## 知识点 3\n\nPython 列表可以用 append 在末尾压栈，用不带下标的 pop 从末尾出栈。\n\n## 知识点 4\n\nPython 的 collections.deque 可以在右端 append，并在左端 popleft，实现先进先出队列。\n\n## 知识点 5\n\n顺序存储通过下标定位元素；链式存储通过节点之间的链接连接元素。\n\n## 知识点 6\n\n在单链表中删除已知节点的后继，需要修改该节点的 next 链接。\n",
+              "start": 0,
+              "end": 291
+            }
+          ]
+        },
+        {
+          "id": "graphs-3-2",
+          "group": "graphs-3",
+          "category": "paraphrase",
+          "query": "广度优先为什么是逐层扩展？",
+          "passed": true,
+          "matchedGold": 1,
+          "goldCount": 1,
+          "reciprocalRank": 1.0,
+          "returnedCount": 1,
+          "budgetBytes": 2000,
+          "usedBytes": 603,
+          "validLocations": true,
+          "conflictFlag": false,
+          "latencyMs": [
+            0.928000001295004,
+            0.893000000360189,
+            0.8976999997685198
+          ],
+          "returned": [
+            {
+              "document": "graphs.md",
+              "quote": "# 图与遍历\n\n## 知识点 1\n\n邻接表按顶点保存相邻顶点列表，适合表示稀疏图。\n\n## 知识点 2\n\n邻接矩阵用二维表记录顶点对之间的连接关系。\n\n## 知识点 3\n\n广度优先搜索使用队列，按照从起点逐层扩展的顺序访问节点。\n\n## 知识点 4\n\n深度优先搜索可以使用递归或显式栈，沿一条路径深入后再回溯。\n\n## 知识点 5\n\n无权图中，从起点执行广度优先搜索可得到到可达顶点的最少边数路径。\n\n## 知识点 6\n\n拓扑排序只适用于有向无环图；存在有向环时不存在拓扑序。\n",
+              "start": 0,
+              "end": 239
+            }
+          ]
+        },
+        {
+          "id": "graphs-4-1",
+          "group": "graphs-4",
+          "category": "direct",
+          "query": "DFS 可以怎样实现？",
+          "passed": true,
+          "matchedGold": 1,
+          "goldCount": 1,
+          "reciprocalRank": 0.5,
+          "returnedCount": 2,
+          "budgetBytes": 2000,
+          "usedBytes": 1228,
+          "validLocations": true,
+          "conflictFlag": false,
+          "latencyMs": [
+            0.8984999985841569,
+            0.8987999972305261,
+            0.8884999988367781
+          ],
+          "returned": [
+            {
+              "document": "linear.md",
+              "quote": "# 线性结构\n\n## 知识点 1\n\n栈遵循后进先出，最后压入栈的元素最先弹出。\n\n## 知识点 2\n\n队列遵循先进先出，最早进入队列的元素最先离开。\n\n## 知识点 3\n\nPython 列表可以用 append 在末尾压栈，用不带下标的 pop 从末尾出栈。\n\n## 知识点 4\n\nPython 的 collections.deque 可以在右端 append，并在左端 popleft，实现先进先出队列。\n\n## 知识点 5\n\n顺序存储通过下标定位元素；链式存储通过节点之间的链接连接元素。\n\n## 知识点 6\n\n在单链表中删除已知节点的后继，需要修改该节点的 next 链接。\n",
+              "start": 0,
+              "end": 291
+            },
+            {
+              "document": "graphs.md",
+              "quote": "# 图与遍历\n\n## 知识点 1\n\n邻接表按顶点保存相邻顶点列表，适合表示稀疏图。\n\n## 知识点 2\n\n邻接矩阵用二维表记录顶点对之间的连接关系。\n\n## 知识点 3\n\n广度优先搜索使用队列，按照从起点逐层扩展的顺序访问节点。\n\n## 知识点 4\n\n深度优先搜索可以使用递归或显式栈，沿一条路径深入后再回溯。\n\n## 知识点 5\n\n无权图中，从起点执行广度优先搜索可得到到可达顶点的最少边数路径。\n\n## 知识点 6\n\n拓扑排序只适用于有向无环图；存在有向环时不存在拓扑序。\n",
+              "start": 0,
+              "end": 239
+            }
+          ]
+        },
+        {
+          "id": "graphs-4-2",
+          "group": "graphs-4",
+          "category": "paraphrase",
+          "query": "深度优先何时回溯？",
+          "passed": true,
+          "matchedGold": 1,
+          "goldCount": 1,
+          "reciprocalRank": 1.0,
+          "returnedCount": 1,
+          "budgetBytes": 2000,
+          "usedBytes": 603,
+          "validLocations": true,
+          "conflictFlag": false,
+          "latencyMs": [
+            1.1769999982789159,
+            0.9491999990132172,
+            0.8981999999377877
+          ],
+          "returned": [
+            {
+              "document": "graphs.md",
+              "quote": "# 图与遍历\n\n## 知识点 1\n\n邻接表按顶点保存相邻顶点列表，适合表示稀疏图。\n\n## 知识点 2\n\n邻接矩阵用二维表记录顶点对之间的连接关系。\n\n## 知识点 3\n\n广度优先搜索使用队列，按照从起点逐层扩展的顺序访问节点。\n\n## 知识点 4\n\n深度优先搜索可以使用递归或显式栈，沿一条路径深入后再回溯。\n\n## 知识点 5\n\n无权图中，从起点执行广度优先搜索可得到到可达顶点的最少边数路径。\n\n## 知识点 6\n\n拓扑排序只适用于有向无环图；存在有向环时不存在拓扑序。\n",
+              "start": 0,
+              "end": 239
+            }
+          ]
+        },
+        {
+          "id": "graphs-5-1",
+          "group": "graphs-5",
+          "category": "direct",
+          "query": "无权图的最少边数路径可用什么算法？",
+          "passed": true,
+          "matchedGold": 1,
+          "goldCount": 1,
+          "reciprocalRank": 1.0,
+          "returnedCount": 2,
+          "budgetBytes": 2000,
+          "usedBytes": 1257,
+          "validLocations": true,
+          "conflictFlag": false,
+          "latencyMs": [
+            0.9353999994345941,
+            1.0236000016448088,
+            1.0351000018999912
+          ],
+          "returned": [
+            {
+              "document": "graphs.md",
+              "quote": "# 图与遍历\n\n## 知识点 1\n\n邻接表按顶点保存相邻顶点列表，适合表示稀疏图。\n\n## 知识点 2\n\n邻接矩阵用二维表记录顶点对之间的连接关系。\n\n## 知识点 3\n\n广度优先搜索使用队列，按照从起点逐层扩展的顺序访问节点。\n\n## 知识点 4\n\n深度优先搜索可以使用递归或显式栈，沿一条路径深入后再回溯。\n\n## 知识点 5\n\n无权图中，从起点执行广度优先搜索可得到到可达顶点的最少边数路径。\n\n## 知识点 6\n\n拓扑排序只适用于有向无环图；存在有向环时不存在拓扑序。\n",
+              "start": 0,
+              "end": 239
+            },
+            {
+              "document": "search.md",
+              "quote": "# 查找与堆\n\n## 知识点 1\n\n二分查找的前提是待查序列按照比较规则有序。\n\n## 知识点 2\n\n每轮二分查找把候选区间缩小到原来的一半，查找次数随规模呈对数增长。\n\n## 知识点 3\n\nPython 的 bisect_left 返回保持有序的最左插入位置，不是插入操作本身。\n\n## 知识点 4\n\nPython 的 insort 先定位插入点，再移动列表元素完成插入；定位快不代表整体插入是对数时间。\n\n## 知识点 5\n\n小根堆要求每个父节点的值不大于其子节点，根节点保存最小值。\n\n## 知识点 6\n\nPython 的 heapq.heappop 从小根堆移除并返回最小元素。\n",
+              "start": 0,
+              "end": 294
+            }
+          ]
+        },
+        {
+          "id": "graphs-5-2",
+          "group": "graphs-5",
+          "category": "paraphrase",
+          "query": "BFS 求得的是哪种图上的最少边数路径？",
+          "passed": true,
+          "matchedGold": 1,
+          "goldCount": 1,
+          "reciprocalRank": 1.0,
+          "returnedCount": 2,
+          "budgetBytes": 2000,
+          "usedBytes": 1257,
+          "validLocations": true,
+          "conflictFlag": false,
+          "latencyMs": [
+            1.1359999989508651,
+            0.9411999999429099,
+            0.9169000004476402
+          ],
+          "returned": [
+            {
+              "document": "graphs.md",
+              "quote": "# 图与遍历\n\n## 知识点 1\n\n邻接表按顶点保存相邻顶点列表，适合表示稀疏图。\n\n## 知识点 2\n\n邻接矩阵用二维表记录顶点对之间的连接关系。\n\n## 知识点 3\n\n广度优先搜索使用队列，按照从起点逐层扩展的顺序访问节点。\n\n## 知识点 4\n\n深度优先搜索可以使用递归或显式栈，沿一条路径深入后再回溯。\n\n## 知识点 5\n\n无权图中，从起点执行广度优先搜索可得到到可达顶点的最少边数路径。\n\n## 知识点 6\n\n拓扑排序只适用于有向无环图；存在有向环时不存在拓扑序。\n",
+              "start": 0,
+              "end": 239
+            },
+            {
+              "document": "search.md",
+              "quote": "# 查找与堆\n\n## 知识点 1\n\n二分查找的前提是待查序列按照比较规则有序。\n\n## 知识点 2\n\n每轮二分查找把候选区间缩小到原来的一半，查找次数随规模呈对数增长。\n\n## 知识点 3\n\nPython 的 bisect_left 返回保持有序的最左插入位置，不是插入操作本身。\n\n## 知识点 4\n\nPython 的 insort 先定位插入点，再移动列表元素完成插入；定位快不代表整体插入是对数时间。\n\n## 知识点 5\n\n小根堆要求每个父节点的值不大于其子节点，根节点保存最小值。\n\n## 知识点 6\n\nPython 的 heapq.heappop 从小根堆移除并返回最小元素。\n",
+              "start": 0,
+              "end": 294
+            }
+          ]
+        },
+        {
+          "id": "graphs-6-1",
+          "group": "graphs-6",
+          "category": "direct",
+          "query": "拓扑排序适用于什么图？",
+          "passed": true,
+          "matchedGold": 1,
+          "goldCount": 1,
+          "reciprocalRank": 1.0,
+          "returnedCount": 1,
+          "budgetBytes": 2000,
+          "usedBytes": 603,
+          "validLocations": true,
+          "conflictFlag": false,
+          "latencyMs": [
+            0.8987000001070555,
+            0.8841000017127953,
+            0.8865999989211559
+          ],
+          "returned": [
+            {
+              "document": "graphs.md",
+              "quote": "# 图与遍历\n\n## 知识点 1\n\n邻接表按顶点保存相邻顶点列表，适合表示稀疏图。\n\n## 知识点 2\n\n邻接矩阵用二维表记录顶点对之间的连接关系。\n\n## 知识点 3\n\n广度优先搜索使用队列，按照从起点逐层扩展的顺序访问节点。\n\n## 知识点 4\n\n深度优先搜索可以使用递归或显式栈，沿一条路径深入后再回溯。\n\n## 知识点 5\n\n无权图中，从起点执行广度优先搜索可得到到可达顶点的最少边数路径。\n\n## 知识点 6\n\n拓扑排序只适用于有向无环图；存在有向环时不存在拓扑序。\n",
+              "start": 0,
+              "end": 239
+            }
+          ]
+        },
+        {
+          "id": "graphs-6-2",
+          "group": "graphs-6",
+          "category": "paraphrase",
+          "query": "有向环为什么使拓扑序不存在？",
+          "passed": true,
+          "matchedGold": 1,
+          "goldCount": 1,
+          "reciprocalRank": 1.0,
+          "returnedCount": 1,
+          "budgetBytes": 2000,
+          "usedBytes": 603,
+          "validLocations": true,
+          "conflictFlag": false,
+          "latencyMs": [
+            1.017300000967225,
+            0.9189000011247117,
+            0.9122000010393094
+          ],
+          "returned": [
+            {
+              "document": "graphs.md",
+              "quote": "# 图与遍历\n\n## 知识点 1\n\n邻接表按顶点保存相邻顶点列表，适合表示稀疏图。\n\n## 知识点 2\n\n邻接矩阵用二维表记录顶点对之间的连接关系。\n\n## 知识点 3\n\n广度优先搜索使用队列，按照从起点逐层扩展的顺序访问节点。\n\n## 知识点 4\n\n深度优先搜索可以使用递归或显式栈，沿一条路径深入后再回溯。\n\n## 知识点 5\n\n无权图中，从起点执行广度优先搜索可得到到可达顶点的最少边数路径。\n\n## 知识点 6\n\n拓扑排序只适用于有向无环图；存在有向环时不存在拓扑序。\n",
+              "start": 0,
+              "end": 239
+            }
+          ]
+        },
+        {
+          "id": "conflict-1",
+          "group": "conflict-Z",
+          "category": "conflict",
+          "query": "课程符号 Z 是否表示栈？",
+          "passed": true,
+          "matchedGold": 2,
+          "goldCount": 2,
+          "reciprocalRank": 1.0,
+          "returnedCount": 4,
+          "budgetBytes": 2000,
+          "usedBytes": 1327,
+          "validLocations": true,
+          "conflictFlag": true,
+          "latencyMs": [
+            0.9409000012965407,
+            1.0729000023275148,
+            0.9711999991850462
+          ],
+          "returned": [
+            {
+              "document": "conflict-a.md",
+              "quote": "冲突验收声明：课程符号 Z 表示栈。",
+              "start": 0,
+              "end": 18
+            },
+            {
+              "document": "conflict-b.md",
+              "quote": "冲突验收声明：课程符号 Z 不表示栈。",
+              "start": 0,
+              "end": 19
+            },
+            {
+              "document": "graphs.md",
+              "quote": "# 图与遍历\n\n## 知识点 1\n\n邻接表按顶点保存相邻顶点列表，适合表示稀疏图。\n\n## 知识点 2\n\n邻接矩阵用二维表记录顶点对之间的连接关系。\n\n## 知识点 3\n\n广度优先搜索使用队列，按照从起点逐层扩展的顺序访问节点。\n\n## 知识点 4\n\n深度优先搜索可以使用递归或显式栈，沿一条路径深入后再回溯。\n\n## 知识点 5\n\n无权图中，从起点执行广度优先搜索可得到到可达顶点的最少边数路径。\n\n## 知识点 6\n\n拓扑排序只适用于有向无环图；存在有向环时不存在拓扑序。\n",
+              "start": 0,
+              "end": 239
+            },
+            {
+              "document": "linear.md",
+              "quote": "# 线性结构\n\n## 知识点 1\n\n栈遵循后进先出，最后压入栈的元素最先弹出。\n\n## 知识点 2\n\n队列遵循先进先出，最早进入队列的元素最先离开。\n\n## 知识点 3\n\nPython 列表可以用 append 在末尾压栈，用不带下标的 pop 从末尾出栈。\n\n## 知识点 4\n\nPython 的 collections.deque 可以在右端 append，并在左端 popleft，实现先进先出队列。\n\n## 知识点 5\n\n顺序存储通过下标定位元素；链式存储通过节点之间的链接连接元素。\n\n## 知识点 6\n\n在单链表中删除已知节点的后继，需要修改该节点的 next 链接。\n",
+              "start": 0,
+              "end": 291
+            }
+          ]
+        },
+        {
+          "id": "conflict-2",
+          "group": "conflict-Z",
+          "category": "conflict",
+          "query": "两份声明对 Z 的解释一致吗？",
+          "passed": true,
+          "matchedGold": 2,
+          "goldCount": 2,
+          "reciprocalRank": 1.0,
+          "returnedCount": 2,
+          "budgetBytes": 2000,
+          "usedBytes": 99,
+          "validLocations": true,
+          "conflictFlag": true,
+          "latencyMs": [
+            0.9396999994351063,
+            0.9062999997695442,
+            0.9119999995164108
+          ],
+          "returned": [
+            {
+              "document": "conflict-a.md",
+              "quote": "冲突验收声明：课程符号 Z 表示栈。",
+              "start": 0,
+              "end": 18
+            },
+            {
+              "document": "conflict-b.md",
+              "quote": "冲突验收声明：课程符号 Z 不表示栈。",
+              "start": 0,
+              "end": 19
+            }
+          ]
+        },
+        {
+          "id": "conflict-3",
+          "group": "conflict-Z",
+          "category": "conflict",
+          "query": "请比较 Z 表示栈的声明",
+          "passed": true,
+          "matchedGold": 2,
+          "goldCount": 2,
+          "reciprocalRank": 1.0,
+          "returnedCount": 5,
+          "budgetBytes": 2000,
+          "usedBytes": 1945,
+          "validLocations": true,
+          "conflictFlag": true,
+          "latencyMs": [
+            1.6037999994296115,
+            1.589100000273902,
+            1.5789999997650739
+          ],
+          "returned": [
+            {
+              "document": "conflict-a.md",
+              "quote": "冲突验收声明：课程符号 Z 表示栈。",
+              "start": 0,
+              "end": 18
+            },
+            {
+              "document": "conflict-b.md",
+              "quote": "冲突验收声明：课程符号 Z 不表示栈。",
+              "start": 0,
+              "end": 19
+            },
+            {
+              "document": "linear.md",
+              "quote": "# 线性结构\n\n## 知识点 1\n\n栈遵循后进先出，最后压入栈的元素最先弹出。\n\n## 知识点 2\n\n队列遵循先进先出，最早进入队列的元素最先离开。\n\n## 知识点 3\n\nPython 列表可以用 append 在末尾压栈，用不带下标的 pop 从末尾出栈。\n\n## 知识点 4\n\nPython 的 collections.deque 可以在右端 append，并在左端 popleft，实现先进先出队列。\n\n## 知识点 5\n\n顺序存储通过下标定位元素；链式存储通过节点之间的链接连接元素。\n\n## 知识点 6\n\n在单链表中删除已知节点的后继，需要修改该节点的 next 链接。\n",
+              "start": 0,
+              "end": 291
+            },
+            {
+              "document": "graphs.md",
+              "quote": "# 图与遍历\n\n## 知识点 1\n\n邻接表按顶点保存相邻顶点列表，适合表示稀疏图。\n\n## 知识点 2\n\n邻接矩阵用二维表记录顶点对之间的连接关系。\n\n## 知识点 3\n\n广度优先搜索使用队列，按照从起点逐层扩展的顺序访问节点。\n\n## 知识点 4\n\n深度优先搜索可以使用递归或显式栈，沿一条路径深入后再回溯。\n\n## 知识点 5\n\n无权图中，从起点执行广度优先搜索可得到到可达顶点的最少边数路径。\n\n## 知识点 6\n\n拓扑排序只适用于有向无环图；存在有向环时不存在拓扑序。\n",
+              "start": 0,
+              "end": 239
+            },
+            {
+              "document": "trees.md",
+              "quote": "# 二叉树与搜索树\n\n## 知识点 1\n\n二叉树的每个节点最多有两个子节点，分别称为左孩子和右孩子。\n\n## 知识点 2\n\n先序遍历按照根节点、左子树、右子树的顺序访问。\n\n## 知识点 3\n\n中序遍历按照左子树、根节点、右子树的顺序访问。\n\n## 知识点 4\n\n后序遍历按照左子树、右子树、根节点的顺序访问。\n\n## 知识点 5\n\n在键互不重复的二叉搜索树中，左子树的键小于根，右子树的键大于根。\n\n## 知识点 6\n\n二叉搜索树的查找代价取决于树高；退化为链时可能逐个比较所有节点。\n",
+              "start": 0,
+              "end": 244
+            }
+          ]
+        },
+        {
+          "id": "conflict-4",
+          "group": "conflict-Z",
+          "category": "conflict",
+          "query": "冲突验收声明有没有相反说法？",
+          "passed": true,
+          "matchedGold": 2,
+          "goldCount": 2,
+          "reciprocalRank": 1.0,
+          "returnedCount": 2,
+          "budgetBytes": 2000,
+          "usedBytes": 99,
+          "validLocations": true,
+          "conflictFlag": true,
+          "latencyMs": [
+            1.0619000022416003,
+            0.9246000008715782,
+            0.9123999989242293
+          ],
+          "returned": [
+            {
+              "document": "conflict-a.md",
+              "quote": "冲突验收声明：课程符号 Z 表示栈。",
+              "start": 0,
+              "end": 18
+            },
+            {
+              "document": "conflict-b.md",
+              "quote": "冲突验收声明：课程符号 Z 不表示栈。",
+              "start": 0,
+              "end": 19
+            }
+          ]
+        },
+        {
+          "id": "negative-3",
+          "group": "negative-3",
+          "category": "out-of-domain",
+          "query": "梵高出生在哪个城市？",
+          "passed": true,
+          "matchedGold": 0,
+          "goldCount": 0,
+          "reciprocalRank": 0,
+          "returnedCount": 0,
+          "budgetBytes": 2000,
+          "usedBytes": 0,
+          "validLocations": true,
+          "conflictFlag": false,
+          "latencyMs": [
+            1.0806999998749234,
+            0.90730000010808,
+            0.8672000003571156
+          ],
+          "returned": []
+        },
+        {
+          "id": "negative-4",
+          "group": "negative-4",
+          "category": "out-of-domain",
+          "query": "光合作用的化学方程式是什么？",
+          "passed": true,
+          "matchedGold": 0,
+          "goldCount": 0,
+          "reciprocalRank": 0,
+          "returnedCount": 0,
+          "budgetBytes": 2000,
+          "usedBytes": 0,
+          "validLocations": true,
+          "conflictFlag": false,
+          "latencyMs": [
+            0.9061999990080949,
+            0.8741999990888871,
+            0.8813999993435573
+          ],
+          "returned": []
+        },
+        {
+          "id": "negative-5",
+          "group": "negative-5",
+          "category": "missing-detail",
+          "query": "课程指定的栈容量上限是多少？",
+          "passed": false,
+          "matchedGold": 0,
+          "goldCount": 0,
+          "reciprocalRank": 0,
+          "returnedCount": 4,
+          "budgetBytes": 2000,
+          "usedBytes": 1327,
+          "validLocations": true,
+          "conflictFlag": true,
+          "latencyMs": [
+            0.9308000007877126,
+            1.111900000978494,
+            1.0270999991917051
+          ],
+          "returned": [
+            {
+              "document": "conflict-a.md",
+              "quote": "冲突验收声明：课程符号 Z 表示栈。",
+              "start": 0,
+              "end": 18
+            },
+            {
+              "document": "conflict-b.md",
+              "quote": "冲突验收声明：课程符号 Z 不表示栈。",
+              "start": 0,
+              "end": 19
+            },
+            {
+              "document": "linear.md",
+              "quote": "# 线性结构\n\n## 知识点 1\n\n栈遵循后进先出，最后压入栈的元素最先弹出。\n\n## 知识点 2\n\n队列遵循先进先出，最早进入队列的元素最先离开。\n\n## 知识点 3\n\nPython 列表可以用 append 在末尾压栈，用不带下标的 pop 从末尾出栈。\n\n## 知识点 4\n\nPython 的 collections.deque 可以在右端 append，并在左端 popleft，实现先进先出队列。\n\n## 知识点 5\n\n顺序存储通过下标定位元素；链式存储通过节点之间的链接连接元素。\n\n## 知识点 6\n\n在单链表中删除已知节点的后继，需要修改该节点的 next 链接。\n",
+              "start": 0,
+              "end": 291
+            },
+            {
+              "document": "graphs.md",
+              "quote": "# 图与遍历\n\n## 知识点 1\n\n邻接表按顶点保存相邻顶点列表，适合表示稀疏图。\n\n## 知识点 2\n\n邻接矩阵用二维表记录顶点对之间的连接关系。\n\n## 知识点 3\n\n广度优先搜索使用队列，按照从起点逐层扩展的顺序访问节点。\n\n## 知识点 4\n\n深度优先搜索可以使用递归或显式栈，沿一条路径深入后再回溯。\n\n## 知识点 5\n\n无权图中，从起点执行广度优先搜索可得到到可达顶点的最少边数路径。\n\n## 知识点 6\n\n拓扑排序只适用于有向无环图；存在有向环时不存在拓扑序。\n",
+              "start": 0,
+              "end": 239
+            }
+          ]
+        },
+        {
+          "id": "negative-6",
+          "group": "negative-6",
+          "category": "missing-detail",
+          "query": "这门课二叉树考试在哪一天？",
+          "passed": false,
+          "matchedGold": 0,
+          "goldCount": 0,
+          "reciprocalRank": 0,
+          "returnedCount": 1,
+          "budgetBytes": 2000,
+          "usedBytes": 618,
+          "validLocations": true,
+          "conflictFlag": false,
+          "latencyMs": [
+            1.0283000010531396,
+            0.9824000007938594,
+            1.024699999106815
+          ],
+          "returned": [
+            {
+              "document": "trees.md",
+              "quote": "# 二叉树与搜索树\n\n## 知识点 1\n\n二叉树的每个节点最多有两个子节点，分别称为左孩子和右孩子。\n\n## 知识点 2\n\n先序遍历按照根节点、左子树、右子树的顺序访问。\n\n## 知识点 3\n\n中序遍历按照左子树、根节点、右子树的顺序访问。\n\n## 知识点 4\n\n后序遍历按照左子树、右子树、根节点的顺序访问。\n\n## 知识点 5\n\n在键互不重复的二叉搜索树中，左子树的键小于根，右子树的键大于根。\n\n## 知识点 6\n\n二叉搜索树的查找代价取决于树高；退化为链时可能逐个比较所有节点。\n",
+              "start": 0,
+              "end": 244
+            }
+          ]
+        },
+        {
+          "id": "negative-7",
+          "group": "negative-7",
+          "category": "missing-detail",
+          "query": "图论老师的电话号码是什么？",
+          "passed": true,
+          "matchedGold": 0,
+          "goldCount": 0,
+          "reciprocalRank": 0,
+          "returnedCount": 0,
+          "budgetBytes": 2000,
+          "usedBytes": 0,
+          "validLocations": true,
+          "conflictFlag": false,
+          "latencyMs": [
+            0.9959999988495838,
+            1.232399998116307,
+            0.8764000012888573
+          ],
+          "returned": []
+        },
+        {
+          "id": "negative-8",
+          "group": "negative-8",
+          "category": "missing-detail",
+          "query": "这份讲义要求的队列作业截止时间是什么？",
+          "passed": false,
+          "matchedGold": 0,
+          "goldCount": 0,
+          "reciprocalRank": 0,
+          "returnedCount": 3,
+          "budgetBytes": 2000,
+          "usedBytes": 1882,
+          "validLocations": true,
+          "conflictFlag": false,
+          "latencyMs": [
+            1.4487999978882726,
+            1.1526999987836462,
+            1.0285999996995088
+          ],
+          "returned": [
+            {
+              "document": "search.md",
+              "quote": "# 查找与堆\n\n## 知识点 1\n\n二分查找的前提是待查序列按照比较规则有序。\n\n## 知识点 2\n\n每轮二分查找把候选区间缩小到原来的一半，查找次数随规模呈对数增长。\n\n## 知识点 3\n\nPython 的 bisect_left 返回保持有序的最左插入位置，不是插入操作本身。\n\n## 知识点 4\n\nPython 的 insort 先定位插入点，再移动列表元素完成插入；定位快不代表整体插入是对数时间。\n\n## 知识点 5\n\n小根堆要求每个父节点的值不大于其子节点，根节点保存最小值。\n\n## 知识点 6\n\nPython 的 heapq.heappop 从小根堆移除并返回最小元素。\n",
+              "start": 0,
+              "end": 294
+            },
+            {
+              "document": "linear.md",
+              "quote": "# 线性结构\n\n## 知识点 1\n\n栈遵循后进先出，最后压入栈的元素最先弹出。\n\n## 知识点 2\n\n队列遵循先进先出，最早进入队列的元素最先离开。\n\n## 知识点 3\n\nPython 列表可以用 append 在末尾压栈，用不带下标的 pop 从末尾出栈。\n\n## 知识点 4\n\nPython 的 collections.deque 可以在右端 append，并在左端 popleft，实现先进先出队列。\n\n## 知识点 5\n\n顺序存储通过下标定位元素；链式存储通过节点之间的链接连接元素。\n\n## 知识点 6\n\n在单链表中删除已知节点的后继，需要修改该节点的 next 链接。\n",
+              "start": 0,
+              "end": 291
+            },
+            {
+              "document": "graphs.md",
+              "quote": "# 图与遍历\n\n## 知识点 1\n\n邻接表按顶点保存相邻顶点列表，适合表示稀疏图。\n\n## 知识点 2\n\n邻接矩阵用二维表记录顶点对之间的连接关系。\n\n## 知识点 3\n\n广度优先搜索使用队列，按照从起点逐层扩展的顺序访问节点。\n\n## 知识点 4\n\n深度优先搜索可以使用递归或显式栈，沿一条路径深入后再回溯。\n\n## 知识点 5\n\n无权图中，从起点执行广度优先搜索可得到到可达顶点的最少边数路径。\n\n## 知识点 6\n\n拓扑排序只适用于有向无环图；存在有向环时不存在拓扑序。\n",
+              "start": 0,
+              "end": 239
+            }
+          ]
+        }
+      ]
+    },
+    "structured-lexical": {
+      "status": "evaluated",
+      "summary": {
+        "cases": 46,
+        "passed": 40,
+        "allEvidenceRecallAt6": 0.925,
+        "excerptRecallAt6": 0.9318181818181818,
+        "mrrAt6": 0.875,
+        "noEvidenceRateOnUnanswerable": 0.5,
+        "p50Ms": 6.966200000533718,
+        "p95Ms": 10.38669999979902,
+        "invalidLocations": 0,
+        "overBudget": 0,
+        "byCategory": {
+          "conflict": {
+            "passed": 4,
+            "count": 4
+          },
+          "direct": {
+            "passed": 18,
+            "count": 18
+          },
+          "missing-detail": {
+            "passed": 1,
+            "count": 4
+          },
+          "out-of-domain": {
+            "passed": 2,
+            "count": 2
+          },
+          "paraphrase": {
+            "passed": 15,
+            "count": 18
+          }
+        }
+      },
+      "rows": [
+        {
+          "id": "search-1-1",
+          "group": "search-1",
+          "category": "direct",
+          "query": "二分查找需要什么前提？",
+          "passed": true,
+          "matchedGold": 1,
+          "goldCount": 1,
+          "reciprocalRank": 1.0,
+          "returnedCount": 6,
+          "budgetBytes": 2000,
+          "usedBytes": 288,
+          "validLocations": true,
+          "conflictFlag": false,
+          "latencyMs": [
+            9.094199998799013,
+            8.803699998679804,
+            8.640599997306708
+          ],
+          "returned": [
+            {
+              "document": "search.md",
+              "quote": "二分查找的前提是待查序列按照比较规则有序。",
+              "start": 18,
+              "end": 39
+            },
+            {
+              "document": "search.md",
+              "quote": "每轮二分查找把候选区间缩小到原来的一半，查找次数随规模呈对数增长。",
+              "start": 51,
+              "end": 84
+            },
+            {
+              "document": "linear.md",
+              "quote": "在单链表中删除已知节点的后继，需要修改该节点的 next 链接。",
+              "start": 258,
+              "end": 290
+            },
+            {
+              "document": "search.md",
+              "quote": "# 查找与堆",
+              "start": 0,
+              "end": 6
+            },
+            {
+              "document": "search.md",
+              "quote": "## 知识点 5",
+              "start": 205,
+              "end": 213
+            },
+            {
+              "document": "search.md",
+              "quote": "## 知识点 4",
+              "start": 142,
+              "end": 150
+            }
+          ]
+        },
+        {
+          "id": "search-1-2",
+          "group": "search-1",
+          "category": "paraphrase",
+          "query": "无序数据能否直接使用讲义中的二分查找？",
+          "passed": true,
+          "matchedGold": 1,
+          "goldCount": 1,
+          "reciprocalRank": 1.0,
+          "returnedCount": 6,
+          "budgetBytes": 2000,
+          "usedBytes": 443,
+          "validLocations": true,
+          "conflictFlag": false,
+          "latencyMs": [
+            9.398499998496845,
+            9.451600002648775,
+            9.771799999725772
+          ],
+          "returned": [
+            {
+              "document": "search.md",
+              "quote": "二分查找的前提是待查序列按照比较规则有序。",
+              "start": 18,
+              "end": 39
+            },
+            {
+              "document": "search.md",
+              "quote": "每轮二分查找把候选区间缩小到原来的一半，查找次数随规模呈对数增长。",
+              "start": 51,
+              "end": 84
+            },
+            {
+              "document": "trees.md",
+              "quote": "在键互不重复的二叉搜索树中，左子树的键小于根，右子树的键大于根。",
+              "start": 167,
+              "end": 199
+            },
+            {
+              "document": "graphs.md",
+              "quote": "广度优先搜索使用队列，按照从起点逐层扩展的顺序访问节点。",
+              "start": 86,
+              "end": 114
+            },
+            {
+              "document": "graphs.md",
+              "quote": "深度优先搜索可以使用递归或显式栈，沿一条路径深入后再回溯。",
+              "start": 126,
+              "end": 155
+            },
+            {
+              "document": "search.md",
+              "quote": "# 查找与堆",
+              "start": 0,
+              "end": 6
+            }
+          ]
+        },
+        {
+          "id": "search-2-1",
+          "group": "search-2",
+          "category": "direct",
+          "query": "二分查找每轮怎样缩小区间？",
+          "passed": true,
+          "matchedGold": 1,
+          "goldCount": 1,
+          "reciprocalRank": 1.0,
+          "returnedCount": 6,
+          "budgetBytes": 2000,
+          "usedBytes": 218,
+          "validLocations": true,
+          "conflictFlag": false,
+          "latencyMs": [
+            9.532100000797072,
+            9.202500001265435,
+            9.227599999576341
+          ],
+          "returned": [
+            {
+              "document": "search.md",
+              "quote": "每轮二分查找把候选区间缩小到原来的一半，查找次数随规模呈对数增长。",
+              "start": 51,
+              "end": 84
+            },
+            {
+              "document": "search.md",
+              "quote": "二分查找的前提是待查序列按照比较规则有序。",
+              "start": 18,
+              "end": 39
+            },
+            {
+              "document": "search.md",
+              "quote": "# 查找与堆",
+              "start": 0,
+              "end": 6
+            },
+            {
+              "document": "search.md",
+              "quote": "## 知识点 5",
+              "start": 205,
+              "end": 213
+            },
+            {
+              "document": "search.md",
+              "quote": "## 知识点 4",
+              "start": 142,
+              "end": 150
+            },
+            {
+              "document": "search.md",
+              "quote": "## 知识点 3",
+              "start": 86,
+              "end": 94
+            }
+          ]
+        },
+        {
+          "id": "search-2-2",
+          "group": "search-2",
+          "category": "paraphrase",
+          "query": "二分查找次数为何呈对数增长？",
+          "passed": true,
+          "matchedGold": 1,
+          "goldCount": 1,
+          "reciprocalRank": 1.0,
+          "returnedCount": 6,
+          "budgetBytes": 2000,
+          "usedBytes": 327,
+          "validLocations": true,
+          "conflictFlag": false,
+          "latencyMs": [
+            8.846400000038557,
+            8.37649999812129,
+            8.65459999840823
+          ],
+          "returned": [
+            {
+              "document": "search.md",
+              "quote": "每轮二分查找把候选区间缩小到原来的一半，查找次数随规模呈对数增长。",
+              "start": 51,
+              "end": 84
+            },
+            {
+              "document": "search.md",
+              "quote": "二分查找的前提是待查序列按照比较规则有序。",
+              "start": 18,
+              "end": 39
+            },
+            {
+              "document": "search.md",
+              "quote": "Python 的 insort 先定位插入点，再移动列表元素完成插入；定位快不代表整体插入是对数时间。",
+              "start": 152,
+              "end": 203
+            },
+            {
+              "document": "search.md",
+              "quote": "# 查找与堆",
+              "start": 0,
+              "end": 6
+            },
+            {
+              "document": "search.md",
+              "quote": "## 知识点 5",
+              "start": 205,
+              "end": 213
+            },
+            {
+              "document": "search.md",
+              "quote": "## 知识点 4",
+              "start": 142,
+              "end": 150
+            }
+          ]
+        },
+        {
+          "id": "search-3-1",
+          "group": "search-3",
+          "category": "direct",
+          "query": "bisect_left 返回什么？",
+          "passed": true,
+          "matchedGold": 1,
+          "goldCount": 1,
+          "reciprocalRank": 1.0,
+          "returnedCount": 2,
+          "budgetBytes": 2000,
+          "usedBytes": 159,
+          "validLocations": true,
+          "conflictFlag": false,
+          "latencyMs": [
+            6.05849999919883,
+            5.668300000252202,
+            6.5561000010347925
+          ],
+          "returned": [
+            {
+              "document": "search.md",
+              "quote": "Python 的 bisect_left 返回保持有序的最左插入位置，不是插入操作本身。",
+              "start": 96,
+              "end": 140
+            },
+            {
+              "document": "search.md",
+              "quote": "Python 的 heapq.heappop 从小根堆移除并返回最小元素。",
+              "start": 256,
+              "end": 293
+            }
+          ]
+        },
+        {
+          "id": "search-3-2",
+          "group": "search-3",
+          "category": "paraphrase",
+          "query": "bisect_left 会直接修改序列吗？",
+          "passed": true,
+          "matchedGold": 1,
+          "goldCount": 1,
+          "reciprocalRank": 0.5,
+          "returnedCount": 3,
+          "budgetBytes": 2000,
+          "usedBytes": 239,
+          "validLocations": true,
+          "conflictFlag": false,
+          "latencyMs": [
+            6.271700000070268,
+            6.023999998433283,
+            5.900300002394943
+          ],
+          "returned": [
+            {
+              "document": "search.md",
+              "quote": "二分查找的前提是待查序列按照比较规则有序。",
+              "start": 18,
+              "end": 39
+            },
+            {
+              "document": "search.md",
+              "quote": "Python 的 bisect_left 返回保持有序的最左插入位置，不是插入操作本身。",
+              "start": 96,
+              "end": 140
+            },
+            {
+              "document": "linear.md",
+              "quote": "在单链表中删除已知节点的后继，需要修改该节点的 next 链接。",
+              "start": 258,
+              "end": 290
+            }
+          ]
+        },
+        {
+          "id": "search-4-1",
+          "group": "search-4",
+          "category": "direct",
+          "query": "insort 为什么仍可能较慢？",
+          "passed": true,
+          "matchedGold": 1,
+          "goldCount": 1,
+          "reciprocalRank": 1.0,
+          "returnedCount": 2,
+          "budgetBytes": 2000,
+          "usedBytes": 219,
+          "validLocations": true,
+          "conflictFlag": false,
+          "latencyMs": [
+            7.417399996484164,
+            5.7822999988275114,
+            5.732899997383356
+          ],
+          "returned": [
+            {
+              "document": "search.md",
+              "quote": "Python 的 insort 先定位插入点，再移动列表元素完成插入；定位快不代表整体插入是对数时间。",
+              "start": 152,
+              "end": 203
+            },
+            {
+              "document": "trees.md",
+              "quote": "二叉搜索树的查找代价取决于树高；退化为链时可能逐个比较所有节点。",
+              "start": 211,
+              "end": 243
+            }
+          ]
+        },
+        {
+          "id": "search-4-2",
+          "group": "search-4",
+          "category": "paraphrase",
+          "query": "二分定位能否让列表插入整体变成对数时间？",
+          "passed": true,
+          "matchedGold": 1,
+          "goldCount": 1,
+          "reciprocalRank": 1.0,
+          "returnedCount": 6,
+          "budgetBytes": 2000,
+          "usedBytes": 535,
+          "validLocations": true,
+          "conflictFlag": false,
+          "latencyMs": [
+            6.889100000989856,
+            7.307900003070245,
+            7.077400001435308
+          ],
+          "returned": [
+            {
+              "document": "search.md",
+              "quote": "Python 的 insort 先定位插入点，再移动列表元素完成插入；定位快不代表整体插入是对数时间。",
+              "start": 152,
+              "end": 203
+            },
+            {
+              "document": "search.md",
+              "quote": "每轮二分查找把候选区间缩小到原来的一半，查找次数随规模呈对数增长。",
+              "start": 51,
+              "end": 84
+            },
+            {
+              "document": "search.md",
+              "quote": "Python 的 bisect_left 返回保持有序的最左插入位置，不是插入操作本身。",
+              "start": 96,
+              "end": 140
+            },
+            {
+              "document": "search.md",
+              "quote": "二分查找的前提是待查序列按照比较规则有序。",
+              "start": 18,
+              "end": 39
+            },
+            {
+              "document": "graphs.md",
+              "quote": "邻接表按顶点保存相邻顶点列表，适合表示稀疏图。",
+              "start": 18,
+              "end": 41
+            },
+            {
+              "document": "linear.md",
+              "quote": "Python 列表可以用 append 在末尾压栈，用不带下标的 pop 从末尾出栈。",
+              "start": 86,
+              "end": 129
+            }
+          ]
+        },
+        {
+          "id": "search-5-1",
+          "group": "search-5",
+          "category": "direct",
+          "query": "小根堆的父子大小关系是什么？",
+          "passed": true,
+          "matchedGold": 1,
+          "goldCount": 1,
+          "reciprocalRank": 0.5,
+          "returnedCount": 3,
+          "budgetBytes": 2000,
+          "usedBytes": 217,
+          "validLocations": true,
+          "conflictFlag": false,
+          "latencyMs": [
+            6.3004000003275,
+            6.282399997871835,
+            6.0415000007196795
+          ],
+          "returned": [
+            {
+              "document": "search.md",
+              "quote": "Python 的 heapq.heappop 从小根堆移除并返回最小元素。",
+              "start": 256,
+              "end": 293
+            },
+            {
+              "document": "search.md",
+              "quote": "小根堆要求每个父节点的值不大于其子节点，根节点保存最小值。",
+              "start": 215,
+              "end": 244
+            },
+            {
+              "document": "graphs.md",
+              "quote": "邻接矩阵用二维表记录顶点对之间的连接关系。",
+              "start": 53,
+              "end": 74
+            }
+          ]
+        },
+        {
+          "id": "search-5-2",
+          "group": "search-5",
+          "category": "paraphrase",
+          "query": "小根堆最小元素位于哪里？",
+          "passed": true,
+          "matchedGold": 1,
+          "goldCount": 1,
+          "reciprocalRank": 0.5,
+          "returnedCount": 6,
+          "budgetBytes": 2000,
+          "usedBytes": 502,
+          "validLocations": true,
+          "conflictFlag": false,
+          "latencyMs": [
+            6.974400002945913,
+            6.353400000080001,
+            6.241200000658864
+          ],
+          "returned": [
+            {
+              "document": "search.md",
+              "quote": "Python 的 heapq.heappop 从小根堆移除并返回最小元素。",
+              "start": 256,
+              "end": 293
+            },
+            {
+              "document": "search.md",
+              "quote": "小根堆要求每个父节点的值不大于其子节点，根节点保存最小值。",
+              "start": 215,
+              "end": 244
+            },
+            {
+              "document": "linear.md",
+              "quote": "顺序存储通过下标定位元素；链式存储通过节点之间的链接连接元素。",
+              "start": 215,
+              "end": 246
+            },
+            {
+              "document": "linear.md",
+              "quote": "栈遵循后进先出，最后压入栈的元素最先弹出。",
+              "start": 18,
+              "end": 39
+            },
+            {
+              "document": "linear.md",
+              "quote": "队列遵循先进先出，最早进入队列的元素最先离开。",
+              "start": 51,
+              "end": 74
+            },
+            {
+              "document": "search.md",
+              "quote": "Python 的 insort 先定位插入点，再移动列表元素完成插入；定位快不代表整体插入是对数时间。",
+              "start": 152,
+              "end": 203
+            }
+          ]
+        },
+        {
+          "id": "search-6-1",
+          "group": "search-6",
+          "category": "direct",
+          "query": "heappop 返回哪个元素？",
+          "passed": true,
+          "matchedGold": 1,
+          "goldCount": 1,
+          "reciprocalRank": 1.0,
+          "returnedCount": 6,
+          "budgetBytes": 2000,
+          "usedBytes": 507,
+          "validLocations": true,
+          "conflictFlag": false,
+          "latencyMs": [
+            7.426300002407515,
+            7.318099997064564,
+            6.73340000139433
+          ],
+          "returned": [
+            {
+              "document": "search.md",
+              "quote": "Python 的 heapq.heappop 从小根堆移除并返回最小元素。",
+              "start": 256,
+              "end": 293
+            },
+            {
+              "document": "search.md",
+              "quote": "Python 的 bisect_left 返回保持有序的最左插入位置，不是插入操作本身。",
+              "start": 96,
+              "end": 140
+            },
+            {
+              "document": "linear.md",
+              "quote": "顺序存储通过下标定位元素；链式存储通过节点之间的链接连接元素。",
+              "start": 215,
+              "end": 246
+            },
+            {
+              "document": "linear.md",
+              "quote": "栈遵循后进先出，最后压入栈的元素最先弹出。",
+              "start": 18,
+              "end": 39
+            },
+            {
+              "document": "linear.md",
+              "quote": "队列遵循先进先出，最早进入队列的元素最先离开。",
+              "start": 51,
+              "end": 74
+            },
+            {
+              "document": "search.md",
+              "quote": "Python 的 insort 先定位插入点，再移动列表元素完成插入；定位快不代表整体插入是对数时间。",
+              "start": 152,
+              "end": 203
+            }
+          ]
+        },
+        {
+          "id": "search-6-2",
+          "group": "search-6",
+          "category": "paraphrase",
+          "query": "使用 heapq 如何取出最小元素？",
+          "passed": true,
+          "matchedGold": 1,
+          "goldCount": 1,
+          "reciprocalRank": 1.0,
+          "returnedCount": 6,
+          "budgetBytes": 2000,
+          "usedBytes": 481,
+          "validLocations": true,
+          "conflictFlag": false,
+          "latencyMs": [
+            7.393299998511793,
+            8.060699998168275,
+            7.5393999977677595
+          ],
+          "returned": [
+            {
+              "document": "search.md",
+              "quote": "Python 的 heapq.heappop 从小根堆移除并返回最小元素。",
+              "start": 256,
+              "end": 293
+            },
+            {
+              "document": "linear.md",
+              "quote": "顺序存储通过下标定位元素；链式存储通过节点之间的链接连接元素。",
+              "start": 215,
+              "end": 246
+            },
+            {
+              "document": "search.md",
+              "quote": "小根堆要求每个父节点的值不大于其子节点，根节点保存最小值。",
+              "start": 215,
+              "end": 244
+            },
+            {
+              "document": "graphs.md",
+              "quote": "广度优先搜索使用队列，按照从起点逐层扩展的顺序访问节点。",
+              "start": 86,
+              "end": 114
+            },
+            {
+              "document": "graphs.md",
+              "quote": "深度优先搜索可以使用递归或显式栈，沿一条路径深入后再回溯。",
+              "start": 126,
+              "end": 155
+            },
+            {
+              "document": "linear.md",
+              "quote": "栈遵循后进先出，最后压入栈的元素最先弹出。",
+              "start": 18,
+              "end": 39
+            }
+          ]
+        },
+        {
+          "id": "trees-1-1",
+          "group": "trees-1",
+          "category": "direct",
+          "query": "二叉树节点最多有几个孩子？",
+          "passed": true,
+          "matchedGold": 1,
+          "goldCount": 1,
+          "reciprocalRank": 1.0,
+          "returnedCount": 6,
+          "budgetBytes": 2000,
+          "usedBytes": 413,
+          "validLocations": true,
+          "conflictFlag": false,
+          "latencyMs": [
+            8.905400001822272,
+            8.819599999696948,
+            9.555200002068887
+          ],
+          "returned": [
+            {
+              "document": "trees.md",
+              "quote": "二叉树的每个节点最多有两个子节点，分别称为左孩子和右孩子。",
+              "start": 21,
+              "end": 50
+            },
+            {
+              "document": "trees.md",
+              "quote": "# 二叉树与搜索树",
+              "start": 0,
+              "end": 9
+            },
+            {
+              "document": "trees.md",
+              "quote": "先序遍历按照根节点、左子树、右子树的顺序访问。",
+              "start": 62,
+              "end": 85
+            },
+            {
+              "document": "trees.md",
+              "quote": "中序遍历按照左子树、根节点、右子树的顺序访问。",
+              "start": 97,
+              "end": 120
+            },
+            {
+              "document": "trees.md",
+              "quote": "后序遍历按照左子树、右子树、根节点的顺序访问。",
+              "start": 132,
+              "end": 155
+            },
+            {
+              "document": "trees.md",
+              "quote": "二叉搜索树的查找代价取决于树高；退化为链时可能逐个比较所有节点。",
+              "start": 211,
+              "end": 243
+            }
+          ]
+        },
+        {
+          "id": "trees-1-2",
+          "group": "trees-1",
+          "category": "paraphrase",
+          "query": "二叉树的左右孩子指什么？",
+          "passed": true,
+          "matchedGold": 1,
+          "goldCount": 1,
+          "reciprocalRank": 1.0,
+          "returnedCount": 6,
+          "budgetBytes": 2000,
+          "usedBytes": 440,
+          "validLocations": true,
+          "conflictFlag": false,
+          "latencyMs": [
+            8.483099998557009,
+            7.89960000111023,
+            7.865900002798298
+          ],
+          "returned": [
+            {
+              "document": "trees.md",
+              "quote": "二叉树的每个节点最多有两个子节点，分别称为左孩子和右孩子。",
+              "start": 21,
+              "end": 50
+            },
+            {
+              "document": "trees.md",
+              "quote": "在键互不重复的二叉搜索树中，左子树的键小于根，右子树的键大于根。",
+              "start": 167,
+              "end": 199
+            },
+            {
+              "document": "trees.md",
+              "quote": "先序遍历按照根节点、左子树、右子树的顺序访问。",
+              "start": 62,
+              "end": 85
+            },
+            {
+              "document": "trees.md",
+              "quote": "中序遍历按照左子树、根节点、右子树的顺序访问。",
+              "start": 97,
+              "end": 120
+            },
+            {
+              "document": "trees.md",
+              "quote": "# 二叉树与搜索树",
+              "start": 0,
+              "end": 9
+            },
+            {
+              "document": "trees.md",
+              "quote": "二叉搜索树的查找代价取决于树高；退化为链时可能逐个比较所有节点。",
+              "start": 211,
+              "end": 243
+            }
+          ]
+        },
+        {
+          "id": "trees-2-1",
+          "group": "trees-2",
+          "category": "direct",
+          "query": "先序遍历的顺序是什么？",
+          "passed": true,
+          "matchedGold": 1,
+          "goldCount": 1,
+          "reciprocalRank": 1.0,
+          "returnedCount": 6,
+          "budgetBytes": 2000,
+          "usedBytes": 398,
+          "validLocations": true,
+          "conflictFlag": false,
+          "latencyMs": [
+            8.746999999857508,
+            10.361799999373034,
+            10.383800003182841
+          ],
+          "returned": [
+            {
+              "document": "trees.md",
+              "quote": "先序遍历按照根节点、左子树、右子树的顺序访问。",
+              "start": 62,
+              "end": 85
+            },
+            {
+              "document": "trees.md",
+              "quote": "中序遍历按照左子树、根节点、右子树的顺序访问。",
+              "start": 97,
+              "end": 120
+            },
+            {
+              "document": "trees.md",
+              "quote": "后序遍历按照左子树、右子树、根节点的顺序访问。",
+              "start": 132,
+              "end": 155
+            },
+            {
+              "document": "graphs.md",
+              "quote": "广度优先搜索使用队列，按照从起点逐层扩展的顺序访问节点。",
+              "start": 86,
+              "end": 114
+            },
+            {
+              "document": "graphs.md",
+              "quote": "# 图与遍历",
+              "start": 0,
+              "end": 6
+            },
+            {
+              "document": "linear.md",
+              "quote": "顺序存储通过下标定位元素；链式存储通过节点之间的链接连接元素。",
+              "start": 215,
+              "end": 246
+            }
+          ]
+        },
+        {
+          "id": "trees-2-2",
+          "group": "trees-2",
+          "category": "paraphrase",
+          "query": "根左右是哪种遍历？",
+          "passed": false,
+          "matchedGold": 0,
+          "goldCount": 1,
+          "reciprocalRank": 0,
+          "returnedCount": 6,
+          "budgetBytes": 2000,
+          "usedBytes": 84,
+          "validLocations": true,
+          "conflictFlag": false,
+          "latencyMs": [
+            8.910299999115523,
+            10.212100001808722,
+            10.182699999859324
+          ],
+          "returned": [
+            {
+              "document": "graphs.md",
+              "quote": "# 图与遍历",
+              "start": 0,
+              "end": 6
+            },
+            {
+              "document": "graphs.md",
+              "quote": "## 知识点 4",
+              "start": 116,
+              "end": 124
+            },
+            {
+              "document": "graphs.md",
+              "quote": "## 知识点 1",
+              "start": 8,
+              "end": 16
+            },
+            {
+              "document": "graphs.md",
+              "quote": "## 知识点 6",
+              "start": 201,
+              "end": 209
+            },
+            {
+              "document": "graphs.md",
+              "quote": "## 知识点 2",
+              "start": 43,
+              "end": 51
+            },
+            {
+              "document": "graphs.md",
+              "quote": "## 知识点 3",
+              "start": 76,
+              "end": 84
+            }
+          ]
+        },
+        {
+          "id": "trees-3-1",
+          "group": "trees-3",
+          "category": "direct",
+          "query": "中序遍历的顺序是什么？",
+          "passed": true,
+          "matchedGold": 1,
+          "goldCount": 1,
+          "reciprocalRank": 1.0,
+          "returnedCount": 6,
+          "budgetBytes": 2000,
+          "usedBytes": 398,
+          "validLocations": true,
+          "conflictFlag": false,
+          "latencyMs": [
+            9.901400000671856,
+            10.953299999528099,
+            9.55199999953038
+          ],
+          "returned": [
+            {
+              "document": "trees.md",
+              "quote": "中序遍历按照左子树、根节点、右子树的顺序访问。",
+              "start": 97,
+              "end": 120
+            },
+            {
+              "document": "trees.md",
+              "quote": "先序遍历按照根节点、左子树、右子树的顺序访问。",
+              "start": 62,
+              "end": 85
+            },
+            {
+              "document": "trees.md",
+              "quote": "后序遍历按照左子树、右子树、根节点的顺序访问。",
+              "start": 132,
+              "end": 155
+            },
+            {
+              "document": "graphs.md",
+              "quote": "广度优先搜索使用队列，按照从起点逐层扩展的顺序访问节点。",
+              "start": 86,
+              "end": 114
+            },
+            {
+              "document": "graphs.md",
+              "quote": "# 图与遍历",
+              "start": 0,
+              "end": 6
+            },
+            {
+              "document": "linear.md",
+              "quote": "顺序存储通过下标定位元素；链式存储通过节点之间的链接连接元素。",
+              "start": 215,
+              "end": 246
+            }
+          ]
+        },
+        {
+          "id": "trees-3-2",
+          "group": "trees-3",
+          "category": "paraphrase",
+          "query": "左根右是哪种遍历？",
+          "passed": false,
+          "matchedGold": 0,
+          "goldCount": 1,
+          "reciprocalRank": 0,
+          "returnedCount": 6,
+          "budgetBytes": 2000,
+          "usedBytes": 84,
+          "validLocations": true,
+          "conflictFlag": false,
+          "latencyMs": [
+            9.782500001165317,
+            9.60069999928237,
+            10.329700002330355
+          ],
+          "returned": [
+            {
+              "document": "graphs.md",
+              "quote": "# 图与遍历",
+              "start": 0,
+              "end": 6
+            },
+            {
+              "document": "graphs.md",
+              "quote": "## 知识点 4",
+              "start": 116,
+              "end": 124
+            },
+            {
+              "document": "graphs.md",
+              "quote": "## 知识点 1",
+              "start": 8,
+              "end": 16
+            },
+            {
+              "document": "graphs.md",
+              "quote": "## 知识点 6",
+              "start": 201,
+              "end": 209
+            },
+            {
+              "document": "graphs.md",
+              "quote": "## 知识点 2",
+              "start": 43,
+              "end": 51
+            },
+            {
+              "document": "graphs.md",
+              "quote": "## 知识点 3",
+              "start": 76,
+              "end": 84
+            }
+          ]
+        },
+        {
+          "id": "trees-4-1",
+          "group": "trees-4",
+          "category": "direct",
+          "query": "后序遍历的顺序是什么？",
+          "passed": true,
+          "matchedGold": 1,
+          "goldCount": 1,
+          "reciprocalRank": 1.0,
+          "returnedCount": 6,
+          "budgetBytes": 2000,
+          "usedBytes": 398,
+          "validLocations": true,
+          "conflictFlag": false,
+          "latencyMs": [
+            10.453300001245225,
+            9.919000000081724,
+            9.93650000236812
+          ],
+          "returned": [
+            {
+              "document": "trees.md",
+              "quote": "后序遍历按照左子树、右子树、根节点的顺序访问。",
+              "start": 132,
+              "end": 155
+            },
+            {
+              "document": "trees.md",
+              "quote": "先序遍历按照根节点、左子树、右子树的顺序访问。",
+              "start": 62,
+              "end": 85
+            },
+            {
+              "document": "trees.md",
+              "quote": "中序遍历按照左子树、根节点、右子树的顺序访问。",
+              "start": 97,
+              "end": 120
+            },
+            {
+              "document": "graphs.md",
+              "quote": "广度优先搜索使用队列，按照从起点逐层扩展的顺序访问节点。",
+              "start": 86,
+              "end": 114
+            },
+            {
+              "document": "graphs.md",
+              "quote": "# 图与遍历",
+              "start": 0,
+              "end": 6
+            },
+            {
+              "document": "linear.md",
+              "quote": "顺序存储通过下标定位元素；链式存储通过节点之间的链接连接元素。",
+              "start": 215,
+              "end": 246
+            }
+          ]
+        },
+        {
+          "id": "trees-4-2",
+          "group": "trees-4",
+          "category": "paraphrase",
+          "query": "左右根是哪种遍历？",
+          "passed": false,
+          "matchedGold": 0,
+          "goldCount": 1,
+          "reciprocalRank": 0,
+          "returnedCount": 6,
+          "budgetBytes": 2000,
+          "usedBytes": 84,
+          "validLocations": true,
+          "conflictFlag": false,
+          "latencyMs": [
+            9.494800000538817,
+            10.326899999199668,
+            9.753999998793006
+          ],
+          "returned": [
+            {
+              "document": "graphs.md",
+              "quote": "# 图与遍历",
+              "start": 0,
+              "end": 6
+            },
+            {
+              "document": "graphs.md",
+              "quote": "## 知识点 4",
+              "start": 116,
+              "end": 124
+            },
+            {
+              "document": "graphs.md",
+              "quote": "## 知识点 1",
+              "start": 8,
+              "end": 16
+            },
+            {
+              "document": "graphs.md",
+              "quote": "## 知识点 6",
+              "start": 201,
+              "end": 209
+            },
+            {
+              "document": "graphs.md",
+              "quote": "## 知识点 2",
+              "start": 43,
+              "end": 51
+            },
+            {
+              "document": "graphs.md",
+              "quote": "## 知识点 3",
+              "start": 76,
+              "end": 84
+            }
+          ]
+        },
+        {
+          "id": "trees-5-1",
+          "group": "trees-5",
+          "category": "direct",
+          "query": "不重复键的二叉搜索树有什么大小关系？",
+          "passed": true,
+          "matchedGold": 1,
+          "goldCount": 1,
+          "reciprocalRank": 1.0,
+          "returnedCount": 6,
+          "budgetBytes": 2000,
+          "usedBytes": 257,
+          "validLocations": true,
+          "conflictFlag": false,
+          "latencyMs": [
+            11.078000003180932,
+            9.782599998288788,
+            11.394299999665236
+          ],
+          "returned": [
+            {
+              "document": "trees.md",
+              "quote": "在键互不重复的二叉搜索树中，左子树的键小于根，右子树的键大于根。",
+              "start": 167,
+              "end": 199
+            },
+            {
+              "document": "trees.md",
+              "quote": "二叉搜索树的查找代价取决于树高；退化为链时可能逐个比较所有节点。",
+              "start": 211,
+              "end": 243
+            },
+            {
+              "document": "trees.md",
+              "quote": "# 二叉树与搜索树",
+              "start": 0,
+              "end": 9
+            },
+            {
+              "document": "trees.md",
+              "quote": "## 知识点 5",
+              "start": 157,
+              "end": 165
+            },
+            {
+              "document": "trees.md",
+              "quote": "## 知识点 6",
+              "start": 201,
+              "end": 209
+            },
+            {
+              "document": "trees.md",
+              "quote": "## 知识点 2",
+              "start": 52,
+              "end": 60
+            }
+          ]
+        },
+        {
+          "id": "trees-5-2",
+          "group": "trees-5",
+          "category": "paraphrase",
+          "query": "BST 如何组织根与左右子树的键？",
+          "passed": true,
+          "matchedGold": 1,
+          "goldCount": 1,
+          "reciprocalRank": 1.0,
+          "returnedCount": 6,
+          "budgetBytes": 2000,
+          "usedBytes": 486,
+          "validLocations": true,
+          "conflictFlag": false,
+          "latencyMs": [
+            7.469500000297558,
+            7.169900000008056,
+            6.701599999360042
+          ],
+          "returned": [
+            {
+              "document": "trees.md",
+              "quote": "在键互不重复的二叉搜索树中，左子树的键小于根，右子树的键大于根。",
+              "start": 167,
+              "end": 199
+            },
+            {
+              "document": "trees.md",
+              "quote": "先序遍历按照根节点、左子树、右子树的顺序访问。",
+              "start": 62,
+              "end": 85
+            },
+            {
+              "document": "trees.md",
+              "quote": "中序遍历按照左子树、根节点、右子树的顺序访问。",
+              "start": 97,
+              "end": 120
+            },
+            {
+              "document": "trees.md",
+              "quote": "后序遍历按照左子树、右子树、根节点的顺序访问。",
+              "start": 132,
+              "end": 155
+            },
+            {
+              "document": "trees.md",
+              "quote": "二叉搜索树的查找代价取决于树高；退化为链时可能逐个比较所有节点。",
+              "start": 211,
+              "end": 243
+            },
+            {
+              "document": "trees.md",
+              "quote": "二叉树的每个节点最多有两个子节点，分别称为左孩子和右孩子。",
+              "start": 21,
+              "end": 50
+            }
+          ]
+        },
+        {
+          "id": "trees-6-1",
+          "group": "trees-6",
+          "category": "direct",
+          "query": "二叉搜索树退化后查找会怎样？",
+          "passed": true,
+          "matchedGold": 1,
+          "goldCount": 1,
+          "reciprocalRank": 1.0,
+          "returnedCount": 6,
+          "budgetBytes": 2000,
+          "usedBytes": 257,
+          "validLocations": true,
+          "conflictFlag": false,
+          "latencyMs": [
+            10.50339999710559,
+            10.343099998863181,
+            10.38669999979902
+          ],
+          "returned": [
+            {
+              "document": "trees.md",
+              "quote": "二叉搜索树的查找代价取决于树高；退化为链时可能逐个比较所有节点。",
+              "start": 211,
+              "end": 243
+            },
+            {
+              "document": "trees.md",
+              "quote": "在键互不重复的二叉搜索树中，左子树的键小于根，右子树的键大于根。",
+              "start": 167,
+              "end": 199
+            },
+            {
+              "document": "trees.md",
+              "quote": "# 二叉树与搜索树",
+              "start": 0,
+              "end": 9
+            },
+            {
+              "document": "trees.md",
+              "quote": "## 知识点 5",
+              "start": 157,
+              "end": 165
+            },
+            {
+              "document": "trees.md",
+              "quote": "## 知识点 6",
+              "start": 201,
+              "end": 209
+            },
+            {
+              "document": "trees.md",
+              "quote": "## 知识点 2",
+              "start": 52,
+              "end": 60
+            }
+          ]
+        },
+        {
+          "id": "trees-6-2",
+          "group": "trees-6",
+          "category": "paraphrase",
+          "query": "BST 查找代价为什么与树高有关？",
+          "passed": true,
+          "matchedGold": 1,
+          "goldCount": 1,
+          "reciprocalRank": 1.0,
+          "returnedCount": 6,
+          "budgetBytes": 2000,
+          "usedBytes": 382,
+          "validLocations": true,
+          "conflictFlag": false,
+          "latencyMs": [
+            9.103700002015103,
+            8.68369999807328,
+            8.43209999948158
+          ],
+          "returned": [
+            {
+              "document": "trees.md",
+              "quote": "二叉搜索树的查找代价取决于树高；退化为链时可能逐个比较所有节点。",
+              "start": 211,
+              "end": 243
+            },
+            {
+              "document": "trees.md",
+              "quote": "在键互不重复的二叉搜索树中，左子树的键小于根，右子树的键大于根。",
+              "start": 167,
+              "end": 199
+            },
+            {
+              "document": "search.md",
+              "quote": "# 查找与堆",
+              "start": 0,
+              "end": 6
+            },
+            {
+              "document": "search.md",
+              "quote": "每轮二分查找把候选区间缩小到原来的一半，查找次数随规模呈对数增长。",
+              "start": 51,
+              "end": 84
+            },
+            {
+              "document": "search.md",
+              "quote": "二分查找的前提是待查序列按照比较规则有序。",
+              "start": 18,
+              "end": 39
+            },
+            {
+              "document": "search.md",
+              "quote": "## 知识点 5",
+              "start": 205,
+              "end": 213
+            }
+          ]
+        },
+        {
+          "id": "graphs-1-1",
+          "group": "graphs-1",
+          "category": "direct",
+          "query": "稀疏图可以选哪种表示？",
+          "passed": true,
+          "matchedGold": 1,
+          "goldCount": 1,
+          "reciprocalRank": 1.0,
+          "returnedCount": 3,
+          "budgetBytes": 2000,
+          "usedBytes": 168,
+          "validLocations": true,
+          "conflictFlag": true,
+          "latencyMs": [
+            5.428200001915684,
+            5.33490000088932,
+            5.34690000131377
+          ],
+          "returned": [
+            {
+              "document": "graphs.md",
+              "quote": "邻接表按顶点保存相邻顶点列表，适合表示稀疏图。",
+              "start": 18,
+              "end": 41
+            },
+            {
+              "document": "conflict-a.md",
+              "quote": "冲突验收声明：课程符号 Z 表示栈。",
+              "start": 0,
+              "end": 18
+            },
+            {
+              "document": "conflict-b.md",
+              "quote": "冲突验收声明：课程符号 Z 不表示栈。",
+              "start": 0,
+              "end": 19
+            }
+          ]
+        },
+        {
+          "id": "graphs-1-2",
+          "group": "graphs-1",
+          "category": "paraphrase",
+          "query": "邻接表按什么组织邻居？",
+          "passed": true,
+          "matchedGold": 1,
+          "goldCount": 1,
+          "reciprocalRank": 1.0,
+          "returnedCount": 2,
+          "budgetBytes": 2000,
+          "usedBytes": 132,
+          "validLocations": true,
+          "conflictFlag": false,
+          "latencyMs": [
+            5.39310000021942,
+            5.267999997158768,
+            5.351499999960652
+          ],
+          "returned": [
+            {
+              "document": "graphs.md",
+              "quote": "邻接表按顶点保存相邻顶点列表，适合表示稀疏图。",
+              "start": 18,
+              "end": 41
+            },
+            {
+              "document": "graphs.md",
+              "quote": "邻接矩阵用二维表记录顶点对之间的连接关系。",
+              "start": 53,
+              "end": 74
+            }
+          ]
+        },
+        {
+          "id": "graphs-2-1",
+          "group": "graphs-2",
+          "category": "direct",
+          "query": "邻接矩阵记录什么？",
+          "passed": true,
+          "matchedGold": 1,
+          "goldCount": 1,
+          "reciprocalRank": 1.0,
+          "returnedCount": 2,
+          "budgetBytes": 2000,
+          "usedBytes": 132,
+          "validLocations": true,
+          "conflictFlag": false,
+          "latencyMs": [
+            6.05119999818271,
+            5.482399999891641,
+            6.031500000972301
+          ],
+          "returned": [
+            {
+              "document": "graphs.md",
+              "quote": "邻接矩阵用二维表记录顶点对之间的连接关系。",
+              "start": 53,
+              "end": 74
+            },
+            {
+              "document": "graphs.md",
+              "quote": "邻接表按顶点保存相邻顶点列表，适合表示稀疏图。",
+              "start": 18,
+              "end": 41
+            }
+          ]
+        },
+        {
+          "id": "graphs-2-2",
+          "group": "graphs-2",
+          "category": "paraphrase",
+          "query": "二维表如何表示图的边？",
+          "passed": true,
+          "matchedGold": 1,
+          "goldCount": 1,
+          "reciprocalRank": 1.0,
+          "returnedCount": 4,
+          "budgetBytes": 2000,
+          "usedBytes": 231,
+          "validLocations": true,
+          "conflictFlag": true,
+          "latencyMs": [
+            6.378599999152357,
+            6.354799999826355,
+            8.200100000976818
+          ],
+          "returned": [
+            {
+              "document": "graphs.md",
+              "quote": "邻接矩阵用二维表记录顶点对之间的连接关系。",
+              "start": 53,
+              "end": 74
+            },
+            {
+              "document": "conflict-a.md",
+              "quote": "冲突验收声明：课程符号 Z 表示栈。",
+              "start": 0,
+              "end": 18
+            },
+            {
+              "document": "conflict-b.md",
+              "quote": "冲突验收声明：课程符号 Z 不表示栈。",
+              "start": 0,
+              "end": 19
+            },
+            {
+              "document": "graphs.md",
+              "quote": "邻接表按顶点保存相邻顶点列表，适合表示稀疏图。",
+              "start": 18,
+              "end": 41
+            }
+          ]
+        },
+        {
+          "id": "graphs-3-1",
+          "group": "graphs-3",
+          "category": "direct",
+          "query": "BFS 使用什么结构？",
+          "passed": true,
+          "matchedGold": 1,
+          "goldCount": 1,
+          "reciprocalRank": 1.0,
+          "returnedCount": 6,
+          "budgetBytes": 2000,
+          "usedBytes": 309,
+          "validLocations": true,
+          "conflictFlag": false,
+          "latencyMs": [
+            10.7205000022077,
+            9.199500000249827,
+            8.687199999258155
+          ],
+          "returned": [
+            {
+              "document": "graphs.md",
+              "quote": "广度优先搜索使用队列，按照从起点逐层扩展的顺序访问节点。",
+              "start": 86,
+              "end": 114
+            },
+            {
+              "document": "graphs.md",
+              "quote": "深度优先搜索可以使用递归或显式栈，沿一条路径深入后再回溯。",
+              "start": 126,
+              "end": 155
+            },
+            {
+              "document": "linear.md",
+              "quote": "# 线性结构",
+              "start": 0,
+              "end": 6
+            },
+            {
+              "document": "graphs.md",
+              "quote": "无权图中，从起点执行广度优先搜索可得到到可达顶点的最少边数路径。",
+              "start": 167,
+              "end": 199
+            },
+            {
+              "document": "linear.md",
+              "quote": "## 知识点 6",
+              "start": 248,
+              "end": 256
+            },
+            {
+              "document": "linear.md",
+              "quote": "## 知识点 5",
+              "start": 205,
+              "end": 213
+            }
+          ]
+        },
+        {
+          "id": "graphs-3-2",
+          "group": "graphs-3",
+          "category": "paraphrase",
+          "query": "广度优先为什么是逐层扩展？",
+          "passed": true,
+          "matchedGold": 1,
+          "goldCount": 1,
+          "reciprocalRank": 1.0,
+          "returnedCount": 3,
+          "budgetBytes": 2000,
+          "usedBytes": 267,
+          "validLocations": true,
+          "conflictFlag": false,
+          "latencyMs": [
+            5.655299999489216,
+            5.57670000125654,
+            5.573899998125853
+          ],
+          "returned": [
+            {
+              "document": "graphs.md",
+              "quote": "广度优先搜索使用队列，按照从起点逐层扩展的顺序访问节点。",
+              "start": 86,
+              "end": 114
+            },
+            {
+              "document": "graphs.md",
+              "quote": "无权图中，从起点执行广度优先搜索可得到到可达顶点的最少边数路径。",
+              "start": 167,
+              "end": 199
+            },
+            {
+              "document": "graphs.md",
+              "quote": "深度优先搜索可以使用递归或显式栈，沿一条路径深入后再回溯。",
+              "start": 126,
+              "end": 155
+            }
+          ]
+        },
+        {
+          "id": "graphs-4-1",
+          "group": "graphs-4",
+          "category": "direct",
+          "query": "DFS 可以怎样实现？",
+          "passed": true,
+          "matchedGold": 1,
+          "goldCount": 1,
+          "reciprocalRank": 0.5,
+          "returnedCount": 2,
+          "budgetBytes": 2000,
+          "usedBytes": 191,
+          "validLocations": true,
+          "conflictFlag": false,
+          "latencyMs": [
+            5.448399999295361,
+            5.319500000041444,
+            5.525400003534742
+          ],
+          "returned": [
+            {
+              "document": "linear.md",
+              "quote": "Python 的 collections.deque 可以在右端 append，并在左端 popleft，实现先进先出队列。",
+              "start": 141,
+              "end": 203
+            },
+            {
+              "document": "graphs.md",
+              "quote": "深度优先搜索可以使用递归或显式栈，沿一条路径深入后再回溯。",
+              "start": 126,
+              "end": 155
+            }
+          ]
+        },
+        {
+          "id": "graphs-4-2",
+          "group": "graphs-4",
+          "category": "paraphrase",
+          "query": "深度优先何时回溯？",
+          "passed": true,
+          "matchedGold": 1,
+          "goldCount": 1,
+          "reciprocalRank": 1.0,
+          "returnedCount": 3,
+          "budgetBytes": 2000,
+          "usedBytes": 267,
+          "validLocations": true,
+          "conflictFlag": false,
+          "latencyMs": [
+            6.20590000107768,
+            5.59600000269711,
+            5.775000001449371
+          ],
+          "returned": [
+            {
+              "document": "graphs.md",
+              "quote": "深度优先搜索可以使用递归或显式栈，沿一条路径深入后再回溯。",
+              "start": 126,
+              "end": 155
+            },
+            {
+              "document": "graphs.md",
+              "quote": "广度优先搜索使用队列，按照从起点逐层扩展的顺序访问节点。",
+              "start": 86,
+              "end": 114
+            },
+            {
+              "document": "graphs.md",
+              "quote": "无权图中，从起点执行广度优先搜索可得到到可达顶点的最少边数路径。",
+              "start": 167,
+              "end": 199
+            }
+          ]
+        },
+        {
+          "id": "graphs-5-1",
+          "group": "graphs-5",
+          "category": "direct",
+          "query": "无权图的最少边数路径可用什么算法？",
+          "passed": true,
+          "matchedGold": 1,
+          "goldCount": 1,
+          "reciprocalRank": 1.0,
+          "returnedCount": 3,
+          "budgetBytes": 2000,
+          "usedBytes": 275,
+          "validLocations": true,
+          "conflictFlag": false,
+          "latencyMs": [
+            6.032299999787938,
+            6.482000000687549,
+            5.950099999608938
+          ],
+          "returned": [
+            {
+              "document": "graphs.md",
+              "quote": "无权图中，从起点执行广度优先搜索可得到到可达顶点的最少边数路径。",
+              "start": 167,
+              "end": 199
+            },
+            {
+              "document": "search.md",
+              "quote": "Python 的 bisect_left 返回保持有序的最左插入位置，不是插入操作本身。",
+              "start": 96,
+              "end": 140
+            },
+            {
+              "document": "graphs.md",
+              "quote": "深度优先搜索可以使用递归或显式栈，沿一条路径深入后再回溯。",
+              "start": 126,
+              "end": 155
+            }
+          ]
+        },
+        {
+          "id": "graphs-5-2",
+          "group": "graphs-5",
+          "category": "paraphrase",
+          "query": "BFS 求得的是哪种图上的最少边数路径？",
+          "passed": true,
+          "matchedGold": 1,
+          "goldCount": 1,
+          "reciprocalRank": 1.0,
+          "returnedCount": 4,
+          "budgetBytes": 2000,
+          "usedBytes": 359,
+          "validLocations": true,
+          "conflictFlag": false,
+          "latencyMs": [
+            6.427199998142896,
+            6.430800000089221,
+            5.940099999861559
+          ],
+          "returned": [
+            {
+              "document": "graphs.md",
+              "quote": "无权图中，从起点执行广度优先搜索可得到到可达顶点的最少边数路径。",
+              "start": 167,
+              "end": 199
+            },
+            {
+              "document": "search.md",
+              "quote": "Python 的 bisect_left 返回保持有序的最左插入位置，不是插入操作本身。",
+              "start": 96,
+              "end": 140
+            },
+            {
+              "document": "graphs.md",
+              "quote": "广度优先搜索使用队列，按照从起点逐层扩展的顺序访问节点。",
+              "start": 86,
+              "end": 114
+            },
+            {
+              "document": "graphs.md",
+              "quote": "深度优先搜索可以使用递归或显式栈，沿一条路径深入后再回溯。",
+              "start": 126,
+              "end": 155
+            }
+          ]
+        },
+        {
+          "id": "graphs-6-1",
+          "group": "graphs-6",
+          "category": "direct",
+          "query": "拓扑排序适用于什么图？",
+          "passed": true,
+          "matchedGold": 1,
+          "goldCount": 1,
+          "reciprocalRank": 1.0,
+          "returnedCount": 1,
+          "budgetBytes": 2000,
+          "usedBytes": 81,
+          "validLocations": true,
+          "conflictFlag": false,
+          "latencyMs": [
+            5.325599999196129,
+            6.52540000010049,
+            5.166000002645887
+          ],
+          "returned": [
+            {
+              "document": "graphs.md",
+              "quote": "拓扑排序只适用于有向无环图；存在有向环时不存在拓扑序。",
+              "start": 211,
+              "end": 238
+            }
+          ]
+        },
+        {
+          "id": "graphs-6-2",
+          "group": "graphs-6",
+          "category": "paraphrase",
+          "query": "有向环为什么使拓扑序不存在？",
+          "passed": true,
+          "matchedGold": 1,
+          "goldCount": 1,
+          "reciprocalRank": 1.0,
+          "returnedCount": 1,
+          "budgetBytes": 2000,
+          "usedBytes": 81,
+          "validLocations": true,
+          "conflictFlag": false,
+          "latencyMs": [
+            5.1178000030631665,
+            5.108400000608526,
+            5.178899999009445
+          ],
+          "returned": [
+            {
+              "document": "graphs.md",
+              "quote": "拓扑排序只适用于有向无环图；存在有向环时不存在拓扑序。",
+              "start": 211,
+              "end": 238
+            }
+          ]
+        },
+        {
+          "id": "conflict-1",
+          "group": "conflict-Z",
+          "category": "conflict",
+          "query": "课程符号 Z 是否表示栈？",
+          "passed": true,
+          "matchedGold": 2,
+          "goldCount": 2,
+          "reciprocalRank": 1.0,
+          "returnedCount": 6,
+          "budgetBytes": 2000,
+          "usedBytes": 407,
+          "validLocations": true,
+          "conflictFlag": true,
+          "latencyMs": [
+            7.0686000035493635,
+            6.156399998872075,
+            7.032599998638034
+          ],
+          "returned": [
+            {
+              "document": "conflict-a.md",
+              "quote": "冲突验收声明：课程符号 Z 表示栈。",
+              "start": 0,
+              "end": 18
+            },
+            {
+              "document": "conflict-b.md",
+              "quote": "冲突验收声明：课程符号 Z 不表示栈。",
+              "start": 0,
+              "end": 19
+            },
+            {
+              "document": "graphs.md",
+              "quote": "邻接表按顶点保存相邻顶点列表，适合表示稀疏图。",
+              "start": 18,
+              "end": 41
+            },
+            {
+              "document": "linear.md",
+              "quote": "栈遵循后进先出，最后压入栈的元素最先弹出。",
+              "start": 18,
+              "end": 39
+            },
+            {
+              "document": "linear.md",
+              "quote": "Python 列表可以用 append 在末尾压栈，用不带下标的 pop 从末尾出栈。",
+              "start": 86,
+              "end": 129
+            },
+            {
+              "document": "graphs.md",
+              "quote": "深度优先搜索可以使用递归或显式栈，沿一条路径深入后再回溯。",
+              "start": 126,
+              "end": 155
+            }
+          ]
+        },
+        {
+          "id": "conflict-2",
+          "group": "conflict-Z",
+          "category": "conflict",
+          "query": "两份声明对 Z 的解释一致吗？",
+          "passed": true,
+          "matchedGold": 2,
+          "goldCount": 2,
+          "reciprocalRank": 1.0,
+          "returnedCount": 2,
+          "budgetBytes": 2000,
+          "usedBytes": 99,
+          "validLocations": true,
+          "conflictFlag": true,
+          "latencyMs": [
+            5.242499999440042,
+            5.195100002310937,
+            5.326500002411194
+          ],
+          "returned": [
+            {
+              "document": "conflict-a.md",
+              "quote": "冲突验收声明：课程符号 Z 表示栈。",
+              "start": 0,
+              "end": 18
+            },
+            {
+              "document": "conflict-b.md",
+              "quote": "冲突验收声明：课程符号 Z 不表示栈。",
+              "start": 0,
+              "end": 19
+            }
+          ]
+        },
+        {
+          "id": "conflict-3",
+          "group": "conflict-Z",
+          "category": "conflict",
+          "query": "请比较 Z 表示栈的声明",
+          "passed": true,
+          "matchedGold": 2,
+          "goldCount": 2,
+          "reciprocalRank": 1.0,
+          "returnedCount": 6,
+          "budgetBytes": 2000,
+          "usedBytes": 390,
+          "validLocations": true,
+          "conflictFlag": true,
+          "latencyMs": [
+            6.957999998121522,
+            6.949399998120498,
+            7.278699999005767
+          ],
+          "returned": [
+            {
+              "document": "conflict-a.md",
+              "quote": "冲突验收声明：课程符号 Z 表示栈。",
+              "start": 0,
+              "end": 18
+            },
+            {
+              "document": "conflict-b.md",
+              "quote": "冲突验收声明：课程符号 Z 不表示栈。",
+              "start": 0,
+              "end": 19
+            },
+            {
+              "document": "linear.md",
+              "quote": "栈遵循后进先出，最后压入栈的元素最先弹出。",
+              "start": 18,
+              "end": 39
+            },
+            {
+              "document": "search.md",
+              "quote": "二分查找的前提是待查序列按照比较规则有序。",
+              "start": 18,
+              "end": 39
+            },
+            {
+              "document": "graphs.md",
+              "quote": "邻接表按顶点保存相邻顶点列表，适合表示稀疏图。",
+              "start": 18,
+              "end": 41
+            },
+            {
+              "document": "trees.md",
+              "quote": "二叉搜索树的查找代价取决于树高；退化为链时可能逐个比较所有节点。",
+              "start": 211,
+              "end": 243
+            }
+          ]
+        },
+        {
+          "id": "conflict-4",
+          "group": "conflict-Z",
+          "category": "conflict",
+          "query": "冲突验收声明有没有相反说法？",
+          "passed": true,
+          "matchedGold": 2,
+          "goldCount": 2,
+          "reciprocalRank": 1.0,
+          "returnedCount": 2,
+          "budgetBytes": 2000,
+          "usedBytes": 99,
+          "validLocations": true,
+          "conflictFlag": true,
+          "latencyMs": [
+            5.14600000315113,
+            5.164300000615185,
+            5.460300002596341
+          ],
+          "returned": [
+            {
+              "document": "conflict-a.md",
+              "quote": "冲突验收声明：课程符号 Z 表示栈。",
+              "start": 0,
+              "end": 18
+            },
+            {
+              "document": "conflict-b.md",
+              "quote": "冲突验收声明：课程符号 Z 不表示栈。",
+              "start": 0,
+              "end": 19
+            }
+          ]
+        },
+        {
+          "id": "negative-3",
+          "group": "negative-3",
+          "category": "out-of-domain",
+          "query": "梵高出生在哪个城市？",
+          "passed": true,
+          "matchedGold": 0,
+          "goldCount": 0,
+          "reciprocalRank": 0,
+          "returnedCount": 0,
+          "budgetBytes": 2000,
+          "usedBytes": 0,
+          "validLocations": true,
+          "conflictFlag": false,
+          "latencyMs": [
+            5.522100000234786,
+            5.282499998429557,
+            4.829099998460151
+          ],
+          "returned": []
+        },
+        {
+          "id": "negative-4",
+          "group": "negative-4",
+          "category": "out-of-domain",
+          "query": "光合作用的化学方程式是什么？",
+          "passed": true,
+          "matchedGold": 0,
+          "goldCount": 0,
+          "reciprocalRank": 0,
+          "returnedCount": 0,
+          "budgetBytes": 2000,
+          "usedBytes": 0,
+          "validLocations": true,
+          "conflictFlag": false,
+          "latencyMs": [
+            4.830900001252303,
+            4.985999999917112,
+            4.878899999312125
+          ],
+          "returned": []
+        },
+        {
+          "id": "negative-5",
+          "group": "negative-5",
+          "category": "missing-detail",
+          "query": "课程指定的栈容量上限是多少？",
+          "passed": false,
+          "matchedGold": 0,
+          "goldCount": 0,
+          "reciprocalRank": 0,
+          "returnedCount": 5,
+          "budgetBytes": 2000,
+          "usedBytes": 338,
+          "validLocations": true,
+          "conflictFlag": true,
+          "latencyMs": [
+            5.974499999865657,
+            6.373299998813309,
+            6.761700002243742
+          ],
+          "returned": [
+            {
+              "document": "conflict-a.md",
+              "quote": "冲突验收声明：课程符号 Z 表示栈。",
+              "start": 0,
+              "end": 18
+            },
+            {
+              "document": "conflict-b.md",
+              "quote": "冲突验收声明：课程符号 Z 不表示栈。",
+              "start": 0,
+              "end": 19
+            },
+            {
+              "document": "linear.md",
+              "quote": "栈遵循后进先出，最后压入栈的元素最先弹出。",
+              "start": 18,
+              "end": 39
+            },
+            {
+              "document": "linear.md",
+              "quote": "Python 列表可以用 append 在末尾压栈，用不带下标的 pop 从末尾出栈。",
+              "start": 86,
+              "end": 129
+            },
+            {
+              "document": "graphs.md",
+              "quote": "深度优先搜索可以使用递归或显式栈，沿一条路径深入后再回溯。",
+              "start": 126,
+              "end": 155
+            }
+          ]
+        },
+        {
+          "id": "negative-6",
+          "group": "negative-6",
+          "category": "missing-detail",
+          "query": "这门课二叉树考试在哪一天？",
+          "passed": false,
+          "matchedGold": 0,
+          "goldCount": 0,
+          "reciprocalRank": 0,
+          "returnedCount": 6,
+          "budgetBytes": 2000,
+          "usedBytes": 93,
+          "validLocations": true,
+          "conflictFlag": false,
+          "latencyMs": [
+            9.13090000176453,
+            9.229399998730514,
+            8.81900000240421
+          ],
+          "returned": [
+            {
+              "document": "trees.md",
+              "quote": "# 二叉树与搜索树",
+              "start": 0,
+              "end": 9
+            },
+            {
+              "document": "trees.md",
+              "quote": "## 知识点 5",
+              "start": 157,
+              "end": 165
+            },
+            {
+              "document": "trees.md",
+              "quote": "## 知识点 6",
+              "start": 201,
+              "end": 209
+            },
+            {
+              "document": "trees.md",
+              "quote": "## 知识点 2",
+              "start": 52,
+              "end": 60
+            },
+            {
+              "document": "trees.md",
+              "quote": "## 知识点 3",
+              "start": 87,
+              "end": 95
+            },
+            {
+              "document": "trees.md",
+              "quote": "## 知识点 1",
+              "start": 11,
+              "end": 19
+            }
+          ]
+        },
+        {
+          "id": "negative-7",
+          "group": "negative-7",
+          "category": "missing-detail",
+          "query": "图论老师的电话号码是什么？",
+          "passed": true,
+          "matchedGold": 0,
+          "goldCount": 0,
+          "reciprocalRank": 0,
+          "returnedCount": 0,
+          "budgetBytes": 2000,
+          "usedBytes": 0,
+          "validLocations": true,
+          "conflictFlag": false,
+          "latencyMs": [
+            6.062500000552973,
+            5.827000000863336,
+            5.7809999998426065
+          ],
+          "returned": []
+        },
+        {
+          "id": "negative-8",
+          "group": "negative-8",
+          "category": "missing-detail",
+          "query": "这份讲义要求的队列作业截止时间是什么？",
+          "passed": false,
+          "matchedGold": 0,
+          "goldCount": 0,
+          "reciprocalRank": 0,
+          "returnedCount": 5,
+          "budgetBytes": 2000,
+          "usedBytes": 467,
+          "validLocations": true,
+          "conflictFlag": false,
+          "latencyMs": [
+            7.575299998279661,
+            7.342500000959262,
+            7.564100000308827
+          ],
+          "returned": [
+            {
+              "document": "linear.md",
+              "quote": "队列遵循先进先出，最早进入队列的元素最先离开。",
+              "start": 51,
+              "end": 74
+            },
+            {
+              "document": "linear.md",
+              "quote": "Python 的 collections.deque 可以在右端 append，并在左端 popleft，实现先进先出队列。",
+              "start": 141,
+              "end": 203
+            },
+            {
+              "document": "graphs.md",
+              "quote": "广度优先搜索使用队列，按照从起点逐层扩展的顺序访问节点。",
+              "start": 86,
+              "end": 114
+            },
+            {
+              "document": "search.md",
+              "quote": "小根堆要求每个父节点的值不大于其子节点，根节点保存最小值。",
+              "start": 215,
+              "end": 244
+            },
+            {
+              "document": "search.md",
+              "quote": "Python 的 insort 先定位插入点，再移动列表元素完成插入；定位快不代表整体插入是对数时间。",
+              "start": 152,
+              "end": 203
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "unmeasured": {
+    "vector": "API credentials/budget not authorized",
+    "hybrid": "no real embedding evaluation",
+    "rerank": "no real rerank evaluation",
+    "ocr": "image-only fixture verifies no fabricated text, not OCR accuracy",
+    "multimodal": "real model quality not tested"
+  }
+}
