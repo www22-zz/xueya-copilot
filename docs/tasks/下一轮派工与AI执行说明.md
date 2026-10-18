@@ -1,6 +1,6 @@
 # 下一轮派工与 AI 执行说明
 
-日期：2026-10-17。A～E 主要实现已合入 main，本轮复用已有代码做增强，不重新开发 A～E。F 由当前主 AI 继续负责；G1～G5 可整包分给队友，不按人数拆分。
+日期：2026-10-17；集成更新：2026-10-18。A～E 主要实现已合入 main，本轮复用已有代码做增强，不重新开发 A～E。G1～G4 本轮交付及联合验证见 [主线集成记录](../delivery/G1-G4-main-integration.md)，不要重新派发同一实现；G5 仍按下面范围推进，F 持续跟进质量与最终交付。各包不按人数拆分。
 
 依据：[Open Notebook 功能建议](../research/2026-10-17-参考OpenNotebook的学涯功能完善建议.md)、[当前验收记录](../delivery/AE-integration-audit.md)。下表是本轮选定的工作范围；不扩大到本地模型、云协作或整站换框架。
 
@@ -9,9 +9,9 @@
 | 工作包 | 完整任务 | 包含建议 | 开发分支 | 交付进度文件 |
 | --- | --- | --- | --- | --- |
 | G1 学习体验与公共接线 | 统一旧/进阶入口；模型与能力设置；任务/用量/失败处理中心；统一各包公共接口与根装配 | ON-01、02、13 | `codex/g1-workspace` | `docs/delivery/G1-workspace.md` |
-| G2 课程资料与阅读 | 网址/粘贴文字/文件导入；章节组织与显式资料复用；原件/版本/媒体位置；完整阅读流程 | ON-04、05、11 的资料部分 | `codex/g2-library` | `docs/delivery/G2-library.md` |
-| G3 学习模板与笔记 | 模板管理与试运行；产物转笔记/题目/复习卡；出处和人工修订；来源变化后的影响检查 | ON-06、09、10 | `codex/g3-learning-content` | `docs/delivery/G3-learning-content.md` |
-| G4 检索与综合问答 | 会话上下文策略和预算；全文/语义统一搜索；有边界的多步骤综合回答 | ON-03、07、08 | `codex/g4-search-agent` | `docs/delivery/G4-search-agent.md` |
+| G2 课程资料与阅读 | 网址/粘贴文字/文件导入；章节组织与显式资料复用；原件/版本/媒体位置；完整阅读流程 | ON-04、05、11 的资料部分 | `codex/g2-workspace` | `docs/delivery/G2-workspace.md` |
+| G3 学习模板与笔记 | 模板管理与试运行；产物转笔记/题目/复习卡；出处和人工修订；来源变化后的影响检查 | ON-06、09、10 | `codex/g3-workspace` | `docs/delivery/G3-workspace.md` |
+| G4 检索与综合问答 | 会话上下文策略和预算；全文/语义统一搜索；有边界的多步骤综合回答 | ON-03、07、08 | `codex/g4-workspace` | `docs/delivery/G4-workspace.md` |
 | G5 多模态与复习音频 | 录音/视频分段、真实片段定位；可核对脚本；单人/双人复习音频；关联实际回忆练习 | ON-11 的识别/讲解部分、12 | `codex/g5-media-audio` | `docs/delivery/G5-media-audio.md` |
 | F / G6 质量与交付 | 独立验收资料、自动评测、缺陷闭环、实验、技术报告、演示；课程包导出/导入验收，缺接口交 G1 协调 | 原 F、ON-14 与各包验收 | `codex/f-quality-delivery` | `docs/delivery/large-F-quality-report.md` |
 

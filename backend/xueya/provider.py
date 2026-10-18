@@ -7,6 +7,7 @@ from contextlib import asynccontextmanager
 from uuid import uuid4
 import httpx
 from .common import AppError, digest, dumps, require, utc_now
+from .rag_api import api_permit_held
 
 
 class MimoProvider:
@@ -14,15 +15,18 @@ class MimoProvider:
         self.config, self.platform, self.transport = config, platform, transport
 
     @asynccontextmanager
-    async def invocation(self, messages, scope):
+    async def invocation(self, messages, scope, *, capability='text', model=None):
         require(bool(self.config.api_key), "AI_UNAVAILABLE")
         request_id, release, state = None, None, {"usage": None, "complete": False}
         if self.platform:
-            release = self.platform.resources.acquire("api")
+            release = (lambda: None) if api_permit_held(self.platform) else self.platform.resources.acquire("api")
             require(release is not None, "API_BUSY")
             request_id = str(uuid4())
             try:
                 self.platform.db.execute("INSERT INTO invocations(id,user_id,course_id,status,provider,request_hash,at,updated_at) VALUES(?,?,?,?,?,?,?,?)", (request_id, scope.user_id, scope.course_id, "pending", "mimo", digest(messages), utc_now(), utc_now()))
+                from .invocation_context import attach_invocation
+                attach_invocation(self.platform, scope, request_id, capability=capability, model=model or self.config.model,
+                                  base_url=self.config.base_url, key=self.config.api_key)
             except BaseException:
                 release()
                 raise

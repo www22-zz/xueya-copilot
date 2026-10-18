@@ -120,7 +120,11 @@ class LearningHost:
         self.services = {}
         from .learning_ui_api import LearningPages
         self.pages = LearningPages(self)
+        from .content_workspace import ContentWorkspace
+        self.content_workspace = ContentWorkspace(self)
         self.p.jobs.register("learning-chapter", self.execute)
+        from .search_workspace import SearchWorkspace
+        self.search_workspace = SearchWorkspace(self)
 
     def service(self, course):
         scope = self.p.scope(course)
@@ -130,7 +134,7 @@ class LearningHost:
                 model_id=self.app.state.config.model, checkpoint=self.checkpoints, verify_snapshot=self.verify_snapshot)
         return self.services[course]
 
-    async def sources(self, value, *, catalog=False):
+    async def sources(self, value, *, catalog=False, generation=True):
         scope = self.p.scope(value["courseId"])
         selection = value.get("selection") or {}
         require(isinstance(selection, dict) and not set(selection)-{"documentIds", "section", "sourceIds"}, "INVALID_SELECTION")
@@ -161,6 +165,8 @@ class LearningHost:
             # The page catalog must remain accessible even when a whole course
             # exceeds a generation budget. Commands still load complete evidence.
             return [{**s, 'quote': s['quote'][:1500]} for s in result[:256]]
+        if not generation:
+            return result
         require(sum(len(s["quote"]) for s in result) <= 384000, "CHAPTER_BUDGET_EXCEEDED")
         version = evidence_package({"courseId": scope.course_id, "sources": result})["version"]
         await self.snapshots.put(scope.course_id, version, {"sourceIds": [s["id"] for s in result]})
@@ -248,9 +254,15 @@ class LearningHost:
         require(secrets.compare_digest(request.headers.get("x-xueya-token", ""), self.app.state.token), "AUTH_REQUIRED")
         course = request.query_params.get("courseId", "course-default")
         self.p.scope(course)
+        content_response = await self.content_workspace.dispatch(path, request, course)
+        if content_response is not None:
+            return content_response
         extended = await self.pages.dispatch(path, request, course)
         if extended is not None:
             return extended
+        search_response = await self.search_workspace.dispatch(path, request, course)
+        if search_response is not None:
+            return search_response
 
         async def context(_):
             return {"courseId": course, "userId": self.p.user_id, "loadStudyContext": lambda: self.study_context(course), 'scopeStudyContext': self.scope_study_context}

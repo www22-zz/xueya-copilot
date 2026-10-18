@@ -34,6 +34,7 @@ class RagService:
         require(row is not None and not row["value"].get("deleted"), "DOCUMENT_NOT_FOUND")
         value = {**row["value"], "id": document_id, "version": row["version"]}
         require(not active or not value.get("superseded"), "DOCUMENT_SUPERSEDED")
+        require(not active or not value.get("archived"), "DOCUMENT_ARCHIVED")
         return value
 
     def artifact(self, scope, doc):
@@ -190,7 +191,7 @@ class RagService:
         self.repo.require_course(scope, archived=True)
         require(document_ids is None or isinstance(document_ids, list) and len(document_ids) <= 100 and all(isinstance(d, str) for d in document_ids), "INVALID_FILTER")
         require(section is None or isinstance(section, str) and len(section) <= 200, "INVALID_FILTER")
-        documents = {d["id"]: d for d in self.repo.all(scope, "document") if not d.get("deleted") and not d.get("superseded")}
+        documents = {d["id"]: d for d in self.repo.all(scope, "document") if not d.get("deleted") and not d.get("superseded") and not d.get("archived")}
         result, artifacts = [], {}
         for source in self.repo.all(scope, "source"):
             doc = documents.get(source.get("documentId"))
