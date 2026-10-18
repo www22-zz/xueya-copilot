@@ -120,6 +120,8 @@ class LearningHost:
         self.services = {}
         from .learning_ui_api import LearningPages
         self.pages = LearningPages(self)
+        from .content_workspace import ContentWorkspace
+        self.content_workspace = ContentWorkspace(self)
         self.p.jobs.register("learning-chapter", self.execute)
 
     def service(self, course):
@@ -248,6 +250,9 @@ class LearningHost:
         require(secrets.compare_digest(request.headers.get("x-xueya-token", ""), self.app.state.token), "AUTH_REQUIRED")
         course = request.query_params.get("courseId", "course-default")
         self.p.scope(course)
+        content_response = await self.content_workspace.dispatch(path, request, course)
+        if content_response is not None:
+            return content_response
         extended = await self.pages.dispatch(path, request, course)
         if extended is not None:
             return extended
