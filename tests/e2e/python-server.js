@@ -58,4 +58,15 @@ async function startPython({model,platform=false,dataDir}={}){
     }};
   }catch(error){child.kill();upstream?.closeAllConnections();upstream?.close();throw error;}
 }
-module.exports={startPython};
+// Historical A/E acceptance intentionally exercises the expanded legacy surface.
+// G1's separate browser acceptance verifies the default collapsed primary view.
+async function expandLegacyRecords(page){
+  await page.addInitScript(()=>{
+    const expand=()=>document.querySelectorAll('.wb-legacy:not([open])').forEach(panel=>{
+      panel.querySelector(':scope > summary')?.click();
+    });
+    new MutationObserver(expand).observe(document,{childList:true,subtree:true});
+    document.addEventListener('DOMContentLoaded',expand,{once:true});
+  });
+}
+module.exports={startPython,expandLegacyRecords};

@@ -1,11 +1,12 @@
 'use strict';
 const {chromium}=require('playwright'),assert=require('node:assert/strict'),http=require('node:http'),fs=require('node:fs'),os=require('node:os'),path=require('node:path');
-const {startPython}=require('./python-server.js');
+const {startPython,expandLegacyRecords}=require('./python-server.js');
 (async()=>{
   const dir=fs.mkdtempSync(path.join(os.tmpdir(),'xueya-e-browser-'));
   const server=await startPython({platform:true,dataDir:dir});let browser;
   try{
     browser=await chromium.launch({headless:true,...(process.env.CHROME_PATH?{executablePath:process.env.CHROME_PATH}:{})});const page=await browser.newPage({viewport:{width:1440,height:1000}});page.setDefaultTimeout(15000);const errors=[];page.on('pageerror',e=>errors.push(e.message));
+    await expandLegacyRecords(page);
     await page.addInitScript(()=>{if(!localStorage.getItem('e-seeded')){localStorage.setItem('e-seeded','1');localStorage.setItem('xueya-copilot-state-v2',JSON.stringify({documents:[],cards:[],messages:Array.from({length:35},(_,i)=>({id:'msg-'+i,role:'user',text:'历史'+i})),records:Array.from({length:350},()=>({questionId:'q1',correct:true,createdAt:new Date().toISOString()}))}));}});
     const base='http://127.0.0.1:'+server.address().port;await page.goto(base+'/#space/overview');await page.locator('#platformData').click();await page.locator('#platformPreview').click();await page.locator('#platformApply:not([hidden])').waitFor();assert.match(await page.locator('#platformPreviewText').textContent(),/350/);await page.locator('#platformApply').click();await page.waitForFunction(()=>document.querySelector('#platformStatus').textContent.includes('迁移完成'));
     assert.equal((await server.api('/workspace')).workspace.data.courses[0].data.records.length,350);console.log('E browser: migration retains 35 messages and 350 records');

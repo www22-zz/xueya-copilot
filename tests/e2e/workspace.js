@@ -5,7 +5,7 @@ const http=require('node:http');
 const fs=require('node:fs');
 const path=require('node:path');
 const {pathToFileURL}=require('node:url');
-const {startPython}=require('./python-server.js');
+const {startPython,expandLegacyRecords}=require('./python-server.js');
 const root=path.resolve(__dirname,'../..'),output=path.join(root,'test-results/workspace');
 
 (async()=>{
@@ -16,6 +16,7 @@ const root=path.resolve(__dirname,'../..'),output=path.join(root,'test-results/w
   try{
     browser=await chromium.launch({headless:true,...(process.env.CHROME_PATH?{executablePath:process.env.CHROME_PATH}:{})});
     page=await browser.newPage({viewport:{width:1440,height:1000}});page.setDefaultTimeout(12000);
+    await expandLegacyRecords(page);
     const errors=[];page.on('pageerror',error=>errors.push(error.message));
     const nav=async view=>{await page.goto(base+'/#space/'+view);await page.locator('#spacePage').waitFor({state:'visible'});};
     const close=()=>page.getByRole('button',{name:'关闭编辑面板',exact:true}).click();
@@ -66,7 +67,7 @@ const root=path.resolve(__dirname,'../..'),output=path.join(root,'test-results/w
     await page.locator('[data-feedback][data-rating=incorrect]').first().click();await dialog().locator('[name=text]').fill('请核对引用的课程版本。');await submit();assert.equal((await saved()).feedback.length,1);
     const firstSession=(await saved()).sessionId;await page.locator('[data-new-session]').click();assert.equal(await page.locator('.message').count(),0);
     await page.locator(`[data-session="${firstSession}"]`).click();assert.ok(await page.locator('.message').count()>=6);
-    await page.locator('.scope-picker summary').click();const scopeDoc=(await saved()).documents.find(d=>d.version===2);await page.locator(`[data-scope="${scopeDoc.id}"]`).check();await ask('拓扑排序如何维护入度？');assert.equal(requests.at(-1).context.library.length>0&&requests.at(-1).context.library.every(s=>scopeDoc.chunks.some(c=>c.id===s.id)),true);
+    await page.locator('.scope-picker summary').click();const scopeDoc=(await saved()).documents.find(d=>d.version===2);for(const checkbox of await page.locator('[data-scope]').all())await checkbox.uncheck();await page.locator(`[data-scope="${scopeDoc.id}"]`).check();await ask('拓扑排序如何维护入度？');assert.equal(requests.at(-1).context.library.length>0&&requests.at(-1).context.library.every(s=>scopeDoc.chunks.some(c=>c.id===s.id)),true);
     await page.unroute('**/api/agent/stream');
 
     phase('question authoring, draft recovery, multiple/short scoring and correction');
@@ -115,6 +116,7 @@ const root=path.resolve(__dirname,'../..'),output=path.join(root,'test-results/w
       async video(){return{summary:'受控视频片段摘要',segments:[{start:2,end:4,text:'原片段要点'}]};},
       async speak(){return{audio:new Blob(['controlled fixture'],{type:'audio/wav'}),text:'受控语音结果'};}
     };});
+    await expandLegacyRecords(mediaPage);
     await mediaPage.goto(base+'/#space/chat');await mediaPage.locator('#imageInput').setInputFiles({name:'图表.png',mimeType:'image/png',buffer:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+kP6kAAAAASUVORK5CYII=','base64')});await mediaPage.locator('#chatInput').fill('解释图片');await mediaPage.getByRole('button',{name:'发送问题',exact:true}).click();await mediaPage.getByText('受控图像接口：已收到图片。',{exact:true}).waitFor();assert.deepEqual(await mediaPage.evaluate(()=>window.imageNames),['图表.png']);assert.equal(await mediaPage.locator('.citation-chip').count(),1);
     await mediaPage.goto(base+'/#space/library');await mediaPage.locator('[data-refresh-documents]').click();await mediaPage.getByText('服务端课程.md',{exact:true}).waitFor();await mediaPage.locator('#fileInput').setInputFiles({name:'远程上传.md',mimeType:'text/markdown',buffer:Buffer.from('受控上传接口原文')});await mediaPage.waitForFunction(()=>JSON.parse(localStorage.getItem('xueya-copilot-state-v2')).documents.some(doc=>doc.id==='remote-upload'));const remoteRow=mediaPage.locator('.document-row').filter({hasText:'远程上传.md'});await remoteRow.getByRole('button',{name:'整理',exact:true}).click();await mediaPage.locator('#workspaceDialog [name=tags]').fill('同步标签');await mediaPage.locator('#workspaceDialog').getByRole('button',{name:'保存',exact:true}).click();assert.deepEqual(await mediaPage.evaluate(()=>window.remoteDocuments.find(doc=>doc.id==='remote-upload').tags),['同步标签']);await mediaPage.locator('#fileInput').setInputFiles({name:'重复版本.md',mimeType:'text/markdown',buffer:Buffer.from('不能覆盖原件')});await mediaPage.getByText('资料服务必须为新版本提供独立记录ID，本次未覆盖已有原件。',{exact:true}).waitFor();assert.equal(await mediaPage.evaluate(()=>JSON.parse(localStorage.getItem('xueya-copilot-state-v2')).documents.filter(doc=>doc.id==='remote-upload').length),1);assert.equal(await mediaPage.evaluate(async()=>await(await window.XueyaFileCache.createCache().get('remote-upload')).text()),'受控上传接口原文');await remoteRow.locator('[data-remove-document]').click();await mediaPage.locator('#workspaceDialog').getByRole('button',{name:'确认移除',exact:true}).click();assert.equal(await mediaPage.evaluate(()=>window.remoteDocuments.some(doc=>doc.id==='remote-upload')),false);
     await mediaPage.goto(base+'/#space/graph');await mediaPage.locator('.concept-list').getByText('受控学习路径',{exact:true}).waitFor();assert.equal(await mediaPage.locator('.learning-graph circle').count(),2);assert.match(await mediaPage.locator('.concept-list').innerText(),/60%/);assert.equal(await mediaPage.locator('.concept-list img').count(),0);assert.equal(await mediaPage.evaluate(()=>window.hacked),undefined);await mediaPage.evaluate(()=>{window.deferNextGraph=true;});await mediaPage.locator('[data-refresh-graph]').click();await mediaPage.waitForFunction(()=>typeof window.deliverStaleGraph==='function');await mediaPage.locator('[data-refresh-graph]').click();await mediaPage.locator('.concept-list').getByText('受控学习路径',{exact:true}).waitFor();await mediaPage.evaluate(async()=>{window.deliverStaleGraph();await new Promise(requestAnimationFrame);});assert.doesNotMatch(await mediaPage.locator('.concept-list').innerText(),/陈旧图谱/);
