@@ -77,6 +77,9 @@
     }
   }
   function upload(files){return workspace.upload(files);}
+  const contentUI=window.XueyaContentWorkspace?.create({state,store,toast});
+  const mountLearning=learningUI?.mount;
+  if(mountLearning)learningUI.mount=()=>{mountLearning();contentUI?.mount();};
   function searchResults(query){const q=query.trim().toLowerCase();const items=Object.entries(titles).map(([view,title])=>({title,type:'页面',view}));state.documents.forEach(d=>items.push({title:d.name,type:'资料',document:d.id}));state.cards.forEach(c=>items.push({title:c.title,type:'卡片',view:'cards',query:c.title}));const found=items.filter(item=>!q||item.title.toLowerCase().includes(q)).slice(0,12);$('#searchResults').innerHTML=found.length?found.map(item=>`<button type="button" class="search-result" ${item.document?`data-search-document="${e(item.document)}"`:`data-search-view="${item.view}"`} data-query="${e(item.query||'')}">${icon(item.type==='资料'?'file':item.type==='卡片'?'bookmark':'arrow')} ${e(item.title)}<span>${item.type}</span></button>`).join(''):'<div class="empty-state"><p>没有找到结果。试试文件名、知识点或页面名称。</p></div>';icons();}
   function showDocument(id){const doc=state.documents.find(d=>d.id===id);if(!doc)return;const source=doc.chunks?.[0]||viewLearning.sources.find(s=>s.documentId===id);openSource(source||{id:doc.id,documentId:doc.id,title:doc.name,location:doc.status,quote:'',sample:false});}
   function mount(){
