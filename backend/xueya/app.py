@@ -321,4 +321,6 @@ def create_app(config: Config | None = None, *, provider=None, start_jobs=True):
         install_learning(app)
         from .workbench_http import install_workbench
         install_workbench(app)
+        from .library_http import install_library
+        install_library(app)
     return app
