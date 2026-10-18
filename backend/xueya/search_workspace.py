@@ -209,6 +209,12 @@ class SearchWorkspace:
                 "estimate": {"unit": "utf8Bytes", "used": used, "limit": policy["budget"], "approximateTokens": (used+2)//3, "exactTokens": False}}
 
     async def submit(self, course, value):
+        key = "search-run-"+fingerprint([course, value.get("sessionId"), identifier(value.get("operationId"))])[:40]
+        previous = await self.h.repo.get(course, key)
+        if previous:
+            old = previous["content"]
+            require(old["query"] == value.get("query") and old["policyRevision"] == value.get("policyRevision") and old["complex"] == bool(value.get("complex")), "IDEMPOTENCY_CONFLICT")
+            return old
         session = await self.session(course, value.get("sessionId"))
         policy = session["content"]["policy"]
         require(value.get("policyRevision") == session["revision"], "CONTEXT_POLICY_CONFLICT")
@@ -223,12 +229,7 @@ class SearchWorkspace:
         if policy["retrieval"] != "lexical" and policy["mode"] == "relevant":
             calls += query_count*(int(bool(self.h.app.state.rag.embedding))+int(policy["retrieval"] == "rerank" and bool(self.h.app.state.rag.rerank)))
         require(calls <= policy["maxApiCalls"], "API_CALL_BUDGET_EXCEEDED")
-        key = "search-run-"+fingerprint([course, value.get("sessionId"), identifier(value.get("operationId"))])[:40]
-        previous = await self.h.repo.get(course, key)
         identity = fingerprint([query, session["revision"], policy, bool(value.get("complex"))])
-        if previous:
-            require(previous["content"]["requestHash"] == identity, "IDEMPOTENCY_CONFLICT")
-            return previous["content"]
         run = {"runId": key, "query": query, "requestHash": identity, "sessionId": value["sessionId"], "policyRevision": session["revision"],
                "policy": clone(policy), "history": history, "complex": bool(value.get("complex")), "status": "queued", "steps": [], "maxApiCalls": calls}
         with self.p.db.transaction():
@@ -306,6 +307,7 @@ class SearchWorkspace:
                         "runs": [r for r in self.h.repo.all(course) if r["kind"] == "search-run" and r["content"]["sessionId"] == value["sessionId"]],
                         "capabilities": {"model": bool(self.h.service(course).model), "embedding": bool(self.h.app.state.rag.embedding), "rerank": bool(self.h.app.state.rag.rerank)}}
             if operation == "policy":
+                require(type(value.get("expectedRevision")) is int and value["expectedRevision"] >= 0, "INVALID_REVISION")
                 session = await self.session(course, value.get("sessionId"))
                 revision = self.store(course, session["id"], "search-session", {**session["content"], "policy": self.policy(value.get("policy"))}, value.get("expectedRevision"))
                 return {"revision": revision}

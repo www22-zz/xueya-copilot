@@ -177,3 +177,14 @@ def test_stale_learning_content_filter_and_calendar_validation(client):
     assert result["items"][0]["needsReview"]
     assert call(c, "find", {"query": "x", "afterTime": "2026-99-99"}).status_code == 400
     assert call(c, "find", {"query": "x", "types": [{}]}).status_code == 400
+
+
+def test_completed_request_replay_and_revision_validation(client):
+    c = client
+    seed(c)
+    policy(c)
+    value = {'sessionId': 'one', 'policyRevision': 1, 'query': '光合作用', 'operationId': 'same-request'}
+    first = call(c, 'ask', value).json()['result']
+    assert finish(c, first['jobId'])['status'] == 'succeeded'
+    assert call(c, 'ask', value).json()['result']['runId'] == first['runId']
+    assert call(c, 'policy', {'sessionId': 'one', 'policy': {}}).status_code == 400

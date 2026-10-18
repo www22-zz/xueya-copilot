@@ -8,6 +8,7 @@ import subprocess
 import tempfile
 import threading
 import time
+import sys
 import uvicorn
 
 from scripts.check_learning_browser import Browser
@@ -66,6 +67,15 @@ def main():
                 browser.wait('!!document.querySelector("[data-g4=result]")')
                 browser.click('[data-g4=result]')
                 browser.wait('document.querySelector("#g4Detail").innerText.includes("叶绿体")')
+                if '--with-content' in sys.argv:
+                    browser.click('[data-g4=convert-result]')
+                    browser.wait('!!document.querySelector("#g3Dialog [data-g3-form=convert]")')
+                    browser.evaluate('document.querySelector("#g3Dialog [data-g3-form=convert]").requestSubmit()')
+                    browser.wait('!!document.querySelector("#g3Dialog [data-g3=adopt]:not(:disabled)")')
+                    browser.click('#g3Dialog [data-g3=adopt]')
+                    browser.wait('!document.querySelector("#g3Dialog").open')
+                    browser.click('#searchTrigger')
+                    browser.wait('!!document.querySelector("[data-g4-form=search]")')
                 browser.screenshot(output/'desktop.png')
                 browser.click('[data-g4=close]')
                 browser.reload()
@@ -75,7 +85,7 @@ def main():
                 browser.screenshot(output/'mobile.png')
                 assert browser.evaluate('document.documentElement.scrollWidth <= innerWidth+1')
                 assert not browser.errors, browser.errors
-                (output/'report.json').write_text(json.dumps({'passed': True, 'flows': ['body search', 'open actual source', 'context policy save/refresh', 'queued excerpt answer', '390px layout'], 'paidApiCalls': 0}, indent=2), encoding='utf-8')
+                (output/'report.json').write_text(json.dumps({'passed': True, 'flows': ['body search', 'open actual source', 'context policy save/refresh', 'queued excerpt answer', '390px layout'], 'contentConversion': '--with-content' in sys.argv, 'paidApiCalls': 0}, indent=2), encoding='utf-8')
             finally:
                 browser.ws.close()
                 if os.name == 'nt':
