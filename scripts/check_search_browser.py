@@ -74,6 +74,9 @@ def main():
                     browser.wait('!!document.querySelector("#g3Dialog [data-g3=adopt]:not(:disabled)")')
                     browser.click('#g3Dialog [data-g3=adopt]')
                     browser.wait('!document.querySelector("#g3Dialog").open')
+                    saved_notes = [r for r in app.state.learning.repo.all('course-default') if r['kind'] == 'note']
+                    assert any(r['content'].get('derivedFrom', [{}])[0].get('id', '').startswith('search-run-') and
+                               r['content'].get('evidence', [{}])[0].get('sourceId') == 'plant' for r in saved_notes)
                     browser.click('#searchTrigger')
                     browser.wait('!!document.querySelector("[data-g4-form=search]")')
                 browser.screenshot(output/'desktop.png')
