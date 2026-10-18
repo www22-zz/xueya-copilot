@@ -79,8 +79,15 @@ def test_run_is_preview_only_convert_note_card_question_and_edit_history(client)
         assert saved["content"]["derivedFrom"] == [{"id": result["id"], "revision": 1}]
         if kind == "question-draft":
             assert saved["content"]["status"] == "candidate"
+            reviewed = c.post('/api/learning/questions/review', headers=c.platform_headers, json={
+                'id': saved['content']['id'], 'expectedRevision': saved['revision'], 'expectedVersion': saved['content']['version'],
+                'operationId': str(uuid4()), 'approved': True, 'reason': '已逐字核对来源和评分点'})
+            assert reviewed.status_code == 200, reviewed.text
+            assert c.platform.repo.read(c.platform.scope(), 'question', saved['content']['id'])
         if kind == "memory-card":
             assert saved["content"]["reviewEvents"] == []
+            queue = c.post('/api/learning/reviews/queue', headers=c.platform_headers, json={'cardIds': [saved['id']]}).json()['result']
+            assert queue['cards'][0]['id'] == saved['id']
     note = call(c, "note/preview", {"id": "note", "expectedRevision": 1, "text": "我修订了自己的理解", "pendingQuestions": "适用条件？"}).json()["result"]
     adopted(c, note)
     assert call(c, "workspace").json()["result"]["items"]

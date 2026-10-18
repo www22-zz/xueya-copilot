@@ -145,9 +145,22 @@ class ContentWorkspace:
             if row["kind"] in ("learning-template", "template-run", "media"):
                 continue
             content = row["content"]
-            refs = content.get("evidence", []) if isinstance(content, dict) else []
-            if not refs and isinstance(content, dict):
-                refs = [r for c in content.get("claims", []) for r in c.get("evidence", [])]
+            refs, parents = [], []
+            def dependencies(value):
+                if isinstance(value, dict):
+                    if all(k in value for k in ("sourceId", "version", "quote")):
+                        refs.append(value)
+                    if all(k in value for k in ("sourceId", "sourceVersion", "evidenceQuote")):
+                        refs.append({"sourceId": value["sourceId"], "version": value["sourceVersion"], "quote": value["evidenceQuote"]})
+                    parents.extend(value.get("derivedFrom", []))
+                    if isinstance(value.get("sourcePackage"), dict):
+                        parents.append(value["sourcePackage"])
+                    for nested in value.values():
+                        dependencies(nested)
+                elif isinstance(value, list):
+                    for nested in value:
+                        dependencies(nested)
+            dependencies(content)
             reasons = []
             for ref in refs:
                 source = actual.get(ref.get("sourceId"))
@@ -155,19 +168,22 @@ class ContentWorkspace:
                     reasons.append("source_removed")
                 elif str(source["version"]) != str(ref.get("version")) or ref.get("quote", "") not in source["quote"]:
                     reasons.append("source_changed")
-            for parent in content.get("derivedFrom", []) if isinstance(content, dict) else []:
+            for parent in parents:
                 current = by_id.get(parent["id"])
                 if not current or current["revision"] != parent["revision"]:
                     reasons.append("parent_changed")
-            result.append({"id": row["id"], "kind": row["kind"], "revision": row["revision"],
-                           "status": "needs_review" if reasons else "current" if refs else "untracked",
+            snapshot = content.get("evidenceVersion")
+            if snapshot and not await self.h.verify_snapshot(course, snapshot):
+                reasons.append("source_snapshot_changed")
+            result.append({"id": row["id"], "kind": row["kind"], "revision": row["revision"], "parents": parents,
+                           "status": "needs_review" if reasons else "current" if refs or snapshot else "untracked",
                            "reasons": sorted(set(reasons)), "origin": content.get("origin", "legacy-untracked")})
         # Propagate source impact through derived content without rewriting any historical artifact.
         for _ in range(min(len(result), 32)):
             stale = {r["id"] for r in result if r["status"] == "needs_review"}
             changed = False
             for item in result:
-                parents = by_id[item["id"]]["content"].get("derivedFrom", [])
+                parents = item["parents"]
                 if item["status"] != "needs_review" and any(p["id"] in stale for p in parents):
                     item.update(status="needs_review", reasons=["parent_needs_review"])
                     changed = True
@@ -204,7 +220,7 @@ class ContentWorkspace:
         question = validate_question({"id": key, "courseId": course, "version": fingerprint([text, refs])[:24], "type": "short",
             "prompt": value.get("prompt"), "sourceId": refs[0]["sourceId"], "sourceVersion": refs[0]["version"],
             "evidenceQuote": refs[0]["quote"], "rubric": [{"id": "point-1", "description": text[:8000], "points": 1}], "status": "candidate"}, sources)
-        return await self.preview(course, key, "question-draft", {**question, **provenance})
+        return await self.preview(course, "question:"+key, "question-draft", {**question, **provenance})
 
     async def dispatch(self, path, request, course):
         if not path.startswith("content/"):

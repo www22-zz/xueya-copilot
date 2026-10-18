@@ -138,7 +138,7 @@ class LearningService:
         require(isinstance(text, str) and text.strip() and len(text) <= 120000, 'INVALID_NOTE')
         row = await self.repository.get(value['courseId'], value['id'])
         require(row and row['courseId'] == value['courseId'] and row['kind'] in ('note', 'knowledge-card'), 'ARTIFACT_NOT_FOUND')
-        return await self.artifacts.preview({**value, 'kind': row['kind'], 'content': {**clone(row['content']), 'text': text, 'editedBy': 'user'}})
+        return await self.artifacts.preview({**value, 'kind': row['kind'], 'content': {**clone(row['content']), 'text': text, 'editedBy': 'user', 'origin': 'human-revised'}})
 
     async def _chapter(self, step):
         return await self.content.learning_package(step['input'], signal=step['signal'])
