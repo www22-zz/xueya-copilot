@@ -7,6 +7,7 @@ from contextlib import asynccontextmanager
 from uuid import uuid4
 import httpx
 from .common import AppError, digest, dumps, require, utc_now
+from .rag_api import api_permit_held
 
 
 class MimoProvider:
@@ -18,7 +19,7 @@ class MimoProvider:
         require(bool(self.config.api_key), "AI_UNAVAILABLE")
         request_id, release, state = None, None, {"usage": None, "complete": False}
         if self.platform:
-            release = self.platform.resources.acquire("api")
+            release = (lambda: None) if api_permit_held(self.platform) else self.platform.resources.acquire("api")
             require(release is not None, "API_BUSY")
             request_id = str(uuid4())
             try:

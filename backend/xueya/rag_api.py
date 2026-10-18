@@ -22,6 +22,10 @@ from .rag_search import normalize
 _leased_platform = ContextVar("rag_leased_api_platform", default=None)
 
 
+def api_permit_held(platform):
+    return _leased_platform.get() is platform
+
+
 @contextmanager
 def borrowed_api_permit(platform):
     """An api JobQueue handler already owns one permit on this same task."""
