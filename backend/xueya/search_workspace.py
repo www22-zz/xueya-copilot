@@ -26,6 +26,12 @@ class SearchWorkspace:
                 if row["kind"] == "search-run" and row["content"]["status"] == "running":
                     self.store(course["id"], row["id"], "search-run", {**row["content"], "status": "unknown", "error": "INTERRUPTED_REQUIRES_REVIEW"})
 
+    def configuration_identity(self):
+        c = self.h.app.state.config
+        rag = self.h.app.state.rag
+        providers = [(provider.identity, fingerprint(provider.settings.key)) if provider else None for provider in (rag.embedding, rag.rerank)]
+        return fingerprint([c.model, c.base_url, fingerprint(c.api_key), providers])
+
     def store(self, course, key, kind, content, expected=None):
         scope = self.p.scope(course)
         old = self.p.repo.read(scope, "artifact", self.h.repo.key(key))
@@ -231,7 +237,8 @@ class SearchWorkspace:
         require(calls <= policy["maxApiCalls"], "API_CALL_BUDGET_EXCEEDED")
         identity = fingerprint([query, session["revision"], policy, bool(value.get("complex"))])
         run = {"runId": key, "query": query, "requestHash": identity, "sessionId": value["sessionId"], "policyRevision": session["revision"],
-               "policy": clone(policy), "history": history, "complex": bool(value.get("complex")), "status": "queued", "steps": [], "maxApiCalls": calls}
+               "policy": clone(policy), "history": history, "complex": bool(value.get("complex")), "status": "queued", "steps": [], "maxApiCalls": calls,
+               "configurationIdentity": self.configuration_identity()}
         with self.p.db.transaction():
             self.store(course, key, "search-run", run)
             job = self.p.jobs.submit(self.p.user_id, {"type": "search-answer", "courseId": course, "idempotencyKey": key,
@@ -251,6 +258,8 @@ class SearchWorkspace:
         run["status"] = "running"
         self.store(course, row["id"], "search-run", run)
         try:
+            if run.get('configurationIdentity') != self.configuration_identity():
+                raise AppError('NOT_SENT')
             current = await self.session(course, run["sessionId"])
             require(current["revision"] == run["policyRevision"], "CONTEXT_POLICY_CONFLICT")
             with borrowed_api_permit(self.p) if job["resource"] == "api" else _nothing():
@@ -285,7 +294,7 @@ class SearchWorkspace:
             commit(publish)
             return {"runId": row["id"], "status": "completed"}
         except (Exception, asyncio.CancelledError) as error:
-            run.update(status="unknown" if job["resource"] == "api" else "cancelled" if isinstance(error, asyncio.CancelledError) else "failed",
+            run.update(status="failed" if getattr(error, 'code', None) == 'NOT_SENT' else "unknown" if job["resource"] == "api" else "cancelled" if isinstance(error, asyncio.CancelledError) else "failed",
                        error=getattr(error, "code", "CANCELLED" if isinstance(error, asyncio.CancelledError) else "SEARCH_FAILED"))
             self.store(course, row["id"], "search-run", run)
             raise

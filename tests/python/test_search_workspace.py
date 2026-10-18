@@ -188,3 +188,23 @@ def test_completed_request_replay_and_revision_validation(client):
     assert finish(c, first['jobId'])['status'] == 'succeeded'
     assert call(c, 'ask', value).json()['result']['runId'] == first['runId']
     assert call(c, 'policy', {'sessionId': 'one', 'policy': {}}).status_code == 400
+
+
+def test_queued_configuration_change_is_not_sent(tmp_path):
+    import asyncio
+    from dataclasses import replace
+    app = create_app(Config(data_dir=tmp_path/'config-drift'), start_jobs=False)
+    with TestClient(app, base_url='http://127.0.0.1') as c:
+        c.platform, c.platform_headers = app.state.platform, {'X-Xueya-Token': c.get('/api/platform/bootstrap').json()['token']}
+        seed(c)
+        policy(c)
+        run = call(c, 'ask', {'sessionId': 'one', 'policyRevision': 1, 'query': '光合作用', 'operationId': 'drift'}).json()['result']
+        app.state.config = replace(app.state.config, api_key='controlled-changed-config')
+        async def tick():
+            c.platform.jobs.stopped = False
+            await c.platform.jobs.tick()
+            await asyncio.gather(*list(c.platform.jobs.active.values()))
+        c.portal.call(tick)
+        result = call(c, 'result?id='+run['runId']).json()['result']['content']
+        assert result['status'] == 'failed' and result['error'] == 'NOT_SENT'
+        assert c.platform.db.one('SELECT count(*) n FROM invocations')['n'] == 0
