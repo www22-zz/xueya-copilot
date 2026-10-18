@@ -21,7 +21,8 @@ class FileStore:
         return target
 
     def put(self, buffer):
-        require(isinstance(buffer, bytes) and 0 < len(buffer) <= 10485760, "FILE_TOO_LARGE")
+        # Media originals may be larger; document HTTP/parse limits remain separate.
+        require(isinstance(buffer, bytes) and 0 < len(buffer) <= 128*1024*1024, "FILE_TOO_LARGE")
         value = hashlib.sha256(buffer).hexdigest()
         target = self.path(value)
         if not target.exists():
@@ -42,7 +43,7 @@ class FileStore:
     def read(self, value):
         target = self.path(value)
         require(target.is_file(), "ORIGINAL_NOT_FOUND")
-        require(target.stat().st_size <= 10485760, "FILE_TOO_LARGE")
+        require(target.stat().st_size <= 128*1024*1024, "FILE_TOO_LARGE")
         buffer = target.read_bytes()
         require(hashlib.sha256(buffer).hexdigest() == value, "FILE_HASH_MISMATCH")
         return buffer

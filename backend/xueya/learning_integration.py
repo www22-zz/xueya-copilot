@@ -125,6 +125,8 @@ class LearningHost:
         self.p.jobs.register("learning-chapter", self.execute)
         from .search_workspace import SearchWorkspace
         self.search_workspace = SearchWorkspace(self)
+        from .media_workspace import MediaWorkspace
+        self.media_workspace = MediaWorkspace(self)
 
     def service(self, course):
         scope = self.p.scope(course)
@@ -254,6 +256,9 @@ class LearningHost:
         require(secrets.compare_digest(request.headers.get("x-xueya-token", ""), self.app.state.token), "AUTH_REQUIRED")
         course = request.query_params.get("courseId", "course-default")
         self.p.scope(course)
+        media_response = await self.media_workspace.dispatch(path, request, course)
+        if media_response is not None:
+            return media_response
         content_response = await self.content_workspace.dispatch(path, request, course)
         if content_response is not None:
             return content_response
