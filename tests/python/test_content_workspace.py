@@ -153,6 +153,25 @@ def test_g4_result_port_converts_to_evidence_bound_note(client):
     assert note['content']['derivedFrom'] == [{'id': 'g4-result', 'revision': 1}]
 
 
+def test_template_configuration_drift_is_not_sent(tmp_path):
+    from dataclasses import replace
+    app = create_app(Config(data_dir=tmp_path/'drift'), start_jobs=False)
+    with TestClient(app, base_url='http://127.0.0.1') as c:
+        c.platform, c.platform_headers = app.state.platform, {'X-Xueya-Token': c.get('/api/platform/bootstrap').json()['token']}
+        seed(c)
+        run = run_template(c)[0]
+        app.state.config = replace(app.state.config, api_key='controlled-config-change')
+        async def tick():
+            c.platform.jobs.stopped = False
+            await c.platform.jobs.tick()
+            await asyncio.gather(*list(c.platform.jobs.active.values()))
+        c.portal.call(tick)
+        result = call(c, 'workspace').json()['result']['runs'][0]['content']
+        assert result['status'] == 'failed' and result['error'] == 'NOT_SENT'
+        assert c.platform.db.one('SELECT count(*) n FROM invocations')['n'] == 0
+        assert call(c, 'template/preview', {'id': 'builtin-guide', 'content': {'title': 'x', 'goal': 'x', 'prompt': 'x'}}).status_code == 400
+
+
 @pytest.mark.parametrize("invalid", [True, False])
 def test_controlled_model_quality_and_paid_unknown_are_separate(tmp_path, invalid):
     def upstream(request):

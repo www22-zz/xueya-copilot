@@ -38,6 +38,10 @@ class ContentWorkspace:
                     "content": {"title": title, "goal": goal, "prompt": goal, "subject": "通用", "format": "claims-with-evidence", "modelPurpose": "course-content", "sourcePolicy": "selected-originals", "builtin": True}} for key, title, goal in BUILTINS]
         return builtin+[r for r in self.h.repo.all(course) if r["kind"] == "learning-template"]
 
+    def configuration_identity(self):
+        c = self.h.app.state.config
+        return fingerprint([c.model, c.base_url, fingerprint(c.api_key)])
+
     async def template(self, course, key, revision=None):
         row = next((r for r in self.templates(course) if r["id"] == key), None)
         require(row and (revision is None or row["revision"] == revision), "TEMPLATE_VERSION_CONFLICT")
@@ -84,7 +88,7 @@ class ContentWorkspace:
             pack = evidence_package({"courseId": course, "sources": group})
             await self.h.snapshots.put(course, pack["version"], {"sourceIds": [s["id"] for s in group]})
             run = {"runId": run_id, "requestHash": request_hash, "template": template, "sourceIds": [s["id"] for s in group],
-                   "evidenceVersion": pack["version"], "status": "queued", "createdAt": now_iso()}
+                   "evidenceVersion": pack["version"], "status": "queued", "createdAt": now_iso(), "configurationIdentity": self.configuration_identity()}
             with self.p.db.transaction():
                 self.save_run(course, run_id, run)
                 job = self.p.jobs.submit(self.p.user_id, {"type": "learning-template", "courseId": course, "resource": "api" if self.h.service(course).model else "cpu", "maxAttempts": 1,
@@ -103,8 +107,9 @@ class ContentWorkspace:
         job = self.p.jobs.get(run["jobId"], scope.user_id)
         require(job and job["status"] == "running" and job["attempts"] == 1 and run["status"] == "queued", "UNKNOWN_OUTCOME_REQUIRES_REVIEW")
         service = self.h.service(course)
-        require(not service.model or job["resource"] == "api", "NOT_SENT")
         try:
+            if run.get('configurationIdentity') != self.configuration_identity() or service.model and job['resource'] != 'api':
+                raise AppError('NOT_SENT')
             require(await self.h.verify_snapshot(course, run["evidenceVersion"]), "STALE_EVIDENCE")
             run["status"] = "running"
             await self.operational(course, row["id"], "template-run", run)
@@ -127,7 +132,7 @@ class ContentWorkspace:
             checkpoint({"runId": run["runId"], "draftId": draft["draftId"]})
             return {"runId": run["runId"], "draftId": draft["draftId"], "status": run["status"]}
         except (Exception, asyncio.CancelledError) as error:
-            run.update(status="unknown" if service.model and run["status"] == "running" else "cancelled" if isinstance(error, asyncio.CancelledError) else "failed",
+            run.update(status="failed" if getattr(error, 'code', None) == 'NOT_SENT' else "unknown" if service.model and run["status"] == "running" else "cancelled" if isinstance(error, asyncio.CancelledError) else "failed",
                        error=getattr(error, "code", "CANCELLED" if isinstance(error, asyncio.CancelledError) else "TEMPLATE_FAILED"))
             await self.operational(course, row["id"], "template-run", run)
             raise
@@ -246,6 +251,7 @@ class ContentWorkspace:
             if operation == "impacts":
                 return {"items": await self.impact(course)}
             if operation == "template/preview":
+                require(isinstance(value.get('id'), str) and not value['id'].startswith('builtin-'), 'BUILTIN_TEMPLATE_READ_ONLY')
                 c = value.get("content")
                 require(isinstance(c, dict) and all(isinstance(c.get(k), str) and 0 < len(c[k].strip()) <= 6000 for k in ("title", "goal", "prompt")), "INVALID_TEMPLATE")
                 return await self.preview(course, value.get("id"), "learning-template", {**{k: c[k] for k in ("title", "goal", "prompt")},
