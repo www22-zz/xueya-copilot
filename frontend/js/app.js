@@ -20,6 +20,7 @@
   const {titles,renders,documentRows,cardRows,currentQuestions}=workspace.enhance(window.XueyaViews.createViews({state,L:viewLearning,e,icon,sourceById}));
   const chatService=window.XueyaChat.createChatService();
   let activeChat;
+  const searchUI=window.XueyaSearchWorkspace?.create({state,store,toast});
   const practiceUI=window.XueyaPracticeUI.create({state,allSources,persist,toast,render,e});
   const learningUI=window.XueyaLearningUI?.create({state,store,toast});
   const workbench=window.XueyaWorkbench?.create({state,store,toast});
