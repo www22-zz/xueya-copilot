@@ -138,6 +138,21 @@ def test_batch_each_document_independent_and_idempotent(client):
     assert call(c, "run", {"templateId": "builtin-guide", "operationId": "empty", "selection": {"documentIds": []}}).status_code == 400
 
 
+def test_g4_result_port_converts_to_evidence_bound_note(client):
+    from backend.core import fingerprint
+    c = client
+    seed(c)
+    content = {'status': 'completed', 'result': {'answer': '光合作用发生在叶绿体。', 'engine': 'local-excerpts',
+        'context': {'sources': [{'id': 'original', 'documentId': 'doc-original', 'version': '1', 'quote': '光合作用发生在叶绿体。'}]}}}
+    c.platform.repo.put(c.platform.scope(), 'artifact', 'learning-artifact-'+fingerprint('g4-result'),
+        {'id': 'g4-result', 'courseId': 'course-default', 'kind': 'search-run', 'revision': 1, 'content': content})
+    preview = call(c, 'convert/preview', {'id': 'answer-note', 'target': 'note', 'parentId': 'g4-result', 'parentRevision': 1})
+    assert preview.status_code == 200, preview.text
+    note = adopted(c, preview.json()['result'])['result']
+    assert note['content']['evidence'][0]['sourceId'] == 'original'
+    assert note['content']['derivedFrom'] == [{'id': 'g4-result', 'revision': 1}]
+
+
 @pytest.mark.parametrize("invalid", [True, False])
 def test_controlled_model_quality_and_paid_unknown_are_separate(tmp_path, invalid):
     def upstream(request):

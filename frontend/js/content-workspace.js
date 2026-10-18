@@ -2,12 +2,12 @@
 (() => {'use strict';
 window.XueyaContentWorkspace={create({state,toast}){
 const e=window.XueyaRich.escape,rich=window.XueyaRich.render,uid=()=>crypto.randomUUID();
-let course=null,data=null,preview=null,controller=null,busy=false,epoch=0,poll=null,error='',selection=new Set();
+let course=null,data=null,preview=null,controller=null,busy=false,epoch=0,poll=null,error='',selection=new Set();const externalParents=new Map();
 const api=(path,body)=>window.XueyaPlatform.learningRequest('content/'+path,{courseId:course,method:body?'POST':'GET',body,signal:controller?.signal});
 const b=(label,action,id='')=>`<button type="button" class="button button-outline button-small" data-g3="${action}" data-id="${e(id)}" ${busy?'disabled':''}>${e(label)}</button>`;
 const input=(label,name,value='',area=false)=>`<label class="form-field">${e(label)}${area?`<textarea name="${name}" rows="4" maxlength="20000" required>${e(value)}</textarea>`:`<input name="${name}" value="${e(value)}" required maxlength="1000">`}</label>`;
 const form=(name,body,label,id='')=>`<form data-g3-form="${name}" data-id="${e(id)}">${body}<button class="button button-blue button-small" ${busy?'disabled':''}>${e(label)}</button></form>`;
-const row=id=>data?.items.find(a=>a.id===id),template=id=>data?.templates.find(a=>a.id===id);
+const row=id=>data?.items.find(a=>a.id===id)||externalParents.get(id),template=id=>data?.templates.find(a=>a.id===id);
 function dialog(){let d=document.getElementById('g3Dialog');if(!d){d=document.createElement('dialog');d.id='g3Dialog';d.className='source-dialog';d.setAttribute('aria-label','学习内容核对');document.body.append(d);}return d;}
 function show(title,html){const d=dialog();d.innerHTML=`<div class="dialog-head"><h2>${e(title)}</h2><button type="button" class="subtle-button" data-g3="close">关闭</button></div><div class="bank-dialog-body">${html}</div>`;if(!d.open)d.showModal();}
 function showPreview(value){preview=value;const c=value.draft.content;show('核对后再保存',`<p>这是预览，尚未进入学习内容。来源和版本会在保存时再次核对。</p><pre style="white-space:pre-wrap;max-height:50vh;overflow:auto">${e(JSON.stringify(c,null,2))}</pre>${b('确认保存此版本','adopt')}`);}
@@ -28,6 +28,7 @@ if(action==='resume'){const r=data.runs.find(r=>r.id===id);show('显式恢复，
 if(action==='legacy'||action==='message'){const c=action==='legacy'?state.cards[Number(id)]:state.messages[Number(id)];showPreview(await api('legacy/preview',{id:'note-'+uid(),title:c.title||'从历史回答整理',text:c.text}));}
 if(action==='history'){const history=await window.XueyaPlatform.learningRequest('history?id='+encodeURIComponent(id),{courseId:course});show('笔记历史（恢复仍先预览）',history.items.map(r=>`<article class="c-item"><p>版本 ${r.version} · ${e(r.at)}</p>${rich(r.value.content.text||'')}${b('预览恢复此版本','restore',id+'|'+r.version)}</article>`).join(''));}
 if(action==='restore'){const [key,version]=id.split('|');showPreview(await window.XueyaPlatform.learningRequest('history/preview',{courseId:course,method:'POST',body:{id:key,version:Number(version),expectedRevision:row(key).revision}}));}});}
+document.addEventListener('xueya:content-convert',event=>{const d=event.detail;if(d?.courseId!==state.courseId||!d.parent)return;externalParents.set(d.parent.id,d.parent);void action('convert',d.parent.id);});
 document.addEventListener('click',event=>{const el=event.target.closest('[data-g3]');if(!el)return;event.preventDefault();event.stopImmediatePropagation();void action(el.dataset.g3,el.dataset.id);},true);
 document.addEventListener('submit',event=>{const f=event.target;if(!f.matches('[data-g3-form]'))return;event.preventDefault();event.stopImmediatePropagation();const v=new FormData(f),id=f.dataset.id;void work(async()=>{if(f.dataset.g3Form==='run'){const t=template(v.get('template'));selection=new Set(v.getAll('documents'));await api('run',{templateId:t.id,templateRevision:t.revision,selection:{documentIds:[...selection]},batch:v.has('batch'),allowApi:v.has('allowApi'),operationId:uid()});await reload();}
 if(f.dataset.g3Form==='template')showPreview(await api('template/preview',{id:id||'template-'+uid(),expectedRevision:id?template(id).revision:0,content:Object.fromEntries(v)}));

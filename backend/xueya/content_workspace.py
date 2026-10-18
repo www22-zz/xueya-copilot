@@ -195,6 +195,11 @@ class ContentWorkspace:
         parent = await self.h.repo.get(course, identifier(value.get("parentId")))
         require(parent and parent["revision"] == value.get("parentRevision"), "ARTIFACT_CONFLICT")
         content, service = parent["content"], self.h.service(course)
+        if parent['kind'] == 'search-run':
+            require(content.get('status') == 'completed' and content.get('result'), 'RESULT_NOT_READY')
+            result = content['result']
+            content = {'text': result['answer'], 'origin': 'original-excerpt' if result.get('engine') == 'local-excerpts' else 'ai-generated',
+                       'evidence': [{'sourceId': s['id'], 'documentId': s['documentId'], 'version': s['version'], 'quote': s['quote']} for s in result.get('context', {}).get('sources', [])]}
         refs = content.get("evidence") or [r for c in content.get("claims", []) for r in c.get("evidence", [])]
         text = value.get("text") or content.get("text") or "\n\n".join(c["text"] for c in content.get("claims", []))
         require(isinstance(text, str) and 0 < len(text.strip()) <= 120000, "INVALID_NOTE")
