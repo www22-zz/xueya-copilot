@@ -10,7 +10,7 @@ G3已在独立PR#7交付；此分支不混入G3业务，只兼容其同库artifa
 - [x] 会话上下文策略/原文范围/背景与用量预览：按现有courseId/sessionId、CAS保存。
 - [x] 同课程全文与语义搜索/类型过滤/结果跳转：先词法；语义/混合复用B，学习内容明确仍词法。
 - [x] 有界分步综合回答、停止/恢复/来源有效性：同队列/账本、最多4查询/8请求上限。
-- [x] Python/浏览器实际验证、文档与分阶段提交；待最终推送/PR链接补录。
+- [x] Python/浏览器实际验证、文档与分阶段提交、推送及[PR #8](https://github.com/www22-zz/xueya-copilot/pull/8)；待独立审查。
 
 不做付费API测试，不联系队友、不合并main、不强推/删除私人数据；缺服务明确未配置。
 
@@ -61,3 +61,5 @@ G3/G4均独立来自main bc3a36b；在仅本地codex/g3-g4-validation组合，�
 
 公共依赖：G3 PR#7提供转换组件，G1 PR#5提供统一工作台；本分支不夹带它们的业务提交。
 缺G3时显示尚未挂载，不假称已保存笔记。没有新增依赖、数据库迁移或额外调用账本。
+分支已推送 codex/g4-workspace，负责人审查[PR #8](https://github.com/www22-zz/xueya-copilot/pull/8)；
+G3为[PR #7](https://github.com/www22-zz/xueya-copilot/pull/7)，联合测试没有把G1/G3实现夹带到此分支。
