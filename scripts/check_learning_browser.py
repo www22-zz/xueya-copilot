@@ -130,9 +130,19 @@ class Browser:
         self.wait(f'performance.timeOrigin !== {previous} && document.readyState === "complete"')
 
     def close(self):
-        self.ws.close()
-        self.process.terminate()
-        self.process.wait(timeout=10)
+        try:
+            self.ws.close()
+        finally:
+            if self.process.poll() is None:
+                if os.name == 'nt':
+                    # Only this test's isolated browser tree; Crashpad can retain
+                    # a profile handle after terminating the parent alone.
+                    subprocess.run(['taskkill', '/PID', str(self.process.pid), '/T', '/F'],
+                                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                                   creationflags=subprocess.CREATE_NO_WINDOW, timeout=10, check=False)
+                else:
+                    self.process.terminate()
+            self.process.wait(timeout=10)
 
 
 def main():

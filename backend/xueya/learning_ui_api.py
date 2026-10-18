@@ -21,7 +21,8 @@ class TrackedNativeModel:
 
     async def generate(self, value):
         provider = self.host.app.state.provider
-        async with provider.invocation(value['messages'], self.scope) as state:
+        purpose = 'asr' if self.model == 'mimo-v2.5-asr' else 'tts' if self.model == 'mimo-v2.5-tts' else 'image'
+        async with provider.invocation(value['messages'], self.scope, capability=purpose, model=self.model) as state:
             result = await self.native.generate(value)
             state.update(complete=True, usage=result.get('usage'))
             return result
