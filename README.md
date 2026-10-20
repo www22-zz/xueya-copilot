@@ -39,6 +39,8 @@ macOS/Linux 对应命令使用 `.venv/bin/python`。环境变量沿用 `.env.exa
 
 G1/G2 工作台提供统一的课程学习主区、“更多”中的“服务设置”和“任务与用量”，以及资料页的文字/网页/文件/媒体导入、章节设置、原文与历史阅读、显式跨课程复用和真实媒体位置关联。旧浏览器记录保留在可展开区域。免费检查不调用模型，凭据仍由本机 `.env` 管理；网页抓取会拒绝内网或保留地址。操作与兼容接口见 [工作台与资料指南](docs/contracts/workbench-library.md)，交付证据见 [G1](docs/delivery/G1-workspace.md) 和 [G2](docs/delivery/G2-workspace.md)。
 
+G5 的录音分段、视频采样与复习音频收在“更多 → 章节学习 → 高级：模板加工与历史记录 → 录音与复习音频”，保留 #11 的主界面。见[使用说明](docs/G5-media-user-guide.md)与[整合记录](docs/delivery/G5-PR11-integration.md)；识别和合成须明确确认外部 API 调用。
+
 下一轮整包派工与队友给 AI 的提示见 [派工说明](docs/tasks/下一轮派工与AI执行说明.md)。F 的 [技术报告](docs/reports/学涯Copilot技术报告.md)、[原创验收集与实际结果](evals/acceptance/README.md)、[演示指南](docs/demo/演示与验收指南.md)及[待验证清单](docs/delivery/F-问题与待验证清单.md)分别记录实现、证据、操作与限制；真实模型效果和人工审核尚未全部验收。
 
 ## 验证
