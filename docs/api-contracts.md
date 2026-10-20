@@ -218,3 +218,7 @@ async with open_session(platform_registry(platform, trusted_scope)) as session:
 新增工作台能力/任务投影与课程资料导入/阅读接口，旧 HTTP/SSE 保持。兼容定义、鉴权、字段、调用关联和操作流程见 [工作台与资料接线](contracts/workbench-library.md)。
 
 G5 复用同一学习主平台，新增分段媒体任务与有出处复习音频，旧媒体路由保留；见 [G5 媒体与音频契约](contracts/G5-media-audio.md)。
+
+### 提问附件与麦克风输入（2026-10-20）
+
+加号选择图片/文档；直接录音停止后，客户端转换为16kHz单声道PCM WAV，复用现有 `media/upload`、`media/transcribe`。ASR 使用 `mimo-v2.5-asr`，识别文字回填草稿，用户发送后才调用配置的 LLM（默认 `mimo-v2.6-flash`）。文档复用原上传/解析接口，并加入该次问答的 `documentIds` 及有效来源范围；无新增HTTP/SSE接口。详见[交付与使用说明](delivery/composer-input.md)。

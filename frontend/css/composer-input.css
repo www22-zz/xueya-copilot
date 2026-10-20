@@ -1,0 +1,14 @@
+.composer .composer-icon-button{display:inline-flex;align-items:center;justify-content:center;flex:0 0 42px;width:42px;height:42px;padding:0;border-radius:50%;border:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer;vertical-align:middle}
+.composer .composer-add{font-size:29px;font-weight:300;line-height:1}
+.composer .composer-mic{background:#202124;color:#f2f2f2;border-color:#202124}
+.composer .composer-mic svg{width:24px;height:24px;display:block}
+.composer .composer-mic.is-recording{background:#a92e3d;border-color:#a92e3d;color:#fff}
+.composer .record-stop{width:12px;height:12px;border-radius:3px;background:currentColor}
+.composer .composer-icon-button:focus-visible{outline:2px solid var(--blue);outline-offset:4px}
+.composer .composer-icon-button:disabled,.composer .send-button:disabled{opacity:.45;cursor:default}
+.composer-voice-status{display:flex;align-items:center;flex-wrap:wrap;gap:10px;padding:12px 0 0;border-top:1px solid var(--line);margin-top:12px;color:var(--text-secondary);font-size:12px;line-height:1.8}
+.composer-voice-status>span{flex:1 1 200px;overflow-wrap:anywhere}
+.composer-file-icon{display:inline-flex;align-items:center;justify-content:center;width:38px;height:42px;color:var(--blue);background:var(--mist);border-radius:8px}
+.composer .image-attachment>span{overflow-wrap:anywhere;min-width:0}
+html[data-theme=dark] .composer .composer-mic:not(.is-recording){background:#e8e9ed;border-color:#e8e9ed;color:#202124}
+@media(max-width:600px){.composer .composer-icon-button{flex-basis:38px;width:38px;height:38px}.composer .composer-mic svg{width:22px;height:22px}.composer .image-attachment{max-width:100%}}
