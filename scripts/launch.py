@@ -33,6 +33,15 @@ def main():
     if sys.version_info < (3, 11):
         raise RuntimeError('请先安装 Python 3.11 或更新版本，再双击启动文件。')
     python = ROOT/'.venv/Scripts/python.exe'
+    if python.exists():
+        probe = subprocess.run([str(python), '-c', 'import sys'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        if probe.returncode:
+            backup = ROOT/'.migration-backup'/('unusable-venv-'+str(time.time_ns()))
+            backup.parent.mkdir(parents=True, exist_ok=True)
+            source = (ROOT/'.venv').resolve()
+            if not source.is_relative_to(ROOT.resolve()) or not backup.resolve().is_relative_to(ROOT.resolve()):
+                raise RuntimeError('环境备份路径不正确。')
+            source.rename(backup)
     if not python.exists():
         print('首次启动：正在创建 Python 环境…', flush=True)
         run([sys.executable, '-m', 'venv', str(ROOT/'.venv')])
@@ -61,8 +70,8 @@ def main():
             identity = json.loads(metadata.read_text(encoding='utf-8'))
             base = 'http://127.0.0.1:'+str(int(identity['port']))
             if ready(base, identity['instanceId']):
-                print('本地服务已经运行，正在打开学习空间。', flush=True)
-                webbrowser.open(base+'/#space/overview')
+                print('本地服务已经运行，正在打开星球首页。', flush=True)
+                webbrowser.open(base+'/#home')
                 return
         except (OSError, ValueError, KeyError, TypeError):
             pass
@@ -83,8 +92,8 @@ def main():
                 identity = json.loads(metadata.read_text(encoding='utf-8'))
                 base = 'http://127.0.0.1:'+str(int(identity['port']))
                 if ready(base, identity['instanceId']):
-                    print('启动完成，正在打开学习空间。关闭此窗口不会停止服务。', flush=True)
-                    webbrowser.open(base+'/#space/overview')
+                    print('启动完成，正在打开星球首页。关闭此窗口不会停止服务。', flush=True)
+                    webbrowser.open(base+'/#home')
                     return
             except (OSError, ValueError, KeyError, TypeError):
                 pass

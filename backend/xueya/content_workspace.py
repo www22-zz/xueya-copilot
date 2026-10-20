@@ -285,8 +285,10 @@ class ContentWorkspace:
                 require(not old or old["kind"] == "note", "ARTIFACT_KIND_CONFLICT")
                 text = value.get("text")
                 require(isinstance(text, str) and 0 < len(text.strip()) <= 120000, "INVALID_NOTE")
+                chapter = value.get('chapter', old['content'].get('chapter', '') if old else '')
+                require(isinstance(chapter, str) and len(chapter) <= 200, 'INVALID_CHAPTER')
                 content = {**(clone(old["content"]) if old else {}), "title": str(value.get("title", "学习笔记"))[:160], "text": text,
-                    "understanding": text, "pendingQuestions": str(value.get("pendingQuestions", ""))[:4000], "origin": "human-revised" if old else "legacy-untracked" if operation == "legacy/preview" else "personal-note", "editedBy": "user"}
+                    "chapter": chapter, "understanding": text, "pendingQuestions": str(value.get("pendingQuestions", ""))[:4000], "origin": "human-revised" if old else "legacy-untracked" if operation == "legacy/preview" else "personal-note", "editedBy": "user"}
                 return await self.preview(course, value.get("id"), "note", content, value.get("expectedRevision", 0))
             require(False, "ROUTE_NOT_FOUND")
         return JSONResponse({"ok": True, "result": await connected_work(request, execute()) if operation not in reads else await execute()})
