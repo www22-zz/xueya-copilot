@@ -56,6 +56,10 @@ class ToolGateway:
         require(isinstance(args, dict) and validator.is_valid(args), "INVALID_TOOL_ARGUMENTS")
         require(len(dumps(args).encode()) <= 65536, "TOOL_ARGUMENTS_TOO_LARGE")
         require(time.monotonic() < self.deadline and self.calls < self.max_calls and self.cost+cost <= self.max_cost_units, "TOOL_BUDGET_EXCEEDED")
+        from .execution_budget import current_budget
+        budget = current_budget.get()
+        if budget:
+            budget.tool()
         release, started, status = self.limiter.acquire(), time.monotonic(), "completed"
         self.calls += 1
         self.cost += cost
@@ -70,13 +74,16 @@ class ToolGateway:
 
         def finished(t):
             self.pending.discard(t)
+            release()  # Idempotent; a task may be cancelled before entering execute().
             if not t.cancelled():
                 t.exception()  # timed-out tasks must not emit unhandled exception warnings
         task.add_done_callback(finished)
         try:
-            done, _ = await asyncio.wait([task], timeout=min(self.timeout, max(.001, self.deadline-time.monotonic())))
+            done, _ = await asyncio.wait([task], timeout=min(self.timeout, max(.001, self.deadline-time.monotonic()), budget.remaining() if budget else self.timeout))
             if not done:
                 task.cancel()
+                if budget:
+                    budget.remaining()
                 raise AppError("TOOL_TIMEOUT")
             result = task.result()
             require(isinstance(result, dict) and isinstance(result.get("content"), list) and len(result["content"]) <= 16 and all(isinstance(block, dict) and block.get("type") == "text" and isinstance(block.get("text"), str) for block in result["content"]), "INVALID_TOOL_RESULT")

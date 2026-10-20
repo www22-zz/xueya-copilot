@@ -3,8 +3,18 @@ from __future__ import annotations
 import asyncio
 import json
 import time
+from functools import wraps
 from uuid import uuid4
 from .common import AppError, Scope, dumps, identifier, require, utc_now
+from .execution_budget import budget_scope
+
+
+def budgeted_job(method):
+    @wraps(method)
+    async def execute(self, *args, **kwargs):
+        with budget_scope(getattr(self, 'budget_config', None), fresh=True):
+            return await method(self, *args, **kwargs)
+    return execute
 
 TERMINAL = frozenset(("succeeded", "failed", "cancelled", "unknown"))
 
@@ -89,6 +99,7 @@ class JobQueue:
                 execution.cancel()
                 return
 
+    @budgeted_job
     async def _execute(self, row, release):
         job_id = row["id"]
         from .invocation_context import active_job

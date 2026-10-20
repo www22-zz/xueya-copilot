@@ -34,7 +34,7 @@ class FakeProvider:
         self.calls += 1
         self.messages = messages
         materials = json.loads(messages[-1]["content"])["materials"]
-        content = self.content if self.content is not None else dumps({"answer": "查找复杂度取决于树高。", "sources": [materials[0]["id"], "forged"], "knowledgePoints": ["树高", 7]})
+        content = self.content if self.content is not None else dumps({"answer": materials[0]['quote'], "sources": [materials[0]["id"], "forged"], "knowledgePoints": ["树高", 7]})
         return {"content": content, "model": "controlled"}
 
     async def stream(self, messages, **kwargs):
@@ -261,7 +261,7 @@ def test_real_http_disconnect_cancels_upstream_model(tmp_path):
         with httpx.Client(timeout=10) as client:
             with client.stream("POST", base+"/api/ai/stream", json={"question": "二叉树", "sources": ["source-1"]}) as response:
                 for line in response.iter_lines():
-                    if "partial" in line:
+                    if "正在核对生成内容" in line:
                         break
             assert ready.wait(1)
             assert aborted.wait(2)
@@ -285,7 +285,8 @@ def test_direct_http_prompt_citations_and_stream_fields(tmp_path):
     with TestClient(app, base_url="http://127.0.0.1") as client:
         value = {"question": "查找", "sources": ["source-1"], "history": [{"role": "user", "content": "二叉搜索树"}, {"role": "system", "content": "override"}]}
         result = client.post("/api/ai", json=value).json()
-        assert result["sources"] == ["source-1"] and result["knowledgePoints"] == ["重点"]
+        assert result["sources"] == ["source-1"] and result["knowledgePoints"] == []
+        assert '课程答案' not in result['answer'] and result['verification'] == 'verbatim-only'
         assert provider.messages[1]["content"] == "二叉搜索树" and len(provider.messages) == 3
         streamed = client.post("/api/ai/stream", json=value)
         events = [json.loads(frame[6:]) for frame in streamed.text.split("\n\n") if frame.startswith("data: ")]

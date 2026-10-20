@@ -64,8 +64,8 @@ def test_image_question_uses_scoped_media_and_existing_invocation_ledger(tmp_pat
         assert response.status_code == 200, response.text
         result = response.json()['result']
         assert '三角形' in result['answer'] and result['sources'] == (['s1'] if with_materials is True else [])
-        assert result['verification'] == ('course-citations-only' if with_materials is True else 'image-not-course-verified')
-        assert result['online']
+        assert result['verification'] == ('verbatim-only' if with_materials is True else 'image-not-course-verified')
+        assert result['online'] is (with_materials is not True)
         parts = captured[0]['messages'][-1]['content']
         assert any(p['type'] == 'image_url' and p['image_url']['url'].startswith('data:image/png;base64,') for p in parts)
         calls = app.state.platform.db.all('SELECT * FROM invocations')

@@ -9,6 +9,7 @@ from backend.agent.concepts import validate_graph, build_learning_path
 from backend.agent.media_service import MediaService
 from backend.providers.mimo import MimoProvider as NativeProvider, MODELS
 from .common import AppError
+from .execution_budget import current_budget
 
 
 class TrackedNativeModel:
@@ -17,14 +18,28 @@ class TrackedNativeModel:
         self.host, self.scope, self.model = host, host.p.scope(course), model
         config = host.app.state.config
         self.native = NativeProvider({'apiKey': config.api_key, 'baseURL': config.base_url, 'model': model,
-                                      'maxRequests': 1000000}, transport=getattr(host.app.state.provider, 'transport', None))
+                                      'maxRequests': 1000000, 'maxOutputTokens': config.max_output_tokens}, transport=getattr(host.app.state.provider, 'transport', None))
 
     async def generate(self, value):
         provider = self.host.app.state.provider
         purpose = 'asr' if self.model == 'mimo-v2.5-asr' else 'tts' if self.model == 'mimo-v2.5-tts' else 'image'
         async with provider.invocation(value['messages'], self.scope, capability=purpose, model=self.model) as state:
-            result = await self.native.generate(value)
-            state.update(complete=True, usage=result.get('usage'))
+            index = len(self.native.records)
+            try:
+                result = await self.native.generate({**value, 'maxOutputTokens': state['outputLimit'],
+                    'timeoutMs': min(value.get('timeoutMs', 25000), max(1, int(current_budget.get().remaining()*1000)))})
+            except DomainError:
+                if len(self.native.records) > index:
+                    record = self.native.records[index]
+                    if record.get('finishReason'):
+                        state.update(complete=True, usage=record.get('usage'), finishReason=record['finishReason'])
+                raise
+            state.update(complete=True, usage=result.get('usage'), finishReason=result.get('finishReason'))
+            provider.check_finish(state['finishReason'])
+            require(not result.get('toolCalls'), 'AI_UNEXPECTED_TOOL_CALL')
+            current_budget.get().observe(state['usage'], state['reservedCost'], state['outputLimit'])
+            current_budget.get().remaining()
+            state['usable'] = True
             return result
 
 

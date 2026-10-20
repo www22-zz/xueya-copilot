@@ -46,7 +46,8 @@ def main():
                     content=json.loads(message.get('content',''))
                     sources.extend(s for s in content.get('materials',[]) if isinstance(s,dict) and s.get('id'))
                 except (TypeError,ValueError,AttributeError):pass
-            answer=json.dumps({'answer':'队列遵循先进先出，这是受控测试回答。','sources':[sources[0]['id']] if sources else []},ensure_ascii=False)
+            source=max(sources,key=lambda item:len(item['quote'])) if sources else None
+            answer=json.dumps({'answer':source['quote'] if source else '队列遵循先进先出，这是受控测试回答。','sources':[source['id']] if source else []},ensure_ascii=False)
             if not value.get('stream'):
                 return httpx.Response(200,json={'model':value['model'],'choices':[{'message':{'content':answer},'finish_reason':'stop'}]})
             return httpx.Response(200,text='data: '+json.dumps({'choices':[{'delta':{'content':answer}}]})+'\n\ndata: [DONE]\n\n',headers={'Content-Type':'text/event-stream'})
@@ -131,7 +132,7 @@ def main():
                 browser.wait('!document.querySelector("#chatForm .stop-button") && !document.querySelector("[data-remove-image]")')
                 docs=app.state.platform.repo.list(app.state.platform.scope(),'document')['items']
                 assert any(d['name']=='队列附件.md' for d in docs)
-                assert browser.evaluate('document.querySelector("#chatThread").innerText.includes("受控测试回答")')
+                assert browser.evaluate('document.querySelector("#chatThread").innerText.includes("先入队的元素先出队")')
                 assert browser.evaluate('document.querySelectorAll("#chatThread .citation-chip").length>0'), 'Attached document must remain a real citation'
                 picture=folder/'picture.png';picture.write_bytes(base64.b64decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jR3sAAAAASUVORK5CYII='))
                 browser.file('#imageInput',picture);browser.wait('!!document.querySelector(".attachment-list img")')

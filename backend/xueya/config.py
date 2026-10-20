@@ -17,6 +17,24 @@ class Config:
     api_slots: int = 2
     platform_enabled: bool = True
     tool_timeout: float = 5.0
+    max_output_tokens: int = 4096
+    run_model_calls: int = 10
+    run_tool_calls: int = 12
+    run_output_tokens: int = 32768
+    run_timeout: float = 300.0
+    run_budget_cny: str = '0'
+    input_cny_per_million: str = '0'
+    output_cny_per_million: str = '0'
+
+    def __post_init__(self):
+        from .common import require
+        from .execution_budget import decimal_setting
+        for value in (self.max_output_tokens, self.run_model_calls, self.run_tool_calls, self.run_output_tokens):
+            require(type(value) is int and value > 0, 'AI_INVALID_BUDGET_CONFIG')
+        import math
+        require(math.isfinite(self.run_timeout) and self.run_timeout > 0, 'AI_INVALID_BUDGET_CONFIG')
+        for value in (self.run_budget_cny, self.input_cny_per_million, self.output_cny_per_million):
+            decimal_setting(value)
 
 
 def load_config() -> Config:
@@ -35,4 +53,12 @@ def load_config() -> Config:
                   base_url=env.get("MIMO_BASE_URL", Config.base_url), model=env.get("MIMO_MODEL", Config.model),
                   api_slots=max(1, min(8, int(env.get("API_MAX_CONCURRENT", 2)))),
                   platform_enabled=env.get("XUEYA_PLATFORM_ENABLED", "1") != "0",
-                  tool_timeout=max(.05, min(60, float(env.get("MCP_TOOL_TIMEOUT_MS", 5000))/1000)))
+                  tool_timeout=max(.05, min(60, float(env.get("MCP_TOOL_TIMEOUT_MS", 5000))/1000)),
+                  max_output_tokens=int(env.get('AI_MAX_OUTPUT_TOKENS', 4096)),
+                  run_model_calls=int(env.get('AI_RUN_MAX_MODEL_CALLS', 10)),
+                  run_tool_calls=int(env.get('AI_RUN_MAX_TOOL_CALLS', 12)),
+                  run_output_tokens=int(env.get('AI_RUN_MAX_OUTPUT_TOKENS', 32768)),
+                  run_timeout=float(env.get('AI_RUN_TIMEOUT_SECONDS', 300)),
+                  run_budget_cny=env.get('AI_RUN_BUDGET_CNY', '0'),
+                  input_cny_per_million=env.get('AI_INPUT_CNY_PER_MILLION', '0'),
+                  output_cny_per_million=env.get('AI_OUTPUT_CNY_PER_MILLION', '0'))

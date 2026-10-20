@@ -76,6 +76,7 @@ class Registry:
     def __init__(self, *, structured=True):
         self.tools, self.structured = {}, structured
         self.bound_scope = None
+        self.allowed_tools = None
 
     def add(self, name, schema, handler, *, risk="read", description=None):
         require(name not in self.tools, "DUPLICATE_TOOL")
@@ -83,6 +84,7 @@ class Registry:
 
     async def call(self, name, args):
         require(name in self.tools, "TOOL_NOT_FOUND")
+        require(self.allowed_tools is None or name in self.allowed_tools, 'TOOL_FORBIDDEN')
         require(isinstance(args, dict), "INVALID_TOOL_ARGUMENTS")
         require(len(dumps(args).encode()) <= (262144 if not self.structured else 65536), "TOOL_ARGUMENTS_TOO_LARGE")
         tool = self.tools[name]
@@ -119,7 +121,9 @@ def create_server(registry=None, *, resolve_registry=None):
         return resolve_registry(ctx) if resolve_registry else registry
 
     async def list_tools(ctx, params):
-        return types.ListToolsResult(tools=[t.definition() for t in resolve(ctx).tools.values()])
+        registry = resolve(ctx)
+        return types.ListToolsResult(tools=[t.definition() for name, t in registry.tools.items()
+            if registry.allowed_tools is None or name in registry.allowed_tools])
 
     async def call_tool(ctx, params):
         try:
@@ -332,6 +336,10 @@ class Session:
         require(Draft202012Validator(self.definitions[name]["inputSchema"]).is_valid(args), "INVALID_TOOL_ARGUMENTS")
         require(len(dumps(args).encode()) <= (262144 if self.context else 65536), "TOOL_ARGUMENTS_TOO_LARGE")
         require(time.monotonic() < self.deadline and self.calls < 64 and self.cost < 64, "TOOL_BUDGET_EXCEEDED")
+        from .execution_budget import current_budget
+        budget = current_budget.get()
+        if budget:
+            budget.tool()
         release = self.limiter.acquire()
         self.calls += 1
         self.cost += 1
@@ -345,16 +353,19 @@ class Session:
         self.pending.add(task)
         def finished(t):
             self.pending.discard(t)
+            release()  # Also handles cancellation before execute() first starts.
             if not t.cancelled():
                 t.exception()
         task.add_done_callback(finished)
         try:
-            done, _ = await asyncio.wait([task], timeout=min(self.timeout, max(.001, self.deadline-time.monotonic())))
+            done, _ = await asyncio.wait([task], timeout=min(self.timeout, max(.001, self.deadline-time.monotonic()), budget.remaining() if budget else self.timeout))
         except BaseException:
             task.cancel()
             raise
         if not done:
             task.cancel()
+            if budget:
+                budget.remaining()
             # Permit is released only when the underlying task actually terminates.
             raise AppError("TOOL_TIMEOUT")
         result = task.result()
@@ -376,7 +387,7 @@ class Session:
 
 
 @asynccontextmanager
-async def open_session(registry=None, *, context=None, stdio=False, stdio_params=None, timeout=5, max_duration=60):
+async def open_session(registry=None, *, context=None, stdio=False, stdio_params=None, timeout=5, max_duration=60, allowed_tools=None):
     stdio = stdio or stdio_params is not None
     release = (STDIO_CONNECTIONS if stdio else CONNECTIONS).acquire()
     session = None
@@ -384,7 +395,7 @@ async def open_session(registry=None, *, context=None, stdio=False, stdio_params
         target = (stdio_params or StdioServerParameters(command=sys.executable, args=["-X", "utf8", "-m", "backend.xueya.mcp_server"], cwd=ROOT)) if stdio else create_server(registry or course_registry(context))
         async with asyncio.timeout(max_duration):
             async with Client(target, read_timeout_seconds=timeout) as client:
-                session = Session(client, context=context if stdio else None, timeout=timeout)
+                session = Session(client, context=context if stdio else None, timeout=timeout, allowed_tools=allowed_tools)
                 await session.list_tools()
                 try:
                     yield session

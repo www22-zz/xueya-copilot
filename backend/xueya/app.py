@@ -17,6 +17,7 @@ from .mcp_core import open_session, platform_registry
 from .parse_worker import parse_artifact
 from .platform import Platform
 from .provider import MimoProvider
+from .execution_budget import BudgetMiddleware
 
 PUBLIC_SHARED = frozenset("/shared/learning.js /shared/contracts/index.js /shared/fixtures/course.js /shared/rag/index.js /shared/agent/local-answer.js /shared/agent/sse.js /shared/agent/context.js /shared/agent/tasks.js".split())
 
@@ -29,6 +30,14 @@ def error_response(code, status=None):
     if status is None:
         status = 403 if "AUTH" in code or "ORIGIN" in code else 409 if "CONFLICT" in code else 404 if "NOT_FOUND" in code else 413 if "TOO_LARGE" in code else 400
     return JSONResponse({"ok": False, "error": code}, status_code=status)
+
+
+def ai_error_code(error, allowed=()):
+    code = getattr(error, 'code', None)
+    policy = {'AI_TRUNCATED', 'AI_INCOMPLETE', 'AI_UNEXPECTED_TOOL_CALL', 'AI_RUN_TIMEOUT',
+              'AI_MODEL_BUDGET_EXCEEDED', 'AI_TOOL_BUDGET_EXCEEDED', 'AI_OUTPUT_BUDGET_EXCEEDED',
+              'AI_COST_BUDGET_EXCEEDED', 'AI_PRICING_REQUIRED', 'STALE_EVIDENCE'}
+    return code if code in policy or code in allowed else 'AI_TIMEOUT' if isinstance(error, TimeoutError) else 'AI_UNAVAILABLE'
 
 
 async def body(request, limit=524288):
@@ -75,6 +84,8 @@ def create_app(config: Config | None = None, *, provider=None, start_jobs=True):
     async def lifespan(app):
         platform = Platform(config.data_dir, config.api_slots) if config.platform_enabled else None
         app.state.platform = platform
+        if platform:
+            platform.jobs.budget_config = config
         from .account import LocalAccount
         app.state.account = LocalAccount(platform) if platform else None
         app.state.provider = provider or MimoProvider(config, platform)
@@ -90,6 +101,7 @@ def create_app(config: Config | None = None, *, provider=None, start_jobs=True):
             if platform:
                 await platform.close()
     app = FastAPI(title="学涯 Copilot API", version="2.0.0", lifespan=lifespan, docs_url=None, redoc_url=None)
+    app.add_middleware(BudgetMiddleware, config=config)
     app.state.config = config
     app.state.instance_id = None
     app.state.stop_token = None
@@ -161,7 +173,7 @@ def create_app(config: Config | None = None, *, provider=None, start_jobs=True):
             try:
                 return await connected_work(request, agent.practice(task, value))
             except Exception as error:
-                code = error.code if isinstance(error, AppError) and error.code in ("NO_SOURCES", "AI_EMPTY") else "AI_TIMEOUT" if isinstance(error, TimeoutError) else "AI_UNAVAILABLE"
+                code = ai_error_code(error, ('NO_SOURCES', 'AI_EMPTY'))
                 return {"ok": False, "error": code}
         normalize_request(value)
         iterator = agent.workflow(value) if task.startswith("agent") else agent.direct(value, stream=task.endswith("stream"))
@@ -172,7 +184,7 @@ def create_app(config: Config | None = None, *, provider=None, start_jobs=True):
                         async for event in iterator:
                             yield "data: "+dumps(event)+"\n\n"
                 except Exception as error:
-                    code = error.code if isinstance(error, AppError) and error.code in ("NO_SOURCES", "EMPTY_QUESTION", "AI_INVALID_RESPONSE") else "AI_TIMEOUT" if isinstance(error, TimeoutError) else "AI_UNAVAILABLE"
+                    code = ai_error_code(error, ('NO_SOURCES', 'EMPTY_QUESTION', 'AI_INVALID_RESPONSE'))
                     yield "data: "+dumps({"type": "error", "error": code})+"\n\n"
             return StreamingResponse(events(), media_type="text/event-stream", headers={"Cache-Control": "no-store", "X-Accel-Buffering": "no"})
 
@@ -185,7 +197,7 @@ def create_app(config: Config | None = None, *, provider=None, start_jobs=True):
         try:
             return await connected_work(request, run())
         except Exception as error:
-            code = error.code if isinstance(error, AppError) and error.code in ("NO_SOURCES", "EMPTY_QUESTION") else "AI_TIMEOUT" if isinstance(error, TimeoutError) else "AI_UNAVAILABLE"
+            code = ai_error_code(error, ('NO_SOURCES', 'EMPTY_QUESTION'))
             return {"ok": False, "error": code, "engine": "local-fallback"}
 
     async def platform_route(request, path):

@@ -18,6 +18,7 @@ import httpx
 
 from .common import AppError, digest, dumps, require, utc_now
 from .rag_search import normalize
+from .execution_budget import current_budget
 
 _leased_platform = ContextVar("rag_leased_api_platform", default=None)
 
@@ -66,13 +67,16 @@ class ApiClient:
         require(release is not None, "NOT_SENT")
         request_id, sent, complete, usage = str(uuid4()), False, False, None
         try:
+            budget = current_budget.get()
+            if budget:
+                budget.model([], 0, capability='rag', model=self.settings.model)
             self.platform.db.execute("INSERT INTO invocations(id,user_id,course_id,status,provider,request_hash,at,updated_at) VALUES(?,?,?,?,?,?,?,?)",
                                      (request_id, scope.user_id, scope.course_id, "pending", self.name, digest({"model": self.settings.model, "revision": self.settings.revision, "payload": payload}), utc_now(), utc_now()))
             from .invocation_context import attach_invocation
             purpose = 'embedding' if isinstance(self, EmbeddingProvider) else 'rerank' if isinstance(self, RerankProvider) else 'ocr'
             attach_invocation(self.platform, scope, request_id, capability=purpose, model=self.settings.model,
                               base_url=self.settings.base_url, key=self.settings.key)
-            async with asyncio.timeout(self.settings.timeout):
+            async with asyncio.timeout(min(self.settings.timeout, budget.remaining() if budget else self.settings.timeout)):
                 async with httpx.AsyncClient(timeout=self.settings.timeout, follow_redirects=False, transport=self.transport,
                                              headers={"Authorization": "Bearer "+self.settings.key}) as client:
                     sent = True

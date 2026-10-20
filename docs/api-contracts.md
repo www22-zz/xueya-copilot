@@ -222,3 +222,11 @@ G5 复用同一学习主平台，新增分段媒体任务与有出处复习音�
 ### 提问附件与麦克风输入（2026-10-20）
 
 加号选择图片/文档；直接录音停止后，客户端转换为16kHz单声道PCM WAV，复用现有 `media/upload`、`media/transcribe`。ASR 使用 `mimo-v2.5-asr`，识别文字回填草稿，用户发送后才调用配置的 LLM（默认 `mimo-v2.6-flash`）。文档复用原上传/解析接口，并加入该次问答的 `documentIds` 及有效来源范围；无新增HTTP/SSE接口。详见[交付与使用说明](delivery/composer-input.md)。
+
+### Agent P0 可信执行（2026-10-20）
+
+原路径、基础字段和 SSE 类型保持。资料问答的正文在逐条证据核验后以 `content/done` 发布，核验期间仍发送 `workflow` 进度；通用问答继续流式。未审核改写退回原文，额外返回 `verification/reason`；生成期间资料修订会阻止发布失效来源。
+
+主模型调用增加输出上限与结束状态检查；原 `error` 字段可返回 `AI_TRUNCATED`、`AI_INCOMPLETE`、`AI_UNEXPECTED_TOOL_CALL`、`STALE_EVIDENCE`、`AI_RUN_TIMEOUT`、`AI_MODEL_BUDGET_EXCEEDED`、`AI_TOOL_BUDGET_EXCEEDED`、`AI_OUTPUT_BUDGET_EXCEEDED`、`AI_COST_BUDGET_EXCEEDED`、`AI_PRICING_REQUIRED`。工作流可继续采用已存在的原文/规则回退，但不发布被拒绝的模型正文，也不额外重试收费请求。
+
+预算仅由服务器 `.env` 配置；请求体不能提高限额或工具权限。主聊天 MCP 仅能使用四个兼容只读工具；原宿主鉴权和具体预览确认写入路径保留。默认限额、费用计价边界及验收见 [P0 交付说明](delivery/agent-P0.md)。

@@ -8,7 +8,9 @@ async def finalize_answer(content, sources, model, *, review=None, signal=None, 
     parsed = parse_model_json(content)
     require(isinstance(parsed, dict) and isinstance(parsed.get('answer'), str) and parsed['answer'].strip(), 'AI_INVALID_RESPONSE')
     allowed = {s['id']: s for s in sources}
-    selected = list(dict.fromkeys(x for x in parsed.get('sources', []) if isinstance(x, str) and x in allowed))
+    refs = parsed.get('sources', [])
+    require(isinstance(refs, list), 'AI_INVALID_RESPONSE')
+    selected = list(dict.fromkeys(x for x in refs if isinstance(x, str) and x in allowed))
     require(selected, 'AI_INVALID_RESPONSE')
 
     def fallback(reason):
@@ -21,12 +23,13 @@ async def finalize_answer(content, sources, model, *, review=None, signal=None, 
         claims = [{'text': parsed['answer'].strip(), 'evidence': [{'sourceId': original['id'], 'quote': parsed['answer'].strip()}]}]
     try:
         checked = await validate_claims(claims, {'sources': sources}, review, signal)
-    except (ValueError, TypeError, KeyError):
+    except (ValueError, TypeError, KeyError, AttributeError):
         return fallback('INVALID_CLAIM_EVIDENCE')
     if any(c['support'] != 'supported' for c in checked):
         return fallback('CLAIMS_NEED_REVIEW')
     ids = list(dict.fromkeys(ref['sourceId'] for c in checked for ref in c['evidence']))
     answer = '\n\n'.join(c['text']+''.join(f" [{ids.index(r['sourceId'])+1}]" for r in c['evidence']) for c in checked)
     require(len(answer) <= 16000, 'AI_INVALID_RESPONSE')
-    return {'ok': True, 'answer': answer, 'sources': ids, 'knowledgePoints': [p for p in parsed.get('knowledgePoints', []) if isinstance(p, str) and any(p in s['quote'] for s in sources)][:8],
+    points = parsed.get('knowledgePoints', [])
+    return {'ok': True, 'answer': answer, 'sources': ids, 'knowledgePoints': [p for p in points if isinstance(p, str) and any(p in s['quote'] for s in sources)][:8] if isinstance(points, list) else [],
             'model': model, 'claims': checked, 'verification': 'verbatim-only' if all(c['kind'] == 'excerpt' for c in checked) else 'reviewed-claims', 'engine': 'xiaomi-mimo'}

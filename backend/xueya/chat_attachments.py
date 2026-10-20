@@ -87,7 +87,7 @@ def install_chat_attachments(app):
                     result['online'] = result.get('engine') not in ('local-workflow', 'general-chat-unavailable')
                     result['engine'] = 'image-chat' if result['online'] else 'local-workflow'
                     result['modality'] = 'image-text'
-                    result['verification'] = 'course-citations-only' if result.get('sources') else 'image-not-course-verified'
+                    result['verification'] = result.get('verification', 'course-citations-only') if result.get('sources') else 'image-not-course-verified'
                     # Let the workflow exit its MCP session before returning.
                     # Closing at `done` can interrupt a no-evidence fallback that
                     # still owns the session's async task group.
