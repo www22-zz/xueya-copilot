@@ -1,5 +1,5 @@
 """Host-controlled learning interactions; model decisions never submit user answers."""
-from backend.core import require, clone
+from backend.core import require, clone, fingerprint
 from backend.agent.assessment import validate_question, public_quiz
 
 
@@ -60,8 +60,8 @@ class AgentInteractions:
         key = run['id']+'-quiz-'+str(run.get('cycle', 0))
         draft = await service.preview_quiz({'courseId': run['courseId'], 'id': key,
             'questions': questions, 'sources': value['sources'], 'count': min(3, len(questions))})
-        return self.ready(draft, '核对本轮练习，确认后开始作答', diagnosis=session['estimates'], diagnosticActions=session['diagnosticActions'],
-            explanation=(run.get('result') or {}).get('answer', ''), warnings=session['warnings'])
+        return {**self.ready(draft, '核对本轮练习，确认后开始作答', diagnosis=session['estimates'], diagnosticActions=session['diagnosticActions'],
+            explanation=(run.get('result') or {}).get('answer', ''), warnings=session['warnings']), 'learningBasis': fingerprint(value)}
 
     async def review(self, run, attempt):
         events = attempt['content']['events']
@@ -72,11 +72,15 @@ class AgentInteractions:
         service = self.host.service(run['courseId'])
         session = await service.study_session({**value, 'practiceCount': 3})
         key = run['id']+'-review-'+str(run.get('cycle', 0))
+        if not value['graph']['concepts']:
+            return {'status': 'awaiting_user', 'attemptId': attempt['id'], 'interaction': {'kind': 'missing_graph',
+                'title': '作答已保存，请先核对知识图谱，再生成有知识点支持的复习安排。',
+                'grades': [{'questionId': e['questionId'], 'grade': e['grade']} for e in events]}}
         draft = await service.preview_plan({**value, 'id': key})
         return {**self.ready(draft, '根据真实作答生成后续安排，确认后保存',
             grades=[{'questionId': e['questionId'], 'grade': e['grade']} for e in events],
             diagnosis=session['estimates'], nextPracticeIds=[i['question']['id'] for i in session['practice']['items']],
-            limitation='本次作答仅用于调整安排，不代表已经完全掌握。'), 'attemptId': attempt['id']}
+            limitation='本次作答仅用于调整安排，不代表已经完全掌握。'), 'attemptId': attempt['id'], 'learningBasis': fingerprint(value)}
 
     async def exam(self, run):
         value = await self.inputs(run)
@@ -84,6 +88,7 @@ class AgentInteractions:
             return {'status': 'awaiting_user', 'interaction': {'kind': 'missing_graph',
                 'title': '请先在知识图谱中整理并核对当前资料的知识点，再生成跨章节安排。'}}
         service = self.host.service(run['courseId'])
+        basis = fingerprint(value)
         key = run.get('planId', run['id']+'-exam-plan')
         previous = await self.host.repo.get(run['courseId'], key)
         value.update(id=key, expectedRevision=previous['revision'] if previous else 0)
@@ -92,7 +97,7 @@ class AgentInteractions:
             changes={'previous': draft.get('previous'), 'proposed': draft['content']},
             basis={'gradedEvents': sum(e['grade']['status'] == 'graded' for e in value['events']),
                 'conceptCount': len(value['graph']['concepts']), 'minutes': value['minutes'], 'examDate': value['examDate']}),
-            'planId': key}
+            'planId': key, 'learningBasis': basis}
 
     async def act(self, run, action, body):
         service, course = self.host.service(run['courseId']), run['courseId']
@@ -112,6 +117,7 @@ class AgentInteractions:
             require(run['status'] == 'awaiting_confirmation' and body.get('confirmed') is True, 'CONFIRMATION_REQUIRED')
             draft = run.get('pendingDraft')
             require(draft and body.get('digest') == draft['digest'], 'DRAFT_CHANGED')
+            require(run.get('learningBasis') == fingerprint(await self.inputs(run)), 'LEARNING_STATE_CHANGED')
             await self.host.validate_draft(course, draft)
             adopted = await service.artifacts.adopt(draft, {'confirmed': True, 'operationId': run['id']+':'+draft['digest']})
             if draft['kind'] == 'quiz':

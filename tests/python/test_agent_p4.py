@@ -59,3 +59,26 @@ def test_exam_without_graph_waits_instead_of_empty_plan(host):
     with host() as (client, _, p):
         run = prepared(client, p, 'exam')
         assert run['interaction']['kind'] == 'missing_graph'
+
+
+def test_new_actual_grade_invalidates_preview_and_is_used_on_replan(host):
+    with host() as (client, calls, p):
+        graph(client, p)
+        run = prepared(client, p, 'exam')
+        learning = client.app.state.learning
+        async def submit():
+            sources = await learning.sources({'courseId': 'course-default'})
+            question = {'id': 'new-grade-q', 'courseId': 'course-default', 'version': '1', 'type': 'boolean',
+                'prompt': '队列是否先进先出？', 'answer': True, 'status': 'approved', 'conceptIds': ['basics'],
+                'sourceId': SOURCE['id'], 'sourceVersion': '1', 'evidenceQuote': SOURCE['quote']}
+            service = learning.service('course-default')
+            draft = await service.preview_quiz({'courseId': 'course-default', 'id': 'new-grade-quiz', 'questions': [question], 'sources': sources, 'count': 1})
+            await service.artifacts.adopt(draft, {'confirmed': True, 'operationId': 'new-grade-quiz-adopt'})
+            await service.submit_quiz({'courseId': 'course-default', 'id': 'new-grade-attempt', 'quizId': 'new-grade-quiz',
+                'quizRevision': 1, 'responses': [{'questionId': question['id'], 'answer': False}]})
+        client.portal.call(submit)
+        r = client.post('/api/learning/agent-runs/'+run['id']+'/confirm', json={'revision': run['revision'], 'confirmed': True, 'digest': run['interaction']['digest']})
+        assert r.status_code == 409 and r.json()['error'] == 'LEARNING_STATE_CHANGED'
+        run = act(client, run, 'replan', settings={})
+        assert run['interaction']['basis']['gradedEvents'] == 1
+        assert run['status'] == 'awaiting_confirmation'

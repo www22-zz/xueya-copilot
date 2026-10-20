@@ -246,3 +246,9 @@ G5 复用同一学习主平台，新增分段媒体任务与有出处复习音�
 
 `GET /api/learning/agent-runs/{id}?courseId=...` 查询；`POST .../{id}/pause|resume|cancel` 接收 `{revision,...}`。unknown 恢复需 `acknowledgeUnknown:true`，awaiting_user 恢复需 `userInput`。所有调用沿用学习 API Host 和 X-Xueya-Token 鉴权。暂停在步骤边界生效。新接口不修改既有 HTTP/SSE 字段和事件类型。
 
+P3–P5 增量：创建可带 `sourceIds`（1–48 个当前服务器来源 id）。`GET .../features` 返回 `{durable,interactive,configured}`。运行 `scenario` 为 prepare/chapter/wrong/exam；结果带可选 `interaction`（confirmation/quiz/diagnosis/missing_questions/missing_graph/awaiting_review/completed）。仅公开计划/观察，内部工具缓存及含答案试卷不随运行查询返回。
+
+`POST .../{id}/confirm`：`{revision,confirmed:true,digest}`，绑定服务器预览。`answer`：`{revision,responses:[{questionId,answer,reasoning?}]}`，要求实际完整作答，评分复用原服务。`diagnose`：`{revision,confirmed:true,cause,reason}`，用户身份由服务器绑定。`refresh`：`{revision}`，重新准备预览或读取已有人工评分。`replan`：`{revision,settings:{examDate?,minutes?,availability?}}`，支持 exam 运行在 completed 后再次预览，需再次 confirm。
+
+新增状态 awaiting_confirmation/paused/unknown 与既有 awaiting_user/partial/completed；响应包装仍为 `{ok:true,result}`。确认期间资料失效返回 STALE_EVIDENCE，学习状态变化返回 LEARNING_STATE_CHANGED，修订号不匹配返回 RUN_CONFLICT（409）。开关停用返回 AGENT_DISABLED / AGENT_INTERACTIVE_DISABLED。
+

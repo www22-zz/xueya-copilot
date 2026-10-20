@@ -95,6 +95,8 @@ class ScopedModel:
         if signal:
             signal.check()
         options = {'max_output_tokens': value['maxOutputTokens']} if 'maxOutputTokens' in value else {}
+        if value.get('responseFormat'):
+            options['response_format'] = value['responseFormat']
         operation = asyncio.create_task(self.provider.generate(value["messages"], scope=self.scope, **options))
         monitor = asyncio.create_task(signal.event.wait()) if signal else None
         try:

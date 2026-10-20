@@ -3,11 +3,16 @@ from test_agent_p2 import create, step, BASE
 
 
 def bank(p):
+    from backend.xueya.learning_integration import LearningRepository
     q = {'id': 'approved-queue', 'courseId': 'course-default', 'version': '1', 'type': 'single',
         'prompt': '队列的出队顺序是什么？', 'options': ['先进先出', '后进先出'], 'answer': 0,
-        'topic': '队列', 'conceptIds': [], 'sourceId': SOURCE['id'], 'sourceVersion': '1',
+        'topic': '队列', 'conceptIds': ['queue'], 'sourceId': SOURCE['id'], 'sourceVersion': '1',
         'evidenceQuote': SOURCE['quote'], 'status': 'approved'}
     p.repo.put(p.scope(), 'question', q['id'], q, 0)
+    p.repo.put(p.scope(), 'artifact', LearningRepository(p).key('course-graph'), {'id': 'course-graph', 'kind': 'concept-graph',
+        'courseId': 'course-default', 'revision': 1, 'content': {'courseId': 'course-default', 'edges': [], 'concepts': [
+            {'id': 'queue', 'name': '队列', 'courseId': 'course-default', 'status': 'confirmed',
+             'evidence': [{'sourceId': SOURCE['id'], 'version': '1', 'quote': SOURCE['quote']}]}]}}, 0)
     return q
 
 

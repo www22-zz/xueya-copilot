@@ -8,6 +8,7 @@
   const icon=name=>`<span data-icon="${name}"></span>`;
   let storage;try{storage=window.localStorage;}catch{storage={getItem(){return null;},setItem(){throw new Error('STORAGE_UNAVAILABLE');}};}
   const store=window.XueyaWorkspaceStore.createStore({storage,learning:L}),state=store.state;
+  let agentRuns;
   window.XueyaPlatform?.attach({store,state,toast,render});
   const viewLearning=Object.create(L);
   for(const key of ['documents','sources','questions'])Object.defineProperty(viewLearning,key,{get:()=>state.courseId==='course-default'?L[key]:[]});
@@ -35,6 +36,7 @@
     const pool=currentQuestions();if(state.quizIndex>=pool.length)state.quizIndex=0;
     workspace.beforeRender();$('#spaceContent').innerHTML=renders[state.view]();$('#documentCount').textContent=state.documents.filter(d=>!d.superseded).length;icons();workspace.afterRender();workbench?.prepare();libraryUI?.mount();learningUI?.mount();notesUI?.mount();workbench?.mount();experience?.mount();mediaUI?.mount();
     const thread=$('#chatThread');if(thread)thread.scrollTop=!sameSession||nearBottom?thread.scrollHeight:scrollTop;
+    agentRuns?.refresh();
   }
   let initialRoute=true;function route(){const parts=location.hash.replace(/^#/,'').split('/');const space=parts[0]==='space';$('#homePage').hidden=space;$('#spacePage').hidden=!space;document.body.classList.toggle('in-space',space);if(space){state.view=titles[parts[1]]?parts[1]:'overview';$$('[data-view]').forEach(a=>{a.classList.toggle('active',a.dataset.view===state.view);a.dataset.view===state.view?a.setAttribute('aria-current','page'):a.removeAttribute('aria-current');});render();document.title=`${titles[state.view]} · 学涯 Copilot`;if(!initialRoute){scrollTo({top:0,behavior:'instant'});$('#spaceContent').focus({preventScroll:true});}}else{document.title='学涯 Copilot — 让知识，真正连起来';if(['possibilities','evidence','rhythm'].includes(parts[0]))requestAnimationFrame(()=>document.getElementById(parts[0]).scrollIntoView());else if(!initialRoute)scrollTo({top:0,behavior:'instant'});}initialRoute=false;}
   function sourceById(id){return [...viewLearning.sources,...state.documents.flatMap(d=>d.chunks||[])].find(s=>s.id===id)||state.messages.flatMap(m=>m.sources||[]).find(s=>s.id===id)||state.cards.flatMap(c=>c.sources||[]).find(s=>s.id===id);}
@@ -88,7 +90,9 @@
   if(mountLearning)learningUI.mount=()=>{mountLearning();contentUI?.mount();};
   function searchResults(query){const q=query.trim().toLowerCase();const items=Object.entries(titles).map(([view,title])=>({title,type:'页面',view}));state.documents.forEach(d=>items.push({title:d.name,type:'资料',document:d.id}));state.cards.forEach(c=>items.push({title:c.title,type:'卡片',view:'cards',query:c.title}));const found=items.filter(item=>!q||item.title.toLowerCase().includes(q)).slice(0,12);$('#searchResults').innerHTML=found.length?found.map(item=>`<button type="button" class="search-result" ${item.document?`data-search-document="${e(item.document)}"`:`data-search-view="${item.view}"`} data-query="${e(item.query||'')}">${icon(item.type==='资料'?'file':item.type==='卡片'?'bookmark':'arrow')} ${e(item.title)}<span>${item.type}</span></button>`).join(''):'<div class="empty-state"><p>没有找到结果。试试文件名、知识点或页面名称。</p></div>';icons();}
   function showDocument(id){const doc=state.documents.find(d=>d.id===id);if(!doc)return;const source=doc.chunks?.[0]||viewLearning.sources.find(s=>s.documentId===id);openSource(source||{id:doc.id,documentId:doc.id,title:doc.name,location:doc.status,quote:'',sample:false});}
+  agentRuns=window.XueyaAgentRuns?.create({state,persist,render,toast});
   function mount(){
+    agentRuns?.mount();
     workspace.mount();practiceUI.mount();route();window.addEventListener('hashchange',route);
     if(location.protocol==='file:')$('#engineStatus').textContent='本地检索模式';
     else fetch('/api/health',{signal:AbortSignal.timeout(5000)}).then(r=>r.json()).then(p=>{$('#engineStatus').textContent=p.engine==='xiaomi-mimo'?'MiMo 已配置':'本地检索模式';}).catch(()=>{$('#engineStatus').textContent='本地检索模式';});

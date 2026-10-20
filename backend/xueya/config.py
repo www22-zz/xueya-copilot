@@ -30,6 +30,9 @@ class Config:
     agent_max_replans: int = 2
     agent_no_progress_limit: int = 2
     agent_decision_tokens: int = 1536
+    agent_durable_enabled: bool = True
+    agent_interactive_enabled: bool = True
+    agent_rollout_percent: int = 100
 
     def __post_init__(self):
         from .common import require
@@ -45,6 +48,8 @@ class Config:
         require(type(self.agent_max_replans) is int and 0 <= self.agent_max_replans <= 4, 'AI_INVALID_BUDGET_CONFIG')
         require(type(self.agent_no_progress_limit) is int and 1 <= self.agent_no_progress_limit <= 4, 'AI_INVALID_BUDGET_CONFIG')
         require(type(self.agent_decision_tokens) is int and 1 <= self.agent_decision_tokens <= 16384, 'AI_INVALID_BUDGET_CONFIG')
+        require(type(self.agent_durable_enabled) is bool and type(self.agent_interactive_enabled) is bool, 'AI_INVALID_BUDGET_CONFIG')
+        require(type(self.agent_rollout_percent) is int and 0 <= self.agent_rollout_percent <= 100, 'AI_INVALID_BUDGET_CONFIG')
 
 
 def load_config() -> Config:
@@ -76,4 +81,7 @@ def load_config() -> Config:
                   agent_max_rounds=int(env.get('AI_AGENT_MAX_ROUNDS', 8)),
                   agent_max_replans=int(env.get('AI_AGENT_MAX_REPLANS', 2)),
                   agent_no_progress_limit=int(env.get('AI_AGENT_NO_PROGRESS_LIMIT', 2)),
-                  agent_decision_tokens=int(env.get('AI_AGENT_DECISION_TOKENS', 1536)))
+                  agent_decision_tokens=int(env.get('AI_AGENT_DECISION_TOKENS', 1536)),
+                  agent_durable_enabled=env.get('AI_AGENT_DURABLE_ENABLED', '1') == '1',
+                  agent_interactive_enabled=env.get('AI_AGENT_INTERACTIVE_ENABLED', '1') == '1',
+                  agent_rollout_percent=int(env.get('AI_AGENT_ROLLOUT_PERCENT', 100)))

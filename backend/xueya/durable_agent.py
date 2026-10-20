@@ -44,10 +44,20 @@ class DurableAgent:
             'idempotencyKey': 'agent-'+fingerprint([run['id'], run['revision']])})
 
     def public(self, run):
-        return {k: clone(run[k]) for k in ('id', 'courseId', 'revision', 'status', 'state', 'result', 'budget', 'error', 'scenario', 'interaction') if k in run}
+        result = {k: clone(run[k]) for k in ('id', 'courseId', 'revision', 'status', 'state', 'result', 'budget', 'error', 'scenario', 'interaction') if k in run}
+        result.get('state', {}).pop('tools', None)
+        return result
+
+    def features(self, course):
+        bucket = int(fingerprint([self.p.user_id, course])[:8], 16) % 100
+        enabled = self.config.agent_planning_enabled and self.config.agent_durable_enabled and bucket < self.config.agent_rollout_percent
+        return {'durable': enabled, 'interactive': enabled and self.config.agent_interactive_enabled,
+            'configured': bool(self.config.api_key)}
 
     async def create(self, course, value):
-        require(self.config.agent_planning_enabled, 'AGENT_DISABLED')
+        require(self.features(course)['durable'], 'AGENT_DISABLED')
+        require(value.get('scenario', 'prepare') == 'prepare' or self.features(course)['interactive'], 'AGENT_INTERACTIVE_DISABLED')
+        require(isinstance(value.get('context', {}), dict), 'INVALID_CONTEXT')
         require(identifier(value.get('id')), 'INVALID_RUN')
         request = normalize_request(value)
         # Always reload host-owned evidence; browser quotations never enter a durable run.
@@ -56,6 +66,11 @@ class DurableAgent:
         require(selected is None or isinstance(selected, list) and len(selected) <= 100 and all(isinstance(s, str) for s in selected), 'INVALID_SELECTION')
         if selected is not None:
             library = [s for s in library if s.get('documentId') in selected]
+        selected_sources = value.get('sourceIds')
+        require(selected_sources is None or isinstance(selected_sources, list) and 0 < len(selected_sources) <= 48 and all(isinstance(s, str) for s in selected_sources), 'INVALID_SELECTION')
+        if selected_sources is not None:
+            library = [s for s in library if s['id'] in selected_sources]
+            require(len(library) == len(set(selected_sources)), 'STALE_EVIDENCE')
         context = normalize_context({**(value.get('context') or {}), 'library': library,
             'questions': self.p.repo.all(self.p.scope(course), 'question'),
             'records': self.p.repo.all(self.p.scope(course), 'attempt')})
@@ -81,6 +96,8 @@ class DurableAgent:
             run = self.get(course, key)
             if run['status'] != 'queued':
                 return self.public(run)
+            if not self.features(course)['durable'] or run['scenario'] != 'prepare' and not self.features(course)['interactive']:
+                return self.public(self.save({**run, 'status': 'paused', 'pauseRequested': True}, run['revision']))
             owner = str(uuid4())
             run = self.save({**run, 'status': 'running', 'owner': owner}, run['revision'])
 
@@ -113,6 +130,8 @@ class DurableAgent:
                         async for event in events:
                             if event['type'] == 'done':
                                 terminal = event
+                                if terminal.get('model') == 'external-planner':
+                                    terminal['model'] = self.config.model
                     update(budget=budget.snapshot())
             with self.p.db.transaction():
                 status = terminal['agent']['status'] if terminal else 'queued'
@@ -141,6 +160,7 @@ class DurableAgent:
             run = self.get(course, key)
             require(body.get('revision') == run['revision'], 'RUN_CONFLICT')
             if action in ('confirm', 'answer', 'refresh', 'diagnose', 'replan'):
+                require(self.features(course)['interactive'], 'AGENT_INTERACTIVE_DISABLED')
                 require(self.agent.evidence_current(self.p.scope(course), run['context']['library'], run['snapshot']), 'STALE_EVIDENCE')
                 require(run['scenario'] != 'prepare' and (run['status'] in ('awaiting_user', 'awaiting_confirmation') or
                     action == 'replan' and run['status'] == 'completed'), 'RUN_NOT_RESUMABLE')
@@ -155,6 +175,7 @@ class DurableAgent:
                 require(run['status'] != 'running', 'RUN_BUSY_PAUSE_FIRST')
                 run = self.save({**run, 'status': 'cancelled'}, run['revision'])
             elif action == 'resume':
+                require(self.features(course)['durable'], 'AGENT_DISABLED')
                 require(run['status'] in ('paused', 'awaiting_user', 'unknown', 'failed'), 'RUN_NOT_RESUMABLE')
                 require(not run.get('interaction'), 'USE_LEARNING_INTERACTION')
                 require(run['status'] != 'unknown' or body.get('acknowledgeUnknown') is True, 'UNKNOWN_OUTCOME_CONFIRMATION_REQUIRED')
@@ -185,6 +206,8 @@ class DurableAgent:
         if not path.startswith('agent-runs'):
             return None
         parts = path.split('/')
+        if path == 'agent-runs/features' and request.method == 'GET':
+            return JSONResponse({'ok': True, 'result': self.features(course)})
         if request.method == 'GET' and len(parts) == 2:
             result = self.public(self.get(course, parts[1]))
         else:
