@@ -23,6 +23,7 @@
   const chatService=window.XueyaChat.createChatService();
   const experience=window.XueyaExperience?.create({state});
   let activeChat;
+  const historyLayout=window.XueyaHistoryLayout?.create();
   const searchUI=window.XueyaPlatform?.available?window.XueyaSearchWorkspace?.create({state,store,toast}):null;
   const practiceUI=window.XueyaPracticeUI.create({state,allSources,persist,toast,render,e});
   const learningUI=window.XueyaLearningUI?.create({state,store,toast});
@@ -34,7 +35,7 @@
   function render(){
     const prior=$('#chatThread'),sameSession=prior?.dataset.sessionId===state.sessionId,scrollTop=prior?.scrollTop||0,nearBottom=!prior||prior.scrollHeight-prior.scrollTop-prior.clientHeight<90;
     const pool=currentQuestions();if(state.quizIndex>=pool.length)state.quizIndex=0;
-    workspace.beforeRender();$('#spaceContent').innerHTML=renders[state.view]();$('#documentCount').textContent=state.documents.filter(d=>!d.superseded).length;icons();workspace.afterRender();workbench?.prepare();libraryUI?.mount();learningUI?.mount();notesUI?.mount();workbench?.mount();experience?.mount();mediaUI?.mount();
+    workspace.beforeRender();$('#spaceContent').innerHTML=renders[state.view]();$('#documentCount').textContent=state.documents.filter(d=>!d.superseded).length;icons();workspace.afterRender();workbench?.prepare();libraryUI?.mount();learningUI?.mount();notesUI?.mount();workbench?.mount();experience?.mount();mediaUI?.mount();historyLayout?.mount();
     const thread=$('#chatThread');if(thread)thread.scrollTop=!sameSession||nearBottom?thread.scrollHeight:scrollTop;
     agentRuns?.refresh();
   }
