@@ -13,7 +13,7 @@ from scripts.check_learning_browser import Browser, server, upstream
 
 
 def real_click(browser, selector):
-    point=browser.evaluate('(()=>{const el=document.querySelector('+json.dumps(selector)+');el.scrollIntoView({block:"center"});const r=el.getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2};})()')
+    point=browser.evaluate('(()=>{const el=document.querySelector('+json.dumps(selector)+');el.scrollIntoView({block:"center",behavior:"instant"});const r=el.getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2};})()')
     browser.call('Input.dispatchMouseEvent',type='mousePressed',button='left',clickCount=1,**point)
     browser.call('Input.dispatchMouseEvent',type='mouseReleased',button='left',clickCount=1,**point)
 
@@ -37,7 +37,8 @@ def main():
             if control['failAsr']:
                 control['failAsr']=False;return httpx.Response(503)
             return httpx.Response(200,json={'model':value['model'],'choices':[{'message':{'content':'请解释队列的先进先出。'},'finish_reason':'stop'}]})
-        if value.get('stream'):
+        image=any(isinstance(m.get('content'),list) and any(p.get('type')=='image_url' for p in m['content']) for m in value['messages'])
+        if value.get('stream') or image:
             assert value['model']=='mimo-v2.6-flash'
             sources=[]
             for message in value['messages']:
@@ -46,6 +47,8 @@ def main():
                     sources.extend(s for s in content.get('materials',[]) if isinstance(s,dict) and s.get('id'))
                 except (TypeError,ValueError,AttributeError):pass
             answer=json.dumps({'answer':'队列遵循先进先出，这是受控测试回答。','sources':[sources[0]['id']] if sources else []},ensure_ascii=False)
+            if not value.get('stream'):
+                return httpx.Response(200,json={'model':value['model'],'choices':[{'message':{'content':answer},'finish_reason':'stop'}]})
             return httpx.Response(200,text='data: '+json.dumps({'choices':[{'delta':{'content':answer}}]})+'\n\ndata: [DONE]\n\n',headers={'Content-Type':'text/event-stream'})
         return upstream(request)
 
@@ -133,6 +136,23 @@ def main():
                 picture=folder/'picture.png';picture.write_bytes(base64.b64decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jR3sAAAAASUVORK5CYII='))
                 browser.file('#imageInput',picture);browser.wait('!!document.querySelector(".attachment-list img")')
                 browser.click('[data-remove-image]')
+                # Use native ClipboardEvent/DataTransfer without touching the user's OS clipboard.
+                image_data=base64.b64encode(picture.read_bytes()).decode()
+                browser.fill('#chatInput','前后')
+                browser.evaluate('document.querySelector("#chatInput").setSelectionRange(1,1)')
+                paste=r'''(()=>{const data=new DataTransfer();data.items.add(new File([Uint8Array.from(atob(IMAGE),x=>x.charCodeAt(0))],'粘贴图片.png',{type:'image/png'}));if(TEXT)data.setData('text/plain',TEXT);const event=new ClipboardEvent('paste',{clipboardData:data,bubbles:true,cancelable:true});document.querySelector('#chatInput').dispatchEvent(event);return event.defaultPrevented;})()'''
+                assert browser.evaluate(paste.replace('IMAGE',json.dumps(image_data)).replace('TEXT',json.dumps('中间')))
+                browser.wait('document.querySelectorAll(".attachment-list img").length===1')
+                assert browser.evaluate('document.querySelector("#chatInput").value==="前中间后" && document.activeElement.id==="chatInput" && document.querySelector("#chatInput").selectionStart===3')
+                browser.click('[data-remove-image]')
+                # A plain-text paste remains the browser's responsibility.
+                assert browser.evaluate('(()=>{const data=new DataTransfer();data.setData("text/plain","普通文字");const event=new ClipboardEvent("paste",{clipboardData:data,bubbles:true,cancelable:true});document.querySelector("#chatInput").dispatchEvent(event);return !event.defaultPrevented;})()')
+                browser.fill('#chatInput','粘贴的图片里是什么？')
+                assert browser.evaluate(paste.replace('IMAGE',json.dumps(image_data)).replace('TEXT','""'))
+                browser.wait('document.querySelectorAll(".attachment-list img").length===1')
+                browser.click('#chatForm .send-button')
+                browser.wait('!document.querySelector("#chatForm .stop-button") && !document.querySelector(".attachment-list img")')
+                assert any(any(isinstance(m.get('content'),list) and any(p.get('type')=='image_url' for p in m['content']) for m in c['messages']) for c in calls), 'Pasted image must reach the image conversation'
                 for theme in ('light','dark'):
                     browser.evaluate('window.XueyaPreferences.applyTheme('+json.dumps(theme)+')')
                     browser.screenshot(output/f'desktop-{theme}-chat.png')
@@ -144,7 +164,7 @@ def main():
                     browser.screenshot(output/f'mobile-{theme}.png')
                     browser.call('Emulation.setDeviceMetricsOverride',width=1440,height=1000,deviceScaleFactor=1,mobile=False)
                 assert not browser.errors,browser.errors
-                (output/'report.json').write_text(json.dumps({'passed':True,'paidApiCalls':0,'models':[c['model'] for c in calls],'checks':['plus-picker','permission-denied','actual-MediaRecorder-PCM16k-mono','ASR-only-before-send','edit-then-LLM','cancel-stops-tracks','navigation-stops-recording','late-permission-cancel','explicit-retry','document-upload-and-real-citation','image-preview-remove','390px-light-dark']},ensure_ascii=False,indent=2),encoding='utf-8')
+                (output/'report.json').write_text(json.dumps({'passed':True,'paidApiCalls':0,'models':[c['model'] for c in calls],'checks':['plus-picker','permission-denied','actual-MediaRecorder-PCM16k-mono','ASR-only-before-send','edit-then-LLM','cancel-stops-tracks','navigation-stops-recording','late-permission-cancel','explicit-retry','document-upload-and-real-citation','image-preview-remove','paste-image-and-mixed-text-caret','plain-text-paste-default','pasted-image-reaches-provider','390px-light-dark']},ensure_ascii=False,indent=2),encoding='utf-8')
                 print('Composer browser passed: files/images, recording/PCM/ASR, editable draft then LLM, permission/cancel/retry and mobile themes; no paid APIs.')
             except BaseException:
                 browser.screenshot(output/'failure.png');raise

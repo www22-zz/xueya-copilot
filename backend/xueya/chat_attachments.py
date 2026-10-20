@@ -75,6 +75,7 @@ def install_chat_attachments(app):
 
         async def work():
             iterator = agent.workflow(value) if library else agent.general(normalized, scope)
+            result = None
             async with aclosing(iterator):
                 async for event in iterator:
                     if event['type'] != 'done':
@@ -87,8 +88,11 @@ def install_chat_attachments(app):
                     result['engine'] = 'image-chat' if result['online'] else 'local-workflow'
                     result['modality'] = 'image-text'
                     result['verification'] = 'course-citations-only' if result.get('sources') else 'image-not-course-verified'
-                    return result
-            require(False, 'CHAT_INCOMPLETE')
+                    # Let the workflow exit its MCP session before returning.
+                    # Closing at `done` can interrupt a no-evidence fallback that
+                    # still owns the session's async task group.
+            require(result is not None, 'CHAT_INCOMPLETE')
+            return result
         return {'ok': True, 'result': await connected_work(request, work())}
 
     count = len(app.router.routes)

@@ -42,13 +42,13 @@ def test_launcher_opens_globe_in_both_start_paths(tmp_path, monkeypatch, already
     assert opened == ['http://127.0.0.1:43210/#home']
 
 
-@pytest.mark.parametrize('with_materials', [False, True])
+@pytest.mark.parametrize('with_materials', [False, True, 'unrelated'])
 def test_image_question_uses_scoped_media_and_existing_invocation_ledger(tmp_path, with_materials):
     captured = []
     def upstream(request):
         value = json.loads(request.content)
         captured.append(value)
-        result = json.dumps({'answer': '图中是三角形。', 'sources': ['s1'] if with_materials else []}, ensure_ascii=False)
+        result = json.dumps({'answer': '图中是三角形。', 'sources': ['s1'] if with_materials is True else []}, ensure_ascii=False)
         stream = 'data: '+json.dumps({'choices': [{'delta': {'content': result}}]})+'\n\ndata: [DONE]\n\n'
         return httpx.Response(200, text=stream, headers={'Content-Type': 'text/event-stream'})
     config = Config(data_dir=tmp_path/'data', api_key='controlled-image-test', base_url='https://controlled.invalid/v1')
@@ -56,14 +56,15 @@ def test_image_question_uses_scoped_media_and_existing_invocation_ledger(tmp_pat
     with TestClient(app, base_url='http://127.0.0.1') as client:
         headers = {'X-Xueya-Token': client.get('/api/platform/bootstrap').json()['token']}
         if with_materials:
-            app.state.platform.repo.put(app.state.platform.scope('course-default'), 'source', 's1', {'id': 's1', 'title': '三角形', 'quote': '三角形有三条边。', 'keywords': ['三角形']}, 0)
+            source = {'id': 's1', 'title': '三角形', 'quote': '三角形有三条边。', 'keywords': ['三角形']} if with_materials is True else {'id': 's1', 'title': '植物', 'quote': '叶绿体参与光合作用。', 'keywords': ['叶绿体']}
+            app.state.platform.repo.put(app.state.platform.scope('course-default'), 'source', 's1', source, 0)
         media = client.post('/api/learning/media/upload?name=figure.png', content=b'controlled-image', headers={**headers, 'Content-Type': 'image/png'}).json()['result']
         payload = {'question': '三角形的定义是什么？看图解释。', 'media': [{'id': media['id'], 'version': 1}]}
         response = client.post('/api/learning/chat/respond', json=payload, headers=headers)
         assert response.status_code == 200, response.text
         result = response.json()['result']
-        assert '三角形' in result['answer'] and result['sources'] == (['s1'] if with_materials else [])
-        assert result['verification'] == ('course-citations-only' if with_materials else 'image-not-course-verified')
+        assert '三角形' in result['answer'] and result['sources'] == (['s1'] if with_materials is True else [])
+        assert result['verification'] == ('course-citations-only' if with_materials is True else 'image-not-course-verified')
         assert result['online']
         parts = captured[0]['messages'][-1]['content']
         assert any(p['type'] == 'image_url' and p['image_url']['url'].startswith('data:image/png;base64,') for p in parts)

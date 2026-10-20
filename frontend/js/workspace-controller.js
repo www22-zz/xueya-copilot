@@ -95,6 +95,18 @@ function createWorkspace(ctx){
     for(const file of files){const audio=file.type.startsWith('audio/')||/\.(wav|mp3)$/i.test(file.name),image=['image/png','image/jpeg','image/webp'].includes(file.type),document=!audio&&!image&&/\.(pdf|docx|txt|md|markdown)$/i.test(file.name);if(!audio&&!image&&!document){toast('请选择 PNG/JPG/WebP 图片，或 PDF、Word、TXT、Markdown 文件。');continue;}if(audio&&!/\.(wav|mp3)$/i.test(file.name)){toast('语音附件暂支持 WAV 和 MP3。');continue;}if(!file.size||file.size>(audio?7:image?6:10)*1024*1024||attachments.length>=4){toast('最多4个附件；图片6MB、文档10MB以内。');continue;}attachments.push({file,url:URL.createObjectURL(file),documentFile:document});}
     render();
   }
+  function pasteImages(event){
+    const input=event.target;if(input.id!=='chatInput'||!event.clipboardData)return;
+    const items=Array.from(event.clipboardData.items||[]).filter(item=>item.kind==='file'&&item.type.startsWith('image/'));
+    const files=items.length?items.map(item=>item.getAsFile()).filter(Boolean):Array.from(event.clipboardData.files||[]).filter(file=>file.type.startsWith('image/'));
+    if(!files.length)return;
+    if(state.pending||voice?.busy){toast('请等待当前处理完成后再粘贴图片。');return;}
+    event.preventDefault();
+    const text=event.clipboardData.getData('text/plain'),room=Math.max(0,input.maxLength-(input.value.length-(input.selectionEnd-input.selectionStart)));
+    if(text&&room)input.setRangeText(text.slice(0,room),input.selectionStart,input.selectionEnd,'end');
+    const start=input.selectionStart,end=input.selectionEnd;state.draft=input.value;persist();
+    attachImages(files).then(()=>{const current=$('#chatInput');if(current){current.focus({preventScroll:true});current.setSelectionRange(start,end);}}).catch(notifyError);
+  }
   function historyFor(question){const index=Number.isInteger(state.followupIndex)?state.followupIndex:state.messages.length-1;const messages=state.messages.slice(0,index+1).filter(m=>!m.failed&&!m.cancelled);const prior=Number.isInteger(state.followupIndex)?state.messages[state.followupIndex]:[...messages].reverse().find(m=>m.role==='ai'&&m.sources?.length);return{history:messages.slice(-12).map(m=>({role:m.role==='ai'?'assistant':'user',content:m.text})),previousSources:prior?.sources||[],question};}
   async function imageChat(request,options){
     if(globalThis.XueyaChatAttachments){
@@ -232,6 +244,7 @@ function createWorkspace(ctx){
     return false;
   }
   function mount(){
+    $('#spaceContent').addEventListener('paste',pasteImages);
     const dialog=document.createElement('dialog');dialog.id='workspaceDialog';dialog.className='source-dialog workspace-dialog';dialog.setAttribute('aria-labelledby','workspaceDialogTitle');dialog.innerHTML=`<div class="dialog-head"><h2 id="workspaceDialogTitle"></h2><button type="button" class="icon-button" data-close-dialog aria-label="关闭编辑面板">×</button></div><div id="workspaceDialogBody"></div>`;document.body.append(dialog);
     dialog.addEventListener('submit',async event=>{if(event.target.id!=='workspaceForm')return;event.preventDefault();if(!editorSubmit)return;const submit=event.submitter;if(submit)submit.disabled=true;try{const result=await editorSubmit(new FormData(event.target));if(result!==false)dialog.close();}catch(error){$('#editorError').textContent=error.message||'保存失败，请重试。';}finally{if(submit)submit.disabled=false;}});
     $('#courseSelect').addEventListener('change',event=>selectCourse(event.target.value));
