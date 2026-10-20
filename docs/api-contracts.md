@@ -230,3 +230,13 @@ G5 复用同一学习主平台，新增分段媒体任务与有出处复习音�
 主模型调用增加输出上限与结束状态检查；原 `error` 字段可返回 `AI_TRUNCATED`、`AI_INCOMPLETE`、`AI_UNEXPECTED_TOOL_CALL`、`STALE_EVIDENCE`、`AI_RUN_TIMEOUT`、`AI_MODEL_BUDGET_EXCEEDED`、`AI_TOOL_BUDGET_EXCEEDED`、`AI_OUTPUT_BUDGET_EXCEEDED`、`AI_COST_BUDGET_EXCEEDED`、`AI_PRICING_REQUIRED`。工作流可继续采用已存在的原文/规则回退，但不发布被拒绝的模型正文，也不额外重试收费请求。
 
 预算仅由服务器 `.env` 配置；请求体不能提高限额或工具权限。主聊天 MCP 仅能使用四个兼容只读工具；原宿主鉴权和具体预览确认写入路径保留。默认限额、费用计价边界及验收见 [P0 交付说明](delivery/agent-P0.md)。
+
+### Agent P1 动态只读流程（2026-10-20）
+
+保留原 `/api/agent` 与 `/api/agent/stream` 请求、基础响应字段和SSE类型。已配置模型的文本课程学习请求默认进入动态规划，服务器决定是否启用；`/api/ai`、问候/通用聊天、图片聊天、无模型规则与原学习业务接口保留。
+
+动态流程额外返回 `agent`：`status`（completed/partial/awaiting_user）、`plan`、`planHistory`、`planRevision`、`completedStepIds`、`observations`、`decisions`、`decisionCount`、`replans`和`stopReason`。中间进度仍为workflow，经过证据校验的正文仍为content/done。前端继续使用原处理进度区，持久化可选agent元数据。
+
+完成指本轮只读准备，不是学习掌握或保存确认。缺少条件时显示补充问题；用户下条消息仍走原接口，不新增或承诺P2恢复协议。现有run/checkpoint保存审计状态；partial/awaiting_user不会伪装为整个任务成功。
+
+动态工具白名单在P0基础上增加现有平台的错题、到期复习卡和课程图谱只读查询；仅暴露实际可用项。`build_review_plan`兼容增加可选examDate/minutes，生成只读预览，不修改设置或采纳计划。原固定流程四工具、宿主鉴权与人工确认写入路径保持。开关与限额见 [P1交付说明](delivery/agent-P1.md)。

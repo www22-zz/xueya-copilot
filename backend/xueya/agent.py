@@ -52,7 +52,8 @@ def normalize_context(value, fallback=None):
         minutes = 30
     previous = value.get("previousSourceIds", [])
     ids = {s["id"] for s in library}
-    return {"library": library, "questions": questions, "records": records, "baseDate": base, "examDate": value["examDate"] if L.valid_date(value.get("examDate")) else L.add_days(base, 21), "minutes": minutes, "previousSourceIds": list(dict.fromkeys(s for s in previous if isinstance(s, str) and s in ids))[:3] if isinstance(previous, list) else []}
+    return {"library": library, "questions": questions, "records": records, "baseDate": base, "examDate": value["examDate"] if L.valid_date(value.get("examDate")) else L.add_days(base, 21), "minutes": minutes, "previousSourceIds": list(dict.fromkeys(s for s in previous if isinstance(s, str) and s in ids))[:3] if isinstance(previous, list) else [],
+            'settingsProvided': {'examDate': L.valid_date(value.get('examDate')), 'minutes': bool(value.get('minutes'))}}
 
 
 def build_messages(request, sources, mode=None):
@@ -208,9 +209,11 @@ class Agent:
                 async for event in events:
                     if run_id:
                         if event["type"] == "workflow":
-                            self.platform.repo.put(scope, "checkpoint", run_id, {"stage": event["stage"], "status": event["status"], "at": utc_now()})
+                            self.platform.repo.put(scope, "checkpoint", run_id, {"stage": event["stage"], "status": event["status"], "at": utc_now(), **({'agent': event['agent']} if 'agent' in event else {})})
                         if event["type"] == "done":
-                            version = self.platform.repo.put(scope, "run", run_id, {"status": "succeeded", "question": request["question"], "result": event, "finishedAt": utc_now()}, version)["version"]
+                            outcome = event.get('agent', {}).get('status')
+                            status = outcome if outcome in ('awaiting_user', 'partial') else 'succeeded'
+                            version = self.platform.repo.put(scope, "run", run_id, {"status": status, "question": request["question"], "result": event, "finishedAt": utc_now()}, version)["version"]
                             done = True
                         event = {**event, "runId": run_id}
                     yield event
@@ -252,6 +255,14 @@ class Agent:
                 yield finish('通用问答服务暂时不可用，请检查 API 配置后重试。', engine='general-chat-unavailable')
         if greeting:
             yield finish(greeting)
+            return
+        config = self.model.config
+        learning_goal = study or bool(retrieve(query, context['library'])) or requires_course_evidence(request['question'], request['mode']) or bool(previous) or bool(re.search(r'学习|章节|错题|备考|复习|资料|这章|知识点', request['question']))
+        if (actual or study) and learning_goal and getattr(config, 'agent_planning_enabled', False) and getattr(config, 'api_key', '') and getattr(self.model, 'supports_planning', True):
+            from .learning_integration import stream_readonly_agent
+            async with aclosing(stream_readonly_agent(self, request, context, scope, stored)) as events:
+                async for event in events:
+                    yield event
             return
         yield mark("route", "正在整理你的学习情况" if study else "正在确定这次学习任务", "completed")
         if not study and not actual:

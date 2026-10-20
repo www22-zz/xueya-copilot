@@ -160,10 +160,12 @@ def course_registry(context=None):
 
     def plan(a):
         c = context or a
+        if context:
+            c = {**c, **a}
         require(L.valid_date(c["baseDate"]) and L.valid_date(c["examDate"]) and c["examDate"] >= c["baseDate"] and bool(c["questions"]), "INVALID_PLAN_SETTINGS")
         return {"examDate": c["examDate"], "minutes": c["minutes"], "days": L.build_plan(c["examDate"], c["minutes"], c["records"], c["baseDate"], c["questions"])}
     registry.add("analyze_progress", obj() if context else obj(common, common), analyze)
-    registry.add("build_review_plan", obj() if context else obj({**common, "examDate": date, "minutes": {"type": "integer", "minimum": 15, "maximum": 120}}, [*common, "examDate", "minutes"]), plan)
+    registry.add("build_review_plan", obj({'examDate': date, 'minutes': {'type': 'integer', 'minimum': 15, 'maximum': 120}}) if context else obj({**common, "examDate": date, "minutes": {"type": "integer", "minimum": 15, "maximum": 120}}, [*common, "examDate", "minutes"]), plan)
     return registry
 
 
@@ -255,9 +257,11 @@ def platform_registry(platform, scope, *, context=None, reference=False, rag=Non
 
     def plan(a):
         c = study_context()
+        c = {**c, **a}
+        require(L.valid_date(c['examDate']), 'INVALID_PLAN_SETTINGS')
         return {"examDate": c["examDate"], "minutes": c["minutes"], "days": L.build_plan(c["examDate"], c["minutes"], c["records"], c["baseDate"], c["questions"])}
     registry.add("analyze_progress", obj(), analyze)
-    registry.add("build_review_plan", obj(), plan)
+    registry.add("build_review_plan", obj({'examDate': {'type': 'string', 'pattern': r'^\d{4}-\d{2}-\d{2}$'}, 'minutes': {'type': 'integer', 'minimum': 15, 'maximum': 120}}), plan)
     if learning:
         async def review_queue(a):
             ids = [r['id'] for r in learning.repo.all(scope.course_id) if r.get('kind') == 'memory-card']
@@ -292,10 +296,10 @@ async def lookup_reference(args):
 
 class Session:
     """Host-owned gateway over a real SDK Client, with bounded discovery/calls."""
-    def __init__(self, client, *, context=None, allowed_tools=None, timeout=5):
+    def __init__(self, client, *, context=None, allowed_tools=None, timeout=5, duration=60):
         self.client, self.context = client, context
         self.allowed = set(allowed_tools) if allowed_tools is not None else None
-        self.timeout, self.deadline, self.calls, self.cost = timeout, time.monotonic()+60, 0, 0
+        self.timeout, self.deadline, self.calls, self.cost = timeout, time.monotonic()+duration, 0, 0
         self.limiter, self.definitions, self.pending = Limiter(4), {}, set()
 
     async def list_tools(self, namespace=False):
@@ -395,7 +399,7 @@ async def open_session(registry=None, *, context=None, stdio=False, stdio_params
         target = (stdio_params or StdioServerParameters(command=sys.executable, args=["-X", "utf8", "-m", "backend.xueya.mcp_server"], cwd=ROOT)) if stdio else create_server(registry or course_registry(context))
         async with asyncio.timeout(max_duration):
             async with Client(target, read_timeout_seconds=timeout) as client:
-                session = Session(client, context=context if stdio else None, timeout=timeout, allowed_tools=allowed_tools)
+                session = Session(client, context=context if stdio else None, timeout=timeout, allowed_tools=allowed_tools, duration=max_duration)
                 await session.list_tools()
                 try:
                     yield session

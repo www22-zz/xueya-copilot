@@ -10,6 +10,7 @@ from .common import require
 
 
 class ImageConversation:
+    supports_planning = False  # P1 adds text planning; retain the existing image flow.
     def __init__(self, provider, images):
         self.provider, self.images = provider, images
         self.config = provider.config

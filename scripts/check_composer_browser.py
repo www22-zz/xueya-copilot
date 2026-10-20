@@ -29,6 +29,10 @@ def main():
     calls=[];control={'failAsr':False}
     def controlled(request):
         value=json.loads(request.content);calls.append(value)
+        from scripts.readonly_agent_fixture import planner_response
+        planning = planner_response(value)
+        if planning is not None:
+            return planning
         if value['model']=='mimo-v2.5-asr':
             audio=value['messages'][0]['content'][0]['input_audio']['data']
             assert audio.startswith('data:audio/wav;base64,')
@@ -133,6 +137,11 @@ def main():
                 docs=app.state.platform.repo.list(app.state.platform.scope(),'document')['items']
                 assert any(d['name']=='队列附件.md' for d in docs)
                 assert browser.evaluate('document.querySelector("#chatThread").innerText.includes("先入队的元素先出队")')
+                assert browser.evaluate('document.querySelector("#chatThread").innerText.includes("AI 学习规划")')
+                dynamic=[r for r in app.state.platform.repo.all(app.state.platform.scope(),'run') if r.get('result',{}).get('agent')]
+                assert dynamic and dynamic[-1]['result']['agent']['status']=='completed'
+                used={o.get('tool') for o in dynamic[-1]['result']['agent']['observations']}
+                assert {'search_materials','read_source'}<=used
                 assert browser.evaluate('document.querySelectorAll("#chatThread .citation-chip").length>0'), 'Attached document must remain a real citation'
                 picture=folder/'picture.png';picture.write_bytes(base64.b64decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jR3sAAAAASUVORK5CYII='))
                 browser.file('#imageInput',picture);browser.wait('!!document.querySelector(".attachment-list img")')

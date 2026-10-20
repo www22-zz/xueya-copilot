@@ -94,7 +94,8 @@ class ScopedModel:
         signal = value.get("signal")
         if signal:
             signal.check()
-        operation = asyncio.create_task(self.provider.generate(value["messages"], scope=self.scope))
+        options = {'max_output_tokens': value['maxOutputTokens']} if 'maxOutputTokens' in value else {}
+        operation = asyncio.create_task(self.provider.generate(value["messages"], scope=self.scope, **options))
         monitor = asyncio.create_task(signal.event.wait()) if signal else None
         try:
             if monitor:
@@ -108,6 +109,40 @@ class ScopedModel:
             if not operation.done():
                 operation.cancel()
             await asyncio.gather(operation, *([monitor] if monitor else []), return_exceptions=True)
+
+
+async def stream_readonly_agent(agent, request, context, scope, stored):
+    """Adapt the domain loop to the existing provider, SDK session and P0 snapshot."""
+    from contextlib import aclosing
+    from backend.agent.planner import Planner
+    from backend.agent.tool_adapter import ReadOnlyTools, READ_ONLY_TOOLS
+    from backend.agent.orchestrator import ReadOnlyWorkflow
+    from .mcp_core import open_session, platform_registry, course_registry
+    from .learning import route_task
+    config = agent.model.config
+    registry = platform_registry(agent.platform, scope, context=context, rag=agent.rag, learning=agent.learning) if stored else course_registry(context)
+    registry.allowed_tools = READ_ONLY_TOOLS
+    snapshot = agent.evidence_snapshot(scope, context['library'])
+    verify = lambda: not stored or agent.evidence_current(scope, context['library'], snapshot)
+    terminal, trace = None, []
+    async with open_session(registry, timeout=config.tool_timeout, max_duration=config.run_timeout, allowed_tools=READ_ONLY_TOOLS) as session:
+        tools = ReadOnlyTools(session, context['library'], course_id=scope.course_id if scope else 'course-default', verify=verify)
+        flow = ReadOnlyWorkflow(Planner(ScopedModel(agent.model, scope), min(config.agent_decision_tokens, config.max_output_tokens)), tools,
+            max_rounds=config.agent_max_rounds, max_replans=config.agent_max_replans, max_no_progress=config.agent_no_progress_limit)
+        async with aclosing(flow.stream(request, context, route_task(request['question'], request['mode']))) as events:
+            async for event in events:
+                if event['type'] == 'done':
+                    terminal = event
+                else:
+                    trace.append({k: event[k] for k in ('stage', 'label', 'status')})
+                    yield event
+    # Finish only after the SDK task group has closed, including non-stream HTTP.
+    if terminal:
+        if terminal['model'] == 'external-planner':
+            terminal['model'] = config.model
+        terminal['workflow'] = {'intent': 'dynamic', 'steps': trace}
+        yield {'type': 'content', 'text': json.dumps({k: terminal[k] for k in ('answer', 'sources', 'knowledgePoints')}, ensure_ascii=False), 'model': terminal['model']}
+        yield terminal
 
 
 class LearningHost:

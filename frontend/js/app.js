@@ -67,7 +67,7 @@
       }});
       controller.signal.throwIfAborted();
       if(result.transcript)userMessage.transcript=result.transcript;
-      Object.assign(ai,{text:result.answer,reasoning:result.reasoning||'',sources:result.sources,engine:result.engine,...(result.workflow?{workflow:result.workflow}:{}),...(result.artifacts?{artifacts:result.artifacts}:{})});
+      Object.assign(ai,{text:result.answer,reasoning:result.reasoning||'',sources:result.sources,engine:result.engine,...(result.agent?{agent:result.agent}:{}),...(result.workflow?{workflow:result.workflow}:{}),...(result.artifacts?{artifacts:result.artifacts}:{})});
       $('#engineStatus').textContent=result.online?'MiMo 在线':result.workflow?'本地学习模式':'本地检索模式';
       $('#engineStatus').classList.toggle('online',result.online);
     }catch(error){
