@@ -32,9 +32,9 @@ from test_learning_pages import upstream
 
 
 @contextmanager
-def server(directory):
+def server(directory, upstream_handler=None):
     config = Config(data_dir=directory/'data', api_key='controlled-test-only', model='mimo-v2.6-flash', base_url='https://controlled.invalid/v1')
-    app = create_app(config, provider=MimoProvider(config, transport=httpx.MockTransport(upstream)))
+    app = create_app(config, provider=MimoProvider(config, transport=httpx.MockTransport(upstream_handler or upstream)))
     install_rag(app, service_factory=RagService)
     sock = socket.socket()
     sock.bind(('127.0.0.1', 0))
@@ -112,6 +112,10 @@ class Browser:
 
     def route(self, view):
         self.evaluate(f'location.hash="space/{view}"')
+        if view in ('overview','chat','library','cards'):
+            selector={'overview':'[data-title-play]','chat':'#chatForm','library':'#libraryRows','cards':'#chapterNoteForm'}[view]
+            self.wait(f'!!document.querySelector({json.dumps(selector)})')
+            return
         form = {'practice': 'generate', 'memory': 'memory-preview', 'graph': 'concept-new', 'plan': 'plan-preview', 'cards': 'note-new', 'media': 'media-image'}.get(view)
         self.wait(f'!!document.querySelector("#cLearning [data-c-form={form}]")' if form else '!!document.querySelector("#cLearning [data-c-action=chapter]")')
 
@@ -165,7 +169,7 @@ def main():
             browser = Browser(directory)
             try:
                 browser.call('Emulation.setDeviceMetricsOverride', width=1365, height=950, deviceScaleFactor=1, mobile=False)
-                browser.call('Page.navigate', url=url+'/#space/overview')
+                browser.call('Page.navigate', url=url+'/#space/chapters')
                 browser.wait('!!document.querySelector("#cLearning [data-c-action=chapter]")')
                 browser.click('[data-c-action=chapter]')
                 browser.wait('!!document.querySelector("[data-c-action=run-preview]")', timeout=30)
@@ -281,6 +285,7 @@ def main():
                 assert current['contentRevision'] == 2 and 'verified leaf' in current['chunks'][0]['quote']
                 assert app.state.rag.artifact(app.state.platform.scope(), current)['text'] == original[:first_chunk['start']]+'A verified leaf converts sunlight into sugar.'+original[first_chunk['end']:]
                 browser.click('#sourceDialog [data-close-dialog]')
+                browser.route('chapters')
                 browser.click('[data-c-action=refresh]')
                 browser.wait('!!document.querySelector("[data-c-form=rag-job]")')
                 assert browser.evaluate('!document.querySelector("[data-c-form=rag-job] [name=confirmed]").checked')
@@ -291,7 +296,7 @@ def main():
                 browser.evaluate('document.querySelector("#cLearning").scrollIntoView()')
                 assert browser.evaluate('document.documentElement.scrollWidth <= innerWidth+1')
                 browser.screenshot(output/'media-mobile.png')
-                browser.route('overview')
+                browser.route('chapters')
                 browser.evaluate('document.querySelector("#cLearning").scrollIntoView()')
                 browser.screenshot(output/'overview-mobile.png')
                 browser.call('Emulation.setDeviceMetricsOverride', width=1365, height=950, deviceScaleFactor=1, mobile=False)
