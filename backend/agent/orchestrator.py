@@ -17,9 +17,13 @@ class ReadOnlyWorkflow:
         self.planner, self.tools = planner, tools
         self.max_rounds, self.max_replans, self.max_no_progress = max_rounds, max_replans, max_no_progress
 
-    async def stream(self, request, context, intent, signal=None):
-        plan, completed, observations, decisions, revisions = None, set(), [], [], []
-        rounds, replans, no_progress = 0, 0, 0
+    async def stream(self, request, context, intent, signal=None, *, restore=None, checkpoint=None, single_step=False):
+        saved = restore or {}
+        plan, completed = clone(saved.get('plan')), set(saved.get('completedStepIds', []))
+        observations, decisions, revisions = [clone(saved.get(k, [])) for k in ('observations', 'decisions', 'planHistory')]
+        rounds, replans, no_progress = saved.get('decisionCount', 0), saved.get('replans', 0), saved.get('noProgress', 0)
+        if saved.get('tools'):
+            self.tools.restore(saved['tools'])
         evaluator = ResultEvaluator(request, context, self.tools, intent)
         catalogue = await self.tools.catalogue()
         require(catalogue, 'MCP_TOOL_MISSING')
@@ -29,7 +33,12 @@ class ReadOnlyWorkflow:
                     'planHistory': clone(revisions), 'completedStepIds': sorted(completed),
                     'observations': clone(observations[-8:]), 'decisions': clone(decisions),
                     'decisionCount': rounds, 'replans': replans, 'stopReason': reason,
-                    'scope': 'read-only-request', 'persistedResume': False}
+                    'scope': 'durable-run' if checkpoint else 'read-only-request', 'persistedResume': bool(checkpoint),
+                    'noProgress': no_progress}
+
+        async def save(phase='ready'):
+            if checkpoint:
+                await checkpoint({**state(), 'tools': self.tools.snapshot(), 'phase': phase})
 
         def event(stage, label, status='running'):
             return {'type': 'workflow', 'stage': stage, 'label': label, 'status': status, 'agent': state()}
@@ -47,9 +56,10 @@ class ReadOnlyWorkflow:
 
         yield event('plan', '正在根据学习目标制定执行计划')
         try:
-            for rounds in range(1, self.max_rounds+1):
+            for rounds in range(rounds+1, self.max_rounds+1):
                 check_cancel(signal)
                 await self.tools.current()
+                await save('deciding')
                 decision = await self.planner.decide({'request': {'question': request['question'], 'mode': request['mode'],
                     'history': [{**m, 'content': m['content'][:2000]} for m in request['history'][-4:]]},
                     'context': {k: context[k] for k in ('baseDate', 'examDate', 'minutes', 'previousSourceIds', 'settingsProvided') if k in context},
@@ -72,7 +82,10 @@ class ReadOnlyWorkflow:
                     plan = validate_plan(action['plan'], plan, completed)
                     revisions.append(clone(plan))
                     replans += 1
+                    await save()
                     yield event('replan', '已根据执行结果调整后续步骤', 'completed')
+                    if single_step:
+                        return
                     continue
                 if action['type'] == 'ask_user':
                     require(not re.search(r'密钥|密码|api[ _-]?key|token|令牌', action['question'], re.I), 'AGENT_INVALID_QUESTION')
@@ -96,6 +109,7 @@ class ReadOnlyWorkflow:
                         return
                 else:
                     yield event('tool', TOOL_LABELS.get(action['tool'], '正在核对工具权限'))
+                    await save('calling_tool')
                     try:
                         result = await self.tools.call(action['tool'], action['arguments'])
                     except asyncio.CancelledError:
@@ -109,9 +123,13 @@ class ReadOnlyWorkflow:
                     if result['status'] == 'completed':
                         completed.add(step_id)
                     no_progress = 0 if result['newInformation'] else no_progress+1
+                    await save()
                     yield event('observe', '已检查查询结果，正在决定下一步', 'completed' if result['status'] == 'completed' else 'degraded')
                 if no_progress >= self.max_no_progress:
                     yield await terminal('awaiting_user', 'AGENT_NO_PROGRESS', question='连续查询未获得新的有效信息。请补充具体知识点、相关资料或你的解题过程。')
+                    return
+                await save()
+                if single_step:
                     return
             yield await terminal('partial', 'AGENT_ROUND_LIMIT')
         except asyncio.CancelledError:

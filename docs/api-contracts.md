@@ -240,3 +240,9 @@ G5 复用同一学习主平台，新增分段媒体任务与有出处复习音�
 完成指本轮只读准备，不是学习掌握或保存确认。缺少条件时显示补充问题；用户下条消息仍走原接口，不新增或承诺P2恢复协议。现有run/checkpoint保存审计状态；partial/awaiting_user不会伪装为整个任务成功。
 
 动态工具白名单在P0基础上增加现有平台的错题、到期复习卡和课程图谱只读查询；仅暴露实际可用项。`build_review_plan`兼容增加可选examDate/minutes，生成只读预览，不修改设置或采纳计划。原固定流程四工具、宿主鉴权与人工确认写入路径保持。开关与限额见 [P1交付说明](delivery/agent-P1.md)。
+# 动态 Agent 持久化运行（P2，增量接口）
+
+`POST /api/learning/agent-runs?courseId=...` 接收 `{id,question,mode?,documentIds?,context?,scenario?}`，scenario 为 prepare/chapter/wrong/exam，返回 `{ok:true,result:{id,courseId,revision,status,state,result,budget}}`。相同 id/请求幂等，内容不同冲突。
+
+`GET /api/learning/agent-runs/{id}?courseId=...` 查询；`POST .../{id}/pause|resume|cancel` 接收 `{revision,...}`。unknown 恢复需 `acknowledgeUnknown:true`，awaiting_user 恢复需 `userInput`。所有调用沿用学习 API Host 和 X-Xueya-Token 鉴权。暂停在步骤边界生效。新接口不修改既有 HTTP/SSE 字段和事件类型。
+

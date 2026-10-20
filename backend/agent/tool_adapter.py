@@ -24,6 +24,14 @@ class ReadOnlyTools:
         self.evidence, self.results, self.facts, self.calls = {}, {}, set(), set()
         self.definitions = {}
 
+    def snapshot(self):
+        return {'evidence': clone(self.evidence), 'results': clone(self.results),
+                'facts': sorted(self.facts), 'calls': sorted(self.calls)}
+
+    def restore(self, value):
+        self.evidence, self.results = clone(value.get('evidence', {})), clone(value.get('results', {}))
+        self.facts, self.calls = set(value.get('facts', [])), set(value.get('calls', []))
+
     async def catalogue(self):
         definitions = await self.session.list_tools()
         self.definitions = {d['name']: clone(d) for d in definitions if d['name'] in READ_ONLY_TOOLS}

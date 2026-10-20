@@ -30,6 +30,20 @@ class ExecutionBudget:
         self.priced_model = getattr(config, 'model', None)
         self.models = self.tools = self.output = 0
         self.money = Decimal(0)
+        self.changed = None
+
+    def snapshot(self):
+        return {'models': self.models, 'tools': self.tools, 'output': self.output, 'money': str(self.money),
+                'seconds': max(0, self.deadline-time.monotonic())}
+
+    def restore(self, value):
+        self.models, self.tools, self.output = (value[k] for k in ('models', 'tools', 'output'))
+        self.money = decimal_setting(value['money'])
+        self.deadline = time.monotonic()+value['seconds']
+
+    def persist(self):
+        if self.changed:
+            self.changed(self.snapshot())
 
     def remaining(self):
         seconds = self.deadline-time.monotonic()
@@ -52,6 +66,7 @@ class ExecutionBudget:
         self.models += 1
         self.output += output_tokens
         self.money += cost
+        self.persist()
         return cost
 
     def observe(self, usage, reserved_cost, output_tokens):
@@ -65,6 +80,7 @@ class ExecutionBudget:
             actual = (prompt*self.input_price+completion*self.output_price)/1000000
             self.money += max(Decimal(0), actual-reserved_cost)
             reserved_cost = max(reserved_cost, actual)
+        self.persist()
         require(type(completion) is not int or completion <= output_tokens, 'AI_OUTPUT_BUDGET_EXCEEDED')
         require(not self.money_limit or self.money <= self.money_limit, 'AI_COST_BUDGET_EXCEEDED')
         return reserved_cost
@@ -73,6 +89,7 @@ class ExecutionBudget:
         self.remaining()
         require(self.tools < self.tool_limit, 'AI_TOOL_BUDGET_EXCEEDED')
         self.tools += 1
+        self.persist()
 
 
 @contextmanager

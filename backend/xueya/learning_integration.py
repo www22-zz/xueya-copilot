@@ -162,6 +162,8 @@ class LearningHost:
         self.search_workspace = SearchWorkspace(self)
         from .media_workspace import MediaWorkspace
         self.media_workspace = MediaWorkspace(self)
+        from .durable_agent import DurableAgent
+        self.dynamic = DurableAgent(self)
 
     def service(self, course):
         scope = self.p.scope(course)
@@ -296,6 +298,9 @@ class LearningHost:
         require(secrets.compare_digest(request.headers.get("x-xueya-token", ""), self.app.state.token), "AUTH_REQUIRED")
         course = request.query_params.get("courseId", "course-default")
         self.p.scope(course)
+        dynamic = await self.dynamic.dispatch(path, request, course)
+        if dynamic is not None:
+            return dynamic
         media_response = await self.media_workspace.dispatch(path, request, course)
         if media_response is not None:
             return media_response
@@ -339,8 +344,9 @@ def install_learning(app):
                     if course["archived"]:
                         continue
                     for row in learning.runs.all(course["id"]):
-                        if row.get("status") == "running":
+                        if row.get("status") == "running" and row.get('kind') != 'dynamic-agent':
                             await learning.service(course["id"]).workflow.recover(course["id"], row["id"], lease_expired=True)
+                await learning.dynamic.recover()
             yield
 
     app.router.lifespan_context = lifespan
