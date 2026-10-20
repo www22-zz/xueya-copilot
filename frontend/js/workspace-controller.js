@@ -8,6 +8,7 @@ function createWorkspace(ctx){
   const $=s=>document.querySelector(s),id=()=>crypto.randomUUID();
   let attachments=[],queue=[],uploading=false,nextUpload=null,editorSubmit,readerURL,mediaController;
   const mediaFiles={},mediaURLs=new Set(),audioLoads=new Set();let remoteGraph=null,graphLoadedFor=null,graphRevision=0;
+  const messageImages=globalThis.XueyaMessageImages?.create({state,cache,toast});
   const voice=globalThis.XueyaComposerInput?.create({state,persist,render,toast});
   function mediaURL(blob){const url=URL.createObjectURL(blob);mediaURLs.add(url);return url;}
   const newButton=(label,attrs='')=>`<button class="button button-outline button-small" type="button" ${attrs}>${e(label)}</button>`;
@@ -108,9 +109,10 @@ function createWorkspace(ctx){
     attachImages(files).then(()=>{const current=$('#chatInput');if(current){current.focus({preventScroll:true});current.setSelectionRange(start,end);}}).catch(notifyError);
   }
   function historyFor(question){const index=Number.isInteger(state.followupIndex)?state.followupIndex:state.messages.length-1;const messages=state.messages.slice(0,index+1).filter(m=>!m.failed&&!m.cancelled);const prior=Number.isInteger(state.followupIndex)?state.messages[state.followupIndex]:[...messages].reverse().find(m=>m.role==='ai'&&m.sources?.length);return{history:messages.slice(-12).map(m=>({role:m.role==='ai'?'assistant':'user',content:m.text})),previousSources:prior?.sources||[],question};}
-  async function imageChat(request,options){
+  async function imageChat(request,options,batch){
+    const sent=batch||attachments;
     if(globalThis.XueyaChatAttachments){
-      const documents=attachments.filter(a=>a.documentFile),courseId=state.courseId;
+      const documents=sent.filter(a=>a.documentFile),courseId=state.courseId;
       for(const item of documents){
         options.signal?.throwIfAborted();
         if(!item.document){options.onUpdate?.({progress:'正在解析附件：'+item.file.name});item.document=globalThis.XueyaWorkspaceService.normalizeDocument(await service.call('uploadDocument',{courseId,file:item.file},options));}
@@ -120,13 +122,12 @@ function createWorkspace(ctx){
         if(!doc.chunks.length)throw Error(item.file.name+' 没有可用正文，请到资料页核对解析结果后再提问。');
       }
       if(documents.length){const docs=documents.map(a=>a.document);request={...request,documentIds:[...new Set([...(request.documentIds||[]),...docs.map(d=>d.id)])],sources:[...new Map([...request.sources,...docs.flatMap(d=>d.chunks)].map(s=>[s.id,s])).values()]};}
-      const result=await globalThis.XueyaChatAttachments.respond(attachments.filter(a=>!a.documentFile).map(a=>a.file),request,options);
-      for(const a of attachments)URL.revokeObjectURL(a.url);attachments=[];return result;
+      const result=await globalThis.XueyaChatAttachments.respond(sent.filter(a=>!a.documentFile).map(a=>a.file),request,options);
+      return result;
     }
-    const inputFiles=attachments.map(a=>a.file),names=inputFiles.map(f=>f.name),response=await service.call('imageChat',{...request,courseId:state.courseId,images:inputFiles},options);
+    const inputFiles=sent.map(a=>a.file),names=inputFiles.map(f=>f.name),response=await service.call('imageChat',{...request,courseId:state.courseId,images:inputFiles},options);
     if(typeof response.answer!=='string'||!response.answer.trim())throw new Error('图片服务没有返回有效回答。');
     const known=request.sources,sources=(Array.isArray(response.sources)?response.sources:[]).map(s=>known.find(k=>k.id===(typeof s==='string'?s:s?.id))).filter(Boolean);
-    for(const a of attachments)URL.revokeObjectURL(a.url);attachments=[];
     return{answer:response.answer,sources,engine:response.engine||'图文学习服务',online:true,imageNames:names,workflow:response.workflow};
   }
   function editQuestion(questionId){
@@ -185,7 +186,7 @@ function createWorkspace(ctx){
     finally{mediaController=null;if(state.view==='media')render();}
   }
   let views;
-  function enhance(base){views=globalThis.XueyaWorkspaceViews.createViews({...ctx,rich,service,getAttachments:()=>attachments,getVoiceState:()=>voice?.status,getQueue:()=>queue,getGraph},base);return views;}
+  function enhance(base){views=globalThis.XueyaWorkspaceViews.createViews({...ctx,rich,service,getAttachments:()=>attachments,getMessageImage:ref=>messageImages?.source(ref)||'',getVoiceState:()=>voice?.status,getQueue:()=>queue,getGraph},base);return views;}
   function beforeRender(){
     voice?.mount();
     if(state.quizFilter==='wrong'&&!Array.isArray(state.quizPool))state.quizPool=L.wrongQuestions(state.records,[...L.questions,...state.bank]);
@@ -193,6 +194,7 @@ function createWorkspace(ctx){
     const course=store.courses.find(c=>c.id===state.courseId),select=$('#courseSelect');if(select){select.innerHTML=store.courses.filter(c=>!c.archived).map(c=>`<option value="${e(c.id)}" ${c.id===state.courseId?'selected':''}>${e(c.name)}</option>`).join('');select.disabled=state.pending||state.working||uploading||!!voice?.busy||!!state.mediaJob?.running;}if($('#courseLabel'))$('#courseLabel').textContent=course?.name||'我的课程';
   }
   function afterRender(){
+    messageImages?.mount();
     if(state.view==='media')for(const result of state.mediaResults||[])if(result.audioCached&&!result.audioURL&&!audioLoads.has(result.id)){const courseId=state.courseId;audioLoads.add(result.id);cache.get('audio:'+result.id).then(blob=>{if(!(blob instanceof Blob)||state.courseId!==courseId)return;result.audioURL=mediaURL(blob);if(state.view==='media')render();}).catch(()=>toast('语音缓存未能读取，可重新生成。'));}
     if(state.view==='graph'&&service.capabilities.graph&&graphLoadedFor!==state.courseId){const courseId=state.courseId,revision=++graphRevision;graphLoadedFor=courseId;service.call('graph',{courseId}).then(result=>{if(state.courseId!==courseId||revision!==graphRevision)return;if(!Array.isArray(result.nodes)||!Array.isArray(result.edges))throw new Error('概念服务格式不完整。');const nodes=result.nodes.slice(0,40).filter(n=>n&&typeof n.id==='string'&&typeof n.label==='string').map(n=>({...n}));position(nodes);const ids=new Set(nodes.map(n=>n.id));remoteGraph={nodes,edges:result.edges.filter(edge=>edge&&ids.has(edge.from)&&ids.has(edge.to)),paths:(Array.isArray(result.paths)?result.paths:[]).filter(p=>p&&Array.isArray(p.nodeIds)&&p.nodeIds.every(id=>ids.has(id))),remote:true};if(state.view==='graph')render();}).catch(error=>{if(state.courseId===courseId&&revision===graphRevision)notifyError(error);});}
   }
@@ -215,7 +217,7 @@ function createWorkspace(ctx){
   const actions={
     newSession:()=>{store.newSession();render();},clearChat:()=>{store.newSession();render();},session:d=>{store.selectSession(d.session);render();},
     followup:d=>{const index=Number(d.followup);if(state.messages[index]?.role!=='ai')return;state.followupIndex=index;state.draft='请进一步解释这个问题，并给出资料中的依据。';render();$('#chatInput').focus();},cancelFollowup:()=>{state.followupIndex=null;render();},
-    addAudio:()=>voice?.toggle(),cancelVoice:()=>voice?.cancel(),retryVoice:()=>voice?.retry(),addImages:()=>$('#imageInput').click(),removeImage:d=>{const [item]=attachments.splice(Number(d.removeImage),1);if(item)URL.revokeObjectURL(item.url);render();},
+    messageImage:d=>messageImages?.open(d.messageImage),addAudio:()=>voice?.toggle(),cancelVoice:()=>voice?.cancel(),retryVoice:()=>voice?.retry(),addImages:()=>$('#imageInput').click(),removeImage:d=>{const [item]=attachments.splice(Number(d.removeImage),1);if(item)URL.revokeObjectURL(item.url);render();},
     newCard:()=>editCard(),editCard:d=>editCard(d.editCard),cardHistory:d=>showCardHistory(d.cardHistory),restoreCard:d=>{const card=state.cards.find(c=>c.id===d.restoreCard),old=card?.history?.[Number(d.historyIndex)];if(old){saveCardVersion(card,{title:old.title,text:old.text,tags:old.tags,category:old.category});persist();$('#workspaceDialog').close();render();}},
     editDocument:d=>editDocument(d.editDocument),refreshDocuments:async()=>{const courseId=state.courseId;const result=await service.call('listDocuments',{courseId});const list=Array.isArray(result)?result:result.documents;if(!Array.isArray(list))throw new Error('资料服务没有返回有效列表。');const remote=list.map(globalThis.XueyaWorkspaceService.normalizeDocument).map(doc=>{const old=state.documents.find(item=>item.id===doc.id);return{...doc,...old?.uiMetadata,uiMetadata:old?.uiMetadata,originalAvailable:doc.originalAvailable||old?.originalAvailable,remote:true};});if(state.courseId!==courseId)return;const ids=new Set(remote.map(doc=>doc.id));if(ids.size!==remote.length)throw new Error('资料服务返回了重复版本ID，本次未替换原件记录。');state.documents=[...remote,...state.documents.filter(doc=>!doc.remote&&!ids.has(doc.id))];persist();render();toast('资料状态已同步。');},versionDocument:d=>{nextUpload=state.documents.find(doc=>doc.id===d.versionDocument);$('#fileInput').click();},retryDocument:d=>{nextUpload=state.documents.find(doc=>doc.id===d.retryDocument);$('#fileInput').click();},retryUpload:d=>{const item=queue.find(item=>item.id===d.retryUpload);if(item)upload([item.file]).catch(notifyError);},
     original:d=>original(d.original),exportDocument:d=>{const doc=state.documents.find(doc=>doc.id===d.exportDocument);if(doc)download(doc.name+'.txt',new Blob([doc.chunks.map(c=>c.quote).join('\n\n')],{type:'text/plain;charset=utf-8'}));},correctSource:d=>correctSource(d.correctSource),
@@ -250,7 +252,8 @@ function createWorkspace(ctx){
     $('#courseSelect').addEventListener('change',event=>selectCourse(event.target.value));
     globalThis.addEventListener('beforeunload',()=>{if(!globalThis.XueyaPlatform?.isRestoring)persist();});
   }
-  return{get versionUploadPending(){return !!nextUpload;},enhance,beforeRender,afterRender,mount,handleClick,handleInput,handleChange,handleSubmit,upload:files=>{const existing=nextUpload;nextUpload=null;return upload(files,{existing});},openSource,historyFor,get service(){return service;},get attachments(){return attachments;},imageChat,canAsk(){if(voice?.busy){toast('请先停止录音并等待文字识别，核对后再发送。');return false;}if(attachments.length&&!(globalThis.XueyaChatAttachments&&globalThis.XueyaPlatform?.available)&&!service.capabilities.imageChat){toast('图像服务尚未接通，请移除图片发送文字，或配置图像服务后重试。');return false;}return true;}};
+  function takeAttachments(message){const batch=attachments;attachments=[];message.images=messageImages?.remember(batch,message.id)||[];message.attachmentNames=batch.filter(a=>!a.file.type.startsWith('image/')).map(a=>a.file.name);for(const a of batch)if(!a.file.type.startsWith('image/'))URL.revokeObjectURL(a.url);return batch;}
+  return{takeAttachments,get versionUploadPending(){return !!nextUpload;},enhance,beforeRender,afterRender,mount,handleClick,handleInput,handleChange,handleSubmit,upload:files=>{const existing=nextUpload;nextUpload=null;return upload(files,{existing});},openSource,historyFor,get service(){return service;},get attachments(){return attachments;},imageChat,canAsk(){if(voice?.busy){toast('请先停止录音并等待文字识别，核对后再发送。');return false;}if(attachments.length&&!(globalThis.XueyaChatAttachments&&globalThis.XueyaPlatform?.available)&&!service.capabilities.imageChat){toast('图像服务尚未接通，请移除图片发送文字，或配置图像服务后重试。');return false;}return true;}};
 }
 return{createWorkspace};
 });

@@ -48,10 +48,10 @@
     try{const scope=JSON.parse(localStorage.getItem('xueya-c-learning:'+state.courseId+':scope:'+state.sessionId));if(Array.isArray(scope))request.documentIds=scope;else if(state.selectedDocuments.length)request.documentIds=[...state.selectedDocuments];}catch{}
     const ai={id:crypto.randomUUID(),role:'ai',text:'',reasoning:'',sources:[],engine:'正在回答',title:clean,createdAt:new Date().toISOString()};
     const controller=new AbortController();activeChat=controller;
-    state.draft='';state.followupIndex=null;state.pending=true;const userMessage={id:crypto.randomUUID(),role:'user',text:clean,attachmentNames:workspace.attachments.map(a=>a.file.name)};state.messages.push(userMessage,ai);persist();
+    state.draft='';state.followupIndex=null;state.pending=true;const userMessage={id:crypto.randomUUID(),role:'user',text:clean};const batch=workspace.takeAttachments(userMessage);state.messages.push(userMessage,ai);persist();
     if(state.view!=='chat')location.hash='space/chat';else render();
     try{
-      const stream=workspace.attachments.length?workspace.imageChat:chatService.stream.bind(chatService);
+      const stream=batch.length?((input,options)=>workspace.imageChat(input,options,batch)):chatService.stream.bind(chatService);
       const result=await stream(request,{workflow:true,signal:controller.signal,onUpdate(update){
         if(typeof update.answer==='string')ai.text=update.answer;
         if(typeof update.reasoning==='string')ai.reasoning=update.reasoning;
