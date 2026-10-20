@@ -1,5 +1,6 @@
 (async() => {
   'use strict';
+  await window.XueyaAccountReady;
   await window.XueyaPlatform?.initialize();
   const L=window.XueyaLearning,$=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
   const icons=()=>window.XueyaIcons?.();
@@ -19,17 +20,19 @@
   const workspace=window.XueyaWorkspace.createWorkspace({state,L:viewLearning,store,e,icon,persist,toast,render,sourceById,allSources,libraryService:window.XueyaLibrary});
   const {titles,renders,documentRows,cardRows,currentQuestions}=workspace.enhance(window.XueyaViews.createViews({state,L:viewLearning,e,icon,sourceById}));
   const chatService=window.XueyaChat.createChatService();
+  const experience=window.XueyaExperience?.create({state});
   let activeChat;
   const searchUI=window.XueyaPlatform?.available?window.XueyaSearchWorkspace?.create({state,store,toast}):null;
   const practiceUI=window.XueyaPracticeUI.create({state,allSources,persist,toast,render,e});
   const learningUI=window.XueyaLearningUI?.create({state,store,toast});
   const workbench=window.XueyaPlatform?.available?window.XueyaWorkbench?.create({state,store,toast}):null;
+  const notesUI=window.XueyaPlatform?.available?window.XueyaNotes?.create({state,toast}):null;
   const libraryUI=window.XueyaPlatform?.available?window.XueyaLibraryWorkspace?.create({state,store,toast}):null;
   const {addQuestions,openBankDialog,generateBank,renderBankTopics,updateBankCount,generateFromTopics}=practiceUI;
   function render(){
     const prior=$('#chatThread'),sameSession=prior?.dataset.sessionId===state.sessionId,scrollTop=prior?.scrollTop||0,nearBottom=!prior||prior.scrollHeight-prior.scrollTop-prior.clientHeight<90;
     const pool=currentQuestions();if(state.quizIndex>=pool.length)state.quizIndex=0;
-    workspace.beforeRender();$('#spaceContent').innerHTML=renders[state.view]();$('#documentCount').textContent=state.documents.filter(d=>!d.superseded).length;icons();workspace.afterRender();workbench?.prepare();libraryUI?.mount();learningUI?.mount();workbench?.mount();
+    workspace.beforeRender();$('#spaceContent').innerHTML=renders[state.view]();$('#documentCount').textContent=state.documents.filter(d=>!d.superseded).length;icons();workspace.afterRender();workbench?.prepare();libraryUI?.mount();learningUI?.mount();notesUI?.mount();workbench?.mount();experience?.mount();
     const thread=$('#chatThread');if(thread)thread.scrollTop=!sameSession||nearBottom?thread.scrollHeight:scrollTop;
   }
   let initialRoute=true;function route(){const parts=location.hash.replace(/^#/,'').split('/');const space=parts[0]==='space';$('#homePage').hidden=space;$('#spacePage').hidden=!space;document.body.classList.toggle('in-space',space);if(space){state.view=titles[parts[1]]?parts[1]:'overview';$$('[data-view]').forEach(a=>{a.classList.toggle('active',a.dataset.view===state.view);a.dataset.view===state.view?a.setAttribute('aria-current','page'):a.removeAttribute('aria-current');});render();document.title=`${titles[state.view]} · 学涯 Copilot`;if(!initialRoute){scrollTo({top:0,behavior:'instant'});$('#spaceContent').focus({preventScroll:true});}}else{document.title='学涯 Copilot — 让知识，真正连起来';if(['possibilities','evidence','rhythm'].includes(parts[0]))requestAnimationFrame(()=>document.getElementById(parts[0]).scrollIntoView());else if(!initialRoute)scrollTo({top:0,behavior:'instant'});}initialRoute=false;}
@@ -37,14 +40,14 @@
   function openSource(source){return workspace.openSource(source);}
   function saveCard(title,text,sources){if(state.cards.some(c=>c.text===text)){toast('这段重点已经在知识卡片里了。');return;}state.cards.unshift({id:crypto.randomUUID(),title:title.slice(0,80),text,sources,createdAt:new Date().toISOString()});if(persist())toast('理解，留下来了。已保存知识卡片。');}
   async function ask(question){
-    const clean=question.trim();if(!clean||state.pending||!workspace.canAsk())return;
+    const clean=question.trim()||(workspace.attachments.length?'请根据附件内容帮我解答。':'');if(!clean||state.pending||!workspace.canAsk())return;
     const {history,previousSources}=workspace.historyFor(clean);
     const sources=state.selectedDocuments.length?allSources().filter(s=>state.selectedDocuments.includes(s.documentId)):allSources();
     const request={courseId:state.courseId,question:clean,mode:state.mode,sources,history,previousSources,learning:{questions:[...courseQuestions(),...state.bank],records:state.records,examDate:state.examDate,minutes:state.minutes}};
     try{const scope=JSON.parse(localStorage.getItem('xueya-c-learning:'+state.courseId+':scope:'+state.sessionId));if(Array.isArray(scope))request.documentIds=scope;else if(state.selectedDocuments.length)request.documentIds=[...state.selectedDocuments];}catch{}
     const ai={id:crypto.randomUUID(),role:'ai',text:'',reasoning:'',sources:[],engine:'正在回答',title:clean,createdAt:new Date().toISOString()};
     const controller=new AbortController();activeChat=controller;
-    state.draft='';state.followupIndex=null;state.pending=true;state.messages.push({id:crypto.randomUUID(),role:'user',text:clean,imageNames:workspace.attachments.map(a=>a.file.name)},ai);persist();
+    state.draft='';state.followupIndex=null;state.pending=true;const userMessage={id:crypto.randomUUID(),role:'user',text:clean,attachmentNames:workspace.attachments.map(a=>a.file.name)};state.messages.push(userMessage,ai);persist();
     if(state.view!=='chat')location.hash='space/chat';else render();
     try{
       const stream=workspace.attachments.length?workspace.imageChat:chatService.stream.bind(chatService);
@@ -62,12 +65,13 @@
         }
       }});
       controller.signal.throwIfAborted();
+      if(result.transcript)userMessage.transcript=result.transcript;
       Object.assign(ai,{text:result.answer,reasoning:result.reasoning||'',sources:result.sources,engine:result.engine,...(result.workflow?{workflow:result.workflow}:{}),...(result.artifacts?{artifacts:result.artifacts}:{})});
       $('#engineStatus').textContent=result.online?'MiMo 在线':result.workflow?'本地学习模式':'本地检索模式';
       $('#engineStatus').classList.toggle('online',result.online);
-    }catch{
-      const cancelled=controller.signal.aborted;
-      Object.assign(ai,{text:cancelled?'已停止生成。你可以修改问题或重新发送。':'这次回答未能完成，请重新发送问题。',reasoning:'',sources:[],engine:cancelled?'已停止':'回答未完成',cancelled,failed:!cancelled});
+    }catch(error){
+      const cancelled=controller.signal.aborted||error.name==='AbortError';
+      Object.assign(ai,{text:cancelled?'已停止生成。你可以修改问题或重新发送。':({IMAGE_MODEL_NOT_CONFIGURED:'图片服务未配置，请在更多中的服务设置查看。',ASR_NOT_CONFIGURED:'语音识别服务未配置，请在更多中的服务设置查看。',AI_UNAVAILABLE:'服务暂不可用，请在更多中的服务设置查看。'}[error.code]||'这次回答未能完成，请检查服务设置后重试。'),reasoning:'',sources:[],engine:cancelled?'已停止':'回答未完成',cancelled,failed:!cancelled});
       if(!state.draft)state.draft=clean;
     }finally{
       if(activeChat===controller)activeChat=undefined;
@@ -77,7 +81,7 @@
       else toast(ai.cancelled?'已停止生成。':ai.failed?'回答未完成，请在资料问答中重试。':'回答已准备好，可在资料问答中查看。');
     }
   }
-  function upload(files){return workspace.upload(files);}
+  function upload(files){return libraryUI&&state.view==='library'&&!workspace.versionUploadPending?libraryUI.uploadFiles(files):workspace.upload(files);}
   const contentUI=window.XueyaPlatform?.available?window.XueyaContentWorkspace?.create({state,store,toast}):null;
   const mountLearning=learningUI?.mount;
   if(mountLearning)learningUI.mount=()=>{mountLearning();contentUI?.mount();};

@@ -18,8 +18,8 @@
     function tick(time){
       frame=0;if(!shown||!fine.matches||reduced.matches||document.hidden)return;
       const dt=last?Math.min((time-last)/1000,.05):1/60;last=time;
-      const sx=window.XueyaMotion.spring(x,vx,targetX,dt);
-      const sy=window.XueyaMotion.spring(y,vy,targetY,dt);
+      const sx=window.XueyaMotion.spring(x,vx,targetX,dt,.09);
+      const sy=window.XueyaMotion.spring(y,vy,targetY,dt,.09);
       x=sx.position;vx=sx.velocity;y=sy.position;vy=sy.velocity;
       ring.style.transform=`translate3d(${x}px,${y}px,0)`;
       if(Math.hypot(targetX-x,targetY-y)>.05||Math.hypot(vx,vy)>.05)frame=requestAnimationFrame(tick);
@@ -32,6 +32,8 @@
       if(editing){hide();document.body.classList.add('cursor-editing');return;}
       document.body.classList.remove('cursor-editing');
       targetX=event.clientX;targetY=event.clientY;
+      // Keep the ring within 10px even during a fast sweep.
+      const gap=Math.hypot(targetX-x,targetY-y);if(shown&&gap>10){x=targetX+(x-targetX)*10/gap;y=targetY+(y-targetY)*10/gap;vx=0;vy=0;ring.style.transform=`translate3d(${x}px,${y}px,0)`;}
       if(!shown){x=targetX;y=targetY;vx=0;vy=0;last=0;shown=true;ring.style.transform=`translate3d(${x}px,${y}px,0)`;}
       dot.style.transform=`translate3d(${targetX}px,${targetY}px,0)`;
       document.body.classList.add('custom-cursor');

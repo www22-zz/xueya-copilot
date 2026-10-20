@@ -6,6 +6,7 @@
   <title>学涯 Copilot — 让知识，真正连起来</title>
   <link rel="icon" href="assets/mark.svg" type="image/svg+xml"><link rel="stylesheet" href="css/styles.css">
   <link rel="stylesheet" href="css/workbench.css"><link rel="stylesheet" href="css/workspace.css"><link rel="stylesheet" href="css/learning.css">
+  <link rel="stylesheet" href="css/experience.css"><link rel="stylesheet" href="css/preferences.css"><link rel="stylesheet" href="css/theme-surfaces.css">
   <script src="../shared/contracts/index.js" defer></script>
   <script src="../shared/fixtures/course.js" defer></script>
   <script src="../shared/rag/index.js" defer></script>
@@ -34,6 +35,11 @@
   <script src="js/learning-ui.js" defer></script>
   <script src="js/workbench-ui.js" defer></script>
   <script src="js/library-workspace.js" defer></script>
+  <script src="js/services/chat-attachments.js" defer></script>
+  <script src="js/experience.js" defer></script>
+  <script src="js/preferences.js" defer></script>
+  <script src="js/account.js" defer></script>
+  <script src="js/notes.js" defer></script>
   <script src="js/app.js" defer></script>
 </head>
 <body>
@@ -91,12 +97,14 @@
       <footer class="site-footer section-width"><a class="brand" href="#home"><img src="assets/mark.svg" alt="" width="28" height="28"><strong>学涯<span>Copilot</span></strong></a><span>让知识，真正连起来。</span><small>© 2026 学涯 Copilot</small><a href="#space/library">开始整理资料 <span data-icon="arrow"></span></a></footer>
     </div>
     <div id="spacePage" hidden>
+      <div class="workspace-main">
       <div class="space-top section-width"><div class="course-context"><span class="course-symbol" data-icon="tree"></span><div><label class="sr-only" for="courseSelect">当前课程</label><select id="courseSelect" aria-label="当前课程"><option value="course-default">数据结构</option></select><small id="courseLabel">我的课程空间</small></div></div><div class="space-top-right"><span class="engine-status" id="engineStatus">正在连接</span><button id="searchTrigger" class="icon-button" type="button" aria-label="搜索资料与操作"><span data-icon="search"></span></button><button type="button" class="subtle-button" data-manage-courses>管理课程</button><button type="button" class="subtle-button" data-export-workspace>导出记录</button><span class="profile-avatar" aria-label="本地学习空间">学</span></div></div>
-      <nav class="space-nav section-width" aria-label="学习空间导航"><a href="#space/overview" data-view="overview">学习概览</a><a href="#space/chat" data-view="chat">资料问答</a><a href="#space/library" data-view="library">课程资料 <span id="documentCount">3</span></a><a href="#space/cards" data-view="cards">知识卡片</a><a href="#space/practice" data-view="practice">练习与错题</a><a href="#space/memory" data-view="memory">记忆卡片</a><a href="#space/plan" data-view="plan">复习计划</a><a href="#space/graph" data-view="graph">知识图谱</a><a href="#space/media" data-view="media">多模态学习</a></nav>
+      <nav class="space-nav section-width" aria-label="学习空间导航"><a href="#space/overview" data-view="overview">学习概览</a><a href="#space/chat" data-view="chat">资料问答</a><a href="#space/library" data-view="library">课程资料 <span id="documentCount">3</span></a><a href="#space/cards" data-view="cards">知识卡片</a><a href="#space/practice" data-view="practice">练习与错题</a><a href="#space/memory" data-view="memory">记忆卡片</a><a href="#space/chapters" data-view="chapters">章节学习</a><a href="#space/plan" data-view="plan">复习计划</a><a href="#space/graph" data-view="graph">知识图谱</a></nav>
       <div id="activityBanner" class="activity-banner section-width" role="status" hidden><span id="activityLabel"></span><button type="button" class="button button-outline button-small" data-stop-practice>停止等待</button></div>
       <div id="storageNotice" class="storage-notice section-width" role="alert" hidden><span>本次修改尚未保存。请先导出记录，避免关闭页面后丢失。</span><button type="button" class="button button-outline button-small" data-export-workspace>导出记录</button></div>
       <div class="space-content section-width" id="spaceContent" tabindex="-1"></div>
-      <footer class="space-footer section-width"><span><span class="mini-dot"></span> 浏览器保留副本 · 可启用本机持久化</span><a href="#home">回到首页 <span data-icon="external"></span></a></footer>
+      <footer class="space-footer section-width"><span><span class="mini-dot"></span> 浏览器保留副本 · 可启用本机持久化</span><div class="workspace-footer-actions"><div id="workspaceServicesSlot"></div><a href="#home">回到首页 <span data-icon="external"></span></a></div></footer>
+      </div>
     </div>
   </main>
   <dialog id="sourceDialog" class="source-dialog" aria-label="资料原文"><div class="dialog-head"><span class="eyebrow">回到原文</span><button type="button" class="icon-button" data-close-dialog aria-label="关闭原文"><span data-icon="close"></span></button></div><div id="sourceContent"></div><div class="source-dialog-footer"><button class="button button-blue" type="button" id="sourceSave"><span data-icon="bookmark"></span> 保存为知识卡片</button></div></dialog>

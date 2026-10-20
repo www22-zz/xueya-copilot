@@ -75,6 +75,8 @@ def create_app(config: Config | None = None, *, provider=None, start_jobs=True):
     async def lifespan(app):
         platform = Platform(config.data_dir, config.api_slots) if config.platform_enabled else None
         app.state.platform = platform
+        from .account import LocalAccount
+        app.state.account = LocalAccount(platform) if platform else None
         app.state.provider = provider or MimoProvider(config, platform)
         if isinstance(app.state.provider, MimoProvider):
             app.state.provider.platform = platform
@@ -92,6 +94,7 @@ def create_app(config: Config | None = None, *, provider=None, start_jobs=True):
     app.state.instance_id = None
     app.state.stop_token = None
     app.state.request_stop = None
+    app.state.account = None
 
     @app.middleware("http")
     async def same_origin(request, call_next):
@@ -101,6 +104,9 @@ def create_app(config: Config | None = None, *, provider=None, start_jobs=True):
                 return error_response("ORIGIN_FORBIDDEN")
             if request.url.path.startswith("/api/platform/") and not re.fullmatch(r"(?:127\.0\.0\.1|localhost|\[::1\])(?::\d+)?", host):
                 return error_response("ORIGIN_FORBIDDEN")
+        account = app.state.account
+        if account and request.url.path.startswith('/api/') and request.url.path not in ('/api/health', '/api/account/status', '/api/account/login', '/api/platform/shutdown') and not account.authorized(request):
+            return error_response('LOGIN_REQUIRED', 401)
         response = await call_next(request)
         response.headers["X-Content-Type-Options"] = "nosniff"
         return response
@@ -323,4 +329,8 @@ def create_app(config: Config | None = None, *, provider=None, start_jobs=True):
         install_workbench(app)
         from .library_http import install_library
         install_library(app)
+        from .chat_attachments import install_chat_attachments
+        install_chat_attachments(app)
+        from .account import install_account
+        install_account(app)
     return app

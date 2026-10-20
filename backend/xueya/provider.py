@@ -16,6 +16,8 @@ class MimoProvider:
 
     @asynccontextmanager
     async def invocation(self, messages, scope, *, capability='text', model=None):
+        if capability == 'text' and any(isinstance(m.get('content'), list) and any(isinstance(p, dict) and p.get('type') == 'image_url' for p in m['content']) for m in messages):
+            capability = 'image'
         require(bool(self.config.api_key), "AI_UNAVAILABLE")
         request_id, release, state = None, None, {"usage": None, "complete": False}
         if self.platform:

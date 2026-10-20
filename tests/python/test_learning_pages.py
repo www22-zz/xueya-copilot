@@ -182,3 +182,16 @@ def test_page_question_types_and_subjective_review(pages, kind, fields, answer):
         assert reviewed['content']['events'][0]['grade']['score'] == 1.5
     else:
         assert grade['score'] == 1
+
+
+def test_confirm_selected_graph_after_unrelated_large_book(pages):
+    client,call,headers,doc=pages
+    source=call('workspace')['sources'][0]
+    graph={'courseId':'course-default','concepts':[{'id':'n','courseId':'course-default','name':'Nodes','evidence':[{'sourceId':source['id'],'version':source['version'],'quote':source['quote']}]}],'edges':[]}
+    draft=call('graph/preview',{'graph':graph,'expectedRevision':0,'selection':{'sourceIds':[source['id']]}})
+    platform=client.app.state.platform
+    for i in range(80):
+        key='large-book-'+str(i)
+        platform.repo.put(platform.scope(),'source',key,{'id':key,'title':'Unrelated book','documentId':'unrelated','quote':'Unrelated text '*400,'version':'1'},0)
+    result=adopt(call,draft,'adopt-small-graph')
+    assert result['content']['concepts'][0]['id']=='n'

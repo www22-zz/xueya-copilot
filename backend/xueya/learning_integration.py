@@ -186,7 +186,12 @@ class LearningHost:
         content = draft["content"]
         if draft['kind'] in ('concept-graph', 'quiz'):
             try:
-                sources = [] if draft['kind'] == 'concept-graph' and not content['concepts'] and not content['edges'] else await self.sources({'courseId': course})
+                if draft['kind'] == 'concept-graph':
+                    refs = [r for item in content['concepts']+content['edges'] for r in item.get('evidence', [])]
+                    ids = list({r['sourceId'] for r in refs})
+                else:
+                    ids = list({q['sourceId'] for q in content['questions']})
+                sources = await self.sources({'courseId': course, 'selection': {'sourceIds': ids}}, generation=False) if ids else []
                 if draft['kind'] == 'concept-graph':
                     from backend.agent.concepts import validate_graph
                     validate_graph(content, sources)
