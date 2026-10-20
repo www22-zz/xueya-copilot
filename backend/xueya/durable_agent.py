@@ -140,9 +140,10 @@ class DurableAgent:
         with self.p.db.transaction():
             run = self.get(course, key)
             require(body.get('revision') == run['revision'], 'RUN_CONFLICT')
-            if action in ('confirm', 'answer', 'refresh'):
+            if action in ('confirm', 'answer', 'refresh', 'diagnose', 'replan'):
                 require(self.agent.evidence_current(self.p.scope(course), run['context']['library'], run['snapshot']), 'STALE_EVIDENCE')
-                require(run['scenario'] != 'prepare' and run['status'] in ('awaiting_user', 'awaiting_confirmation'), 'RUN_NOT_RESUMABLE')
+                require(run['scenario'] != 'prepare' and (run['status'] in ('awaiting_user', 'awaiting_confirmation') or
+                    action == 'replan' and run['status'] == 'completed'), 'RUN_NOT_RESUMABLE')
                 fields = await self.interactions.act(run, action, body)
                 run = self.save({**run, **fields}, run['revision'])
                 return self.public(run)

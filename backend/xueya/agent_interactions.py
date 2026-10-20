@@ -29,6 +29,26 @@ class AgentInteractions:
                 'artifactKind': draft['kind'], 'preview': public_quiz(draft['content']) if draft['kind'] == 'quiz' else clone(draft['content']), **extra}}
 
     async def prepare(self, run):
+        if run['scenario'] == 'exam':
+            return await self.exam(run)
+        if run['scenario'] == 'wrong' and not run.get('diagnosisConfirmed'):
+            value = await self.inputs(run)
+            valid = {s['id']: s['version'] for s in value['sources']}
+            attempts = [a for a in self.host.repo.all(run['courseId']) if a.get('kind') == 'attempt']
+            candidates = [(a, e) for a in attempts for e in a['content']['events']
+                if e['grade']['status'] == 'graded' and e['grade']['score'] < e['grade']['maxScore']
+                and valid.get(e['sourceId']) == e['sourceVersion']]
+            if candidates:
+                attempt, event = max(candidates, key=lambda pair: (pair[1]['createdAt'], pair[1]['id']))
+                return {'status': 'awaiting_user', 'diagnosisTarget': {'attemptId': attempt['id'],
+                    'eventId': event['id'], 'expectedRevision': attempt['revision']},
+                    'interaction': {'kind': 'diagnosis', 'title': '请核对这道错题的实际原因',
+                        'questionId': event['questionId'], 'answer': event['answer'], 'reasoning': event.get('reasoning', ''),
+                        'causes': ['knowledge-gap', 'misread', 'calculation', 'method', 'notation', 'input-error', 'uncertain'],
+                        'limitation': '错因由你确认，系统不从一次错误猜测真实思考过程。'}}
+        return await self.practice(run)
+
+    async def practice(self, run):
         value = await self.inputs(run)
         service = self.host.service(run['courseId'])
         session = await service.study_session({**value, 'practiceCount': 3})
@@ -40,7 +60,7 @@ class AgentInteractions:
         key = run['id']+'-quiz-'+str(run.get('cycle', 0))
         draft = await service.preview_quiz({'courseId': run['courseId'], 'id': key,
             'questions': questions, 'sources': value['sources'], 'count': min(3, len(questions))})
-        return self.ready(draft, '核对本轮练习，确认后开始作答', diagnosis=session['estimates'],
+        return self.ready(draft, '核对本轮练习，确认后开始作答', diagnosis=session['estimates'], diagnosticActions=session['diagnosticActions'],
             explanation=(run.get('result') or {}).get('answer', ''), warnings=session['warnings'])
 
     async def review(self, run, attempt):
@@ -58,8 +78,36 @@ class AgentInteractions:
             diagnosis=session['estimates'], nextPracticeIds=[i['question']['id'] for i in session['practice']['items']],
             limitation='本次作答仅用于调整安排，不代表已经完全掌握。'), 'attemptId': attempt['id']}
 
+    async def exam(self, run):
+        value = await self.inputs(run)
+        if not value['graph']['concepts']:
+            return {'status': 'awaiting_user', 'interaction': {'kind': 'missing_graph',
+                'title': '请先在知识图谱中整理并核对当前资料的知识点，再生成跨章节安排。'}}
+        service = self.host.service(run['courseId'])
+        key = run.get('planId', run['id']+'-exam-plan')
+        previous = await self.host.repo.get(run['courseId'], key)
+        value.update(id=key, expectedRevision=previous['revision'] if previous else 0)
+        draft = await (service.preview_replan(value) if previous else service.preview_plan(value))
+        return {**self.ready(draft, '核对跨章节备考安排，确认后保存',
+            changes={'previous': draft.get('previous'), 'proposed': draft['content']},
+            basis={'gradedEvents': sum(e['grade']['status'] == 'graded' for e in value['events']),
+                'conceptCount': len(value['graph']['concepts']), 'minutes': value['minutes'], 'examDate': value['examDate']}),
+            'planId': key}
+
     async def act(self, run, action, body):
         service, course = self.host.service(run['courseId']), run['courseId']
+        if action == 'diagnose':
+            require(run.get('interaction', {}).get('kind') == 'diagnosis' and body.get('confirmed') is True, 'CONFIRMATION_REQUIRED')
+            await service.diagnosis.correct({'courseId': course, **run['diagnosisTarget'],
+                'cause': body.get('cause'), 'reason': body.get('reason'), 'confirmedBy': self.host.p.user_id,
+                'operationId': run['id']+':diagnosis:'+str(run['revision'])})
+            return {**await self.practice({**run, 'diagnosisConfirmed': True}), 'diagnosisConfirmed': True}
+        if action == 'replan':
+            require(run['scenario'] == 'exam', 'INVALID_SCENARIO')
+            settings = body.get('settings', {})
+            require(isinstance(settings, dict) and not set(settings)-{'examDate', 'minutes', 'availability'}, 'INVALID_PLAN')
+            settings = {**run.get('studySettings', {}), **settings}
+            return {**await self.exam({**run, 'studySettings': settings}), 'studySettings': settings}
         if action == 'confirm':
             require(run['status'] == 'awaiting_confirmation' and body.get('confirmed') is True, 'CONFIRMATION_REQUIRED')
             draft = run.get('pendingDraft')
