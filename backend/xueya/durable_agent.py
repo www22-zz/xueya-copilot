@@ -21,6 +21,8 @@ class DurableAgent:
     def __init__(self, host):
         self.host, self.p, self.config = host, host.p, host.app.state.config
         self.agent = host.app.state.agent
+        from .agent_interactions import AgentInteractions
+        self.interactions = AgentInteractions(host)
         self.p.jobs.register('agent-step', self.execute)
 
     def get(self, course, key):
@@ -117,7 +119,11 @@ class DurableAgent:
                 if terminal and run['state'].get('phase') == 'deciding' and terminal['agent'].get('stopReason') in (
                         'AI_TIMEOUT', 'AI_INCOMPLETE', 'AI_UNAVAILABLE', 'AGENT_EXECUTION_FAILED'):
                     status = 'unknown'
-                update(status='paused' if run.get('pauseRequested') and not terminal else status,
+                fields = {}
+                if status == 'completed' and run['scenario'] != 'prepare':
+                    fields = await self.interactions.prepare({**run, 'result': terminal})
+                    status = fields.pop('status')
+                update(**fields, status='paused' if run.get('pauseRequested') and not terminal else status,
                     result=terminal, state={**run['state'], **(terminal['agent'] if terminal else {})}, owner=None)
                 if run['status'] == 'queued':
                     self.enqueue(run)
@@ -134,6 +140,12 @@ class DurableAgent:
         with self.p.db.transaction():
             run = self.get(course, key)
             require(body.get('revision') == run['revision'], 'RUN_CONFLICT')
+            if action in ('confirm', 'answer', 'refresh'):
+                require(self.agent.evidence_current(self.p.scope(course), run['context']['library'], run['snapshot']), 'STALE_EVIDENCE')
+                require(run['scenario'] != 'prepare' and run['status'] in ('awaiting_user', 'awaiting_confirmation'), 'RUN_NOT_RESUMABLE')
+                fields = await self.interactions.act(run, action, body)
+                run = self.save({**run, **fields}, run['revision'])
+                return self.public(run)
             if action == 'pause':
                 require(run['status'] in ('queued', 'running'), 'RUN_NOT_PAUSABLE')
                 run = self.save({**run, 'pauseRequested': True,
@@ -143,6 +155,7 @@ class DurableAgent:
                 run = self.save({**run, 'status': 'cancelled'}, run['revision'])
             elif action == 'resume':
                 require(run['status'] in ('paused', 'awaiting_user', 'unknown', 'failed'), 'RUN_NOT_RESUMABLE')
+                require(not run.get('interaction'), 'USE_LEARNING_INTERACTION')
                 require(run['status'] != 'unknown' or body.get('acknowledgeUnknown') is True, 'UNKNOWN_OUTCOME_CONFIRMATION_REQUIRED')
                 if run['status'] == 'awaiting_user':
                     require(isinstance(body.get('userInput'), str) and 0 < len(body['userInput']) <= 2000, 'USER_INPUT_REQUIRED')
