@@ -216,3 +216,5 @@ async with open_session(platform_registry(platform, trusted_scope)) as session:
 # G1/G2 增量接口
 
 新增工作台能力/任务投影与课程资料导入/阅读接口，旧 HTTP/SSE 保持。兼容定义、鉴权、字段、调用关联和操作流程见 [工作台与资料接线](contracts/workbench-library.md)。
+
+G5 复用同一学习主平台，新增分段媒体任务与有出处复习音频，旧媒体路由保留；见 [G5 媒体与音频契约](contracts/G5-media-audio.md)。

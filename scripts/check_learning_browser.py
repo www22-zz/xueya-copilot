@@ -95,8 +95,14 @@ class Browser:
     def wait(self, expression, timeout=20):
         deadline = time.monotonic()+timeout
         while time.monotonic() < deadline:
-            if self.evaluate(expression):
-                return
+            try:
+                if self.evaluate(expression):
+                    return
+            except AssertionError as error:
+                # CDP can briefly lose the old execution context during reload.
+                # Retry only this protocol transition, never application errors.
+                if '-32000' not in str(error) or not any(message in str(error) for message in ('Inspected target navigated or closed', 'Cannot find context', 'Execution context was destroyed')):
+                    raise
             time.sleep(.1)
         raise AssertionError('Browser condition timed out: '+expression+'\n'+str(self.evaluate('document.body.innerText.slice(-4500)')))
 
