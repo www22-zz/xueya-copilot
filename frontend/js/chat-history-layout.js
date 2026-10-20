@@ -3,7 +3,7 @@
   'use strict';
   window.XueyaHistoryLayout={create(){
     const key='xueya-history-width-v1',mobile=matchMedia('(max-width:760px)');
-    let preferred=null,drag=null,open=false;
+    let preferred=null,drag=null,open=false,resizeFocused=false;
     try{const saved=localStorage.getItem(key);if(saved!==null&&Number.isFinite(Number(saved)))preferred=Number(saved);}catch{}
     const active=()=>location.hash.replace(/^#/,'').split('/').slice(0,2).join('/')==='space/chat';
     const limits=()=>({min:180,max:Math.max(180,Math.min(innerWidth*.45,innerWidth-480))});
@@ -24,16 +24,19 @@
     function end(){if(!drag)return;drag=null;document.body.classList.remove('history-resizing');save();}
     function mount(){
       document.body.classList.toggle('history-layout',active());
-      if(!active()){end();open=false;}
+      if(!active()){end();open=false;resizeFocused=false;}
       apply();drawer(open,false);
+      // Agent updates can replace the chat DOM while the divider is in use.
+      if(active()&&!mobile.matches&&resizeFocused)document.querySelector('[data-history-resize]')?.focus({preventScroll:true});
     }
     document.addEventListener('pointerdown',event=>{
-      const handle=event.target.closest('[data-history-resize]');if(!handle||mobile.matches||event.button!==0)return;
+      const handle=event.target.closest('[data-history-resize]');if(!handle)resizeFocused=false;if(!handle||mobile.matches||event.button!==0)return;
       event.preventDefault();drag={id:event.pointerId,x:event.clientX,width:width()};document.body.classList.add('history-resizing');handle.focus({preventScroll:true});
       handle.setPointerCapture?.(event.pointerId);
     });
     window.addEventListener('pointermove',event=>{if(!drag||event.pointerId!==drag.id)return;preferred=Math.max(limits().min,Math.min(limits().max,drag.width+event.clientX-drag.x));apply();});
     window.addEventListener('pointerup',end);window.addEventListener('pointercancel',end);window.addEventListener('blur',end);
+    document.addEventListener('focusin',event=>{resizeFocused=!!event.target.closest('[data-history-resize]');});
     document.addEventListener('dblclick',event=>{if(event.target.closest('[data-history-resize]')){end();preferred=null;save();apply();}});
     document.addEventListener('click',event=>{
       if(event.target.closest('[data-history-open]'))drawer(true);

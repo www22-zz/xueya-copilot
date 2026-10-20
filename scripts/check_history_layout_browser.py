@@ -16,6 +16,7 @@ def main():
             try:
                 browser.call('Emulation.setDeviceMetricsOverride',width=1440,height=1000,deviceScaleFactor=1,mobile=False)
                 browser.call('Page.addScriptToEvaluateOnNewDocument',source='''if(!localStorage.getItem('history-test-seeded')){localStorage.setItem('history-test-seeded','1');const sessions=Array.from({length:45},(_,i)=>({id:'history-'+i,title:'第 '+(i+1)+' 次课程学习对话',messages:[{id:'message-'+i,role:'user',text:'学习问题 '+i}]}));localStorage.setItem('xueya-copilot-state-v2',JSON.stringify({sessionId:'history-0',sessions,messages:sessions[0].messages}));}''')
+                browser.call('Page.addScriptToEvaluateOnNewDocument',source='''Object.defineProperty(window,'XueyaWorkspace',{configurable:true,set(api){Object.defineProperty(window,'XueyaWorkspace',{value:api,writable:true,configurable:true});const create=api.createWorkspace;api.createWorkspace=ctx=>{window.historyTestRender=ctx.render;return create(ctx);};}});''')
                 browser.call('Page.navigate',url=base+'/#space/chat')
                 browser.wait('document.body.classList.contains("history-layout") && document.querySelectorAll(".session-item").length===45')
                 rect='(()=>{const r=document.querySelector("#chatHistoryPanel").getBoundingClientRect();return {left:r.left,top:r.top,width:r.width,height:r.height};})()'
@@ -35,6 +36,8 @@ def main():
                 browser.evaluate('document.querySelector("[data-history-resize]").focus()')
                 browser.call('Input.dispatchKeyEvent',type='keyDown',key='ArrowRight')
                 browser.wait('Math.abs(document.querySelector("#chatHistoryPanel").getBoundingClientRect().width-404)<2')
+                browser.evaluate('window.historyTestRender()')
+                browser.wait('document.activeElement.matches("[data-history-resize]")')
                 browser.call('Input.dispatchKeyEvent',type='keyDown',key='End')
                 assert browser.evaluate('document.querySelector("#chatHistoryPanel").getBoundingClientRect().width<=innerWidth*.45+1')
                 browser.call('Emulation.setDeviceMetricsOverride',width=900,height=900,deviceScaleFactor=1,mobile=False)
@@ -76,7 +79,7 @@ def main():
                 browser.screenshot(output/'mobile-chat.png')
                 assert not browser.errors,browser.errors
                 assert not app.state.platform.db.all('SELECT * FROM invocations')
-                (output/'report.json').write_text(json.dumps({'passed':True,'paidApiCalls':0,'checks':['20-percent-default','full-viewport-height','independent-history-scroll','pointer-drag','remembered-width-after-reload','keyboard-and-bounds','double-click-reset','search-and-switch','other-pages-unaffected','mobile-drawer-Escape-focus','mobile-selection-closes','light-dark-no-overflow']},indent=2),encoding='utf-8')
+                (output/'report.json').write_text(json.dumps({'passed':True,'paidApiCalls':0,'checks':['20-percent-default','full-viewport-height','independent-history-scroll','pointer-drag','remembered-width-after-reload','keyboard-and-bounds','divider-focus-after-chat-rerender','double-click-reset','search-and-switch','other-pages-unaffected','mobile-drawer-Escape-focus','mobile-selection-closes','light-dark-no-overflow']},indent=2),encoding='utf-8')
                 print('History browser passed: full-height 20% sidebar, drag/keyboard/persistence, search/switch and mobile light/dark drawer. No API calls.')
             except BaseException:
                 browser.screenshot(output/'failure.png');raise
