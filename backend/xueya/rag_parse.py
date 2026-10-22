@@ -99,7 +99,7 @@ def assemble(pages, kind, file_hash):
     canonical = "\n".join(text)
     require(len(canonical) <= MAX_TEXT, "PARSED_TEXT_TOO_LARGE")
     return {"ok": True, "kind": kind, "text": canonical, "pages": pages, "blocks": blocks,
-            "parserVersion": PARSER, "fileHash": file_hash, "textHash": hashlib.sha256(canonical.encode()).hexdigest(),
+            "parserVersion": PARSER + ("-pptx-context-v1" if kind == "pptx" else ""), "fileHash": file_hash, "textHash": hashlib.sha256(canonical.encode()).hexdigest(),
             "empty": not bool(canonical.strip()), "warnings": ["OCR_REQUIRED"] if any(p["needsOcr"] for p in pages) else []}
 
 
@@ -169,7 +169,20 @@ def office_pages(buffer, kind):
                                    "bbox": None, "method": "ooxml-slide-order", "confidence": None})
                     parts.append(part)
                     position += len(part)+1
-            pages.append({"number": len(pages)+1, "method": "ooxml-slide-order", "text": "\n".join(parts), "blocks": blocks})
+            # A slide often encodes one sentence as many separate text boxes or
+            # paragraphs. Preserve contiguous prose on this slide as one parent
+            # so retrieval does not return a lone word/number without its context.
+            # Tables remain atomic; canonical text, slide order and offsets stay exact.
+            merged = []
+            for block in blocks:
+                if merged and block['type'] == merged[-1]['type'] == 'paragraph':
+                    parent = merged[-1]
+                    parent['text'] += '\n' + block['text']
+                    parent['end'] = block['end']
+                else:
+                    merged.append(dict(block))
+            pages.append({"number": len(pages)+1, "method": "ooxml-slide-order", "text": "\n".join(parts), "blocks": merged,
+                          "hasImages": root.find('.//{http://schemas.openxmlformats.org/presentationml/2006/main}pic') is not None})
             require(len(pages) <= 3000, "DOCUMENT_TOO_MANY_PAGES")
         return pages
 
