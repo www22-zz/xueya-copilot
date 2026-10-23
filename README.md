@@ -41,6 +41,8 @@ macOS/Linux 对应命令使用 `.venv/bin/python`。环境变量沿用 `.env.exa
 
 未配置独立 OCR 服务时，PPT 空文本页可通过“处理 → 图片文字补录”导入已核对的视觉转写，先预览再明确采纳；保留实际页码、原件和历史。辅助转写不等同于产品自动识图 API，见 [图片核对与补录](docs/delivery/pptx-visual-review.md)。
 
+已有正文页也可逐图追加补录，装饰/界面截图/无法辨认内容只记录核查状态，不进入检索证据。首次 17 份数据结构课件已完成全量图片清点和本机补录，部分转写与未解决项见 [全批图片补录记录](docs/delivery/all-ppt-images.md)。
+
 G1/G2 工作台提供统一的课程学习主区、“更多”中的“服务设置”和“任务与用量”，以及资料页的文字/网页/文件/媒体导入、章节设置、原文与历史阅读、显式跨课程复用和真实媒体位置关联。旧浏览器记录保留在可展开区域。免费检查不调用模型，凭据仍由本机 `.env` 管理；网页抓取会拒绝内网或保留地址。操作与兼容接口见 [工作台与资料指南](docs/contracts/workbench-library.md)，交付证据见 [G1](docs/delivery/G1-workspace.md) 和 [G2](docs/delivery/G2-workspace.md)。
 
 G5 的录音分段、视频采样与复习音频收在“更多 → 章节学习 → 高级：模板加工与历史记录 → 录音与复习音频”，保留 #11 的主界面。见[使用说明](docs/G5-media-user-guide.md)与[整合记录](docs/delivery/G5-PR11-integration.md)；识别和合成须明确确认外部 API 调用。
