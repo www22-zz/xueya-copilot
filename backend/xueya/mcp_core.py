@@ -409,7 +409,7 @@ async def open_session(registry=None, *, context=None, stdio=False, stdio_params
         leaf = errors
         while isinstance(leaf, BaseExceptionGroup) and len(leaf.exceptions) == 1:
             leaf = leaf.exceptions[0]
-        if isinstance(leaf, (AppError, asyncio.CancelledError)):
+        if isinstance(leaf, (AppError, asyncio.CancelledError, GeneratorExit)):
             raise leaf from errors
         raise
     finally:

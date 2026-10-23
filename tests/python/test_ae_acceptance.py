@@ -54,7 +54,7 @@ def test_main_agent_general_greeting_and_course_refusal():
         async def stream(self, messages, **kwargs):
             self.calls += 1
             assert '通用问答' in messages[0]['content']
-            yield {'type': 'content', 'text': json.dumps({'answer': '巴黎。'}), 'model': 'controlled'}
+            yield {'type': 'content', 'text': '巴黎。', 'model': 'controlled'}
     provider = Provider()
     async def call(value):
         async with aclosing(Agent(provider).workflow(value)) as events:

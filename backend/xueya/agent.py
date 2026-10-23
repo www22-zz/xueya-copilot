@@ -4,6 +4,7 @@ import asyncio
 import json
 import re
 from contextlib import aclosing
+from copy import deepcopy
 from uuid import uuid4
 from . import learning as L
 from .common import AppError, require, utc_now, dumps, digest
@@ -26,7 +27,8 @@ def normalize_request(value):
     history = history if isinstance(history, list) else []
     history = [{"role": m["role"], "content": m["content"][:5000]} for m in history[-8:] if isinstance(m, dict) and m.get("role") in ("user", "assistant") and isinstance(m.get("content"), str)]
     mode = value.get("mode") if value.get("mode") in ("ask", "summarize", "quiz") else "ask"
-    return {"question": question, "mode": mode, "history": history, "sources": value.get("sources", [])}
+    return {"question": question, "mode": mode, "history": history, "sources": value.get("sources", []),
+            **({'previousAnswerKind': 'general'} if value.get('previousAnswerKind') == 'general' else {})}
 
 
 def prepare_sources(value):
@@ -141,11 +143,14 @@ class Agent:
 
         class Model:
             async def stream(self, value):
-                async with aclosing(provider.stream(value['messages'], scope=scope)) as events:
+                messages = [dict(message) for message in value['messages']]
+                messages[0]['content'] += '简单问题直接简短回答；用户要求详细说明时再展开。'
+                async with aclosing(provider.stream(messages, scope=scope, response_format=value.get('responseFormat'),
+                                                    thinking={'type': 'disabled'})) as events:
                     async for event in events:
                         yield event
 
-        async with aclosing(general_chat(Model(), request)) as events:
+        async with aclosing(general_chat(Model(), request, plain_text=True)) as events:
             async for event in events:
                 yield event
 
@@ -223,13 +228,16 @@ class Agent:
 
     async def _learning_stream(self, request, context, scope, stored):
         intent, trace = L.route_task(request["question"], request["mode"]), []
+        tool_calls = []
         study = intent in ("plan", "review")
         query = request["question"]
         if L.refers_previous(query) and not retrieve(query, context["library"]):
             anchor = next((m for m in reversed(request["history"]) if m["role"] == "user" and retrieve(m["content"], context["library"])), None)
             if anchor:
                 query = (anchor["content"][:3000]+"\n追问："+query)[:4000]
-        previous = context["previousSourceIds"] if L.refers_previous(request["question"]) else []
+        editing = bool(re.search(r'代码块|(?:改|换|替换|修改).{0,24}(?:字段|内容)|把.{0,30}改成', request['question']))
+        prior_code = any(m['role'] == 'assistant' and '```' in m['content'] for m in request['history'])
+        previous = context["previousSourceIds"] if L.refers_previous(request["question"]) or editing and prior_code else []
         actual = {s["id"]: s for s in context["library"]}
         greeting = conversation_reply(request['question'], request['mode'])
         use_general = intent == 'ask' and not previous and not requires_course_evidence(request['question'], request['mode'])
@@ -237,10 +245,20 @@ class Agent:
         def mark(stage, label, status="running"):
             event = {"stage": stage, "label": label, "status": status}
             trace.append(event)
-            return {"type": "workflow", **event}
+            return {"type": "workflow", **event, **({'toolCalls': deepcopy(tool_calls)} if tool_calls else {})}
+
+        def begin_tool(name, arguments=None):
+            tool_calls.append({'id': str(len(tool_calls)+1), 'tool': name,
+                               'arguments': arguments or {}, 'status': 'running'})
+            return mark('tool', '正在调用课程工具：'+name)
+
+        def tool_result(value):
+            text = dumps(value)
+            tool_calls[-1].update(status='completed', data=value if len(text.encode('utf-8')) <= 6000
+                                 else {'truncated': True, 'preview': text[:1500]})
 
         def finish(answer, sources=None, **extra):
-            return {"type": "done", "ok": True, "answer": answer, "sources": [s["id"] for s in sources or []], "knowledgePoints": [], "model": "local-learning-tools", "engine": "local-workflow", "workflow": {"intent": intent, "steps": trace}, **extra}
+            return {"type": "done", "ok": True, "answer": answer, "sources": [s["id"] for s in sources or []], "knowledgePoints": [], "model": "local-learning-tools", "engine": "local-workflow", "workflow": {"intent": intent, "steps": trace}, **({'toolCalls': deepcopy(tool_calls)} if tool_calls else {}), **extra}
         async def no_evidence():
             if not use_general:
                 yield finish(L.local_answer(request['question'], request['mode'], []))
@@ -250,11 +268,33 @@ class Agent:
                 async with aclosing(self.general(request, scope)) as events:
                     async for event in events:
                         yield {**event, 'workflow': {'intent': 'general', 'steps': trace}} if event['type'] == 'done' else event
-            except Exception:
-                yield mark('generate', '通用问答服务暂不可用，请检查 API 配置', 'degraded')
-                yield finish('通用问答服务暂时不可用，请检查 API 配置后重试。', engine='general-chat-unavailable')
+            except Exception as error:
+                code = getattr(error, 'code', None)
+                if code in ('AI_INVALID_RESPONSE', 'AI_INVALID_RESPONSE_FORMAT', 'AI_UNEXPECTED_TOOL_CALL'):
+                    message = '模型返回的回答格式不符合要求，未能完成回答，请重试。'
+                elif code == 'AI_EMPTY':
+                    message = '模型没有返回回答正文，请稍后重试。'
+                elif code in ('AI_TRUNCATED', 'AI_INCOMPLETE'):
+                    message = '模型返回的回答不完整，未能完成回答，请重试。'
+                elif getattr(self.model.config, 'api_key', None) == '':
+                    message = '尚未配置通用问答 API 密钥，请配置后重试。'
+                else:
+                    message = '通用问答服务暂时不可用，请稍后重试。'
+                yield mark('generate', message, 'degraded')
+                yield finish(message, engine='general-chat-unavailable')
         if greeting:
             yield finish(greeting)
+            return
+        # A follow-up edits the preceding conversation, not an unrelated passage
+        # that happens to share words such as "code" with the course library.
+        general_followup = use_general and intent == 'ask' and bool(request['history']) and (
+            request.get('previousAnswerKind') == 'general' and (L.refers_previous(request['question']) or editing)
+            or editing and prior_code)
+        if general_followup:
+            yield mark('route', '正在接着上一条回答继续', 'completed')
+            async with aclosing(no_evidence()) as events:
+                async for event in events:
+                    yield event
             return
         config = self.model.config
         learning_goal = study or bool(retrieve(query, context['library'])) or requires_course_evidence(request['question'], request['mode']) or bool(previous) or bool(re.search(r'学习|章节|错题|备考|复习|资料|这章|知识点', request['question']))
@@ -267,8 +307,9 @@ class Agent:
         yield mark("route", "正在整理你的学习情况" if study else "正在确定这次学习任务", "completed")
         if not study and not actual:
             yield mark("evidence", "当前没有可检索的课程原文", "completed")
-            async for event in no_evidence():
-                yield event
+            async with aclosing(no_evidence()) as events:
+                async for event in events:
+                    yield event
             return
         evidence, stats, plan = [], None, None
         try:
@@ -276,20 +317,31 @@ class Agent:
             registry = platform_registry(self.platform, scope, context=context, rag=self.rag, learning=self.learning) if stored else None
             if registry:
                 registry.allowed_tools = LEARNING_READ_TOOLS
-            async with open_session(registry, context=None if stored else context, stdio=not stored, timeout=getattr(self.model.config, "tool_timeout", 5), allowed_tools=LEARNING_READ_TOOLS) as session:
+            # Browser-only context uses the same scoped MCP tools in-process;
+            # starting a Python stdio server on every message adds cold-start latency.
+            async with open_session(registry, context=None if stored else context, timeout=getattr(self.model.config, "tool_timeout", 5), allowed_tools=LEARNING_READ_TOOLS) as session:
                 require(bool(session.definitions), "MCP_TOOL_MISSING")
                 yield mark("connect", "课程学习工具已就绪", "completed")
                 if study:
                     yield mark("analyze", "正在分析近期作答和薄弱知识点")
+                    yield begin_tool('analyze_progress')
                     stats = await session.call("analyze_progress")
+                    tool_result(stats)
                     yield mark("analyze", "已整理近期学习情况", "completed")
                     if intent == "plan":
                         yield mark("plan", "正在按考试日期和每日时长安排复习")
-                        plan = {"examDate": context["examDate"], "minutes": context["minutes"], "days": []} if context["examDate"] < context["baseDate"] else await session.call("build_review_plan")
+                        if context["examDate"] < context["baseDate"]:
+                            plan = {"examDate": context["examDate"], "minutes": context["minutes"], "days": []}
+                        else:
+                            yield begin_tool('build_review_plan')
+                            plan = await session.call('build_review_plan')
+                            tool_result(plan)
                         yield mark("plan", "复习计划预览已生成" if plan["days"] else "考试日期已过或暂无任务，请检查学习设置", "completed")
                 else:
                     yield mark("retrieve", "正在检索课程资料")
+                    yield begin_tool('search_materials', {'query': query, 'limit': 4})
                     found = await session.call("search_materials", {"query": query, "limit": 4})
+                    tool_result(found)
                     ids = list(dict.fromkeys(s["id"] for s in found.get("sources", [])))[:3]
                     require(all(i in actual for i in ids), "MCP_INVALID_RESULT")
                     ids = ids or previous
@@ -297,16 +349,22 @@ class Agent:
                         yield mark("context", "已结合上一轮问题与有效原文理解追问", "completed")
                     yield mark("retrieve", f"找到 {len(ids)} 个相关原文片段" if ids else "当前资料中没有找到足够依据", "completed")
                     if not ids:
-                        async for event in no_evidence():
-                            yield event
+                        async with aclosing(no_evidence()) as events:
+                            async for event in events:
+                                yield event
                         return
                     yield mark("read", "正在核对引用原文")
                     for source_id in ids:
-                        source = (await session.call("read_source", {"sourceId": source_id}))["source"]
+                        yield begin_tool('read_source', {'sourceId': source_id})
+                        value = await session.call("read_source", {"sourceId": source_id})
+                        source = value['source']
                         require(source["id"] == source_id and source["quote"] == actual[source_id]["quote"], "MCP_INVALID_RESULT")
+                        tool_result(value)
                         evidence.append(actual[source_id])
                     yield mark("read", "原文和引用位置已核对", "completed")
-        except Exception:
+        except Exception as error:
+            if tool_calls and tool_calls[-1]['status'] == 'running':
+                tool_calls[-1].update(status='failed', data={'error': getattr(error, 'code', 'TOOL_FAILED')})
             yield mark("tools", "课程工具暂不可用，已切换本地学习规则", "degraded")
             if study:
                 stats = L.progress(context["records"], context["questions"], context["baseDate"])
@@ -319,8 +377,9 @@ class Agent:
             yield finish(L.study_text(intent, stats, plan, context["baseDate"]), artifacts={"progress": stats, **({"plan": plan} if plan is not None else {})})
             return
         if not evidence:
-            async for event in no_evidence():
-                yield event
+            async with aclosing(no_evidence()) as events:
+                async for event in events:
+                    yield event
             return
         yield mark("generate", "正在依据原文整理回答")
         snapshot = self.evidence_snapshot(scope, evidence)
@@ -340,7 +399,7 @@ class Agent:
                 return
             yield mark("validate", "回答与来源检查完成" if result['engine'] != 'local-workflow' else "未核验的改写已退回实际原文", "completed" if result['engine'] != 'local-workflow' else 'degraded')
             yield verified_content(result)
-            yield {"type": "done", **result, "workflow": {"intent": intent, "steps": trace}}
+            yield {"type": "done", **result, "workflow": {"intent": intent, "steps": trace}, 'toolCalls': deepcopy(tool_calls)}
         except Exception:
             if stored and not self.evidence_current(scope, evidence, snapshot):
                 yield finish('资料已更新或移除，请重新选择有效资料后再提问。')

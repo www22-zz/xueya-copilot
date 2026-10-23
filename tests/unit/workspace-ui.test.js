@@ -8,6 +8,29 @@ const {createService,normalizeDocument}=require('../../frontend/js/services/work
 function storage(initial={}){const data=new Map(Object.entries(initial));return{getItem:key=>data.get(key)||null,setItem:(key,value)=>data.set(key,value),data};}
 function setup(initial={}){let counter=0;const disk=storage(initial),store=createStore({storage:disk,learning:L,id:()=>String(++counter)});return{disk,store};}
 
+test('ordinary conversation follow-up carries its kind through the browser request',async t=>{
+  const savedService=globalThis.XueyaWorkspaceService,savedCache=globalThis.XueyaFileCache;
+  t.after(()=>{globalThis.XueyaWorkspaceService=savedService;globalThis.XueyaFileCache=savedCache;});
+  globalThis.XueyaWorkspaceService={createService:()=>({capabilities:{}})};
+  globalThis.XueyaFileCache={createCache:()=>({})};
+  const {createWorkspace}=require('../../frontend/js/workspace-controller.js');
+  const {createChatService}=require('../../frontend/js/services/chat-service.js');
+  const state={messages:[{role:'user',text:'给我一个 JSON 示例'},{role:'ai',engine:'MiMo 通用问答',text:'```json\n{"name":"张三"}\n```',sources:[]}]};
+  const workspace=createWorkspace({state});
+  const input=workspace.historyFor('把代码块里的 name 改成小明');
+  assert.equal(input.previousAnswerKind,'general');
+  let sent;
+  const service=createChatService({fetchImpl:async(url,options)=>{
+    sent=JSON.parse(options.body);
+    return new Response('data: '+JSON.stringify({type:'done',ok:true,answer:'小明',sources:[],engine:'general-chat'})+'\n\n',{headers:{'Content-Type':'text/event-stream'}});
+  }});
+  await service.stream(input,{workflow:true});
+  assert.equal(sent.previousAnswerKind,'general');
+  assert.deepEqual(sent.history,input.history);
+  state.messages.push({role:'ai',engine:'MiMo 资料问答',text:'课程原文',sources:[{id:'source-1'}]});
+  assert.equal(workspace.historyFor('再解释一下').previousAnswerKind,undefined);
+});
+
 test('workspace migration retains full existing messages, records and original v2 content',()=>{
   const legacy={messages:Array.from({length:52},(_,i)=>({role:'user',text:'message '+i})),records:Array.from({length:450},(_,i)=>({questionId:'q1',correct:i%2===0})),documents:[{id:'private',name:'my course.md',chunks:[]}],cards:[{id:'card',title:'mine',text:'note'}]};
   const original=JSON.stringify(legacy),{store,disk}=setup({[LEGACY]:original});

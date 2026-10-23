@@ -48,9 +48,9 @@
   function saveCard(title,text,sources){if(state.cards.some(c=>c.text===text)){toast('这段重点已经在知识卡片里了。');return;}state.cards.unshift({id:crypto.randomUUID(),title:title.slice(0,80),text,sources,createdAt:new Date().toISOString()});if(persist())toast('理解，留下来了。已保存知识卡片。');}
   async function ask(question){
     const clean=question.trim()||(workspace.attachments.length?'请根据附件内容帮我解答。':'');if(!clean||state.pending||!workspace.canAsk())return;
-    const {history,previousSources}=workspace.historyFor(clean);
+    const {history,previousSources,previousAnswerKind}=workspace.historyFor(clean);
     const sources=state.selectedDocuments.length?allSources().filter(s=>state.selectedDocuments.includes(s.documentId)):allSources();
-    const request={courseId:state.courseId,question:clean,mode:state.mode,sources,history,previousSources,learning:{questions:[...courseQuestions(),...state.bank],records:state.records,examDate:state.examDate,minutes:state.minutes}};
+    const request={courseId:state.courseId,question:clean,mode:state.mode,sources,history,previousSources,previousAnswerKind,learning:{questions:[...courseQuestions(),...state.bank],records:state.records,examDate:state.examDate,minutes:state.minutes}};
     try{const scope=JSON.parse(localStorage.getItem('xueya-c-learning:'+state.courseId+':scope:'+state.sessionId));if(Array.isArray(scope))request.documentIds=scope;else if(state.selectedDocuments.length)request.documentIds=[...state.selectedDocuments];}catch{}
     const ai={id:crypto.randomUUID(),role:'ai',text:'',reasoning:'',sources:[],engine:'正在回答',title:clean,createdAt:new Date().toISOString()};
     const controller=new AbortController();activeChat=controller;
@@ -61,19 +61,23 @@
       const result=await stream(request,{workflow:true,signal:controller.signal,onUpdate(update){
         if(typeof update.answer==='string')ai.text=update.answer;
         if(typeof update.reasoning==='string')ai.reasoning=update.reasoning;
-        if(update.progress)ai.progress=update.progress;
+        if(update.agent){ai.agent=update.agent;ai.toolCalls=window.XueyaMCPTrace.collect(ai.toolCalls,update.agent);}
+        if(update.toolCalls)ai.toolCalls=update.toolCalls;
+        if(update.runId)ai.runId=update.runId;
+        if(update.agent||update.toolCalls)persist();
         if(state.view==='chat'){
           const body=$$('#chatThread .ai-message .message-body').at(-1);
           const paragraph=body?.querySelector('p');
-          if(paragraph)paragraph.textContent=ai.text;
-          const status=body?.querySelector('.message-meta span');
-          if(status&&ai.progress)status.textContent=ai.progress;
+          if(paragraph)paragraph.textContent=ai.text||'正在思考中';
 
         }
       }});
       controller.signal.throwIfAborted();
       if(result.transcript)userMessage.transcript=result.transcript;
       Object.assign(ai,{text:result.answer,reasoning:result.reasoning||'',sources:result.sources,engine:result.engine,...(result.agent?{agent:result.agent}:{}),...(result.workflow?{workflow:result.workflow}:{}),...(result.artifacts?{artifacts:result.artifacts}:{})});
+      if(result.agent)ai.toolCalls=window.XueyaMCPTrace.collect(ai.toolCalls,result.agent);
+      if(result.toolCalls)ai.toolCalls=result.toolCalls;
+      if(result.runId)ai.runId=result.runId;
       $('#engineStatus').textContent=result.online?'MiMo 在线':result.workflow?'本地学习模式':'本地检索模式';
       $('#engineStatus').classList.toggle('online',result.online);
     }catch(error){

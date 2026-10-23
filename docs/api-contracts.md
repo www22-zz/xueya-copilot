@@ -210,7 +210,7 @@ async with open_session(platform_registry(platform, trusted_scope)) as session:
     result = await session.call("search_materials", {"query": "课程问题", "limit": 4})
 ```
 
-未启用持久数据时使用官方SDK真实stdio四工具；启用后工具读取SQLite中可信宿主选择的课程。模型不能覆盖userId/courseId。宿主确认路由不注册为工具。公共平台HTTP接口与错误/CAS/迁移语义见[平台指南](platform-guide.md)及[统一契约](contracts/phase1.md)。
+未启用持久数据时，聊天工作流使用官方 SDK 同进程会话调用四个课程工具，独立 stdio 入口仍可使用；启用后工具读取 SQLite 中可信宿主选择的课程。模型不能覆盖 userId/courseId。宿主确认路由不注册为工具。公共平台 HTTP 接口与错误/CAS/迁移语义见[平台指南](platform-guide.md)及[统一契约](contracts/phase1.md)。
 
 模块装配统一在`backend/xueya/app.py`、`platform.py`；不再保留Node后端或Python到Node桥接。客户端JSON字段仍为camelCase，Python内部方法使用snake_case，不要求前端随语言迁移改名。
 # G1/G2 增量接口
@@ -226,6 +226,14 @@ G5 复用同一学习主平台，新增分段媒体任务与有出处复习音�
 ### Agent P0 可信执行（2026-10-20）
 
 原路径、基础字段和 SSE 类型保持。资料问答的正文在逐条证据核验后以 `content/done` 发布，核验期间仍发送 `workflow` 进度；通用问答继续流式。未审核改写退回原文，额外返回 `verification/reason`；生成期间资料修订会阻止发布失效来源。
+
+主服务通用聊天直接接收模型回答正文，不向上游强制 JSON 格式；宿主将每个正文增量做 JSON 字符串转义，继续以既有 `content` JSON 增量和最终 `done.answer` 发布。因此普通文字、Markdown 和用户要求的代码/JSON 示例不会因为不是 `{"answer":...}` 而丢弃。结构化课程任务和旧兼容调用仍执行原有格式/证据校验。工作流失败沿用 `general-chat-unavailable`、降级 `workflow` 和最终 `done`：空正文提示没有返回回答，截断/缺失结束帧提示回答不完整；仅确认本机未配置密钥时提示配置密钥，其他服务故障提示稍后重试。不透出上游原始错误或自动重试付费请求。
+
+主服务通用聊天请求显式设置 `thinking: {type: "disabled"}`，并引导简单问题简短作答以减少等待；仍调用同一外部模型并由宿主保证 JSON 接口、流式事件和调用账本。课程资料问答及学习规划不自动套用此设置，继续使用原有推理模式。该优化不承诺固定响应时间，网络和服务端排队仍影响延迟。
+
+聊天工作流的浏览器上下文通过同进程 MCP 会话调用原有课程工具，不再逐条消息启动 stdio 子进程；独立 stdio MCP 入口仍保留。工具参数校验、只读白名单、预算及课程隔离不变。主模型 HTTP 连接池随应用启动和关闭，逐请求超时仍独立生效，SSE 在 `[DONE]` 后消费 HTTP 收尾以允许安全复用连接，不再转发收尾后的内容，不自动重发失败请求。
+
+聊天请求可选 `previousAnswerKind: "general"`：浏览器仅在所选历史范围的上一条助手回答为通用问答时提供此提示，契约层只保留该枚举值。`ask` 模式的指代/编辑追问可据此继续通用聊天；旧会话中针对已存在代码块的编辑也可直接续答。此提示不能绕过明确的课程依据要求或有效的上轮课程引用，不能改变用户、课程或权限。它不对其他新话题强制通用路由，也不会新增模型意图判定调用。
 
 主模型调用增加输出上限与结束状态检查；原 `error` 字段可返回 `AI_TRUNCATED`、`AI_INCOMPLETE`、`AI_UNEXPECTED_TOOL_CALL`、`STALE_EVIDENCE`、`AI_RUN_TIMEOUT`、`AI_MODEL_BUDGET_EXCEEDED`、`AI_TOOL_BUDGET_EXCEEDED`、`AI_OUTPUT_BUDGET_EXCEEDED`、`AI_COST_BUDGET_EXCEEDED`、`AI_PRICING_REQUIRED`。工作流可继续采用已存在的原文/规则回退，但不发布被拒绝的模型正文，也不额外重试收费请求。
 
@@ -252,3 +260,10 @@ P3–P5 增量：创建可带 `sourceIds`（1–48 个当前服务器来源 id�
 
 新增状态 awaiting_confirmation/paused/unknown 与既有 awaiting_user/partial/completed；响应包装仍为 `{ok:true,result}`。确认期间资料失效返回 STALE_EVIDENCE，学习状态变化返回 LEARNING_STATE_CHANGED，修订号不匹配返回 RUN_CONFLICT（409）。开关停用返回 AGENT_DISABLED / AGENT_INTERACTIVE_DISABLED。
 
+
+
+### 网页 MCP 调用记录（2026-10-23）
+
+保留原 HTTP 基础字段和 SSE 事件类型。动态流程的 `agent.decisions` 在 `call_tool` 时增量携带 `arguments`；工具观察增量携带 `round`，与决策轮次关联。UI/检查点保留所有有界观察，后续模型上下文仍只使用最近 8 条。
+
+四工具固定流程的 `workflow`/`done` 可增量返回 `toolCalls`：`[{id,tool,arguments,status,data?}]`，运行中为 `running`，成功为 `completed`，失败为 `failed`。不新增固定流程的 `agent` 字段。浏览器保存记录供诊断，默认聊天界面只显示等待提示、正文和引用，不渲染工具明细或执行步骤。取消或断流时不得把没有返回的工具标为成功；诊断渲染器对参数与结果转义、限制长度并隐藏敏感键。

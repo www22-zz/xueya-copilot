@@ -31,7 +31,7 @@ class ReadOnlyWorkflow:
         def state(status='running', reason=None):
             return {'status': status, 'planRevision': len(revisions), 'plan': clone(plan),
                     'planHistory': clone(revisions), 'completedStepIds': sorted(completed),
-                    'observations': clone(observations[-8:]), 'decisions': clone(decisions),
+                    'observations': clone(observations), 'decisions': clone(decisions),
                     'decisionCount': rounds, 'replans': replans, 'stopReason': reason,
                     'scope': 'durable-run' if checkpoint else 'read-only-request', 'persistedResume': bool(checkpoint),
                     'noProgress': no_progress}
@@ -64,7 +64,7 @@ class ReadOnlyWorkflow:
                     'history': [{**m, 'content': m['content'][:2000]} for m in request['history'][-4:]]},
                     'context': {k: context[k] for k in ('baseDate', 'examDate', 'minutes', 'previousSourceIds', 'settingsProvided') if k in context},
                     'sources': [{k: s.get(k) for k in ('id', 'title', 'location')} for s in context['library']],
-                    'tools': catalogue, 'state': state(), 'hostRequirements': sorted(evaluator.required),
+                    'tools': catalogue, 'state': {**state(), 'observations': clone(observations[-8:])}, 'hostRequirements': sorted(evaluator.required),
                     'limits': {'remainingRounds': self.max_rounds-rounds, 'remainingReplans': self.max_replans-replans}}, signal)
                 check_cancel(signal)
                 await self.tools.current()
@@ -76,7 +76,7 @@ class ReadOnlyWorkflow:
                     yield event('plan', '学习计划：'+' → '.join(s['title'] for s in plan['steps']), 'completed')
                 else:
                     require('plan' not in decision, 'AGENT_PLAN_CHANGE_REQUIRES_REVISION')
-                decisions.append({k: clone(action[k]) for k in ('type', 'stepId', 'tool') if k in action} | {'round': rounds})
+                decisions.append({k: clone(action[k]) for k in ('type', 'stepId', 'tool', 'arguments') if k in action} | {'round': rounds})
                 if action['type'] == 'revise_plan':
                     require(replans < self.max_replans, 'AGENT_REPLAN_LIMIT')
                     plan = validate_plan(action['plan'], plan, completed)
@@ -119,7 +119,7 @@ class ReadOnlyWorkflow:
                         if code in FATAL_CODES or not hasattr(error, 'code'):
                             raise
                         result = {'status': 'failed', 'data': {'error': code}, 'newInformation': False}
-                    observations.append({'stepId': step_id, 'tool': action['tool'], 'arguments': clone(action['arguments']), **result})
+                    observations.append({'stepId': step_id, 'round': rounds, 'tool': action['tool'], 'arguments': clone(action['arguments']), **result})
                     if result['status'] == 'completed':
                         completed.add(step_id)
                     no_progress = 0 if result['newInformation'] else no_progress+1

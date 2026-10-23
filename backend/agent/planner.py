@@ -27,6 +27,7 @@ DECISION_SCHEMA = obj({'plan': PLAN_SCHEMA, 'action': ACTION_SCHEMA}, ['action']
 
 SYSTEM = '''你是学涯只读学习Agent的规划器。协议：xueya.readonly-agent.v1。
 根据用户目标制定计划，然后每轮根据真实观察自主选择下一步。仅输出符合decisionSchema的JSON。
+每轮输出的顶层都必须是decision对象，动作必须放在action字段中；结束时也不能直接输出顶层type/stepId。
 首次必须提供plan及action；后续只能通过revise_plan修改计划。计划步骤最多8项，只写准备/查询/分析/讲解等本轮能完成的步骤。
 只有工具实际执行成功才算完成步骤；不能伪造作答、掌握度、工具结果或采纳记录。已完成步骤不得删除或改写，完成条件不得降低。
 可以先检索，再根据结果改写检索词、读取原文、查看错题/图谱/进度或生成只读计划预览。不要重复相同调用。
@@ -34,6 +35,7 @@ SYSTEM = '''你是学涯只读学习Agent的规划器。协议：xueya.readonly-
 只能选择tools中列出的只读工具。不能设置用户/课程身份、调用写入/确认/外部任意工具，也不能索要密钥、密码或令牌。
 缺少资料、实际作答或关键条件时ask_user；不要声称用户已理解、已练习、已保存。finish仅表示本轮只读准备完成。
 finish.answer沿用answer/sources/claims/knowledgePoints结构，课程结论必须有read_source所得的逐字引用；改写未经审核会退回原文。
+结束格式示例：{"action":{"type":"finish","stepId":"计划中实际的结束步骤ID","completion":"completed","answer":{"answer":"已读取的逐字原文","sources":["实际来源ID"],"knowledgePoints":[]}}}。示例占位文本必须替换为真实计划及read_source观察；sources仅为ID字符串数组，不放来源对象，不用summary替代answer，不自报掌握度。
 统计和计划只以真实工具结果为准，不在answer中自报成绩或执行结果。无需输出思维链。'''
 
 
@@ -49,6 +51,12 @@ class Planner:
         content = response.get('content')
         require(isinstance(content, str) and len(content.encode('utf-8')) <= 48000, 'AGENT_INVALID_DECISION')
         value = parse_model_json(content)
+        # Some providers emit the finish action without its decision envelope.
+        # Only restore that envelope after planning; keep every field for strict
+        # validation and leave answer evidence/completion checks to the host.
+        if (isinstance(value, dict) and value.get('type') == 'finish' and 'action' not in value
+                and state.get('state', {}).get('plan') is not None):
+            value = {'action': value}
         require(Draft202012Validator(DECISION_SCHEMA).is_valid(value), 'AGENT_INVALID_DECISION')
         return clone(value)
 

@@ -32,7 +32,7 @@ def main():
                 browser.call('Input.dispatchMouseEvent',type='mouseReleased',button='left',clickCount=1,x=point['x']+100,y=point['y'])
                 browser.wait('Math.abs(document.querySelector("#chatHistoryPanel").getBoundingClientRect().width-388)<2')
                 browser.screenshot(output/'desktop-resized.png')
-                browser.reload();browser.wait('Math.abs(document.querySelector("#chatHistoryPanel").getBoundingClientRect().width-388)<2')
+                browser.reload();browser.wait('Math.abs(document.querySelector("#chatHistoryPanel")?.getBoundingClientRect().width-388)<2')
                 browser.evaluate('document.querySelector("[data-history-resize]").focus()')
                 browser.call('Input.dispatchKeyEvent',type='keyDown',key='ArrowRight')
                 browser.wait('Math.abs(document.querySelector("#chatHistoryPanel").getBoundingClientRect().width-404)<2')

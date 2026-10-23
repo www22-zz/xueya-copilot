@@ -53,6 +53,7 @@
         const catalog=workflow?[...hits,...context.library]:hits;
         const timeoutSignal=AbortSignal.timeout(streamTimeoutMs);
         const requestSignal=signal?AbortSignal.any([signal,timeoutSignal]):timeoutSignal;
+        let agent,runId,toolCalls;
         try{
           if(protocol==='file:')throw new Error('LOCAL_PREVIEW');
           const response=await fetchImpl(workflow?'/api/agent/stream':'/api/ai/stream',{
@@ -66,11 +67,14 @@
             try{event=JSON.parse(data);}catch{throw new Error('AI_INVALID_RESPONSE');}
             if(event.type==='error')throw new Error(event.error||'AI_UNAVAILABLE');
             if(event.type==='workflow'){
-              onUpdate({progress:typeof event.label==='string'?event.label:''});
+              if(event.agent)agent=event.agent;
+              if(event.toolCalls)toolCalls=event.toolCalls;
+              if(event.runId)runId=event.runId;
+              onUpdate({progress:typeof event.label==='string'?event.label:'',...(event.agent?{agent:event.agent}:{}),...(event.toolCalls?{toolCalls:event.toolCalls}:{}),...(runId?{runId}:{})});
               continue;
             }
             if(event.type==='done'){
-              completed={...success(event,catalog),reasoning:event.engine==='local-workflow'?'':reasoning};
+              completed={...success(event,catalog),reasoning:event.engine==='local-workflow'?'':reasoning,...(event.toolCalls?{toolCalls:event.toolCalls}:{}),...(event.runId?{runId:event.runId}:{})};
               break;
             }
             if(event.type==='content'&&typeof event.text==='string')content+=event.text;
@@ -86,7 +90,7 @@
           return completed;
         }catch(error){
           if(signal?.aborted)throw signal.reason;
-          return fallback(request,hits,context);
+          return {...fallback(request,hits,context),...(agent?{agent:{...agent,status:'partial',stopReason:error.message||'AI_INCOMPLETE_STREAM'}}:{}),...(toolCalls?{toolCalls:toolCalls.map(c=>c.status==='running'?{...c,status:'interrupted',data:{error:error.message||'AI_INCOMPLETE_STREAM'}}:c)}:{}),...(runId?{runId}:{})};
         }
       }
     };

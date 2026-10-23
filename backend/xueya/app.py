@@ -4,7 +4,7 @@ import asyncio
 import json
 import re
 import secrets
-from contextlib import asynccontextmanager, aclosing
+from contextlib import asynccontextmanager, aclosing, AsyncExitStack
 from urllib.parse import quote
 from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse, Response, StreamingResponse
@@ -20,6 +20,16 @@ from .provider import MimoProvider
 from .execution_budget import BudgetMiddleware
 
 PUBLIC_SHARED = frozenset("/shared/learning.js /shared/contracts/index.js /shared/fixtures/course.js /shared/rag/index.js /shared/agent/local-answer.js /shared/agent/sse.js /shared/agent/context.js /shared/agent/tasks.js".split())
+
+
+class ClosingStreamingResponse(StreamingResponse):
+    """Close task-scoped MCP generators before the HTTP stream task exits."""
+
+    async def stream_response(self, send):
+        try:
+            await super().stream_response(send)
+        finally:
+            await self.body_iterator.aclose()
 
 
 def success(**value):
@@ -95,11 +105,14 @@ def create_app(config: Config | None = None, *, provider=None, start_jobs=True):
         app.state.token = secrets.token_hex(32)
         if platform and start_jobs:
             platform.jobs.start()
-        try:
-            yield
-        finally:
-            if platform:
-                await platform.close()
+        async with AsyncExitStack() as resources:
+            try:
+                if isinstance(app.state.provider, MimoProvider):
+                    await resources.enter_async_context(app.state.provider.connection_pool())
+                yield
+            finally:
+                if platform:
+                    await platform.close()
     app = FastAPI(title="学涯 Copilot API", version="2.0.0", lifespan=lifespan, docs_url=None, redoc_url=None)
     app.add_middleware(BudgetMiddleware, config=config)
     app.state.config = config
@@ -186,7 +199,7 @@ def create_app(config: Config | None = None, *, provider=None, start_jobs=True):
                 except Exception as error:
                     code = ai_error_code(error, ('NO_SOURCES', 'EMPTY_QUESTION', 'AI_INVALID_RESPONSE'))
                     yield "data: "+dumps({"type": "error", "error": code})+"\n\n"
-            return StreamingResponse(events(), media_type="text/event-stream", headers={"Cache-Control": "no-store", "X-Accel-Buffering": "no"})
+            return ClosingStreamingResponse(events(), media_type="text/event-stream", headers={"Cache-Control": "no-store", "X-Accel-Buffering": "no"})
 
         async def run():
             async with aclosing(iterator):
