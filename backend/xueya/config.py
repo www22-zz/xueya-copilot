@@ -16,6 +16,7 @@ class Config:
     model: str = "mimo-v2.6-flash"
     api_slots: int = 2
     platform_enabled: bool = True
+    auto_import_demo: bool = False
     tool_timeout: float = 5.0
     max_output_tokens: int = 4096
     run_model_calls: int = 10
@@ -37,6 +38,7 @@ class Config:
     def __post_init__(self):
         from .common import require
         from .execution_budget import decimal_setting
+        require(type(self.auto_import_demo) is bool, 'INVALID_DEMO_IMPORT_CONFIG')
         for value in (self.max_output_tokens, self.run_model_calls, self.run_tool_calls, self.run_output_tokens):
             require(type(value) is int and value > 0, 'AI_INVALID_BUDGET_CONFIG')
         import math
@@ -68,6 +70,7 @@ def load_config() -> Config:
                   base_url=env.get("MIMO_BASE_URL", Config.base_url), model=env.get("MIMO_MODEL", Config.model),
                   api_slots=max(1, min(8, int(env.get("API_MAX_CONCURRENT", 2)))),
                   platform_enabled=env.get("XUEYA_PLATFORM_ENABLED", "1") != "0",
+                  auto_import_demo=env.get('XUEYA_AUTO_IMPORT_DEMO', '1') == '1',
                   tool_timeout=max(.05, min(60, float(env.get("MCP_TOOL_TIMEOUT_MS", 5000))/1000)),
                   max_output_tokens=int(env.get('AI_MAX_OUTPUT_TOKENS', 4096)),
                   run_model_calls=int(env.get('AI_RUN_MAX_MODEL_CALLS', 10)),

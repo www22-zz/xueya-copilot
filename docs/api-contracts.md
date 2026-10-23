@@ -262,6 +262,14 @@ P3–P5 增量：创建可带 `sourceIds`（1–48 个当前服务器来源 id�
 
 
 
+### 首次启动演示课件（2026-10-24）
+
+生产主服务默认启用 `XUEYA_AUTO_IMPORT_DEMO=1`。仅无任何文档历史的新数据目录向 `course-default` 后台准备仓库演示资料，不调用外部 API。复用原 SQLite artifact、FileStore 和 CPU JobQueue；已有文档、归档/删除历史及完成标记阻止重复初始化。
+
+既有 `GET /api/platform/knowledge/catalog?courseId=course-default` 在已启动自动准备时增量返回可选 `demoImport`，包含 `{status,completed,total,currentFile,error,courseId,bundleHash?}`。status 为 preparing/running/completed/interrupted/failed。运行中页面轮询现有 catalog，完成后停止；原 documents/summary/capabilities 字段保持。
+
+`POST /api/platform/knowledge/demo-retry` 接受 `{courseId:"course-default",confirmed:true}`，沿用主服务身份和 token 检查，只能重试已经存在的 failed/interrupted 自动准备；关闭自动准备或非默认课程不可强制初始化。重复点击运行中的任务返回当前状态，不新增协调任务。失败码仅在状态/日志中供诊断，界面显示可理解的资料修复提示。
+
 ### 网页 MCP 调用记录（2026-10-23）
 
 保留原 HTTP 基础字段和 SSE 事件类型。动态流程的 `agent.decisions` 在 `call_tool` 时增量携带 `arguments`；工具观察增量携带 `round`，与决策轮次关联。UI/检查点保留所有有界观察，后续模型上下文仍只使用最近 8 条。

@@ -3,3 +3,4 @@
 @media(max-width:600px){.kb-overview{flex-direction:column;align-items:stretch;gap:20px}.kb-stats{gap:12px}.kb-stats strong{font-size:23px}.kb-import{grid-template-columns:1fr}.kb-import input[type=file]{grid-column:auto}.kb-document{gap:10px}.kb-row-actions{max-width:104px}.kb-row-actions .button{font-size:11px;padding:7px 9px}.kb-filters{grid-template-columns:1fr}.kb-dialog{width:calc(100% - 20px)}#knowledgeWorkspace .view-heading{gap:12px;flex-wrap:wrap}}
 .kb-search-jump{display:none}#kbSearchHeading{scroll-margin-top:90px}
 @media(max-width:1050px){.kb-search-jump{display:inline-flex}}
+.kb-demo-import{padding:14px 18px;margin-block:12px;border:1px solid var(--line,#dce5f0);border-radius:12px;background:var(--wash,#f4f7fc);color:var(--ink,#263657);overflow-wrap:anywhere}.kb-demo-import p{margin:6px 0;font-size:13px}.kb-demo-import progress{width:100%;height:10px;accent-color:var(--blue,#486bdd)}.kb-demo-import[data-demo-status=failed]{border-color:#b96b43}
