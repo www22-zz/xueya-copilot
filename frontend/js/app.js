@@ -20,6 +20,7 @@
   let toastTimer;function toast(text){$('#toast').textContent=text;$('#toast').classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('#toast').classList.remove('show'),3500);}
   const workspace=window.XueyaWorkspace.createWorkspace({state,L:viewLearning,store,e,icon,persist,toast,render,sourceById,allSources,libraryService:window.XueyaLibrary});
   const {titles,renders,documentRows,cardRows,currentQuestions}=workspace.enhance(window.XueyaViews.createViews({state,L:viewLearning,e,icon,sourceById}));
+  titles.knowledge='知识库';renders.knowledge=()=>'';
   const chatService=window.XueyaChat.createChatService();
   const experience=window.XueyaExperience?.create({state});
   let activeChat;
@@ -30,12 +31,14 @@
   const workbench=window.XueyaPlatform?.available?window.XueyaWorkbench?.create({state,store,toast}):null;
   const notesUI=window.XueyaPlatform?.available?window.XueyaNotes?.create({state,toast}):null;
   const libraryUI=window.XueyaPlatform?.available?window.XueyaLibraryWorkspace?.create({state,store,toast}):null;
+  const knowledgeUI=window.XueyaKnowledgeBase?.create({state,store,toast,render});
+  const knowledgeLink=document.createElement('a');knowledgeLink.href='#space/knowledge';knowledgeLink.dataset.view='knowledge';knowledgeLink.textContent='知识库';document.querySelector('[data-view="library"]').after(knowledgeLink);
   const mediaUI=window.XueyaPlatform?.available?window.XueyaMediaWorkspace?.create({state,store,toast}):null;
   const {addQuestions,openBankDialog,generateBank,renderBankTopics,updateBankCount,generateFromTopics}=practiceUI;
   function render(){
     const prior=$('#chatThread'),sameSession=prior?.dataset.sessionId===state.sessionId,scrollTop=prior?.scrollTop||0,nearBottom=!prior||prior.scrollHeight-prior.scrollTop-prior.clientHeight<90;
     const pool=currentQuestions();if(state.quizIndex>=pool.length)state.quizIndex=0;
-    workspace.beforeRender();$('#spaceContent').innerHTML=renders[state.view]();$('#documentCount').textContent=state.documents.filter(d=>!d.superseded).length;icons();workspace.afterRender();workbench?.prepare();libraryUI?.mount();learningUI?.mount();notesUI?.mount();workbench?.mount();experience?.mount();mediaUI?.mount();historyLayout?.mount();
+    workspace.beforeRender();$('#spaceContent').innerHTML=renders[state.view]();$('#documentCount').textContent=state.documents.filter(d=>!d.superseded).length;icons();workspace.afterRender();workbench?.prepare();libraryUI?.mount();learningUI?.mount();notesUI?.mount();workbench?.mount();experience?.mount();mediaUI?.mount();historyLayout?.mount();knowledgeUI?.mount();
     const thread=$('#chatThread');if(thread)thread.scrollTop=!sameSession||nearBottom?thread.scrollHeight:scrollTop;
     agentRuns?.refresh();
   }

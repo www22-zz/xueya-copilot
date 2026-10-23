@@ -341,6 +341,8 @@ def create_app(config: Config | None = None, *, provider=None, start_jobs=True):
         install_workbench(app)
         from .library_http import install_library
         install_library(app)
+        from .knowledge_base import install_knowledge_base
+        install_knowledge_base(app)
         from .chat_attachments import install_chat_attachments
         install_chat_attachments(app)
         from .account import install_account

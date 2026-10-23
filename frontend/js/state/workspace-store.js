@@ -60,10 +60,15 @@ function createStore({storage,learning:L,id=()=>globalThis.crypto.randomUUID(),n
     if(state.pending||!String(name).trim())return null;
     const course={id:'course-'+id(),name:String(name).trim().slice(0,60),archived:false,data:normalize()};courses.push(course);switchCourse(course.id);return course;
   }
+  function adoptCourse(course){
+    if(!course||typeof course.id!=='string'||typeof course.name!=='string'||course.archived)return false;
+    if(courses.some(c=>c.id===course.id))return true;
+    courses.push({id:course.id,name:course.name,archived:false,data:normalize()});return persist();
+  }
   function newSession(){if(state.pending)return false;sync();const session={id:id(),title:'新的对话',messages:[],scopeDocumentIds:[],createdAt:now()};state.sessions.unshift(session);state.sessionId=session.id;state.messages=[];state.selectedDocuments=[];state.draft='';state.followupIndex=null;persist();return session;}
   function selectSession(sessionId){if(state.pending)return false;const session=state.sessions.find(s=>s.id===sessionId);if(!session)return false;sync();state.sessionId=sessionId;state.messages=clone(session.messages);state.selectedDocuments=[...(session.scopeDocumentIds||[])];state.draft='';state.followupIndex=null;persist();return true;}
   function archive(courseId){const course=courses.find(c=>c.id===courseId);if(!course||state.pending||courses.filter(c=>!c.archived).length<2)return false;if(activeId===courseId)switchCourse(courses.find(c=>!c.archived&&c.id!==courseId).id);course.archived=true;persist();return true;}
-  return{state,persist,newSession,selectSession,switchCourse,addCourse,archive,get courses(){return courses;},get error(){return error;},exportData(){sync();return JSON.stringify({version:3,exportedAt:now(),activeId,courses},null,2);},restoreCourse(courseId){const course=courses.find(c=>c.id===courseId);if(!course)return false;course.archived=false;return persist();}};
+  return{state,persist,newSession,selectSession,switchCourse,addCourse,adoptCourse,archive,get courses(){return courses;},get error(){return error;},exportData(){sync();return JSON.stringify({version:3,exportedAt:now(),activeId,courses},null,2);},restoreCourse(courseId){const course=courses.find(c=>c.id===courseId);if(!course)return false;course.archived=false;return persist();}};
 }
 return{createStore,KEY,LEGACY};
 });
