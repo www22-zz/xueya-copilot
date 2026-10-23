@@ -8,15 +8,20 @@ from test_knowledge_base import wait, catalog
 PNG = base64.b64decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jXioAAAAASUVORK5CYII=')
 
 
-def slides():
+def slides(with_text_images=False):
     out = io.BytesIO()
     with zipfile.ZipFile(out, 'w') as z:
         z.writestr('ppt/presentation.xml', '<p:presentation xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><p:sldId r:id="r1"/><p:sldId r:id="r2"/><p:sldId r:id="r3"/></p:presentation>')
         z.writestr('ppt/_rels/presentation.xml.rels', '<Relationships>'+''.join(f'<Relationship Id="r{i}" Target="slides/slide{i}.xml"/>' for i in (1,2,3))+'</Relationships>')
         for i, body in [(1, '<p:pic><a:blip r:embed="img1"/></p:pic>'), (2, ''), (3, '<p:sp><a:p><a:t>原有正文：栈后进先出。</a:t></a:p></p:sp>')]:
+            if i == 3 and with_text_images:
+                body += '<p:pic><a:blip r:embed="img1"/><a:blip r:embed="img2"/></p:pic>'
             z.writestr(f'ppt/slides/slide{i}.xml', f'<p:sld xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><p:spTree>{body}</p:spTree></p:sld>')
         z.writestr('ppt/slides/_rels/slide1.xml.rels', '<Relationships><Relationship Id="img1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/image1.png"/></Relationships>')
         z.writestr('ppt/media/image1.png', PNG)
+        if with_text_images:
+            z.writestr('ppt/slides/_rels/slide3.xml.rels', '<Relationships>'+''.join(f'<Relationship Id="img{i}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/image{i}.png"/>' for i in (1,2))+'</Relationships>')
+            z.writestr('ppt/media/image2.png', PNG+b'fixture-two')
     return out.getvalue()
 
 
@@ -24,8 +29,8 @@ def post(client, operation, value):
     return client.post('/api/platform/knowledge/'+operation, headers=client.platform_headers, json=value)
 
 
-def prepare(client):
-    job = client.post('/api/platform/knowledge/upload', params={'name':'images.pptx'}, headers={**client.platform_headers, 'Idempotency-Key':'visual-file'}, content=slides()).json()['job']
+def prepare(client, with_text_images=False):
+    job = client.post('/api/platform/knowledge/upload', params={'name':'images.pptx'}, headers={**client.platform_headers, 'Idempotency-Key':'visual-file'}, content=slides(with_text_images)).json()['job']
     result = wait(client, job)
     assert result['status'] == 'succeeded', result
     document_id = result['result']['documentId']
@@ -115,3 +120,58 @@ def test_cancel_and_explicit_cpu_retry_preserve_current_until_publish(client):
     assert wait(client, job)['status'] == 'succeeded'
     assert client.app.state.rag.document(p.scope(),pack['documentId'])['contentRevision'] == 2
     assert not p.db.all('SELECT * FROM invocations')
+
+
+def test_append_preserves_blocks_legacy_reviews_history_and_skips_decoration(client):
+    pack, value = prepare(client, True)
+    legacy = post(client, 'visual-preview', value).json()['preview']
+    assert wait(client, post(client, 'visual-apply', {'previewId':legacy['previewId'],'confirmed':True}).json()['job'])['status'] == 'succeeded'
+    p, rag = client.platform, client.app.state.rag
+    old = rag.document(p.scope(), pack['documentId'])
+    old_artifact = rag.artifact(p.scope(), old)
+    pack = client.get('/api/platform/knowledge/visual-pack', params={'documentId':pack['documentId']}, headers=client.platform_headers).json()['pack']
+    hashes = pack['pages'][2]['imageHashes']
+    value.update(version=pack['version'], pages=[{'page':3,'kind':'supplement','imageHashes':hashes,'imageReviews':[
+        {'imageHash':hashes[0],'kind':'diagram','text':'栈顶指针top随入栈增加。','partial':True},
+        {'imageHash':hashes[1],'kind':'decorative','text':'不进入知识来源的装饰标记'}]}])
+    preview = post(client, 'visual-preview', value).json()['preview']
+    assert '栈顶指针' in preview['pages'][0]['text'] and '装饰标记' not in preview['pages'][0]['text']
+    job = post(client, 'visual-apply', {'previewId':preview['previewId'],'confirmed':True}).json()['job']
+    assert wait(client, job)['status'] == 'succeeded'
+    new = rag.document(p.scope(), pack['documentId'])
+    artifact = rag.artifact(p.scope(), new)
+    assert artifact['text'].startswith(old_artifact['text'])
+    assert artifact['pages'][0]['visualReview'] == old_artifact['pages'][0]['visualReview']
+    assert artifact['pages'][1]['visualReview'] == old_artifact['pages'][1]['visualReview']
+    assert '装饰标记' not in artifact['text'] and '部分转写' in artifact['text']
+    for block in old_artifact['blocks']:
+        preserved = next(b for b in artifact['blocks'] if b['text'] == block['text'])
+        assert all(preserved[k] == block[k] for k in ('page','start','end','method','type'))
+    assert all(artifact['text'][c['start']:c['end']] == c['quote'] for c in new['chunks'])
+    assert rag.artifact(p.scope(),old)['text'] == old_artifact['text']
+    value['version'] = new['version']
+    assert post(client, 'visual-preview', value).json()['error'] == 'VISUAL_IMAGE_ALREADY_REVIEWED'
+    assert post(client, 'visual-apply', {'previewId':preview['previewId'],'confirmed':True}).json()['job']['id'] == job['id']
+    summary = catalog(client, 'course-default')['documents'][0]['review']
+    assert summary['reviewedImages'] == 2 and summary['supplementedPages'] == [3] and summary['partialImages'] == 1
+    assert not p.db.all('SELECT * FROM invocations')
+
+
+def test_supplement_metadata_validation_and_unreadable_not_evidence(client):
+    pack, value = prepare(client, True)
+    sha = pack['pages'][2]['imageHashes'][0]
+    row = {'page':3,'kind':'supplement','imageHashes':[sha],'imageReviews':[{'imageHash':sha,'kind':'unreadable','text':'字迹无法可靠转写','partial':True}]}
+    value['pages'] = [row]
+    for change, error in [({'imageHashes':['a'*64]}, 'VISUAL_IMAGE_MISMATCH'),
+                           ({'imageReviews':row['imageReviews']*2}, 'VISUAL_IMAGE_MISMATCH'),
+                           ({'text':'替换正文'}, 'INVALID_VISUAL_TEXT'),
+                           ({'imageReviews':[{**row['imageReviews'][0],'kind':'unknown'}]}, 'INVALID_IMAGE_REVIEW'),
+                           ({'imageReviews':[{**row['imageReviews'][0],'partial':'true'}]}, 'INVALID_IMAGE_REVIEW')]:
+        assert post(client, 'visual-preview', {**value,'pages':[{**row,**change}]}).json()['error'] == error
+    preview = post(client, 'visual-preview', value).json()['preview']
+    job = post(client, 'visual-apply', {'previewId':preview['previewId'],'confirmed':True}).json()['job']
+    assert wait(client,job)['status'] == 'succeeded'
+    doc = client.app.state.rag.document(client.platform.scope(),pack['documentId'])
+    assert '字迹' not in client.app.state.rag.artifact(client.platform.scope(),doc)['text']
+    review = catalog(client,'course-default')['documents'][0]['review']
+    assert review['unreadableImages'] == 1 and review['supplementedPages'] == []

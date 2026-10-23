@@ -15,6 +15,24 @@ from .rag_parse import A, assemble, safe_xml, text_blocks, quality
 
 P = '{http://schemas.openxmlformats.org/presentationml/2006/main}'
 R = '{http://schemas.openxmlformats.org/officeDocument/2006/relationships}'
+IMAGE_REVIEW_KINDS = frozenset(('transcription', 'diagram', 'illustration', 'administrative', 'decorative', 'unreadable'))
+
+
+def reviewed_images(page):
+    """Include legacy empty-page transcriptions without re-appending their images."""
+    return set(page.get('visualReview', {}).get('imageHashes', [])) | {r['imageHash'] for r in page.get('imageReviews', [])}
+
+
+def supplement_text(reviews):
+    # Non-course screenshots, decoration and unreadable content remain audit
+    # metadata. They must not become evidence that overwhelms course retrieval.
+    parts = []
+    for row in reviews:
+        if row['kind'] not in ('transcription', 'diagram'):
+            continue
+        label = '辅助视觉补录，未独立人审' + ('；部分转写，见限制说明' if row['partial'] else '')
+        parts.append('【'+label+'；图片 '+row['imageHash'][:12]+'】\n'+row['text'])
+    return '\n\n'.join(parts)
 
 
 def ppt_images(buffer):
@@ -65,9 +83,11 @@ class VisualReview:
         return {'documentId': doc['id'], 'name': doc['name'], 'version': doc['version'], 'fileHash': doc['fileHash'],
                 'contentRevision': doc['contentRevision'], 'pages': [
                     {'page': page['number'], 'characters': page['end']-page['start'], 'needsOcr': page.get('needsOcr', False),
-                     'review': page.get('visualReview'), 'imageHashes': page_images.get(page['number'], [])}
+                     'review': page.get('visualReview'), 'imageReviews': page.get('imageReviews', []),
+                     'reviewedImageHashes': sorted(reviewed_images(page)),
+                     'imageHashes': page_images.get(page['number'], [])}
                     for page in artifact['pages']],
-                'scope': 'empty-text-pages-only', 'automaticOcr': False, 'pdfOcrConfigured': bool(self.rag.ocr),
+                'scope': 'empty-page-transcription-or-append-only-image-supplement', 'automaticOcr': False, 'pdfOcrConfigured': bool(self.rag.ocr),
                 'note': '本接口导入已核对的图片转写，不调用聊天助手或任何模型 API。'}
 
     def preview(self, scope, value):
@@ -80,19 +100,39 @@ class VisualReview:
         actual = {p['page']: p for p in pack['pages']}
         seen, checked = set(), []
         for row in rows:
-            require(isinstance(row, dict) and not set(row)-{'page', 'kind', 'text', 'imageHashes'}, 'INVALID_VISUAL_PAGE')
+            require(isinstance(row, dict) and not set(row)-{'page', 'kind', 'text', 'imageHashes', 'imageReviews'}, 'INVALID_VISUAL_PAGE')
             page = row.get('page')
             require(type(page) is int and page in actual and page not in seen, 'INVALID_VISUAL_PAGE')
-            require(actual[page]['characters'] == 0 and not actual[page]['review'], 'VISUAL_PAGE_NOT_EMPTY')
             seen.add(page)
             text, kind, hashes = row.get('text', ''), row.get('kind'), row.get('imageHashes')
+            if kind == 'supplement':
+                require(not text, 'INVALID_VISUAL_TEXT')
+                entries = row.get('imageReviews')
+                require(isinstance(entries, list) and 0 < len(entries) <= 128, 'INVALID_IMAGE_REVIEWS')
+                clean, sha_seen = [], set()
+                for entry in entries:
+                    require(isinstance(entry, dict) and not set(entry)-{'imageHash', 'kind', 'text', 'partial'}, 'INVALID_IMAGE_REVIEW')
+                    sha, label, caption = entry.get('imageHash'), entry.get('kind'), entry.get('text', '')
+                    require(isinstance(sha, str) and sha in actual[page]['imageHashes'] and sha not in sha_seen, 'VISUAL_IMAGE_MISMATCH')
+                    require(sha not in actual[page]['reviewedImageHashes'], 'VISUAL_IMAGE_ALREADY_REVIEWED')
+                    require(isinstance(label, str) and label in IMAGE_REVIEW_KINDS and isinstance(caption, str) and len(caption) <= 12000
+                            and caption.strip() and quality(caption) >= .85 and type(entry.get('partial', False)) is bool, 'INVALID_IMAGE_REVIEW')
+                    sha_seen.add(sha)
+                    clean.append({'imageHash': sha, 'kind': label, 'text': caption.strip(), 'partial': entry.get('partial', False)})
+                require(isinstance(hashes, list) and all(isinstance(h, str) for h in hashes)
+                        and len(hashes) == len(sha_seen) and set(hashes) == sha_seen, 'VISUAL_IMAGE_MISMATCH')
+                require(sum(len(e['text']) for e in clean) <= 20000, 'VISUAL_TEXT_TOO_LARGE')
+                checked.append({'page': page, 'kind': kind, 'text': supplement_text(clean), 'imageHashes': sorted(hashes), 'imageReviews': clean})
+                continue
+            require(actual[page]['characters'] == 0 and not actual[page]['review'] and not actual[page]['imageReviews'], 'VISUAL_PAGE_NOT_EMPTY')
+            require('imageReviews' not in row, 'INVALID_VISUAL_PAGE')
             require(kind in ('transcription', 'blank') and isinstance(text, str) and len(text) <= 20000, 'INVALID_VISUAL_TEXT')
             require(isinstance(hashes, list) and all(isinstance(h, str) for h in hashes)
                     and len(hashes) == len(set(hashes)) and sorted(hashes) == actual[page]['imageHashes'], 'VISUAL_IMAGE_MISMATCH')
             require((kind == 'blank' and not hashes and not text.strip()) or
                     (kind == 'transcription' and bool(hashes) and bool(text.strip()) and quality(text) >= .85), 'INVALID_VISUAL_TEXT')
             checked.append({'page': page, 'kind': kind, 'text': text.strip(), 'imageHashes': sorted(hashes)})
-        require(sum(len(p['text']) for p in checked) <= 50000, 'VISUAL_TEXT_TOO_LARGE')
+        require(sum(len(p['text']) + sum(len(e['text']) for e in p.get('imageReviews', [])) for p in checked) <= 50000, 'VISUAL_TEXT_TOO_LARGE')
         payload = {'documentId': pack['documentId'], 'documentVersion': pack['version'], 'fileHash': pack['fileHash'],
                    'contentRevision': pack['contentRevision'], 'reviewer': reviewer, 'pages': sorted(checked, key=lambda p: p['page'])}
         key = 'visual-preview-'+digest(payload, canonical=True)[:40]
@@ -151,7 +191,24 @@ class VisualReview:
             # assemble consumes page-local block offsets, unlike stored artifacts.
             blocks = [{**b, 'start': b['start']-page['start'], 'end': b['end']-page['start']} for b in old['blocks'] if b['page'] == number]
             if replacement:
-                require(not text and not page.get('visualReview') and replacement['imageHashes'] == page_images[number], 'VISUAL_IMAGE_MISMATCH')
+                if replacement['kind'] == 'supplement':
+                    hashes = set(replacement['imageHashes'])
+                    require(hashes <= set(page_images[number]) and not hashes & reviewed_images(page), 'VISUAL_IMAGE_MISMATCH')
+                    extra = supplement_text(replacement['imageReviews'])
+                    if extra:
+                        offset = len(text) + (2 if text else 0)
+                        text += ('\n\n' if text else '') + extra
+                        blocks += [{**b, 'start': b['start']+offset, 'end': b['end']+offset}
+                                   for b in text_blocks(extra, number, method=method)]
+                    page['imageReviews'] = page.get('imageReviews', []) + [
+                        {**entry, 'reviewer': preview['reviewer'], 'method': method, 'sourceFileHash': doc['fileHash'],
+                         'reviewedAt': utc_now(), 'independentSemanticReview': False}
+                        for entry in replacement['imageReviews']]
+                    if extra:
+                        page['needsOcr'] = False
+                    pages.append({**page, 'text': text, 'blocks': blocks})
+                    continue
+                require(not text and not page.get('visualReview') and not page.get('imageReviews') and replacement['imageHashes'] == page_images[number], 'VISUAL_IMAGE_MISMATCH')
                 text = replacement['text']
                 page['method'] = method if replacement['kind'] == 'transcription' else 'confirmed-empty-slide'
                 page['needsOcr'] = False
@@ -161,7 +218,7 @@ class VisualReview:
                 blocks = text_blocks(text, number, method=page['method'])
             pages.append({**page, 'text': text, 'blocks': blocks})
         parsed = assemble(pages, doc['kind'], doc['fileHash'])
-        parsed['visualReviewScope'] = 'flagged-empty-pages-only; other images not exhaustively reviewed'
+        parsed['visualReviewScope'] = 'per-image-status-and-limitations; reviewed-is-not-independent-semantic-certification'
         checkpoint({'documentId': doc['id'], 'pages': sorted(reviews), 'stage': 'visual-review-ready'})
         result = commit(lambda: self.rag._publish(scope, doc, parsed, correction={'type': 'visual-transcription-import', 'previewId': row['id'], 'pages': sorted(reviews)}))
         progress({'percent': 100, 'label': '图片转写已发布，知识库片段已重建'})

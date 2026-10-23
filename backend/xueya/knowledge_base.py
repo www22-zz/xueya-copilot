@@ -93,6 +93,11 @@ class KnowledgeBase:
             review = {'totalPages': len(pages), 'pendingPages': [p['number'] for p in pages if p.get('needsOcr')],
                       'transcribedPages': [p['number'] for p in pages if p.get('visualReview', {}).get('kind') == 'transcription'],
                       'blankPages': [p['number'] for p in pages if p.get('visualReview', {}).get('kind') == 'blank']}
+            image_reviews = [r for p in pages for r in p.get('imageReviews', [])]
+            review.update(supplementedPages=[p['number'] for p in pages if any(r['kind'] in ('transcription', 'diagram') for r in p.get('imageReviews', []))],
+                          reviewedImages=len(image_reviews),
+                          partialImages=sum(bool(r.get('partial')) for r in image_reviews),
+                          unreadableImages=sum(r['kind'] == 'unreadable' for r in image_reviews))
             documents.append({**{k: doc.get(k) for k in ('id', 'name', 'chapter', 'version', 'contentRevision', 'kind', 'size', 'status', 'indexStatus', 'archived', 'quality')},
                               'review': review,
                               'sourceCount': len(doc.get('chunks', [])), 'task': latest.get(doc['id']),

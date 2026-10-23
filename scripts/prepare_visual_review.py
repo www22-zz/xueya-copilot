@@ -47,6 +47,8 @@ def main():
     parser.add_argument('--base-url', default='http://127.0.0.1:4173')
     parser.add_argument('--output', type=Path, default=Path('test-results/visual-review/packs'))
     parser.add_argument('--render', action='store_true')
+    parser.add_argument('--all-images', action='store_true', help='Include images on pages that already have text; preserve legacy reviews')
+    parser.add_argument('--max-pages', type=int, default=64, choices=range(1,65), metavar='1..64', help='Export one bounded batch per document; re-export after publishing')
     args = parser.parse_args()
     from urllib.parse import urlsplit
     url = urlsplit(args.base_url)
@@ -61,16 +63,24 @@ def main():
             if doc['kind'] != 'pptx' or doc.get('archived') or not doc.get('contentRevision'):
                 continue
             pack = checked(http.get('/api/platform/knowledge/visual-pack', params={'courseId': args.course_id, 'documentId': doc['id']}))['pack']
-            pages = [p for p in pack['pages'] if p['needsOcr'] and not p['review']]
+            pages = ([p for p in pack['pages'] if set(p['imageHashes'])-set(p['reviewedImageHashes'])] if args.all_images else
+                     [p for p in pack['pages'] if p['needsOcr'] and not p['review'] and not p.get('imageReviews')])
             if not pages:
                 continue
+            remaining_pages = len(pages)
+            pages = pages[:args.max_pages]
             directory = args.output/doc['id']
             directory.mkdir(exist_ok=True)
             (directory/'pack.json').write_text(json.dumps(pack, ensure_ascii=False, indent=2), encoding='utf-8')
             # A draft deliberately cannot be applied until each page is reviewed.
+            draft_pages = []
+            for page in pages:
+                hashes = sorted(set(page['imageHashes'])-set(page['reviewedImageHashes'])) if args.all_images else page['imageHashes']
+                draft_pages.append({'page': page['page'], 'kind': 'supplement' if args.all_images else 'review-required', 'text': '',
+                                    'imageHashes': hashes, **({'imageReviews': [{'imageHash': sha, 'kind': 'review-required', 'text': '', 'partial': False} for sha in hashes]} if args.all_images else {})})
             draft = {'courseId': args.course_id, 'documentId': doc['id'], 'version': pack['version'], 'fileHash': pack['fileHash'],
-                     'reviewer': 'human', 'pages': [{'page': p['page'], 'kind': 'review-required', 'text': '', 'imageHashes': p['imageHashes']} for p in pages]}
-            draft_path = directory/'review-draft.json'
+                     'reviewer': 'human', 'pages': draft_pages}
+            draft_path = directory/(('all-images-draft-v'+str(pack['version'])+'.json') if args.all_images else 'review-draft.json')
             if not draft_path.exists():
                 draft_path.write_text(json.dumps(draft, ensure_ascii=False, indent=2), encoding='utf-8')
             response = http.get('/api/platform/rag/original', params={'courseId': args.course_id, 'documentId': doc['id']})
@@ -89,7 +99,7 @@ def main():
             if args.render:
                 render_copy(source, [p['page'] for p in pages], directory)
             count += len(pages)
-            print(json.dumps({'document': doc['name'], 'pendingPages': [p['page'] for p in pages], 'directory': str(directory)}, ensure_ascii=False))
+            print(json.dumps({'document': doc['name'], 'pendingPages': [p['page'] for p in pages], 'remainingAfterBatch': remaining_pages-len(pages), 'directory': str(directory)}, ensure_ascii=False))
     print(json.dumps({'exportedPages': count, 'providerRequests': 0}))
 
 
