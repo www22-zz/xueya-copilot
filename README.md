@@ -37,7 +37,13 @@ macOS/Linux 对应命令使用 `.venv/bin/python`。环境变量沿用 `.env.exa
 
 当前体验调整见 [问答与导航交付](docs/delivery/chat-experience-polish.md)：图片/语音直接加入问答，学习工具统一在“更多”，左下角“设置”提供主题、团队账号和服务数据管理。章节加工仅在“更多 → 章节学习”展示；团队账号是同一本机服务的共享登录，不会跨电脑自动同步，详见 [账号契约](docs/contracts/local-account.md)。
 
-“知识库”入口集中提供课程知识库创建、批量文件导入、章节筛选、后台处理状态、原文检索与问答范围接入。仍使用同一课程、资料版本、数据库与任务队列；默认解析/关键词检索不调用模型。真实课件仅存本机，不随 Git 同步。操作、数据结构与算法课件的实际验收及限制见 [知识库交付](docs/delivery/dsa-knowledge-base.md)。
+“知识库”入口集中提供课程知识库创建、批量文件导入、章节筛选、后台处理状态、原文检索与问答范围接入。仍使用同一课程、资料版本、数据库与任务队列；默认解析/关键词检索不调用模型。用户明确要求共享的首批17份数据结构与算法PPT及图片补录已整理为 [共享资料包](materials/data-structures-algorithms/README.md)，可通过Python工具导入各自的本机服务；私人数据库仍不随Git同步。操作、原知识库验收及限制见 [知识库交付](docs/delivery/dsa-knowledge-base.md)。
+
+**评委首次体验**：先按上文启动服务，再在项目根目录的另一个终端运行 `.venv/Scripts/python.exe -m scripts.import_course_bundle --apply`（macOS/Linux 用 `.venv/bin/python`），成功后进入“知识库”选择“数据结构与算法”。全新导入包含17份课件、1495个片段；无需模型密钥即可检索和核对原文。完整步骤、3组检索关键词和外部 API 配置边界见 [评委体验说明](materials/data-structures-algorithms/README.md#评委从下载到体验)。
+
+未配置独立 OCR 服务时，PPT 空文本页可通过“处理 → 图片文字补录”导入已核对的视觉转写，先预览再明确采纳；保留实际页码、原件和历史。辅助转写不等同于产品自动识图 API，见 [图片核对与补录](docs/delivery/pptx-visual-review.md)。
+
+已有正文页也可逐图追加补录，装饰/界面截图/无法辨认内容只记录核查状态，不进入检索证据。首次 17 份数据结构课件已完成全量图片清点和本机补录，部分转写与未解决项见 [全批图片补录记录](docs/delivery/all-ppt-images.md)。
 
 G1/G2 工作台提供统一的课程学习主区、“更多”中的“服务设置”和“任务与用量”，以及资料页的文字/网页/文件/媒体导入、章节设置、原文与历史阅读、显式跨课程复用和真实媒体位置关联。旧浏览器记录保留在可展开区域。免费检查不调用模型，凭据仍由本机 `.env` 管理；网页抓取会拒绝内网或保留地址。操作与兼容接口见 [工作台与资料指南](docs/contracts/workbench-library.md)，交付证据见 [G1](docs/delivery/G1-workspace.md) 和 [G2](docs/delivery/G2-workspace.md)。
 

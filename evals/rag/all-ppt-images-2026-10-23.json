@@ -1,0 +1,63 @@
+{
+  "date": "2026-10-23",
+  "scope": "all-17-initial-pptx-images",
+  "originalsCommitted": false,
+  "transcriptionsCommitted": false,
+  "inventory": {
+    "documents": 17,
+    "slides": 1112,
+    "imagePages": 487,
+    "uniqueImages": 370,
+    "embeddedOccurrences": 1188,
+    "distinctPageImagePairs": 703,
+    "vectorImagesRendered": 24,
+    "educationalAnimations": 7,
+    "sampledFramesEach": 8,
+    "decorativeAnimations": 4,
+    "uniqueClassifications": {
+      "diagram": 113,
+      "illustration": 34,
+      "transcription": 138,
+      "administrative": 9,
+      "decorative": 70,
+      "previously-reviewed": 4,
+      "unreadable": 2
+    },
+    "partiallyTranscribedUniqueImagesIncludingUnreadable": 44,
+    "unreadableUniqueImages": 2
+  },
+  "ingestion": {
+    "cpuJobs": 18,
+    "newPageImageReviews": 699,
+    "legacyPageImageReviews": 4,
+    "usefulPageImageReferences": 282,
+    "supplementedPages": 206,
+    "sourcesBefore": 1213,
+    "sourcesAfter": 1495,
+    "allOriginalsAndHistoryPreserved": true,
+    "otherCoursesPrivateRecordsWorkspaceUnchanged": true,
+    "applicationProviderRequests": 0,
+    "invocationsBeforeAfter": [
+      0,
+      0
+    ]
+  },
+  "verification": {
+    "pythonTests": 350,
+    "pythonSeconds": 171.5,
+    "frontendTests": 41,
+    "actualChromeChecks": 13,
+    "sourceValidations": 1495,
+    "documentScopedCaptionProbes": 17,
+    "expectedNewPageInTop8": 16,
+    "expectedNewPageAbsentFromTop8": 1,
+    "independentSemanticAccuracyEvaluation": false
+  },
+  "knownLimitations": [
+    "Partial captions and sampled animation frames are labeled.",
+    "Two malformed formula images remain unreadable.",
+    "One document-scoped caption query ranked other related text above the expected new page.",
+    "Automatic external OCR, embeddings and rerank remain unconfigured.",
+    "Reparse retains supplements in history; explicit reimport is required."
+  ]
+}
