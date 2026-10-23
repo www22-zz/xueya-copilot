@@ -26,6 +26,7 @@ class KnowledgeBase:
         self.p, self.rag, self.library = app.state.platform, app.state.rag, app.state.library
         from .visual_review import VisualReview
         self.visual = VisualReview(self.p, self.rag)
+        self.demo = None
 
     def create(self, value):
         name, description = value.get('name'), value.get('description', '')
@@ -107,7 +108,9 @@ class KnowledgeBase:
                 'summary': {'documents': len(active), 'sources': sum(d['sourceCount'] for d in active),
                             'processing': sum(bool(d['task'] and d['task']['status'] not in TERMINAL) for d in active),
                             'needsReview': sum(bool(d.get('quality', {}) and d['quality'].get('warnings')) for d in active)},
-                'capabilities': self.capabilities()}
+                'capabilities': self.capabilities(),
+                **({'demoImport': self.demo.status()} if self.demo and self.demo.config.auto_import_demo
+                   and scope.course_id == 'course-default' and self.demo.status() else {})}
 
     def task(self, scope, value):
         task_id = identifier(value.get('id'))
@@ -133,7 +136,14 @@ def install_knowledge_base(app):
     async def lifespan(host):
         async with previous(host):
             host.state.knowledge = KnowledgeBase(host)
-            yield
+            from .demo_import import DemoImport
+            demo = DemoImport(host.state.knowledge, host.state.config)
+            host.state.knowledge.demo = demo
+            try:
+                demo.start()
+                yield
+            finally:
+                await demo.close()
     app.router.lifespan_context = lifespan
     router = APIRouter(prefix='/api/platform/knowledge')
 
@@ -151,6 +161,10 @@ def install_knowledge_base(app):
         if operation == 'create' and post:
             return success(base=kb.create(value))
         scope = kb.p.scope(value.get('courseId') or q.get('courseId') or 'course-default')
+        if operation == 'demo-retry' and post:
+            require(scope.course_id == 'course-default' and value.get('confirmed') is True, 'CONFIRMATION_REQUIRED')
+            require(kb.demo and kb.demo.config.auto_import_demo, 'DEMO_IMPORT_DISABLED')
+            return success(demoImport=kb.demo.start(retry=True))
         if operation == 'visual-pack' and not post:
             return success(pack=kb.visual.pack(scope, q.get('documentId')))
         if operation == 'visual-preview' and post:

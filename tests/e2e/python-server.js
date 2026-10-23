@@ -28,7 +28,7 @@ async function startPython({model,platform=false,dataDir}={}){
   }
   const directory=dataDir||fs.mkdtempSync(path.join(os.tmpdir(),'xueya-python-e2e-'));
   let logs='',exit;
-  const child=spawn(python,['-X','utf8','-m','backend.xueya.server'],{cwd:root,windowsHide:true,env:{...process.env,PYTHONUTF8:'1',PORT:'0',XUEYA_DATA_DIR:directory,XUEYA_PLATFORM_ENABLED:platform?'1':'0',MIMO_API_KEY:model?'controlled-test-only':'',MIMO_MODEL:model?'controlled':'no-paid-api',MIMO_BASE_URL:upstream?'http://127.0.0.1:'+upstream.address().port:'http://127.0.0.1:1'}});
+  const child=spawn(python,['-X','utf8','-m','backend.xueya.server'],{cwd:root,windowsHide:true,env:{...process.env,PYTHONUTF8:'1',PORT:'0',XUEYA_DATA_DIR:directory,XUEYA_PLATFORM_ENABLED:platform?'1':'0',XUEYA_AUTO_IMPORT_DEMO:'0',MIMO_API_KEY:model?'controlled-test-only':'',MIMO_MODEL:model?'controlled':'no-paid-api',MIMO_BASE_URL:upstream?'http://127.0.0.1:'+upstream.address().port:'http://127.0.0.1:1'}});
   child.stdout.on('data',chunk=>{logs+=chunk;});child.stderr.on('data',chunk=>{logs+=chunk;});child.on('exit',code=>{exit=code;});
   const exited=new Promise(resolve=>child.on('exit',resolve));
   try{
