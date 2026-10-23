@@ -3,6 +3,7 @@ import hashlib
 import json
 import re
 import secrets
+import time
 from contextlib import asynccontextmanager
 
 from fastapi import APIRouter, Request
@@ -23,6 +24,8 @@ def infer_chapter(name):
 class KnowledgeBase:
     def __init__(self, app):
         self.p, self.rag, self.library = app.state.platform, app.state.rag, app.state.library
+        from .visual_review import VisualReview
+        self.visual = VisualReview(self.p, self.rag)
 
     def create(self, value):
         name, description = value.get('name'), value.get('description', '')
@@ -73,8 +76,11 @@ class KnowledgeBase:
     def catalog(self, scope):
         # Latest task per document, including retries/reparses and external index jobs.
         latest = {}
-        for row in self.p.db.all("SELECT id,input FROM jobs WHERE user_id=? AND course_id=? AND type IN ('rag-parse','rag-index','rag-ocr') ORDER BY created_at DESC, rowid DESC", (scope.user_id, scope.course_id)):
+        for row in self.p.db.all("SELECT id,input FROM jobs WHERE user_id=? AND course_id=? AND type IN ('rag-parse','rag-index','rag-ocr','rag-visual-apply') ORDER BY created_at DESC, rowid DESC", (scope.user_id, scope.course_id)):
             document_id = json.loads(row['input']).get('documentId')
+            if not document_id:
+                preview = self.p.repo.read(scope, 'artifact', json.loads(row['input']).get('previewId', ''))
+                document_id = preview['value'].get('documentId') if preview else None
             if document_id not in latest:
                 j = self.p.jobs.get(row['id'], scope.user_id)
                 latest[document_id] = {k: j[k] for k in ('id', 'type', 'status', 'progress', 'error', 'updatedAt')}
@@ -82,7 +88,13 @@ class KnowledgeBase:
         for doc in self.p.repo.all(scope, 'document'):
             if doc.get('superseded'):
                 continue
+            quality_summary = doc.get('quality') or {}
+            pages = quality_summary.get('pages', [])
+            review = {'totalPages': len(pages), 'pendingPages': [p['number'] for p in pages if p.get('needsOcr')],
+                      'transcribedPages': [p['number'] for p in pages if p.get('visualReview', {}).get('kind') == 'transcription'],
+                      'blankPages': [p['number'] for p in pages if p.get('visualReview', {}).get('kind') == 'blank']}
             documents.append({**{k: doc.get(k) for k in ('id', 'name', 'chapter', 'version', 'contentRevision', 'kind', 'size', 'status', 'indexStatus', 'archived', 'quality')},
+                              'review': review,
                               'sourceCount': len(doc.get('chunks', [])), 'task': latest.get(doc['id']),
                               'vectorReady': bool(self.rag.embedding and doc.get('embeddingIdentity') == self.rag.embedding.identity and doc.get('indexStatus') == 'ready')})
         active = [d for d in documents if not d['archived']]
@@ -95,11 +107,16 @@ class KnowledgeBase:
     def task(self, scope, value):
         task_id = identifier(value.get('id'))
         job = self.p.jobs.get(task_id, scope.user_id)
-        require(job and job['courseId'] == scope.course_id and job['type'] in ('rag-parse', 'rag-index', 'rag-ocr'), 'JOB_NOT_FOUND')
+        require(job and job['courseId'] == scope.course_id and job['type'] in ('rag-parse', 'rag-index', 'rag-ocr', 'rag-visual-apply'), 'JOB_NOT_FOUND')
         require(value.get('action') in ('cancel', 'retry'), 'INVALID_JOB_ACTION')
         if value['action'] == 'cancel':
             return self.p.jobs.cancel(task_id, scope.user_id)
-        require(job['type'] == 'rag-parse' and job['resource'] == 'cpu', 'PAID_RETRY_FORBIDDEN')
+        require(job['type'] in ('rag-parse', 'rag-visual-apply') and job['resource'] == 'cpu', 'PAID_RETRY_FORBIDDEN')
+        if job['type'] == 'rag-visual-apply':
+            payload = json.loads(self.p.db.one('SELECT input FROM jobs WHERE id=?', (task_id,))['input'])
+            preview = self.p.repo.read(scope, 'artifact', payload.get('previewId', ''))
+            require(preview and preview['value']['expiresAt'] >= time.time(), 'VISUAL_PREVIEW_EXPIRED')
+            self.visual.current(scope, preview['value'])
         # B's version check also rejects obsolete retries after a source changed.
         return self.p.jobs.retry(task_id, scope.user_id)
 
@@ -129,6 +146,12 @@ def install_knowledge_base(app):
         if operation == 'create' and post:
             return success(base=kb.create(value))
         scope = kb.p.scope(value.get('courseId') or q.get('courseId') or 'course-default')
+        if operation == 'visual-pack' and not post:
+            return success(pack=kb.visual.pack(scope, q.get('documentId')))
+        if operation == 'visual-preview' and post:
+            return success(preview=kb.visual.preview(scope, value))
+        if operation == 'visual-apply' and post:
+            return success(job=kb.visual.submit(scope, value))
         if operation == 'catalog' and not post:
             return success(**kb.catalog(scope))
         if operation == 'search' and post:
