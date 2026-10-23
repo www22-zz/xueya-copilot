@@ -31,8 +31,7 @@ def main():
         return httpx.Response(200,text='data: '+json.dumps({'choices':[{'delta':{'content':answer}}]})+'\n\ndata: [DONE]\n\n',headers={'Content-Type':'text/event-stream'})
     with tempfile.TemporaryDirectory(prefix='xueya-sent-images-') as temporary:
         directory=Path(temporary)
-        with server(directory) as (base,app):
-            app.state.provider.transport=httpx.MockTransport(upstream)
+        with server(directory, upstream) as (base,app):
             browser=Browser(directory)
             def files(paths):
                 root=browser.call('DOM.getDocument')['root']['nodeId']

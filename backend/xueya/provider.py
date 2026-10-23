@@ -13,6 +13,7 @@ from .execution_budget import budget_scope, current_budget
 class MimoProvider:
     def __init__(self, config, platform=None, transport=None):
         self.config, self.platform, self.transport = config, platform, transport
+        self._shared_client = None
 
     @asynccontextmanager
     async def invocation(self, messages, scope, *, capability='text', model=None, max_output_tokens=None):
@@ -55,9 +56,30 @@ class MimoProvider:
                     if release:
                         release()
 
-    def client(self, timeout):
+    def new_client(self, timeout):
         return httpx.AsyncClient(timeout=timeout, follow_redirects=False, transport=self.transport,
+                                 limits=httpx.Limits(max_connections=self.config.api_slots,
+                                                    max_keepalive_connections=self.config.api_slots, keepalive_expiry=60),
                                  headers={'Authorization': 'Bearer '+self.config.api_key, 'Content-Type': 'application/json'})
+
+    @asynccontextmanager
+    async def connection_pool(self):
+        """One pool per host lifetime/event loop; standalone calls still close themselves."""
+        require(self._shared_client is None, 'AI_CLIENT_ALREADY_OPEN')
+        async with self.new_client(60) as client:
+            self._shared_client = client
+            try:
+                yield self
+            finally:
+                self._shared_client = None
+
+    @asynccontextmanager
+    async def client(self, timeout):
+        if self._shared_client is not None:
+            yield self._shared_client
+        else:
+            async with self.new_client(timeout) as client:
+                yield client
 
     @staticmethod
     def check_finish(reason):
@@ -77,7 +99,7 @@ class MimoProvider:
         async with self.invocation(messages, scope, max_output_tokens=max_output_tokens) as state:
             timeout = min(timeout, current_budget.get().remaining())
             async with asyncio.timeout(timeout), self.client(timeout) as client:
-                async with client.stream('POST', self.config.base_url.rstrip('/')+'/chat/completions',
+                async with client.stream('POST', self.config.base_url.rstrip('/')+'/chat/completions', timeout=timeout,
                     json={'model': self.config.model, 'temperature': temperature, 'messages': messages,
                           'max_completion_tokens': state['outputLimit'],
                           **({'response_format': response_format} if response_format else {})}) as response:
@@ -101,15 +123,19 @@ class MimoProvider:
                     state['usable'] = True
                     return {'content': content, 'model': self.config.model, 'usage': state['usage'], 'finishReason': state['finishReason']}
 
-    async def stream(self, messages, *, scope=None, timeout=60, max_output_tokens=None):
+    async def stream(self, messages, *, scope=None, timeout=60, max_output_tokens=None, response_format=None, thinking=None):
+        require(response_format is None or response_format == {'type': 'json_object'}, 'AI_INVALID_RESPONSE_FORMAT')
+        require(thinking is None or thinking in ({'type': 'enabled'}, {'type': 'disabled'}), 'AI_INVALID_THINKING_MODE')
         async with self.invocation(messages, scope, max_output_tokens=max_output_tokens) as state:
             timeout = min(timeout, current_budget.get().remaining())
             async with asyncio.timeout(timeout), self.client(timeout) as client:
-                async with client.stream('POST', self.config.base_url.rstrip('/')+'/chat/completions',
+                async with client.stream('POST', self.config.base_url.rstrip('/')+'/chat/completions', timeout=timeout,
                     json={'model': self.config.model, 'temperature': .2, 'messages': messages, 'stream': True,
-                          'max_completion_tokens': state['outputLimit'], 'stream_options': {'include_usage': True}}) as response:
+                          'max_completion_tokens': state['outputLimit'], 'stream_options': {'include_usage': True},
+                          **({'response_format': response_format} if response_format else {}),
+                          **({'thinking': thinking} if thinking else {})}) as response:
                     require(response.is_success, 'AI_UNAVAILABLE')
-                    data_lines, size, ended = [], 0, False
+                    data_lines, size, ended, done_received = [], 0, False, False
 
                     def events(frame):
                         nonlocal ended
@@ -142,6 +168,8 @@ class MimoProvider:
                     async for line in response.aiter_lines():
                         size += len(line.encode('utf-8'))
                         require(size <= 2097152, 'AI_INVALID_RESPONSE')
+                        if done_received:
+                            continue
                         if line.startswith('data:'):
                             data_lines.append(line[5:].removeprefix(' '))
                         elif not line and data_lines:
@@ -150,7 +178,9 @@ class MimoProvider:
                             for event in events(frame):
                                 yield event
                             if frame == '[DONE]':
-                                break
+                                # Consume the HTTP body terminator so the pooled
+                                # connection is reusable; ignore post-DONE frames.
+                                done_received = True
                     if data_lines:
                         for event in events('\n'.join(data_lines)):
                             yield event

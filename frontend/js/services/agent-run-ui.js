@@ -1,7 +1,7 @@
 /* Durable learning controls reuse the authenticated platform client and chat store. */
 (function(root){
   'use strict';
-  const labels={queued:'等待执行',running:'正在推进',paused:'已暂停',unknown:'上次请求结果待确认',failed:'执行未完成',partial:'本轮准备未完成',awaiting_user:'等待你补充',awaiting_confirmation:'等待你确认',completed:'本轮已完成',cancelled:'已取消'};
+  const labels={queued:'正在思考中',running:'正在思考中',paused:'已暂停',unknown:'上次请求结果待确认',failed:'执行未完成',partial:'本轮准备未完成',awaiting_user:'等待你补充',awaiting_confirmation:'等待你确认',completed:'本轮已完成',cancelled:'已取消'};
   const causes={'knowledge-gap':'知识理解有缺口',misread:'审题有误',calculation:'计算有误',method:'方法不合适',notation:'符号理解有误','input-error':'输入或点击失误',uncertain:'还不确定'};
   const e=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const button=(label,index,action)=>`<button type="button" class="subtle-button" data-agent-index="${index}" data-agent-action="${action}">${label}</button>`;
@@ -28,12 +28,12 @@
     if(['paused','failed'].includes(run.status))controls+=button('继续',index,'resume');
     if(run.status==='unknown')controls+=form('unknown','<p>上次请求可能已经计费。继续会发起新的规划请求，原请求不会重放。</p><label><input type="checkbox" name="acknowledge" required> 我理解并确认继续</label>','确认后继续');
     if(!['running','completed','cancelled'].includes(run.status))controls+=button('取消本轮',index,'cancel');
-    return `<section class="agent-run panel" aria-label="持续学习任务"><strong>${e(labels[run.status]||run.status)}</strong>${s.plan?`<p>计划第 ${e(s.planRevision)} 版 · 已完成 ${s.completedStepIds?.length||0}/${s.plan.steps.length} 步</p><ol>${s.plan.steps.map(t=>`<li>${s.completedStepIds?.includes(t.id)?'✓ ':''}${e(t.title)}</li>`).join('')}</ol>`:''}${run.result?.answer?`<details><summary>查看资料核对结果</summary><p>${e(run.result.answer)}</p></details>`:''}${interaction.title?`<h3>${e(interaction.title)}</h3>`:''}${body}<div class="message-actions">${controls}</div></section>`;
+    return `<section class="agent-run panel" aria-label="持续学习任务"><strong>${e(labels[run.status]||run.status)}</strong>${run.result?.answer?`<details><summary>查看资料核对结果</summary><p>${e(run.result.answer)}</p></details>`:''}${interaction.title?`<h3>${e(interaction.title)}</h3>`:''}${body}<div class="message-actions">${controls}</div></section>`;
   }
   function create({state,persist,render,toast}){
     const polling=new Map(),busy=new Set();let mounted=false;
     const request=(path,courseId,body)=>root.XueyaPlatform.learningRequest('agent-runs'+path,{courseId,method:body===undefined?'GET':'POST',body});
-    function update(message,run){message.agentRun=run;persist();if(state.messages.includes(message))render();if(['queued','running'].includes(run.status))watch(message);}
+    function update(message,run){run.toolCalls=root.XueyaMCPTrace?.collect(message.agentRun?.toolCalls,run.state);message.agentRun=run;persist();if(state.messages.includes(message))render();if(['queued','running'].includes(run.status))watch(message);}
     function watch(message){
       const run=message.agentRun,key=run.id;if(polling.has(key))return;
       polling.set(key,setTimeout(async()=>{polling.delete(key);if(!state.messages.includes(message))return;try{const value=await request('/'+encodeURIComponent(key),run.courseId);if(value.revision!==message.agentRun.revision)update(message,value);else if(['queued','running'].includes(value.status))watch(message);}catch{toast('学习任务仍保存在本机服务，可稍后更新状态。');}},1000));

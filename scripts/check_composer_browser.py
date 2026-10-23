@@ -52,15 +52,16 @@ def main():
                 except (TypeError,ValueError,AttributeError):pass
             source=max(sources,key=lambda item:len(item['quote'])) if sources else None
             answer=json.dumps({'answer':source['quote'] if source else '队列遵循先进先出，这是受控测试回答。','sources':[source['id']] if source else []},ensure_ascii=False)
+            if value.get('thinking') == {'type': 'disabled'}:
+                answer = '队列遵循先进先出，这是受控测试回答。'
             if not value.get('stream'):
                 return httpx.Response(200,json={'model':value['model'],'choices':[{'message':{'content':answer},'finish_reason':'stop'}]})
-            return httpx.Response(200,text='data: '+json.dumps({'choices':[{'delta':{'content':answer}}]})+'\n\ndata: [DONE]\n\n',headers={'Content-Type':'text/event-stream'})
+            return httpx.Response(200,text='data: '+json.dumps({'choices':[{'delta':{'content':answer},'finish_reason':'stop'}]})+'\n\ndata: [DONE]\n\n',headers={'Content-Type':'text/event-stream'})
         return upstream(request)
 
     with tempfile.TemporaryDirectory(prefix='xueya-composer-') as temporary:
         folder=Path(temporary)
-        with server(folder) as (base,app):
-            app.state.provider.transport=httpx.MockTransport(controlled)
+        with server(folder, controlled) as (base,app):
             browser=Browser(folder)
             try:
                 browser.call('Emulation.setDeviceMetricsOverride',width=1440,height=1000,deviceScaleFactor=1,mobile=False)

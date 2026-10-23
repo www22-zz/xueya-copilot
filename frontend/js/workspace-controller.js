@@ -108,7 +108,7 @@ function createWorkspace(ctx){
     const start=input.selectionStart,end=input.selectionEnd;state.draft=input.value;persist();
     attachImages(files).then(()=>{const current=$('#chatInput');if(current){current.focus({preventScroll:true});current.setSelectionRange(start,end);}}).catch(notifyError);
   }
-  function historyFor(question){const index=Number.isInteger(state.followupIndex)?state.followupIndex:state.messages.length-1;const messages=state.messages.slice(0,index+1).filter(m=>!m.failed&&!m.cancelled);const prior=Number.isInteger(state.followupIndex)?state.messages[state.followupIndex]:[...messages].reverse().find(m=>m.role==='ai'&&m.sources?.length);return{history:messages.slice(-12).map(m=>({role:m.role==='ai'?'assistant':'user',content:m.text})),previousSources:prior?.sources||[],question};}
+  function historyFor(question){const index=Number.isInteger(state.followupIndex)?state.followupIndex:state.messages.length-1;const messages=state.messages.slice(0,index+1).filter(m=>!m.failed&&!m.cancelled);const latest=[...messages].reverse().find(m=>m.role==='ai');const prior=Number.isInteger(state.followupIndex)?state.messages[state.followupIndex]:[...messages].reverse().find(m=>m.role==='ai'&&m.sources?.length);return{history:messages.slice(-12).map(m=>({role:m.role==='ai'?'assistant':'user',content:m.text})),previousSources:prior?.sources||[],...(latest?.engine==='MiMo 通用问答'?{previousAnswerKind:'general'}:{}),question};}
   async function imageChat(request,options,batch){
     const sent=batch||attachments;
     if(globalThis.XueyaChatAttachments){
