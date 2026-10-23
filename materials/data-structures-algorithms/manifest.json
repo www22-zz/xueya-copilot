@@ -1,0 +1,174 @@
+{
+  "schemaVersion": 1,
+  "name": "数据结构与算法",
+  "description": "本机课程课件知识库；保留原件、页码、章节和引用版本。",
+  "documents": [
+    {
+      "name": "week1 第1章_绪论.pptx",
+      "path": "ppt/week1 第1章_绪论.pptx",
+      "sha256": "7fbd8a0444096282daf0b2d68904aa89c70144e1525134db0979be31ed9bfd29",
+      "size": 9580952,
+      "chapter": "第1章",
+      "pages": 112,
+      "expectedSources": 189
+    },
+    {
+      "name": "week2-第2章线性表（1）-顺序表.pptx",
+      "path": "ppt/week2-第2章线性表（1）-顺序表.pptx",
+      "sha256": "6da65496b85208708df00d7213ec3074cb535e36e9eefa03de220438ba946b42",
+      "size": 1268684,
+      "chapter": "第2章",
+      "pages": 58,
+      "expectedSources": 71
+    },
+    {
+      "name": "week3-第2章线性表（2）链表.pptx",
+      "path": "ppt/week3-第2章线性表（2）链表.pptx",
+      "sha256": "5702f159d19a3e88a17049ff691fdaf26ca8fdd6650269d24d39d2f5a89b6504",
+      "size": 1535475,
+      "chapter": "第2章",
+      "pages": 85,
+      "expectedSources": 104
+    },
+    {
+      "name": "week4 第3章_栈和队列.pptx",
+      "path": "ppt/week4 第3章_栈和队列.pptx",
+      "sha256": "92f525d8e8f31560451023cb32bcddf43272c2900e084736a103c86abc3f0bb9",
+      "size": 2057145,
+      "chapter": "第3章",
+      "pages": 99,
+      "expectedSources": 105
+    },
+    {
+      "name": "week6_第4章_数组.pptx",
+      "path": "ppt/week6_第4章_数组.pptx",
+      "sha256": "5e2521731f275e6668f2b6c3ef8cf5a8a511618ccf70922731860d6cf79f3c01",
+      "size": 5456882,
+      "chapter": "第4章",
+      "pages": 45,
+      "expectedSources": 66
+    },
+    {
+      "name": "week5_字符串.pptx",
+      "path": "ppt/week5_字符串.pptx",
+      "sha256": "bcee57b9431913d74027a374631a8ae51157be8d51580e5bd0f3a6d6a602cc81",
+      "size": 789027,
+      "chapter": "第5周",
+      "pages": 66,
+      "expectedSources": 72
+    },
+    {
+      "name": "week9-第6.2章_哈夫曼树和树与森转换林.pptx",
+      "path": "ppt/week9-第6.2章_哈夫曼树和树与森转换林.pptx",
+      "sha256": "473dd54a8df5942c78153ac31052fe51dc8371c205fc89f60f608279ef938d68",
+      "size": 3351422,
+      "chapter": "第6.2章",
+      "pages": 45,
+      "expectedSources": 83
+    },
+    {
+      "name": "week10-第7.1章图-图的存储和遍历.pptx",
+      "path": "ppt/week10-第7.1章图-图的存储和遍历.pptx",
+      "sha256": "72e5342d9b396eefdd82b0524836d37f531ada0b095c6469bdc2290d38d3fbb6",
+      "size": 3516629,
+      "chapter": "第7.1章",
+      "pages": 66,
+      "expectedSources": 86
+    },
+    {
+      "name": "week12-第7.2章图-最小生成树.pptx",
+      "path": "ppt/week12-第7.2章图-最小生成树.pptx",
+      "sha256": "0b604a78940b89e38e461cd4a4c246998d38eb8a4c904a59d5fe9cf28c126282",
+      "size": 1219290,
+      "chapter": "第7.2章",
+      "pages": 43,
+      "expectedSources": 54
+    },
+    {
+      "name": "week13-第7.3章-图最短路径.pptx",
+      "path": "ppt/week13-第7.3章-图最短路径.pptx",
+      "sha256": "33dd0e29b86006998ce77777cb92c21f0689e0d83e06cb5f06e6bb9f7895925d",
+      "size": 2208263,
+      "chapter": "第7.3章",
+      "pages": 56,
+      "expectedSources": 88
+    },
+    {
+      "name": "week14_(1)_-第7.4章图-有向无环网的应用.pptx",
+      "path": "ppt/week14_(1)_-第7.4章图-有向无环网的应用.pptx",
+      "sha256": "c9728e4b91e6eb2ffb415c4301786f01d2c682cd439db11ee7839be289b6aa19",
+      "size": 1392638,
+      "chapter": "第7.4章",
+      "pages": 46,
+      "expectedSources": 53
+    },
+    {
+      "name": "week7-第6.1树和二叉树.pptx",
+      "path": "ppt/week7-第6.1树和二叉树.pptx",
+      "sha256": "713b56dcfc7c62faf4269c145cd9ab16aaa5b55d37fbf83b896a0122fb6c7f45",
+      "size": 2409116,
+      "chapter": "第7周",
+      "pages": 76,
+      "expectedSources": 100
+    },
+    {
+      "name": "week14_(2)-第8.1章_顺序查找和折半查找.pptx",
+      "path": "ppt/week14_(2)-第8.1章_顺序查找和折半查找.pptx",
+      "sha256": "080ae23dc89edc99b235864f9634cf4f349f6b8387a954d5196a9c08251552e2",
+      "size": 1359988,
+      "chapter": "第8.1章",
+      "pages": 49,
+      "expectedSources": 71
+    },
+    {
+      "name": "week15_（1）-第8.2章_树表查找和平衡二叉树.pptx",
+      "path": "ppt/week15_（1）-第8.2章_树表查找和平衡二叉树.pptx",
+      "sha256": "1224051b0a8ee26055d797bbf46bb68967ef854c6ca3739a853dbf9a22d1a4f1",
+      "size": 1514556,
+      "chapter": "第8.2章",
+      "pages": 84,
+      "expectedSources": 107
+    },
+    {
+      "name": "week15（2）-第8.3章_哈希查找.pptx",
+      "path": "ppt/week15（2）-第8.3章_哈希查找.pptx",
+      "sha256": "49ad3f95abebda589560c5d9fa2f127b14b3c1d2e510942a276db97a636f34e9",
+      "size": 1411367,
+      "chapter": "第8.3章",
+      "pages": 42,
+      "expectedSources": 76
+    },
+    {
+      "name": "week16（1）-_第9章_排序（1）插入排序和交换排序_.pptx",
+      "path": "ppt/week16（1）-_第9章_排序（1）插入排序和交换排序_.pptx",
+      "sha256": "2d69b4ec6b0f8398d5cd8894f2cbc1c7a78974fbcaaed8ae13e26474f7bd72a7",
+      "size": 2612208,
+      "chapter": "第9章",
+      "pages": 85,
+      "expectedSources": 105
+    },
+    {
+      "name": "week16（2）-第9章_排序（2）选择排序和归并排序.pptx",
+      "path": "ppt/week16（2）-第9章_排序（2）选择排序和归并排序.pptx",
+      "sha256": "2c78bda97cbcc30cc859e3d7200db4c33b06e7c98cc570bfc23bbd11f8331aa5",
+      "size": 2749568,
+      "chapter": "第9章",
+      "pages": 55,
+      "expectedSources": 65
+    }
+  ],
+  "visualReviews": {
+    "path": "visual-reviews.json",
+    "sha256": "521643a710412d643798a75503c0172edb74bbfe000ea75aee43cf2950b8ebd4"
+  },
+  "summary": {
+    "documents": 17,
+    "slides": 1112,
+    "expectedSources": 1495,
+    "originalBytes": 44433210,
+    "uniqueImages": 370,
+    "distinctPageImageReviews": 703,
+    "partialUniqueImagesIncludingUnreadable": 44,
+    "unreadableUniqueImages": 2
+  }
+}
