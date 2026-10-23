@@ -39,6 +39,8 @@ macOS/Linux 对应命令使用 `.venv/bin/python`。环境变量沿用 `.env.exa
 
 “知识库”入口集中提供课程知识库创建、批量文件导入、章节筛选、后台处理状态、原文检索与问答范围接入。仍使用同一课程、资料版本、数据库与任务队列；默认解析/关键词检索不调用模型。用户明确要求共享的首批17份数据结构与算法PPT及图片补录已整理为 [共享资料包](materials/data-structures-algorithms/README.md)，可通过Python工具导入各自的本机服务；私人数据库仍不随Git同步。操作、原知识库验收及限制见 [知识库交付](docs/delivery/dsa-knowledge-base.md)。
 
+**评委首次体验**：先按上文启动服务，再在项目根目录的另一个终端运行 `.venv/Scripts/python.exe -m scripts.import_course_bundle --apply`（macOS/Linux 用 `.venv/bin/python`），成功后进入“知识库”选择“数据结构与算法”。全新导入包含17份课件、1495个片段；无需模型密钥即可检索和核对原文。完整步骤、3组检索关键词和外部 API 配置边界见 [评委体验说明](materials/data-structures-algorithms/README.md#评委从下载到体验)。
+
 未配置独立 OCR 服务时，PPT 空文本页可通过“处理 → 图片文字补录”导入已核对的视觉转写，先预览再明确采纳；保留实际页码、原件和历史。辅助转写不等同于产品自动识图 API，见 [图片核对与补录](docs/delivery/pptx-visual-review.md)。
 
 已有正文页也可逐图追加补录，装饰/界面截图/无法辨认内容只记录核查状态，不进入检索证据。首次 17 份数据结构课件已完成全量图片清点和本机补录，部分转写与未解决项见 [全批图片补录记录](docs/delivery/all-ppt-images.md)。
