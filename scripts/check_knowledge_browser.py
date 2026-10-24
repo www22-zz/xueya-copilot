@@ -37,19 +37,17 @@ def main():
                 browser.file('#kbFiles', path)
                 browser.wait('document.querySelector("#kbDocuments")?.innerText.includes("已解析，可检索")')
                 browser.wait('document.querySelector("#kbChapter")?.innerText.includes("第3章")')
-                browser.fill('#kbQuery', '后进先出')
-                browser.click('#kbSearch button')
-                browser.wait('!!document.querySelector(".kb-result")')
-                assert '后进先出' in browser.evaluate('document.querySelector("#kbResults").innerText')
-                browser.click('[data-kb=source]')
+                # Standalone search was retired; lexical retrieval remains a backend contract.
+                evidence = browser.evaluate("""(async()=>{const b=await(await fetch('/api/platform/bootstrap')).json();const r=await fetch('/api/platform/knowledge/search',{method:'POST',headers:{'Content-Type':'application/json','X-Xueya-Token':b.token},body:JSON.stringify({courseId:document.querySelector('#kbBase').value,query:'后进先出',mode:'lexical'})});return r.json();})()""")
+                assert '后进先出' in json.dumps(evidence, ensure_ascii=False)
+                browser.click('[data-kb=toggle-list]')
+                browser.click('[data-kb=read]')
                 browser.wait('document.querySelector("#kbDialog[open]")?.innerText.includes("后进先出")')
                 browser.click('#kbDialog [data-kb=close]')
                 browser.file('#kbFiles', path)
                 browser.wait('document.querySelector("#kbNotice")?.innerText.includes("上传完成")')
                 assert browser.evaluate('document.querySelectorAll(".kb-document").length') == 1
-                browser.fill('#kbMode', 'hybrid')
-                assert browser.evaluate('!document.querySelector(".kb-api-confirm").hidden && document.querySelector(".kb-api-confirm input").required')
-                browser.fill('#kbMode', 'lexical')
+                assert browser.evaluate('document.querySelector("[data-kb=index]").disabled')
                 browser.reload()
                 browser.wait('document.querySelector("#kbBase")?.value === '+json.dumps(course_id)+' && !!document.querySelector(".kb-document")')
                 browser.click('#kbDocuments [data-kb=chat]')
@@ -62,7 +60,7 @@ def main():
                 browser.wait('document.querySelector("#kbBase")?.value === "course-default" && !document.querySelector(".kb-document")')
                 browser.fill('#kbBase', course_id)
                 browser.wait('!!document.querySelector(".kb-document")')
-                checks = ['create', 'upload', 'parse', 'filename-chapter', 'lexical-search', 'citation-reader', 'duplicate-import', 'external-confirmation', 'reload', 'chat-course-handoff', 'course-isolation']
+                checks = ['create', 'upload', 'parse', 'filename-chapter', 'lexical-search', 'citation-reader', 'duplicate-import', 'unconfigured-external-processing-disabled', 'reload', 'chat-course-handoff', 'course-isolation']
                 if args.materials:
                     report = import_directory(args.materials, '数据结构与算法', url, output/'real-import.json')
                     assert report['status'] == 'passed', report['status']
@@ -85,9 +83,6 @@ def main():
                 browser.call('Emulation.setDeviceMetricsOverride', width=390, height=844, deviceScaleFactor=1, mobile=True)
                 assert browser.evaluate('document.documentElement.scrollWidth <= innerWidth+1')
                 browser.screenshot(output/'mobile.png')
-                browser.click('[data-kb=jump-search]')
-                assert browser.evaluate('document.activeElement.id') == 'kbSearchHeading'
-                browser.screenshot(output/'search-mobile.png')
                 browser.evaluate('scrollTo(0,0)')
                 browser.evaluate('document.documentElement.dataset.theme="dark"')
                 browser.screenshot(output/'mobile-dark.png')

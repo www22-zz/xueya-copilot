@@ -3,7 +3,7 @@ const assert=require('node:assert/strict');
 const {readSSE}=require('../../shared/agent/sse.js');
 const {createChatService}=require('../../frontend/js/services/chat-service.js');
 const {prepareDocument}=require('../../frontend/js/services/library-service.js');
-const {createPracticeService}=require('../../frontend/js/services/practice-service.js');
+const {createPracticeClient}=require('../../frontend/js/services/practice-client.js');
 const L=require('../../shared/learning.js');
 
 function body(text,step=1){
@@ -63,16 +63,17 @@ test('PDF/DOCX browser service sends binary data, handles empty text and retains
   assert.equal(local.status,'内容待解析');
 });
 
-test('practice browser service forwards selected topics and fails clearly without HTTP',async()=>{
-  let request;
-  const service=createPracticeService({fetchImpl:async(url,options)=>{
-    request={url,input:JSON.parse(options.body)};
-    return new Response(JSON.stringify({ok:true,questions:[{prompt:'题目'}]}));
+test('fixed practice client loads the built-in bank and uses its cached copy offline',async()=>{
+  const cache=new Map(),storage={getItem:k=>cache.get(k),setItem:(k,v)=>cache.set(k,v)};
+  const service=createPracticeClient({storage,request:async(path)=>{
+    if(path==='/api/account/status')return {ok:true,configured:false,authenticated:true};
+    if(path==='/api/platform/bootstrap')return {ok:true,token:'controlled'};
+    if(path==='/api/practice/bank')return {ok:true,version:'test-bank',questions:[{id:'h100-01'}]};
+    return {ok:true,statuses:{},notes:{},serverSeq:0};
   }});
-  assert.equal((await service.questions({sources:L.sources,focus:'树的高度'}))[0].prompt,'题目');
-  assert.equal(request.input.focus,'树的高度');
-  assert.equal(request.url,'/api/questions');
-  await assert.rejects(createPracticeService({protocol:'file:'}).topics(L.sources),/AI_UNAVAILABLE/);
+  await service.initialize();assert.equal(service.bank()[0].id,'h100-01');
+  const offline=createPracticeClient({storage,request:async()=>{throw Error('offline');}});
+  await offline.initialize();assert.equal(offline.bank()[0].id,'h100-01');assert.equal(offline.online,false);
 });
 
 test('offline workflow keeps real learning analysis and plan preview instead of course excerpts',async()=>{

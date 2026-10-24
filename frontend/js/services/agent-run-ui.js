@@ -14,7 +14,7 @@
   }
   function markup(message,index,enabled){
     const run=message.agentRun;
-    if(!run)return enabled&&!message.failed&&!message.cancelled&&message.engine!=='正在回答'?`<div class="message-actions">${button('开始章节学习',index,'start-chapter')}${button('错题巩固',index,'start-wrong')}${button('跨章节备考',index,'start-exam')}</div>`:'';
+    if(!run)return '';
     const s=run.state||{},interaction=run.interaction||{},form=(kind,content,label)=>`<form data-agent-form="${kind}" data-agent-index="${index}">${content}<button class="button button-small button-blue" type="submit">${label}</button></form>`;
     let body='';
     if(interaction.kind==='confirmation')body=`${interaction.explanation?`<p>${e(interaction.explanation)}</p>`:''}${interaction.grades?`<p>本次得分：${interaction.grades.map(g=>`${e(g.grade.score??'待评')}/${e(g.grade.maxScore)}`).join('，')}</p>`:''}${interaction.artifactKind==='quiz'?quiz(interaction.preview):plan(interaction.preview)}${interaction.changes?.previous?`<details><summary>查看原安排</summary>${plan(interaction.changes.previous)}</details>`:''}${interaction.limitation?`<p>${e(interaction.limitation)}</p>`:''}${button('确认并保存此预览',index,'confirm')}${button('重新预览',index,'refresh')}`;

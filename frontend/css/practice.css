@@ -93,3 +93,20 @@
 @media(prefers-reduced-motion:reduce){
   .practice-tab,.practice-row,.practice-option{transition:none}
 }
+
+/* Keep the existing palette, with legible controls and an immersive mobile detail. */
+.practice-module input,.practice-module select,.practice-module textarea{border:1px solid var(--line);border-radius:10px;background:var(--white);color:var(--ink);padding:10px 12px;font:inherit;line-height:1.6}
+.practice-module textarea{width:100%;resize:vertical}
+.practice-module input:focus,.practice-module select:focus,.practice-module textarea:focus{outline:2px solid var(--lavender);outline-offset:2px}
+.practice-sync{font-size:12px;color:var(--muted)}
+.practice-prompt,.practice-explanation{white-space:pre-wrap;overflow-wrap:anywhere}
+.practice-sample{white-space:pre-wrap;overflow-wrap:anywhere}
+.practice-solution{min-width:0;display:grid;gap:12px}
+.practice-detail .practice-actions{position:relative}
+@media(max-width:720px){
+  body:has(.practice-module.is-fullscreen) .site-header{visibility:hidden}
+  body:has(.practice-module.is-fullscreen) #appSettingsButton{visibility:hidden}
+  .practice-module.is-fullscreen .practice-detail-pane{z-index:200;padding:16px;padding-top:max(16px,env(safe-area-inset-top))}
+  .practice-module:not(.is-fullscreen) .practice-detail-pane{display:none}
+  .practice-detail-head .practice-back{flex-basis:100%;justify-content:flex-start}
+}

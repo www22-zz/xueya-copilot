@@ -7,6 +7,7 @@ deterministic and a replayed op never double-counts (PRD 10.5).
 """
 from __future__ import annotations
 import json
+from datetime import datetime, timezone
 from .common import Scope, dumps, require, utc_now
 from . import practice_rules as rules
 
@@ -54,28 +55,46 @@ class PracticeState:
         """Rebuild statuses and notes from the ordered event log. Never patch fields one by one."""
         scope = self.scope(account_id)
         progress, notes = {}, {}
-        for event in self.events(scope):
+        events = self.events(scope)
+        for event in events:
             action, question_id = event.get('action'), event.get('questionId')
             if action == 'note-save':
+                previous_revision = notes.get(question_id, {}).get('revision', 0)
                 notes[question_id] = rules.merge_note(notes.get(question_id), event.get('text', ''),
                                                       event.get('baseRevision'), at=event.get('at') or '',
                                                       device=event.get('deviceTag') or '')
+                if event.get('resolve') and event.get('baseRevision') == previous_revision:
+                    notes[question_id]['conflicts'] = []
                 notes[question_id].pop('merged', None)
                 continue
+        ordered = sorted((event for event in events if event.get('action') != 'note-save'),
+                         key=lambda event: (event.get('effectiveAt') or event.get('at') or '', event.get('serverSeq', 0), event['id']))
+        for event in ordered:
+            question_id = event['questionId']
             question = {'id': question_id, 'type': event.get('questionType')}
             try:
-                rules.apply(progress, question, action, {**(event.get('payload') or {}), 'at': event.get('at')})
+                self._apply(progress, question, event['action'],
+                            {**(event.get('payload') or {}), 'at': event.get('effectiveAt') or event.get('at')},
+                            concurrent=bool(event.get('clientTs')))
             except ValueError:
                 continue
         return {'serverSeq': self.sequence(account_id), 'statuses': progress, 'notes': notes}
+
+    @staticmethod
+    def _apply(progress, question, action, payload, *, concurrent=False):
+        # A lawful offline state choice remains valid when another browser changed the state meanwhile.
+        if concurrent and action in ('master', 'conquer', 'fuzzy', 'reset'):
+            row = rules.entry(progress, question['id'])
+            row['status'] = 'wrong' if action == 'conquer' else 'mastered' if action == 'reset' else 'pending'
+        return rules.apply(progress, question, action, payload)
 
     def accept(self, account_id, ops, *, device=''):
         require(isinstance(ops, list) and 1 <= len(ops) <= MAX_OPS, 'INVALID_OPS')
         scope = self.scope(account_id)
         accepted, duplicates, rejected = [], [], []
-        progress = self.derive(account_id)['statuses']
-        notes = self.derive(account_id)['notes']
         with self.platform.db.transaction():
+            snapshot = self.derive(account_id)
+            progress, notes = snapshot['statuses'], snapshot['notes']
             for op in ops:
                 try:
                     outcome = self._accept_one(account_id, scope, op, device, progress, notes)
@@ -104,21 +123,33 @@ class PracticeState:
         payload = op.get('payload') if isinstance(op.get('payload'), dict) else {}
         guard(len(dumps(op).encode()) <= MAX_OP_BYTES, 'OP_TOO_LARGE')
         at = utc_now()
-        record = {'id': op_id, 'action': action, 'questionId': question_id, 'at': at,
+        effective_at = at
+        if op.get('clientTs'):
+            try:
+                parsed = datetime.fromisoformat(op['clientTs'].replace('Z', '+00:00'))
+                guard(parsed.tzinfo is not None, 'INVALID_CLIENT_TIME')
+                guard(parsed.timestamp() <= datetime.now(timezone.utc).timestamp() + 300, 'INVALID_CLIENT_TIME')
+                effective_at = parsed.astimezone(timezone.utc).isoformat(timespec='milliseconds').replace('+00:00', 'Z')
+            except (TypeError, AttributeError, ValueError):
+                raise ValueError('INVALID_CLIENT_TIME')
+        record = {'effectiveAt': effective_at, 'id': op_id, 'action': action, 'questionId': question_id, 'at': at,
                   'questionType': payload.get('questionType') or op.get('questionType'),
                   'deviceTag': op.get('deviceTag') or device, 'clientTs': op.get('clientTs')}
         if action == 'note-save':
             text = payload.get('text')
             guard(isinstance(text, str) and len(text.encode()) <= MAX_NOTE_BYTES, 'INVALID_NOTE')
-            record.update(text=text, baseRevision=payload.get('baseRevision'))
+            guard(type(payload.get('baseRevision')) is int and payload['baseRevision'] >= 0, 'INVALID_NOTE_REVISION')
+            record.update(text=text, baseRevision=payload.get('baseRevision'), resolve=bool(payload.get('resolve')))
             merged = rules.merge_note(notes.get(question_id), text, payload.get('baseRevision'),
                                       at=at, device=record['deviceTag'])
+            if payload.get('resolve') and payload.get('baseRevision') == notes.get(question_id, {}).get('revision', 0):
+                merged['conflicts'] = []
             merged.pop('merged', None)
         else:
             record['payload'] = payload
             question = {'id': question_id, 'type': record['questionType']}
             try:
-                rules.apply(progress, question, action, {**payload, 'at': at})
+                self._apply(progress, question, action, {**payload, 'at': effective_at}, concurrent=bool(op.get('clientTs')))
             except ValueError as error:
                 raise ValueError(str(error))
             merged = None

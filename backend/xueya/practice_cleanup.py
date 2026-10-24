@@ -17,7 +17,7 @@ DELETED_ENTITY_KINDS = ('note', 'question', 'attempt', 'plan', 'concept', 'sessi
 DELETED_ARTIFACT_KINDS = ('learning-package', 'chapter-summary', 'plan', 'concept-graph', 'note')
 DELETED_META_PREFIXES = ('learning:', 'practice-legacy:', 'practice:op:', 'practice:note-draft:')
 KEEP_META_PREFIXES = ('local-account-v1', 'account-v2:', 'invocation-context', MARKER)
-WORKSPACE_KEEP = frozenset(('documents', 'messages', 'sessions', 'sessionId', 'courseId', 'libraryTags', 'mediaResults'))
+WORKSPACE_KEEP = frozenset(('documents', 'messages', 'sessions', 'sessionId', 'courseId', 'libraryTags', 'mediaResults', 'feedback'))
 
 
 def _stripped(data: dict) -> dict:
@@ -85,3 +85,30 @@ def already_done(db) -> bool:
 def mark_done(db, counts, *, auto=False) -> None:
     db.execute('INSERT INTO meta(key,value) VALUES(?,?)',
                (MARKER, dumps({'doneAt': utc_now(), 'counts': counts, 'auto': bool(auto)})))
+
+
+PURGE_MARKER = 'cleanup:retired-learning-v2'
+
+
+def purge_retired_learning(db):
+    """Complete v1's soft deletion without touching fixed-bank events or retained course/chat data."""
+    if db.one('SELECT value FROM meta WHERE key=?', (PURGE_MARKER,)):
+        return
+    retired = set(DELETED_ENTITY_KINDS) | {'review'}
+    artifact_kinds = set(DELETED_ARTIFACT_KINDS) | {'quiz', 'attempt', 'question', 'memory-card', 'card'}
+    with db.transaction():
+        for row in db.all('SELECT user_id,course_id,kind,id,data FROM entities'):
+            if row['user_id'].startswith('practice:'):
+                continue
+            remove = row['kind'] in retired
+            if row['kind'] == 'artifact':
+                try:
+                    value = json.loads(row['data'])
+                except (ValueError, TypeError):
+                    value = {}
+                remove = row['id'].startswith(('learning-artifact-', 'learning-run-', 'learning-checkpoint-')) or value.get('kind') in artifact_kinds
+            if remove:
+                key = (row['user_id'], row['course_id'], row['kind'], row['id'])
+                db.execute('DELETE FROM revisions WHERE user_id=? AND course_id=? AND kind=? AND id=?', key)
+                db.execute('DELETE FROM entities WHERE user_id=? AND course_id=? AND kind=? AND id=?', key)
+        db.execute('INSERT INTO meta(key,value) VALUES(?,?)', (PURGE_MARKER, dumps({'doneAt': utc_now()})))

@@ -42,10 +42,11 @@ class Platform:
 
     def _one_time_practice_cleanup(self):
         """PRD 14: drop the pre-refactor 笔记/题库/计划/图谱 data exactly once, never the new data."""
-        from .practice_cleanup import already_done, cleanup, mark_done
-        if already_done(self.db):
-            return
-        mark_done(self.db, cleanup(self.db, self.repo), auto=True)
+        from .practice_cleanup import already_done, cleanup, mark_done, purge_retired_learning
+        with self.db.transaction():
+            if not already_done(self.db):
+                mark_done(self.db, cleanup(self.db, self.repo), auto=True)
+            purge_retired_learning(self.db)
 
     def scope(self, course_id="course-default"):
         scope = Scope(user_id=self.user_id, course_id=course_id)

@@ -175,3 +175,36 @@ def test_batch_rejects_only_bad_ops(client):
     assert len(body['rejected']) == 1
     assert body['statuses']['b-dsa-s01']['status'] == 'wrong'
     assert body['statuses']['h100-01']['status'] == 'mastered'
+
+
+def test_offline_state_uses_operation_time_not_reconnect_order(client):
+    newer = op('newer', 'master', 'h100-01')
+    newer['clientTs'] = '2026-01-02T00:00:00.000Z'
+    older = op('older', 'mark-wrong', 'h100-01')
+    older['clientTs'] = '2026-01-01T00:00:00.000Z'
+    assert client.post('/api/practice/ops', json={'ops': [newer]}).json()['accepted'] == ['newer']
+    result = client.post('/api/practice/ops', json={'ops': [older]}).json()
+    assert result['statuses']['h100-01']['status'] == 'mastered'
+    assert result['statuses']['h100-01']['wrongCount'] == 0
+
+
+def test_resolving_note_conflict_is_persisted_and_not_only_hidden_locally(client):
+    client.post('/api/practice/ops', json={'ops': [
+        op('note-a', 'note-save', 'h100-01', {'text': 'A', 'baseRevision': 0}),
+        op('note-b', 'note-save', 'h100-01', {'text': 'B', 'baseRevision': 0})]})
+    result = client.post('/api/practice/ops', json={'ops': [
+        op('resolve', 'note-save', 'h100-01', {'text': 'B', 'baseRevision': 2, 'resolve': True})]}).json()
+    assert result['notes']['h100-01']['text'] == 'B'
+    assert result['notes']['h100-01']['conflicts'] == []
+    assert client.get('/api/practice/state').json()['notes']['h100-01']['conflicts'] == []
+
+
+def test_real_registered_accounts_do_not_share_practice_state(client):
+    for username in ('practicealice', 'practicebob'):
+        registered = client.post('/api/account/register', json={
+            'username': username, 'password': 'Password123', 'confirmPassword': 'Password123'})
+        assert registered.status_code == 200
+        state = client.get('/api/practice/state').json()
+        assert state['statuses'] == {} and state['notes'] == {}
+        client.post('/api/practice/ops', json={'ops': [op(username, 'master', 'h100-01')]})
+        assert client.get('/api/practice/state').json()['statuses']['h100-01']['status'] == 'mastered'

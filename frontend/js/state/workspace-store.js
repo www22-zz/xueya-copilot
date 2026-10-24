@@ -2,16 +2,17 @@
 (function(root,factory){const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;else root.XueyaWorkspaceStore=api;})(typeof globalThis!=='undefined'?globalThis:this,function(){
 'use strict';
 const KEY='xueya-copilot-workspace-v3',LEGACY='xueya-copilot-state-v2';
-const fields=['documents','messages','sessions','sessionId','courseId','libraryTags','mediaResults'];
+const fields=['documents','messages','sessions','sessionId','courseId','libraryTags','mediaResults','feedback'];
 const clone=value=>JSON.parse(JSON.stringify(value));
 function createStore({storage,learning:L,id=()=>globalThis.crypto.randomUUID(),now=()=>new Date().toISOString()}={}){
   let error='';
   function read(key){try{const value=JSON.parse(storage.getItem(key)||'null');return value&&typeof value==='object'&&!Array.isArray(value)?value:null;}catch{return null;}}
   const workspace=read(KEY),legacy=read(LEGACY),old=read('xueya-copilot-state-v1');
-  const defaults=()=>({documents:[],messages:[],sessions:[],sessionId:'',libraryTags:[],mediaResults:[]});
+  const defaults=()=>({documents:[],messages:[],sessions:[],sessionId:'',libraryTags:[],mediaResults:[],feedback:[]});
   function normalize(value={}){
     const result={...defaults(),...value};
-    for(const field of ['documents','messages','sessions','libraryTags','mediaResults'])if(!Array.isArray(result[field]))result[field]=[];
+    for(const key of ['cards','bank','records','notes','plan','plans','planHistory','graph','chapters','reviewLog','quizDraft','corrections','examRun','quizFilter','quizPool','quizIndex'])delete result[key];
+    for(const field of ['documents','messages','sessions','libraryTags','mediaResults','feedback'])if(!Array.isArray(result[field]))result[field]=[];
     result.sessions=result.sessions.filter(s=>s&&typeof s.id==='string'&&Array.isArray(s.messages));
     if(!result.sessions.length)result.sessions=[{id:id(),title:String(result.messages.find(m=>m.role==='user')?.text||'新的对话').slice(0,40),messages:clone(result.messages),createdAt:now()}];
     result.sessionId=result.sessions.some(s=>s.id===result.sessionId)?result.sessionId:result.sessions[0].id;

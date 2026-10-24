@@ -75,64 +75,74 @@ function judgeAnswer(question,value){
 }
 function createStore({storage=globalThis.localStorage,accountId='local',now=()=>new Date().toISOString(),id=()=>globalThis.crypto.randomUUID()}={}){
   const key=KEY+':'+accountId,opsKey=OPS+':'+accountId;
-  const read=k=>{try{const v=JSON.parse(storage.getItem(k)||'null');return v&&typeof v==='object'?v:null;}catch{return null;}};
-  const defaults=()=>({version:1,accountId,bankVersion:'',serverSeq:0,statuses:{},notes:{},drafts:{},filters:{},ui:{category:'hot100',selectedQuestionId:null,detailFullscreen:false,listScroll:0,mode:'order',language:'python',wrongSort:'recent'}});
-  let state=Object.assign(defaults(),read(key)||{});
-  state.filters=Object.assign({hot100:{},basic:{},interview:{}},state.filters||{});
-  for(const category of CATEGORIES)state.filters[category]=Object.assign({keyword:'',subject:'',tag:'',difficulty:'',type:'',status:''},state.filters[category]||{});
-  state.ui=Object.assign(defaults().ui,state.ui||{});
-  let queue=Array.isArray(read(opsKey))?read(opsKey):[];
-  let flushing=null,offline=queue.some(op=>op.state==='pending');
-  function persist(){try{storage.setItem(key,JSON.stringify(state));}catch{/* drafts are best effort; authoritative state stays on the server */}}
-  function persistQueue(){try{storage.setItem(opsKey,JSON.stringify(queue));}catch{throw new Error('STORAGE_UNAVAILABLE');}}
-  function push(kind,questionId,payload={}){
-    const op={opId:'op-'+id(),kind,questionId,payload,clientTs:now(),deviceTag:state.accountId,state:'pending',retries:0};
-    queue.push(op);persistQueue();
-    if(kind!=='note-save'){try{apply(state.statuses,{id:questionId,type:payload.questionType},kind,payload);}catch{/* server will reject; keep the op for the error surface */}}
-    persist();return op;
+  const read=k=>{try{return JSON.parse(storage.getItem(k)||'null');}catch{return null;}};
+  const defaults={version:2,accountId,serverSeq:0,statuses:{},notes:{},drafts:{},filters:{},ui:{category:'hot100',selectedQuestionId:null,listScroll:0,mode:'order',language:'python',wrongSort:'recent',positions:{},reviewFilters:{}}};
+  const state=Object.assign({},defaults,read(key)||{});state.accountId=accountId;
+  state.ui=Object.assign({},defaults.ui,state.ui||{});state.ui.positions=state.ui.positions||{};
+  state.ui.reviewFilters=state.ui.reviewFilters||{};state.ui.detailFullscreen=false;delete state.ui.shortDraft;
+  for(const category of CATEGORIES)state.filters[category]=Object.assign({keyword:'',subject:'',tag:'',difficulty:'',type:'',status:'pending'},state.filters[category]||{});
+  for(const category of CATEGORIES)if(!state.filters[category].status)state.filters[category].status='pending';
+  let queue=read(opsKey)||[],flushing=null,lastError='';
+  const copy=v=>JSON.parse(JSON.stringify(v));
+  let authoritative={statuses:copy(state.statuses),notes:copy(state.notes)};
+  function persist(){try{storage.setItem(key,JSON.stringify(state));return true;}catch{lastError='浏览器无法保存，请检查存储空间';return false;}}
+  function persistQueue(){try{storage.setItem(opsKey,JSON.stringify(queue));}catch{throw Error('无法保存离线操作，请检查浏览器存储空间');}}
+  function replay(){
+    state.statuses=copy(authoritative.statuses||{});state.notes=copy(authoritative.notes||{});
+    for(const op of queue){
+      if(op.kind==='note-save')state.notes[op.questionId]=mergeNote(state.notes[op.questionId],op.payload.text,op.payload.baseRevision,op.clientTs,op.deviceTag);
+      else try{apply(state.statuses,{id:op.questionId,type:op.payload.questionType},op.kind,{...op.payload,at:op.clientTs});}catch{}
+    }
   }
-  function pushNote(questionId,text,baseRevision){
-    const note=mergeNote(state.notes[questionId],text,baseRevision,now(),state.accountId);
-    state.notes[questionId]=note;delete note.merged;persist();
-    return push('note-save',questionId,{text,baseRevision});
+  function push(kind,questionId,payload={}){
+    if(kind!=='note-save')apply(state.statuses,{id:questionId,type:payload.questionType},kind,{...payload,at:now()});
+    const op={opId:'op-'+id(),kind,questionId,payload,clientTs:now(),deviceTag:accountId,state:'pending'};
+    queue.push(op);persistQueue();persist();return op;
+  }
+  function pushNote(questionId,text,baseRevision,resolve=false){
+    const op=push('note-save',questionId,{text,baseRevision,resolve});
+    const note=mergeNote(state.notes[questionId],text,baseRevision,op.clientTs,accountId);
+    if(resolve&&baseRevision===(state.notes[questionId]?.revision||0))note.conflicts=[];
+    state.notes[questionId]=note;persist();return op;
   }
   function applyServer(payload){
-    if(payload&&typeof payload.serverSeq==='number')state.serverSeq=payload.serverSeq;
-    if(payload&&payload.statuses)state.statuses=payload.statuses;
-    if(payload&&payload.notes)state.notes=payload.notes;
-    persist();
+    lastError='';
+    if(typeof payload?.serverSeq==='number')state.serverSeq=payload.serverSeq;
+    authoritative={statuses:copy(payload?.statuses||{}),notes:copy(payload?.notes||{})};
+    replay();persist();try{storage.setItem(key+':server',JSON.stringify(authoritative));}catch{}
   }
   async function flush(client){
-    if(!client)return {ok:false,error:'NO_CLIENT'};
-    const pending=queue.filter(op=>op.state==='pending');
-    if(!pending.length){offline=false;return {ok:true,accepted:[]};}
-    flushing=(flushing||Promise.resolve()).catch(()=>{}).then(async()=>{
-      try{
-        const result=await client.submitOps(pending.map(({opId,kind,questionId,payload,clientTs,deviceTag})=>({opId,kind,questionId,payload,clientTs,deviceTag})));
-        const done=new Set([...(result.accepted||[]),...(result.duplicates||[])]);
-        for(const op of queue)if(done.has(op.opId))op.state='synced';
-        queue=queue.filter(op=>op.state!=='synced');
-        persistQueue();applyServer(result);offline=queue.some(op=>op.state==='pending');
-        return result;
-      }catch(error){
-        for(const op of pending)op.retries=(op.retries||0)+1;
-        persistQueue();offline=true;throw error;
+    if(flushing)return flushing;
+    flushing=(async()=>{
+      while(queue.length){
+        const pending=queue.slice(0,200);
+        try{
+          const result=await client.submitOps(pending);
+          const done=new Set([...(result.accepted||[]),...(result.duplicates||[])]);
+          const rejected=result.rejected||[];
+          if(rejected.length){lastError='部分操作未同步，请重新检查题目状态';throw Error(lastError);}
+          if(!done.size)throw Error('同步未完成');
+          queue=queue.filter(op=>!done.has(op.opId));persistQueue();applyServer(result);
+          for(const op of pending)if(op.kind==='note-save'&&done.has(op.opId)&&state.drafts[op.questionId]?.text===op.payload.text)delete state.drafts[op.questionId];
+          persist();lastError='';
+        }catch(error){lastError=error.message||'待同步';persist();throw error;}
       }
-    });
-    return flushing;
+      return {ok:true};
+    })().finally(()=>{flushing=null;});return flushing;
   }
-  return {
-    state,get offline(){return offline;},get pendingOps(){return queue.filter(op=>op.state==='pending').length;},
-    get error(){return '';},
-    filters(){return state.filters[state.ui.category]||{};},
-    persist,push,pushNote,flush,applyServer,judgeAnswer,
-    setDraft(questionId,text){if(text)state.drafts[questionId]={text,savedAt:now()};else delete state.drafts[questionId];persist();},
-    draft(questionId){return (state.drafts[questionId]||{}).text||'';},
-    chooseConflict(questionId,text){
-      const note=state.notes[questionId];if(!note)return false;
-      const conflicts=(note.conflicts||[]).filter(c=>c.text!==text);
-      state.notes[questionId]={text,revision:note.revision,updatedAt:now(),conflicts};persist();return true;
-    },
+  // v2 stores optimistic state and its authoritative base separately, so refresh cannot double-count.
+  const base=read(key+':server');if(base)authoritative=base;
+  const originalApply=applyServer;
+  function receive(payload){originalApply(payload);try{storage.setItem(key+':server',JSON.stringify(authoritative));}catch{}}
+  return {state,persist,push,pushNote,flush,applyServer:receive,judgeAnswer,
+    get offline(){return queue.length>0;},get pendingOps(){return queue.length;},get error(){return lastError;},
+    filters(){return state.filters[state.ui.category];},
+    setDraft(questionId,text){state.drafts[questionId]={text,savedAt:now()};persist();},
+    clearDraft(questionId){delete state.drafts[questionId];persist();},
+    draft(questionId){return state.drafts[questionId]?.text??'';},
+    hasDraft(questionId){return Object.prototype.hasOwnProperty.call(state.drafts,questionId);},
+    queuedNote(questionId,text){return queue.some(op=>op.kind==='note-save'&&op.questionId===questionId&&op.payload.text===text);},
+    chooseConflict(questionId,text){const note=state.notes[questionId];if(!note)return false;pushNote(questionId,text,note.revision,true);return true;}
   };
 }
 return{createStore,KEY,OPS,CATEGORIES,STATUSES,ACTIONS,blank,apply,weight,randomPick,sortWrong,mergeNote,judgeAnswer};

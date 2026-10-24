@@ -77,7 +77,14 @@ def main():
                 page.get_by_role('button', name='用于问答', exact=True).click()
                 page.locator('#chatInput').fill('队列是什么？')
                 page.get_by_role('button', name='发送问题', exact=True).click()
-                page.locator('.ai-message.loading-message .stream-text').filter(has_text='队列遵循先进先出').wait_for()
+                try:
+                    page.locator('.ai-message.loading-message .stream-text').filter(has_text='队列遵循先进先出').wait_for(timeout=8000)
+                except Exception:
+                    page.screenshot(path='test-results/fast-qa-failure.png', full_page=True)
+                    print('QA browser errors:', errors)
+                    print('QA chat:', page.locator('#spaceContent').inner_text()[-1600:])
+                    print('Controlled model calls:', len(calls))
+                    raise
                 assert not release.is_set() and len(calls) == 1
                 assert page.get_by_role('button', name='停止生成', exact=True).is_visible()
                 release.set()

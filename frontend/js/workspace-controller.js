@@ -75,7 +75,7 @@ function createWorkspace(ctx){
       doc.corrections=doc.corrections||[];doc.corrections.push(correction);persist();render();toast(correction.applied?'纠错已保存并重建原文，请重新打开资料核对。':'纠错草稿已保存，尚未替换检索原文。');
     });
   }
-  function courses(){openEditor('管理课程',`<p class="panel-description">每门课程的资料、会话、笔记、练习和计划分别保存；归档后仍可恢复。</p><div class="course-list">${store.courses.map(c=>`<div><strong>${e(c.name)}</strong>${c.archived?newButton('恢复',`data-restore-course="${e(c.id)}"`):newButton(c.id===state.courseId?'当前课程':'切换',`data-select-course="${e(c.id)}"`)}${!c.archived?newButton('归档',`data-archive-course="${e(c.id)}"`):''}</div>`).join('')}</div>`+field('新课程名称','name','',{required:true}),data=>{if(busy())return false;const course=store.addCourse(data.get('name'));if(course){resetTransient();render();}},{submit:'创建课程'});}
+  function courses(){openEditor('管理课程',`<p class="panel-description">每门课程的资料与会话分别保存；练习进度、错题和随手记在同一账号下跨课程共享。归档课程仍可恢复。</p><div class="course-list">${store.courses.map(c=>`<div><strong>${e(c.name)}</strong>${c.archived?newButton('恢复',`data-restore-course="${e(c.id)}"`):newButton(c.id===state.courseId?'当前课程':'切换',`data-select-course="${e(c.id)}"`)}${!c.archived?newButton('归档',`data-archive-course="${e(c.id)}"`):''}</div>`).join('')}</div>`+field('新课程名称','name','',{required:true}),data=>{if(busy())return false;const course=store.addCourse(data.get('name'));if(course){resetTransient();render();}},{submit:'创建课程'});}
   function resetTransient(){for(const a of attachments)URL.revokeObjectURL(a.url);for(const url of mediaURLs)URL.revokeObjectURL(url);mediaURLs.clear();attachments=[];queue=[];remoteGraph=null;graphLoadedFor=null;graphRevision++;for(const key of Object.keys(mediaFiles))delete mediaFiles[key];state.mediaFiles={};state.mediaPreviews={};state.mediaTokens={};state.mediaJob=null;state.speechText='';}
   function selectCourse(courseId){if(busy())return;if(store.switchCourse(courseId)){resetTransient();$('#workspaceDialog').close();$('#sourceDialog').close();render();}}
   async function attachImages(files){
@@ -135,8 +135,6 @@ function createWorkspace(ctx){
   function enhance(base){views=globalThis.XueyaWorkspaceViews.createViews({...ctx,rich,service,getAttachments:()=>attachments,getMessageImage:ref=>messageImages?.source(ref)||'',getVoiceState:()=>voice?.status,getQueue:()=>queue},base);return views;}
   function beforeRender(){
     voice?.mount();
-    if(state.quizFilter==='wrong'&&!Array.isArray(state.quizPool))state.quizPool=L.wrongQuestions(state.records,[...L.questions,...state.bank]);
-    const q=views?.currentQuestions()[state.quizIndex],draft=q&&state.quizDraft[q.id];if(draft){state.selected=typeof draft.answer==='number'?draft.answer:null;state.submitted=!!draft.submitted;}
     const course=store.courses.find(c=>c.id===state.courseId),select=$('#courseSelect');if(select){select.innerHTML=store.courses.filter(c=>!c.archived).map(c=>`<option value="${e(c.id)}" ${c.id===state.courseId?'selected':''}>${e(c.name)}</option>`).join('');select.disabled=state.pending||state.working||uploading||!!voice?.busy||!!state.mediaJob?.running;}if($('#courseLabel'))$('#courseLabel').textContent=course?.name||'我的课程';
   }
   function afterRender(){

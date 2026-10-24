@@ -78,3 +78,25 @@ def test_cleanup_is_one_time_only(tmp_path):
         assert db.one('SELECT value FROM meta WHERE key=?', (MARKER,)) is not None
     finally:
         db.close()
+
+
+def test_supplemental_purge_removes_retired_revisions_but_keeps_new_bank_and_chat(tmp_path):
+    from backend.xueya.practice_cleanup import purge_retired_learning
+    from backend.xueya.common import Scope
+    db = Database(tmp_path / 'workspace.sqlite')
+    try:
+        repo = Repository(db)
+        seed(db, repo)
+        repo.ensure_course('practice:alice', {'id': 'practice-global', 'name': '练习'})
+        scope = Scope(user_id='practice:alice', course_id='practice-global')
+        repo.put(scope, 'event', 'new-practice', {'id': 'new-practice', 'action': 'master'})
+        purge_retired_learning(db)
+        assert db.one("SELECT id FROM entities WHERE id='old-note'") is None
+        assert db.one("SELECT id FROM revisions WHERE id='old-note'") is None
+        assert db.one("SELECT id FROM entities WHERE id='new-practice'") is not None
+        assert db.one("SELECT id FROM entities WHERE id='doc-1'") is not None
+        assert db.one("SELECT user_id FROM workspaces") is not None
+        purge_retired_learning(db)
+        assert db.one("SELECT id FROM entities WHERE id='new-practice'") is not None
+    finally:
+        db.close()
