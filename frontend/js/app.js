@@ -24,7 +24,7 @@
   let activeChat;
   const historyLayout=window.XueyaHistoryLayout?.create();
   const searchUI=window.XueyaPlatform?.available?window.XueyaSearchWorkspace?.create({state,store,toast}):null;
-  const practiceClient=window.XueyaPracticeClient?.createPracticeClient({request:window.XueyaPlatform?.request});
+  const practiceClient=window.XueyaPracticeClient?.createPracticeClient({});
   const practiceStore=window.XueyaPracticeStore?.createStore({storage,accountId:window.XueyaAccountId||'local'});
   const practiceUI=window.XueyaPracticeView?.createPracticeView({store:practiceStore,client:practiceClient,toast,navigate:hash=>{location.hash=hash;}});
   const workbench=window.XueyaPlatform?.available?window.XueyaWorkbench?.create({state,store,toast}):null;
@@ -35,7 +35,7 @@
   function render(){
     const prior=$('#chatThread'),sameSession=prior?.dataset.sessionId===state.sessionId,scrollTop=prior?.scrollTop||0,nearBottom=!prior||prior.scrollHeight-prior.scrollTop-prior.clientHeight<90;
     const pool=currentQuestions();if(state.quizIndex>=pool.length)state.quizIndex=0;
-    workspace.beforeRender();$('#spaceContent').innerHTML=renders[state.view]();$('#documentCount').textContent=state.documents.filter(d=>!d.superseded).length;icons();workspace.afterRender();workbench?.prepare();libraryUI?.mount();workbench?.mount();experience?.mount();mediaUI?.mount();historyLayout?.mount();knowledgeUI?.mount();if(state.view==='practice')practiceUI?.mountPractice($('#practiceModule'));if(state.view==='review')practiceUI?.mountReview($('#practiceModule'));
+    workspace.beforeRender();$('#spaceContent').innerHTML=renders[state.view]();$('#documentCount').textContent=state.documents.filter(d=>!d.superseded).length;icons();workspace.afterRender();workbench?.prepare();libraryUI?.mount();workbench?.mount();experience?.mount();mediaUI?.mount();historyLayout?.mount();knowledgeUI?.mount();const practiceModule=$('#practiceModule');if(practiceModule){if(state.view==='review')practiceUI?.mountReview(practiceModule);else practiceUI?.mountPractice(practiceModule);}
     const thread=$('#chatThread');if(thread)thread.scrollTop=!sameSession||nearBottom?thread.scrollHeight:scrollTop;
     agentRuns?.refresh();
   }
@@ -95,7 +95,7 @@
   agentRuns=window.XueyaAgentRuns?.create({state,persist,render,toast});
   function mount(){
     agentRuns?.mount();
-    workspace.mount();practiceUI.mount();route();window.addEventListener('hashchange',route);
+    workspace.mount();practiceUI?.initialize?.();route();window.addEventListener('hashchange',route);
     if(location.protocol==='file:')$('#engineStatus').textContent='本地检索模式';
     else fetch('/api/health',{signal:AbortSignal.timeout(5000)}).then(r=>r.json()).then(p=>{$('#engineStatus').textContent=p.engine==='xiaomi-mimo'?'MiMo 已配置':'本地检索模式';}).catch(()=>{$('#engineStatus').textContent='本地检索模式';});
     $('#spaceContent').addEventListener('submit',event=>{event.preventDefault();if(workspace.handleSubmit(event))return;if(event.target.id==='chatForm')ask($('#chatInput').value);});
@@ -107,7 +107,7 @@
     $('#spaceContent').addEventListener('drop',event=>{if(event.target.closest('#uploadZone')){event.preventDefault();$('#uploadZone').classList.remove('drag-over');upload([...event.dataTransfer.files]);}});
     document.addEventListener('click',event=>{const b=event.target.closest('button');if(!b)return;if(workspace.handleClick(b))return;const d=b.dataset;
       if('closeDialog'in d)b.closest('dialog').close();if(d.citation)openSource(sourceById(d.citation));if(d.document)showDocument(d.document);if('upload'in d)$('#fileInput').click();if(d.prompt)ask(d.prompt);
-      if('stopChat'in d)activeChat?.abort();if('stopPractice'in d)practiceUI.cancel();
+      if('stopChat'in d)activeChat?.abort();
       if(d.mode){state.mode=d.mode;render();$('#chatInput').focus();}
 
 

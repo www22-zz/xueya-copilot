@@ -297,7 +297,7 @@ function createPracticeView({store,client,toast=()=>{},navigate=()=>{}}={}){
       if(action==='mode'){store.state.ui.mode=payload.mode;store.persist();render();return true;}
       if(action==='random'){
         const pool=listed().filter(x=>statusOf(x.id)==='pending');
-        const picked=store.randomPick?null:randomPickLocal(pool);
+        const picked=randomPickLocal(pool);
         if(!picked){toast('当前筛选下的题目已刷完');render();return true;}
         select(picked.id);return true;
       }
@@ -347,6 +347,19 @@ function createPracticeView({store,client,toast=()=>{},navigate=()=>{}}={}){
   return {
     beforeRender(){},
     afterRender(){},
+    /* Load the fixed bank once; safe to call again and to call before any mount. */
+    async initialize(){
+      if(!client)return {count:0};
+      try{
+        await client.initialize();
+        if(store&&client.state){
+          const state=client.state();
+          if(state&&state.statuses&&Object.keys(state.statuses).length)store.applyServer(state);
+        }
+        if(store&&store.flush)await store.flush(client).catch(()=>{});
+      }catch(error){toast(error.message||'题库暂不可用');}
+      return {count:(client.bank()||[]).length};
+    },
     mountPractice(node,params={}){root=node;view='practice';if(params.category)store.state.ui.category=params.category;if(params.id)store.state.ui.selectedQuestionId=params.id;store.state.ui.detailFullscreen=!!params.fullscreen;render();},
     mountReview(node,params={}){root=node;view='review';if(params.id)store.state.ui.selectedQuestionId=params.id;render();},
     handleAction(action,payload){return act(action,payload);},

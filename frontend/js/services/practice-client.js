@@ -12,26 +12,30 @@ function createPracticeClient({request,storage=globalThis.localStorage,now=()=>n
   }
   function saveCache(version,questions){
     bank=questions;bankVersion=version;
-    try{storage.setItem(BANK,JSON.stringify({version,questions}));}catch{/* quota: keep the bank memory-only */}  }
-  async function call(path,options={}){
-    if(!request)throw Object.assign(new Error('NO_TRANSPORT'),{code:'NO_TRANSPORT'});
+    try{storage.setItem(BANK,JSON.stringify({version,questions}));}catch{/* quota: keep the bank memory-only */}
+  }
+  /* Transport: prefer an injected request, otherwise use fetch against the same origin. */
+  async function send(path,options={}){
     const headers=Object.assign({'Content-Type':'application/json'},token?{'X-Xueya-Token':token}:{},options.headers||{});
     const body=options.body===undefined?undefined:JSON.stringify(options.body);
-    return request('/api/practice'+path,{...options,headers,body});
+    if(request)return request(path,{...options,headers,body});
+    const response=await fetch(path,{method:options.method||'GET',headers,body,signal:options.signal||AbortSignal.timeout(options.timeout||15000)});
+    let data;try{data=await response.json();}catch{throw Object.assign(new Error('PRACTICE_RESPONSE_INVALID'),{code:'PRACTICE_RESPONSE_INVALID'});}
+    if(!response.ok||!data.ok)throw Object.assign(new Error(data.error||'PRACTICE_REQUEST_FAILED'),{code:data.error||'PRACTICE_REQUEST_FAILED'});
+    return data;
   }
+  function call(path,options={}){return send('/api/practice'+path,options);}
   async function initialize(){
-    if(request){
-      try{
-        const boot=await request('/api/platform/bootstrap',{timeout:3000});
-        token=boot&&boot.token||'';
-      }catch{/* offline: fall back to whatever is cached */}
-    }
+    try{
+      const boot=await send('/api/platform/bootstrap',{timeout:3000});
+      token=boot&&boot.token||'';
+    }catch{/* offline: fall back to whatever is cached */}
     try{
       const catalog=await call('/bank');
       if(catalog&&catalog.ok)saveCache(catalog.version,catalog.questions);
     }catch(error){
       if(!loadCache())throw Object.assign(new Error('BANK_UNAVAILABLE'),{code:'BANK_UNAVAILABLE'});
-      if(String(error.code||error.message)!=='BANK_UNAVAILABLE')offline();
+      offline();
     }
     try{
       const state=await call('/state');
@@ -51,7 +55,6 @@ function createPracticeClient({request,storage=globalThis.localStorage,now=()=>n
     async submitOps(ops){
       try{
         const result=await call('/ops',{method:'POST',body:{ops,deviceTag:now()}});
-        if(!result||!result.ok)throw Object.assign(new Error(result&&result.error||'PRACTICE_SYNC_FAILED'),{code:result&&result.error});
         online=true;emit();
         return result;
       }catch(error){offline();throw error;}
