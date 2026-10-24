@@ -71,11 +71,19 @@ class LearningService:
         require(quiz['revision'] == value['quizRevision'], 'QUIZ_VERSION_CONFLICT')
         responses = value['responses']
         ids = [r.get('questionId') for r in responses]
-        require(len(set(ids)) == len(ids) and all(key in [q['id'] for q in quiz['content']['questions']] for key in ids), 'INVALID_SUBMISSION')
+        require(len(set(ids)) == len(ids), 'INVALID_SUBMISSION')
+        if ids:
+            question_ids = [q['id'] for q in quiz['content']['questions']]
+            require(all(key in question_ids for key in ids), 'INVALID_SUBMISSION')
         created = value.get('createdAt', self.clock())
+        responses_by_question = {r['questionId']: r for r in responses}
         events = []
         for q in quiz['content']['questions']:
-            response = next((r for r in responses if r['questionId'] == q['id']), {})
+            try:
+                response = responses_by_question.get(q['id'], {})
+            except TypeError:
+                # 保留历史非可哈希题目 ID 的匹配行为，不在重构中收紧校验。
+                response = next((r for r in responses if r['questionId'] == q['id']), {})
             events.append(attempt_event(q, {**response, 'id': fingerprint([key, q['id']]), 'createdAt': created}))
         content = {'quizId': value['quizId'], 'quizRevision': value['quizRevision'], 'events': events, 'questionSnapshots': clone(quiz['content']['questions']), 'diagnoses': [{'eventId': e['id'], **diagnose(e)} for e in events]}
         return await self.repository.commit({'courseId': course, 'id': key, 'operationId': operation, 'requestHash': digest, 'expectedRevision': 0, 'value': {'courseId': course, 'id': key, 'kind': 'attempt', 'revision': 1, 'content': content, 'updatedAt': created}})

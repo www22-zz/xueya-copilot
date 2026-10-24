@@ -43,6 +43,7 @@
 | R13 工程配置 | `pytest.ini:2-5` 与 `pyproject.toml:15-19` 重复测试配置；`package.json:26` 未声明浏览器依赖，而三套 e2e 第 1-2 行均 require Playwright；`.github/workflows/quality.yml:31-36` 无独立 lint／类型检查 | 中（浏览器环境）／低（配置重复）。浏览器基线无法运行，测试配置可能漂移 | 待办。安装／声明依赖和选择配置入口均需单独工程变更；约 3-5 文件，本轮不新增依赖 |
 | R14 测试缺口 | `tests_python/test_domain.py:91-107` 仅对路径顺序／拒绝先修局部断言；`:144-146` 只验证典型提交和幂等 | 中。没有锁定完整路径输出、边重复顺序、缺答、乱序响应、错误优先级与旧评分快照 | 本轮三批分别增加行为测试，保留原测试不改；新增 Python 测试文件，不增加框架 |
 | R15 评测复现性（执行中追加） | `rag_service.py:87` 每次上传生成随机文档 UUID；`rag_parse.py:247-248` 将文档 ID 纳入片段 ID；`rag_search.py:46,64,73` 同分按片段 ID 排序。同一未修改实现独立重跑，structured-lexical 46 问中 16 问 returned 不同 | 中。不同临时导入的同分尾部证据不完全一致；不能对两次独立导入直接断言片段逐字等价 | 单列 B/F 待办，不修改检索顺序／测试。固定输入的新旧 C 实现精确比较负责验证本轮行为等价；检索评测保留原指标和返回片段记录 |
+| R16 异步资源警告（执行中追加） | 最后一批首次完整 pytest 在 `tests/python/test_mcp_trace.py::test_dynamic_stream_exposes_arguments_before_observation_and_correlates_round` 报两条 PytestUnraisableExceptionWarning，涉及 ProactorSocketTransport／socket 的 ResourceWarning | 中。警告在垃圾回收时出现，报告所在测试／栈帧不能直接当作资源创建点，尚未确定来源或是否稳定复现 | 保留观察记录，不夹带清理代码修改。启用 `-W error::pytest.PytestUnraisableExceptionWarning` 后 MCP 专项 4 项与完整 547 项均通过，无警告；根因尚未定位，不宣称已修复 |
 
 ## 未确认为问题的检查
 
@@ -50,7 +51,7 @@
 - 顶层静态导入图无环；动态与延迟调用只作为待检查边界，不声称全局无环。
 - `library_fetch.py:30-34,75-79` 已校验公开地址并固定连接地址，不能仅因存在 URL 导入就报告 SSRF；`:115-116` finally 关闭连接。
 - `database.py:54-67` 同步事务明确不允许 await；`learning_integration.py:46-65` 虽调用 async 方法，当前 get_operation 本体无挂起 IO，未复现跨任务事务串扰，不做无依据改造。
-- 未证实 N+1 数据库查询、资源泄漏或真实凭据泄露；上述性能项指 Python 容器重复扫描。
+- 未证实 N+1 数据库查询或真实凭据泄露；上述性能项指 Python 容器重复扫描。执行中出现 R16 未关闭异步资源警告，尚未定位创建点或确定是否为永久泄漏，不把垃圾回收报告位置直接判为根因。
 
 ## 收益／风险优先级与执行计划
 
@@ -75,5 +76,27 @@
 - 批次 1：新增 25 项特征测试在旧源码上全部通过；仅展开判断表达式，`ast.dump(ast.parse(...))` 与批次前完全相同。改后完整 pytest **520 passed / 90.46 秒**，前端 42 passed、pip check、MCP 4 工具／2 命中、Python 220／JS 56 文件语法和 diff --check 通过；离线检索仍为 43/46 与 40/46，分类通过数与基线一致。浏览器保持缺 Playwright 的基线限制；未改浏览器代码。
 - 批次 2：11 项新特征测试在旧源码上通过，修改后路径／领域／跨语言专项 38 项通过；400 组固定随机种子的 DAG 完整输出与 main 旧实现一致且输入不变。500 节点合成星形图 7 轮中位耗时旧实现 27.142ms、索引实现 1.117ms，仅为本机合成微测量，不宣称真实课程延迟提升。
 - 批次 2 额外逐条比较两次独立导入的检索片段时断言失败，立即撤回该批源码并告知用户。旧实现两次对照也有 16 个案例返回片段不同，定位为 R15；分类通过数／召回／排名／边界指标一致。没有修改原测试或评测脚本；复现证据保存于忽略目录 `test-results/refactor-batch2/control-a/`、`control-b/`。排除此次改动导致差异后恢复同一索引补丁，重新完整 pytest **531 passed / 88.36 秒**；前端 42 passed、pip、MCP、Python 221／JS 56 文件语法、diff --check 通过，检索质量仍为 43/46 与 40/46。不采用撤回期间那次测试作为最终结果。
-- 批次 3 尚未开始。
+- 批次 3：16 项新特征测试在旧源码上全部通过；缓存题目 ID 列表、索引已校验作答，保留按题目顺序生成事件、缺答、幂等短路及历史非可哈希题目 ID 的原查找行为。没有收紧既有题目 ID 校验；提交 ID 的成员校验仍沿用列表相等语义，不宣称整段验证降为线性复杂度。修改后提交／领域／HTTP／Agent 专项 44 项通过；200 组固定输入与 main 旧实现的完整输出、异常、存储、幂等回放全部一致。首次完整 pytest 547 passed / 91.36 秒，出现 R16 的两条警告，因此未直接收尾；随后完整严格警告检查 **547 passed / 87.59 秒，无警告**。前端 42、pip、MCP、Python 222／JS 56 文件语法、diff --check 通过，检索质量仍为 43/46 与 40/46。原测试／前端／shared 均无改动。
 - 本轮未调用付费模型；当前验证以确定性行为和受控上游为准，非真实模型效果验收。
+
+本轮三个计划批次均已完成，按顺序单独提交在 `feat/large-C-agent-learning`；批次 1 为 `e49578b`，批次 2 为 `bafc4b2`，批次 3 为本节所在提交。后续查看 `git log --oneline 01c98fd..HEAD` 获取完整列表。没有改公共接口、SQLite schema、配置格式、依赖、前端或原测试；没有合并 main 或推送远程。R01-R03、R06、R08-R13、R15-R16 作为已记录待办保留，不把本轮重构宣称为全仓库所有维护问题已消除。
+
+## 验证命令与复核方式
+
+解释器统一使用仓库 `.venv/Scripts/python.exe`，以下以 `python` 简写。正常本地权限执行测试；不安装依赖，不启动指向个人数据库的正式服务。
+
+```powershell
+python -B -m pytest -q -p no:cacheprovider
+python -B -m pytest -q -p no:cacheprovider -W error::pytest.PytestUnraisableExceptionWarning
+node scripts/test.js --frontend
+python -B -m pip check
+python -B -m backend.xueya.mcp_server --check
+python -B -m scripts.check_quality --repeats 1 --output test-results/refactor-batch3/f-quality
+git diff --check
+```
+
+新增特征测试分别为 `tests_python/test_assessment_characterization.py`（25 项）、`test_learning_path_characterization.py`（11 项）、`test_quiz_submission_characterization.py`（16 项），可单独运行；未改动原有测试。语法检查对 backend/scripts/tests/tests_python 的 Python 用内存 `ast.parse`，对 frontend/shared/scripts/tests 的 JS 用 `node --check`，不生成 pyc。批次 1 另外读取 `git show 01c98fd:backend/agent/assessment.py` 比较 AST，确认表达式和求值顺序不变。
+
+400 组路径对照及 200 组提交对照是一次性本地诊断：从 `git show 01c98fd:...` 读取旧模块，在独立命名空间装载，随机种子 `20261025`；不将复制的旧实现加入生产代码或永久测试。路径生成 1-24 节点 DAG，混合 confirmed/candidate、prerequisite/related 边、显式／默认目标和掌握估计，比较完整返回与输入不变性。提交生成 1-59 题、乱序／遗漏答案及重复／未知 ID、版本冲突，比较返回或异常以及仓库、操作回执、历史和重放。永久特征测试保留可复核的明确行为断言，避免只复制当前实现。
+
+浏览器交互仍未实测：三套现有 JS e2e 因缺 Playwright 无法启动。之后环境就绪应运行 README 中的三套回归；C 手动复核应覆盖学习路径的目标与先修顺序、测验跳题／乱序作答后的判分和再次提交、主观题订正使用原量规。该手动流程未执行，不以 HTTP 回归替代浏览器验收结论。当前提交仅改 C 的三个 Python 源文件，没有页面或浏览器服务改动。
