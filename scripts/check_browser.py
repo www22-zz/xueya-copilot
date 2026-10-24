@@ -103,7 +103,7 @@ def main():
                     for view in ('overview', 'chat', 'library', 'cards', 'practice', 'memory', 'plan'):
                         page.goto(base+'/#space/'+view)
                         assert page.evaluate('document.documentElement.scrollWidth <= innerWidth'), (width, view)
-                page.goto(base+'/#space/chat')
+                page.goto(base+'/#space/ask')
                 page.screenshot(path=str(output/'chat-mobile.png'), full_page=True)
                 assert not errors, errors
                 browser.close()

@@ -53,7 +53,7 @@ def main():
                 browser.reload()
                 browser.wait('document.querySelector("#kbBase")?.value === '+json.dumps(course_id)+' && !!document.querySelector(".kb-document")')
                 browser.click('#kbDocuments [data-kb=chat]')
-                browser.wait('location.hash==="#space/chat" && !!document.querySelector("#chatInput")')
+                browser.wait('location.hash==="#space/ask" && !!document.querySelector("#chatInput")')
                 assert browser.evaluate('document.querySelector("#courseSelect").value') == course_id
                 assert browser.evaluate('document.querySelector(".scope-picker").textContent.includes("栈和队列")')
                 browser.evaluate('location.hash="space/knowledge"')

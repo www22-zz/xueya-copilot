@@ -26,7 +26,7 @@ def main():
                 'type': 'boolean', 'prompt': '队列是否先进先出？', 'answer': True, 'status': 'approved', 'conceptIds': []}, 0)
             browser = Browser(folder)
             try:
-                browser.call('Page.navigate', url=base+'/#space/chat')
+                browser.call('Page.navigate', url=base+'/#space/ask')
                 browser.wait('!!document.querySelector("#chatInput")')
                 browser.fill('#chatInput', '请解释队列这一章')
                 browser.click('#chatForm .send-button')

@@ -13,7 +13,7 @@ def main():
         with server(directory) as (url, app):
             browser = Browser(directory)
             try:
-                browser.call('Page.navigate', url=url+'/#space/memory')
+                browser.call('Page.navigate', url=url+'/#space/review')
                 browser.wait('!!document.querySelector("#cLearning [data-c-form]")')
                 assert browser.evaluate('!!document.querySelector(".wb-legacy:not([open])")')
                 assert not browser.evaluate('document.body.innerText.includes("打开本页进阶学习功能")')

@@ -46,7 +46,7 @@ def main():
                 browser = Browser(folder)
                 try:
                     browser.call('Emulation.setDeviceMetricsOverride', width=1440, height=1000, deviceScaleFactor=1, mobile=False)
-                    browser.call('Page.navigate', url=base+'/#space/chat')
+                    browser.call('Page.navigate', url=base+'/#space/ask')
                     browser.wait('!!document.querySelector("#chatInput")')
                     material = folder/'MCP验收队列.txt'
                     material.write_text(source['quote'], encoding='utf-8')

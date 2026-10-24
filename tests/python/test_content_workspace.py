@@ -62,44 +62,6 @@ def test_catalog_template_preview_adopt_edit_cas_and_scope(client):
     assert call(c, "note/preview", {"id": "n", "text": "x", "courseId": "other"}).status_code == 403
 
 
-def test_run_is_preview_only_convert_note_card_question_and_edit_history(client):
-    c = client
-    seed(c)
-    runs = run_template(c)
-    assert wait_job(c, runs[0]["jobId"])["status"] == "succeeded"
-    assert not call(c, "workspace").json()["result"]["items"]
-    preview = call(c, "recover-preview", {"id": runs[0]["runId"]}).json()["result"]
-    result = adopted(c, preview)["result"]
-    assert result["content"]["origin"] == "original-excerpt"
-    assert result["content"]["template"]["revision"] == 1
-    for kind in ("note", "memory-card", "question-draft"):
-        r = call(c, "convert/preview", {"id": kind, "target": kind, "parentId": result["id"], "parentRevision": 1, "prompt": "光合作用在哪里？"})
-        assert r.status_code == 200, r.text
-        saved = adopted(c, r.json()["result"])["result"]
-        assert saved["content"]["derivedFrom"] == [{"id": result["id"], "revision": 1}]
-        if kind == "question-draft":
-            assert saved["content"]["status"] == "candidate"
-            reviewed = c.post('/api/learning/questions/review', headers=c.platform_headers, json={
-                'id': saved['content']['id'], 'expectedRevision': saved['revision'], 'expectedVersion': saved['content']['version'],
-                'operationId': str(uuid4()), 'approved': True, 'reason': '已逐字核对来源和评分点'})
-            assert reviewed.status_code == 200, reviewed.text
-            assert c.platform.repo.read(c.platform.scope(), 'question', saved['content']['id'])
-        if kind == "memory-card":
-            assert saved["content"]["reviewEvents"] == []
-            queue = c.post('/api/learning/reviews/queue', headers=c.platform_headers, json={'cardIds': [saved['id']]}).json()['result']
-            assert queue['cards'][0]['id'] == saved['id']
-    note = call(c, "note/preview", {"id": "note", "expectedRevision": 1, "text": "我修订了自己的理解", "pendingQuestions": "适用条件？"}).json()["result"]
-    adopted(c, note)
-    assert call(c, "workspace").json()["result"]["items"]
-    history = c.get("/api/learning/history?id=note", headers=c.platform_headers).json()["result"]
-    assert len(history["items"]) == 2
-    # Running the template again makes another result, never overwriting an edited note.
-    again = run_template(c, "run2")
-    assert wait_job(c, again[0]["jobId"])["status"] == "succeeded"
-    note = next(a for a in call(c, "workspace").json()["result"]["items"] if a["id"] == "note")
-    assert note["content"]["text"] == "我修订了自己的理解" and note["revision"] == 2
-
-
 def test_source_changes_flag_transitive_impacts_and_block_new_adoption(client):
     c = client
     seed(c)

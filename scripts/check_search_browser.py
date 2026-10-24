@@ -50,7 +50,7 @@ def main():
             p.repo.put(p.scope(), 'document', 'plant-doc', {'id': 'plant-doc', 'name': '植物.md'})
             browser = Browser(folder)
             try:
-                browser.call('Page.navigate', url=base+'/#space/chat')
+                browser.call('Page.navigate', url=base+'/#space/ask')
                 browser.wait('!!document.querySelector("#cLearning") && !!document.querySelector("#searchTrigger")')
                 browser.click('#searchTrigger')
                 browser.wait('!!document.querySelector("[data-g4-form=search]")')

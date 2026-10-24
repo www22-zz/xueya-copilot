@@ -112,10 +112,8 @@ class LearningPages:
 
     async def dispatch(self, path, request, course):
         query, service, scope = request.query_params, self.h.service(course), self.p.scope(course)
-        gets = {'workspace', 'artifacts', 'history', 'review-history', 'graph', 'media-result', 'draft'}
-        posts = {'questions/generate', 'questions/review', 'questions/edit', 'questions/variant', 'questions/manual',
-                 'summary/preview', 'compare', 'graph/extract', 'graph/preview', 'graph/correct', 'graph/path',
-                 'note/preview', 'history/preview', 'legacy/import', 'media/recognize', 'media/confirm', 'media/diagnose',
+        gets = {'workspace', 'artifacts', 'history', 'review-history', 'media-result', 'draft'}
+        posts = {'legacy/import', 'media/recognize', 'media/confirm', 'media/diagnose',
                  'media/transcribe', 'media/video', 'media/video-register', 'media/speak'}
         if path not in gets | posts | {'media/upload'}:
             return None

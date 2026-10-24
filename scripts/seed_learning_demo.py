@@ -47,43 +47,10 @@ def seed(base='http://127.0.0.1:4173', course='course-default', credentials=None
         def ref(quote):
             s=source(quote)
             return {'sourceId':s['id'],'version':s['version'],'quote':quote}
-        def existing(key):
-            r=client.get('/api/learning/artifacts',params={'courseId':course,'id':key})
-            if r.status_code==404:return None
-            if r.status_code!=200:raise RuntimeError('无法核对已有演示内容')
-            return r.json()['result']
-        def adopt(path,body,key):
-            old=existing(key)
-            if old:return old
-            draft=api(path,{**body,'id':key,'expectedRevision':0,'selection':selection})
-            return api('draft/adopt',{'draftId':draft['draftId'],'operationId':'demo-'+str(uuid4()),'confirmed':True})
-        note=adopt('note/preview',{'title':'【演示】栈与队列对照笔记','text':'# 栈与队列\n\n演示笔记，依据已导入的演示资料手工编写。\n\n| 结构 | 规则 | A、B、C加入后首次取出 |\n| --- | --- | --- |\n| 栈 | 后进先出 LIFO | C |\n| 队列 | 先进先出 FIFO | A |\n\n先模拟操作顺序，再完成练习和复习卡。'},'demo-note-stack-queue')
-        questions=[]
-        examples=[('stack','【演示】A、B、C依次入栈，第一次出栈是？',['A','B','C'],2,'栈遵循后进先出（LIFO）原则。','C最后入栈，因此先出栈。'),('queue','【演示】A、B、C依次入队，第一次出队是？',['A','B','C'],0,'队列遵循先进先出（FIFO）原则。','A最先入队，因此先出队。')]
-        for suffix,prompt,options,answer,quote,explanation in examples:
-            key='demo-question-'+suffix
-            row=existing('question:'+key)
-            if not row:
-                s=source(quote)
-                row=api('questions/manual',{'id':key,'operationId':'demo-'+str(uuid4()),'expectedRevision':0,'selection':selection,'question':{'type':'single','prompt':prompt,'options':options,'answer':answer,'sourceId':s['id'],'evidenceQuote':quote,'explanation':explanation,'conceptIds':[],'difficulty':'easy'}})
-            if row['content']['status']!='approved':
-                row=api('questions/review',{'id':key,'expectedRevision':row['revision'],'expectedVersion':row['content']['version'],'operationId':'demo-'+str(uuid4()),'selection':selection,'approved':True,'reason':'演示数据：已对照演示资料的定义与操作例子核对，不代表个人真实作答。'})
-            questions.append(key)
-            adopt('card/preview',{'prompt':prompt,'answer':explanation,'evidence':[ref(quote)]},'demo-card-'+suffix)
-        adopt('quiz/preview',{'questionIds':questions,'count':2},'demo-quiz-stack-queue')
-        graph=api('graph')
-        content=graph['content']
-        added=[]
-        for suffix,name,quote in [('stack','栈（演示）','栈遵循后进先出（LIFO）原则。'),('queue','队列（演示）','队列遵循先进先出（FIFO）原则。')]:
-            if not any(c['id']=='demo-concept-'+suffix for c in content['concepts']):
-                content['concepts'].append({'id':'demo-concept-'+suffix,'courseId':course,'name':name,'aliases':[],'status':'confirmed','evidence':[ref(quote)]})
-                added.append(suffix)
-        if added:
-            draft=api('graph/preview',{'graph':content,'expectedRevision':graph['revision'],'selection':{}})
-            api('draft/adopt',{'draftId':draft['draftId'],'operationId':'demo-'+str(uuid4()),'confirmed':True})
-        adopt('plan/preview',{'examDate':str(date.today()+timedelta(days=14)),'minutes':20,'availability':{}},'demo-plan-stack-queue')
-        return {'courseId':course,'documentId':doc['id'],'note':'demo-note-stack-queue','questions':questions,'cards':['demo-card-stack','demo-card-queue'],'quiz':'demo-quiz-stack-queue','plan':'demo-plan-stack-queue','paidApiCalls':0,'studentAttemptsCreated':0}
 
+        # 章节学习 / 复习计划 / 知识图谱 / 笔记 / AI 出题已随产品导航重构移除；
+        # 演示种子只负责把示例课程资料导入本机服务，不再写入那些模块的数据。
+        return {'courseId': course, 'documentId': doc['id']}
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)

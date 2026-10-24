@@ -17,7 +17,7 @@ def main():
                 browser.call('Emulation.setDeviceMetricsOverride',width=1440,height=1000,deviceScaleFactor=1,mobile=False)
                 browser.call('Page.addScriptToEvaluateOnNewDocument',source='''if(!localStorage.getItem('history-test-seeded')){localStorage.setItem('history-test-seeded','1');const sessions=Array.from({length:45},(_,i)=>({id:'history-'+i,title:'第 '+(i+1)+' 次课程学习对话',messages:[{id:'message-'+i,role:'user',text:'学习问题 '+i}]}));localStorage.setItem('xueya-copilot-state-v2',JSON.stringify({sessionId:'history-0',sessions,messages:sessions[0].messages}));}''')
                 browser.call('Page.addScriptToEvaluateOnNewDocument',source='''Object.defineProperty(window,'XueyaWorkspace',{configurable:true,set(api){Object.defineProperty(window,'XueyaWorkspace',{value:api,writable:true,configurable:true});const create=api.createWorkspace;api.createWorkspace=ctx=>{window.historyTestRender=ctx.render;return create(ctx);};}});''')
-                browser.call('Page.navigate',url=base+'/#space/chat')
+                browser.call('Page.navigate',url=base+'/#space/ask')
                 browser.wait('document.body.classList.contains("history-layout") && document.querySelectorAll(".session-item").length===45')
                 rect='(()=>{const r=document.querySelector("#chatHistoryPanel").getBoundingClientRect();return {left:r.left,top:r.top,width:r.width,height:r.height};})()'
                 value=browser.evaluate(rect);assert value=={'left':0,'top':0,'width':288,'height':1000},value
@@ -55,7 +55,7 @@ def main():
                 browser.evaluate('location.hash="space/library"')
                 browser.wait('!document.body.classList.contains("history-layout") && !!document.querySelector("#libraryRows")')
                 assert browser.evaluate('getComputedStyle(document.querySelector(".site-header")).marginLeft==="0px"')
-                browser.evaluate('location.hash="space/chat"')
+                browser.evaluate('location.hash="space/ask"')
                 browser.wait('document.body.classList.contains("history-layout")')
                 browser.evaluate('window.XueyaPreferences.applyTheme("dark")')
                 browser.screenshot(output/'desktop-dark.png')

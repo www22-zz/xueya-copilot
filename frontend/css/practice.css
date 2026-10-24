@@ -1,0 +1,95 @@
+/* 练习 / 复习 module — uses the existing paper / blue / lavender tokens from styles.css. */
+.practice-module{display:flex;flex-direction:column;gap:16px}
+.practice-toolbar{display:flex;flex-direction:column;gap:12px}
+.practice-tabs{display:flex;flex-wrap:wrap;gap:8px}
+.practice-tab{appearance:none;border:1px solid var(--line);background:var(--white);color:var(--muted);
+  padding:8px 18px;border-radius:999px;cursor:pointer;font:inherit;font-weight:600;transition:background .18s var(--ease-out),color .18s var(--ease-out)}
+.practice-tab.is-active{background:var(--blue);border-color:var(--blue);color:#fff}
+.practice-tab:focus-visible{outline:2px solid var(--lavender);outline-offset:2px}
+.practice-statuses,.practice-modes{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.practice-filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.practice-filters .form-field{min-width:140px;flex:0 1 auto}
+.practice-filters input[type=search]{flex:1 1 240px;min-width:200px}
+
+.practice-split{display:grid;grid-template-columns:minmax(220px,320px) 1fr;gap:16px;align-items:start}
+.practice-list-pane{max-height:min(72vh,760px);overflow:auto;border:1px solid var(--line);border-radius:16px;background:var(--white)}
+.practice-detail-pane{min-width:0}
+
+.practice-list{list-style:none;margin:0;padding:6px;display:flex;flex-direction:column;gap:4px}
+.practice-row{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;padding:10px 12px;border-radius:12px;
+  cursor:pointer;border:1px solid transparent;transition:background .16s var(--ease-out)}
+.practice-row:hover{background:var(--mist)}
+.practice-row.is-active{background:var(--mist);border-color:var(--lavender)}
+.practice-row:focus-visible{outline:2px solid var(--lavender);outline-offset:-2px}
+.practice-row-id{font-size:12px;color:var(--muted);letter-spacing:.02em}
+.practice-row-title{font-weight:600;grid-column:1 / -1}
+.practice-row-meta{grid-column:1 / -1;display:flex;flex-wrap:wrap;gap:6px;font-size:12px;color:var(--muted);align-items:center}
+
+.chip{display:inline-flex;align-items:center;padding:2px 10px;border-radius:999px;font-size:12px;font-weight:600;
+  border:1px solid var(--line);background:var(--white);color:var(--muted)}
+.chip-pending{color:var(--blue);border-color:var(--lavender)}
+.chip-mastered{color:var(--green);border-color:#bfe0d6}
+.chip-wrong{color:#a2452c;border-color:#e9c4b7}
+.chip-fuzzy{color:#7a4fb5;border-color:#d9c8f2}
+
+.practice-detail{display:flex;flex-direction:column;gap:14px;border:1px solid var(--line);border-radius:16px;
+  background:var(--white);padding:20px}
+.practice-detail-head{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.practice-detail-head h2{margin:0;font-size:20px;flex:1 1 220px}
+.practice-detail-meta{flex-basis:100%;margin:0;color:var(--muted);font-size:13px}
+.practice-back{display:none}
+.practice-prompt{font-size:16px;line-height:1.75}
+.practice-samples{display:flex;flex-direction:column;gap:8px}
+.practice-sample,.practice-code,.practice-conflict-preview{margin:0;padding:12px 14px;border-radius:12px;
+  background:var(--mist);border:1px solid var(--line);overflow:auto;font-size:13px;line-height:1.6}
+.practice-range{margin:0;color:var(--muted);font-size:13px}
+.practice-hints summary,.practice-core summary{cursor:pointer;font-weight:600;color:var(--blue)}
+.practice-hints ol{margin:8px 0 0;padding-left:20px;line-height:1.8}
+
+.practice-options{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.practice-option{width:100%;text-align:left;padding:12px 14px;border-radius:12px;border:1px solid var(--line);
+  background:var(--white);cursor:pointer;font:inherit;transition:border-color .16s var(--ease-out),background .16s var(--ease-out)}
+.practice-option:hover{border-color:var(--lavender)}
+.practice-option.is-chosen{border-color:var(--blue);background:var(--mist)}
+.practice-option.is-correct{border-color:var(--green);background:#e8f4f0}
+.practice-fill{display:flex;gap:8px;flex-wrap:wrap}
+.practice-fill .form-field{flex:1 1 220px}
+
+.practice-answer{border-top:1px solid var(--line);padding-top:14px;display:flex;flex-direction:column;gap:10px}
+.practice-explanation{margin:0;line-height:1.8}
+.practice-complexity{margin:0;color:var(--muted);font-size:13px}
+.practice-pitfalls{margin:0;font-size:14px;line-height:1.7}
+.practice-solution-tabs{display:flex;gap:8px;margin-bottom:8px}
+
+.practice-actions{display:flex;flex-wrap:wrap;gap:8px;padding-top:4px}
+.practice-actions .button-blue{background:var(--blue);color:#fff;border-color:var(--blue)}
+
+.practice-note{border-top:1px solid var(--line);padding-top:14px;display:flex;flex-direction:column;gap:8px}
+.practice-note-head{display:flex;align-items:center;gap:10px}
+.practice-note-head h3{margin:0;font-size:15px;flex:1}
+.practice-note-status{font-size:12px;padding:2px 10px;border-radius:999px;background:var(--mist);color:var(--muted)}
+.practice-note-input{width:100%;resize:vertical;min-height:120px;font-family:inherit;line-height:1.7}
+.practice-note-preview{min-height:80px;line-height:1.8}
+.practice-conflicts{border:1px solid var(--line);border-radius:12px;padding:12px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.practice-conflicts p{margin:0;flex-basis:100%}
+.practice-conflict-preview{flex-basis:100%;max-height:180px}
+
+.practice-empty{padding:32px 20px;text-align:center;color:var(--muted);display:flex;flex-direction:column;
+  gap:12px;align-items:center}
+.practice-review-title{margin:0;font-size:18px}
+
+@media(max-width:720px){
+  .practice-split{grid-template-columns:1fr}
+  .practice-list-pane{max-height:none}
+  .practice-module.is-fullscreen .practice-toolbar,
+  .practice-module.is-fullscreen .practice-list-pane{display:none}
+  .practice-module.is-fullscreen .practice-detail-pane{position:fixed;inset:0;z-index:40;background:var(--paper);
+    overflow:auto;padding:12px}
+  .practice-module.is-fullscreen .practice-detail{border-radius:0;border:0;min-height:100%}
+  .practice-back{display:inline-flex}
+  .practice-filters .form-field{min-width:0;flex:1 1 140px}
+}
+
+@media(prefers-reduced-motion:reduce){
+  .practice-tab,.practice-row,.practice-option{transition:none}
+}

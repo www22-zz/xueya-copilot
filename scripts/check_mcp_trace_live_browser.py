@@ -59,7 +59,7 @@ def main():
             app.state.provider.generate = record
             browser = Browser(folder)
             browser.call('Emulation.setDeviceMetricsOverride', width=1440, height=1000, deviceScaleFactor=1, mobile=False)
-            browser.call('Page.navigate', url=f'http://127.0.0.1:{port}/#space/chat')
+            browser.call('Page.navigate', url=f'http://127.0.0.1:{port}/#space/ask')
             browser.wait('!!document.querySelector("#chatInput")')
             material = folder/'MCP真实体验示例.txt'
             material.write_text('队列遵循先进先出：先入队的元素先出队。', encoding='utf-8')

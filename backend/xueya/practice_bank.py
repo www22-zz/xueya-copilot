@@ -1,0 +1,165 @@
+"""Fixed built-in practice bank: load, validate and filter. No HTTP, no model calls."""
+from __future__ import annotations
+import json
+from pathlib import Path
+from .common import require
+
+BANK_VERSION = 'bank-2026-10-24'
+DATA_FILE = Path(__file__).parent / 'data' / 'practice_bank.json'
+SUBJECTS = ('数据结构与算法', '计算机网络', '操作系统', '数据库', '面向对象基础')
+SUBJECT_CODE = {'dsa': '数据结构与算法', 'net': '计算机网络', 'os': '操作系统', 'db': '数据库', 'oop': '面向对象基础'}
+CATEGORIES = ('hot100', 'basic', 'interview')
+DIFFICULTIES = {'hot100': ('简单', '中等', '困难'), 'basic': ('基础', '进阶', '挑战'), 'interview': ('基础', '进阶', '挑战')}
+DIFFICULTY_ORDER = {'简单': 0, '中等': 1, '困难': 2, '基础': 0, '进阶': 1, '挑战': 2}
+TYPES = ('code', 'single', 'fill', 'short')
+TYPE_OF_CATEGORY = {'hot100': 'code', 'interview': 'short'}
+COUNTS = {'hot100': 100, 'basic': 100, 'interview': 50}
+
+
+def _question(q):
+    require(isinstance(q, dict), 'INVALID_BANK_QUESTION')
+    identifier_id = q.get('id')
+    require(isinstance(identifier_id, str) and 1 <= len(identifier_id) <= 60, 'INVALID_BANK_ID')
+    category, kind = q.get('category'), q.get('type')
+    require(category in CATEGORIES, 'INVALID_BANK_CATEGORY')
+    require(kind in TYPES, 'INVALID_BANK_TYPE')
+    if category in TYPE_OF_CATEGORY:
+        require(kind == TYPE_OF_CATEGORY[category], 'INVALID_BANK_TYPE')
+    else:
+        require(kind in ('single', 'fill'), 'INVALID_BANK_TYPE')
+    require(q.get('subject') in SUBJECTS, 'INVALID_BANK_SUBJECT')
+    require(isinstance(q.get('title'), str) and q['title'], 'INVALID_BANK_TITLE')
+    require(isinstance(q.get('prompt'), str) and q['prompt'], 'INVALID_BANK_PROMPT')
+    require(q.get('difficulty') in DIFFICULTIES[category], 'INVALID_BANK_DIFFICULTY')
+    require(isinstance(q.get('tags'), list) and 1 <= len(q['tags']) <= 5
+            and all(isinstance(t, str) and t for t in q['tags']), 'INVALID_BANK_TAGS')
+    require(isinstance(q.get('explanation'), str) and q['explanation'], 'INVALID_BANK_EXPLANATION')
+    if kind == 'code':
+        require(isinstance(q.get('samples'), list) and q['samples'], 'INVALID_BANK_SAMPLES')
+        for sample in q['samples']:
+            require(isinstance(sample, dict) and isinstance(sample.get('input'), str)
+                    and isinstance(sample.get('output'), str), 'INVALID_BANK_SAMPLES')
+        require(isinstance(q.get('dataRange'), str) and q['dataRange'], 'INVALID_BANK_DATA_RANGE')
+        hints = q.get('hints')
+        require(isinstance(hints, list) and 2 <= len(hints) <= 4 and all(isinstance(h, str) and h for h in hints),
+                'INVALID_BANK_HINTS')
+        require(isinstance(q.get('coreIdea'), str) and q['coreIdea'], 'INVALID_BANK_CORE_IDEA')
+        solutions = q.get('solutions')
+        require(isinstance(solutions, dict), 'INVALID_BANK_SOLUTIONS')
+        for language in ('python', 'cpp', 'java'):
+            require(isinstance(solutions.get(language), str) and solutions[language].strip(),
+                    'INVALID_BANK_SOLUTIONS')
+        complexity = q.get('complexity')
+        require(isinstance(complexity, dict) and isinstance(complexity.get('time'), str) and complexity['time']
+                and isinstance(complexity.get('space'), str) and complexity['space'], 'INVALID_BANK_COMPLEXITY')
+        require(isinstance(q.get('pitfalls'), str) and q['pitfalls'], 'INVALID_BANK_PITFALLS')
+        url = q.get('leetcodeUrl')
+        require(isinstance(url, str) and url.startswith('https://leetcode.cn/problems/')
+                and url.endswith('/') and len(url) > len('https://leetcode.cn/problems/'),
+                'INVALID_BANK_LEETCODE_URL')
+    elif kind == 'single':
+        options = q.get('options')
+        require(isinstance(options, list) and len(options) == 4 and all(isinstance(o, str) and o for o in options),
+                'INVALID_BANK_OPTIONS')
+        require(type(q.get('answer')) is int and 0 <= q['answer'] <= 3, 'INVALID_BANK_ANSWER')
+    elif kind == 'fill':
+        require(isinstance(q.get('answer'), str) and q['answer'].strip(), 'INVALID_BANK_ANSWER')
+        accepted = q.get('acceptedAnswers')
+        require(isinstance(accepted, list) and 1 <= len(accepted) <= 6
+                and all(isinstance(a, str) and a.strip() for a in accepted), 'INVALID_BANK_ACCEPTED')
+        require(accepted[0] == q['answer'], 'INVALID_BANK_ACCEPTED')
+    else:
+        require(isinstance(q.get('answer'), str) and q['answer'].strip(), 'INVALID_BANK_ANSWER')
+        points = q.get('keyPoints')
+        require(isinstance(points, list) and 3 <= len(points) <= 6 and all(isinstance(p, str) and p for p in points),
+                'INVALID_BANK_KEY_POINTS')
+        follow = q.get('followUps')
+        require(isinstance(follow, list) and 2 <= len(follow) <= 4 and all(isinstance(f, str) and f for f in follow),
+                'INVALID_BANK_FOLLOW_UPS')
+    return q
+
+
+def load(path: Path = DATA_FILE):
+    raw = json.loads(Path(path).read_text(encoding='utf-8'))
+    require(isinstance(raw, dict) and raw.get('version') == BANK_VERSION, 'INVALID_BANK_VERSION')
+    questions = raw.get('questions')
+    require(isinstance(questions, list), 'INVALID_BANK')
+    seen, counts, subjects = set(), {}, {}
+    for q in questions:
+        _question(q)
+        require(q['id'] not in seen, 'DUPLICATE_BANK_ID')
+        seen.add(q['id'])
+        counts[q['category']] = counts.get(q['category'], 0) + 1
+        if q['category'] == 'basic':
+            key = (q['subject'], q['type'])
+            subjects[key] = subjects.get(key, 0) + 1
+        if q['category'] == 'interview':
+            subjects[(q['subject'], 'short')] = subjects.get((q['subject'], 'short'), 0) + 1
+    require(counts == COUNTS, 'INVALID_BANK_COUNTS')
+    for subject in SUBJECTS:
+        require(subjects.get((subject, 'single')) == 10, 'INVALID_BANK_COUNTS')
+        require(subjects.get((subject, 'fill')) == 10, 'INVALID_BANK_COUNTS')
+        require(subjects.get((subject, 'short')) == 10, 'INVALID_BANK_COUNTS')
+    return {'version': BANK_VERSION, 'questions': questions}
+
+
+_CACHE = {}
+_DEFAULT = DATA_FILE
+
+
+def use(path):
+    """Point the bank at another catalog (tests). Pass None to restore the built-in one."""
+    global _DEFAULT
+    _DEFAULT = DATA_FILE if path is None else Path(path)
+    _CACHE.clear()
+    return _DEFAULT
+
+
+def bank(path: Path = None):
+    path = _DEFAULT if path is None else Path(path)
+    key = str(path)
+    if key not in _CACHE:
+        _CACHE[key] = load(path)
+    return _CACHE[key]
+
+
+def questions():
+    return bank()['questions']
+
+
+def question(question_id: str):
+    for q in questions():
+        if q['id'] == question_id:
+            return q
+    return None
+
+
+def matches(q, filters: dict) -> bool:
+    """Filter only; never reorders. Callers sort separately by the fixed bank order."""
+    if not filters:
+        return True
+    category = filters.get('category')
+    if category and q['category'] != category:
+        return False
+    subject = filters.get('subject')
+    if subject and q['subject'] != subject:
+        return False
+    difficulty = filters.get('difficulty')
+    if difficulty and q['difficulty'] != difficulty:
+        return False
+    kind = filters.get('type')
+    if kind and q['type'] != kind:
+        return False
+    tag = filters.get('tag')
+    if tag and tag not in q['tags']:
+        return False
+    keyword = (filters.get('keyword') or '').strip().lower()
+    if keyword:
+        haystack = ' '.join([q['id'], q['title'], q['prompt'], ' '.join(q['tags'])]).lower()
+        if keyword not in haystack:
+            return False
+    return True
+
+
+def filtered(filters: dict):
+    return [q for q in questions() if matches(q, filters)]

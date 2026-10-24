@@ -38,6 +38,14 @@ class Platform:
         self.authority = ActionAuthority(self.repo, recover=recover)
         self.migration = BrowserMigration(self.repo)
         self.jobs.register("parse-document", self.parse_job)
+        self._one_time_practice_cleanup()
+
+    def _one_time_practice_cleanup(self):
+        """PRD 14: drop the pre-refactor 笔记/题库/计划/图谱 data exactly once, never the new data."""
+        from .practice_cleanup import already_done, cleanup, mark_done
+        if already_done(self.db):
+            return
+        mark_done(self.db, cleanup(self.db, self.repo), auto=True)
 
     def scope(self, course_id="course-default"):
         scope = Scope(user_id=self.user_id, course_id=course_id)

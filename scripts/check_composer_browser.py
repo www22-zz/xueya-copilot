@@ -105,7 +105,7 @@ def main():
                 browser.evaluate('location.hash="space/library"')
                 browser.wait('!!document.querySelector("#libraryRows") && !window.composerTest.stream.active')
                 assert len(calls)==before
-                browser.evaluate('window.composerTest.oscillator.stop();window.composerTest.context.close();location.hash="space/chat"')
+                browser.evaluate('window.composerTest.oscillator.stop();window.composerTest.context.close();location.hash="space/ask"')
                 browser.wait('!!document.querySelector(".composer-mic") && !document.querySelector("#chatForm .send-button").disabled')
                 # A permission prompt resolved after cancellation must also release its stream.
                 browser.evaluate('navigator.mediaDevices.getUserMedia=()=>new Promise(resolve=>window.composerLateGrant=resolve)')

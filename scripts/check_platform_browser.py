@@ -37,7 +37,7 @@ def main():
                 browser = playwright.chromium.launch(headless=True, executable_path=os.environ.get('CHROME_PATH', r'C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe'))
                 page = browser.new_page(viewport={'width': 1440, 'height': 1000})
                 page.on('pageerror', lambda error: print('Browser error: '+str(error)))
-                page.goto(base+'/#space/chat')
+                page.goto(base+'/#space/ask')
                 page.locator('#platformData').click()
                 page.locator('#platformPreview').click()
                 expect(page.locator('#platformApply')).to_be_visible()

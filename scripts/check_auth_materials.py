@@ -61,7 +61,7 @@ def main():
                 assert '二叉树每个节点最多有两个孩子' in page.locator('#kbDialog').inner_text()
                 page.get_by_role('button', name='关闭', exact=True).click()
                 page.get_by_role('button', name='用于问答', exact=True).click()
-                page.wait_for_url('**/#space/chat')
+                page.wait_for_url('**/#space/ask')
                 assert page.locator('#chatThread').is_visible()
                 assert page.evaluate("Object.keys(localStorage).filter(k=>k.startsWith('xueya-c-learning:')&&k.includes(':scope:')).some(k=>JSON.parse(localStorage.getItem(k)).length===1)") is True
                 page.context.clear_cookies()

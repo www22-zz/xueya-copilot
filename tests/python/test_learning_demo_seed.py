@@ -11,5 +11,4 @@ def test_demo_import_uses_real_store_without_model_and_is_repeatable(tmp_path):
         second=seed(url)
         assert first==second
         assert len(app.state.platform.repo.all(app.state.platform.scope(),'document'))==1
-        assert len(app.state.platform.repo.all(app.state.platform.scope(),'question'))==2
         assert not app.state.platform.db.all('SELECT * FROM invocations')

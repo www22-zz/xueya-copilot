@@ -64,7 +64,7 @@ def main():
                 browser.reload()
                 browser.wait('document.querySelector("#libraryRows")?.innerText.includes("My lecture")')
                 browser.click('#libraryRows [data-lib=learn]')
-                browser.wait('location.hash === "#space/chat" && !!document.querySelector("#chatInput")')
+                browser.wait('location.hash === "#space/ask" && !!document.querySelector("#chatInput")')
                 browser.route('library')
                 browser.call('Emulation.setDeviceMetricsOverride', width=390, height=844, deviceScaleFactor=1, mobile=True)
                 assert browser.evaluate('document.documentElement.scrollWidth <= innerWidth+1')

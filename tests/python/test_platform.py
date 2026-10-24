@@ -27,8 +27,10 @@ def test_node_v3_snapshot_and_confirmations_are_compatible(tmp_path):
         p.authority.now = lambda: expected["pending"]["expiresAt"]-1000
         scope = p.scope()
         ws = p.repo.get_workspace(p.user_id)
-        assert len(ws["data"]["courses"][0]["data"]["records"]) == 400
-        assert len(ws["data"]["courses"][0]["data"]["messages"]) == 40
+        data = ws["data"]["courses"][0]["data"]
+        # PRD 14.1: the old 作答记录 / 知识卡片 are cleared once; 问答记录 must survive untouched.
+        assert "records" not in data and "cards" not in data
+        assert len(data["messages"]) == 40
         assert p.db.one("PRAGMA user_version")["user_version"] == 3
         assert p.authority.apply(scope, expected["applied"]["actionId"]) == expected["receipt"]
         preview = p.authority.preview(scope, expected["pending"]["actionId"])
@@ -37,7 +39,6 @@ def test_node_v3_snapshot_and_confirmations_are_compatible(tmp_path):
         assert receipt["version"] == 1
         assert p.db.one("SELECT count(*) n FROM audits")["n"] == 2
         assert p.migration.backup(p.user_id, expected["importHash"])["raw"]["v2"] == "public legacy fixture"
-        assert ws["data"]["courses"][0]["data"]["cards"][0]["text"] == "Pending with source"
     finally:
         asyncio.run(p.close())
 

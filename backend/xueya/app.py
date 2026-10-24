@@ -360,4 +360,6 @@ def create_app(config: Config | None = None, *, provider=None, start_jobs=True):
         install_chat_attachments(app)
         from .account import install_account
         install_account(app)
+        from .practice_api import install_practice
+        install_practice(app)
     return app

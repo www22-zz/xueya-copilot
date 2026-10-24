@@ -310,3 +310,31 @@ P3–P5 增量：创建可带 `sourceIds`（1–48 个当前服务器来源 id�
 - 新增可选 `omittedClaims` 数量；保留 `verification` 为 verbatim-only/reviewed-claims。`timings.phasesMs.evidenceReview` 记录语义核对耗时，modelCalls 与 modelMs 同时计入核对调用。
 
 验证：`python -m pytest -q tests/python/test_explanatory_qa.py`，覆盖四个HTTP/SSE端点、改写、推理、部分拒绝、真实引文不支持结论、伪造引文、核对失败、预算限制、取消、资料版本变化和复杂Agent；`python -m scripts.check_fast_qa` 通过真实浏览器验证通俗解释、原文引用与调用次数。所有测试使用受控上游，不调用付费API。
+
+
+### 练习模块 /api/practice/*（2026-10-25）
+
+固定内置题库的练习与复习接口。题库不依赖 AI 生成，作答判定在本地完成，本节接口不发起任何付费模型调用。
+调用需同源、本机 Host，并带 `/api/platform/bootstrap` 返回的 `X-Xueya-Token`。已配置账号时还需有效的会话 cookie。
+
+- `GET /api/practice/bank` → `{ok:true, version:'bank-2026-10-24', questions:[Question…]}`。整份 250 题随响应下发，数组顺序即题目列表的固定顺序；浏览器缓存后离线可练。题目按 `category` 区分形状：
+  - `hot100`（100 题，`type:'code'`）：`samples`、`dataRange`、`hints`、`coreIdea`、`solutions{python,cpp,java}`、`complexity{time,space}`、`pitfalls`、`leetcodeUrl`。
+  - `basic`（100 题 = 5 科 × 10 单选 + 10 填空）：单选 `options[4]` + `answer`（0 基下标）；填空 `answer` + `acceptedAnswers`（首项等于 `answer`）。
+  - `interview`（50 题 = 5 科 × 10）：`answer`（一句话核心答案）、`keyPoints`、`followUps`。
+  公共字段：`id`、`category`、`subject`、`type`、`title`、`prompt`、`difficulty`、`tags`、`explanation`。难度取值：Hot 100 为 简单/中等/困难，基础题与面试题为 基础/进阶/挑战。
+- `GET /api/practice/state` → `{ok:true, serverSeq, statuses, notes}`。`statuses[qid]` 为 `{status:'pending'|'mastered'|'wrong', confidence:'unknown'|'fuzzy'|'mastered', wrongCount, correctCount, wrongEnteredAt, lastWrongAt, lastResult, masteredAt, lastOperationAt, revision}`，对应待刷/已掌握/错题本（互斥）与待巩固权重。`notes[qid]` 为 `{text, revision, updatedAt, conflicts:[{text,createdAt,deviceTag,baseRevision}]}`。
+- `POST /api/practice/ops`，请求体 `{ops:[…], deviceTag?}`，单次最多 200 条、每条不超过 1MB。`op` 为 `{opId, kind, questionId, payload, clientTs, deviceTag}`，`kind` 取 `answer`（`payload.result` 为 correct/wrong）、`correct`（此答案也正确，仅填空）、`master`、`conquer`、`fuzzy`、`mark-wrong`、`reset`、`note-save`（`payload.text`/`baseRevision`）。响应 `{ok:true, accepted, duplicates, rejected, serverSeq, statuses, notes}`。
+  - **幂等**：按 `opId` 去重。重放同一 `opId` 进入 `duplicates` 且不改变任何计数，断连重试必须复用原 `opId`，否则会重复累计错误次数。
+  - 单条 op 的非法之处进入 `rejected`，批次内其余 op 照常生效；整个请求体不合法才返回 4xx。
+  - 状态始终由有序事件日志重导，不按字段覆盖，因此多浏览器合并是确定的。作答记录按 `opId` 合并去重，掌握状态以最后一次操作为准。
+  - `note-save` 的 `baseRevision` 与服务端不一致时**两份都保留**：服务端文本不变，冲突文本追加到 `conflicts[]`，由用户选择保留哪一份。
+  - 规则（与 `backend/xueya/practice_rules.py` 和 `frontend/js/state/practice-store.js` 为跨语言一致性实现）：单选/填空答错自动进错题本并 `wrongCount+1`，每次重新作答答错各计一次；算法题加入错题本、面试题点忘记只记录时间不加次数；错题本内答对**仍留在错题本**，需「已攻克」才移出；「此答案也正确」只撤销本次新增次数并把题目移回待刷，保留历史与随手记；「已掌握」「已攻克」移入已掌握，「移回待刷」恢复常规练习资格且不清空历史次数；「待巩固」只提高随机抽题权重，不改变列表排序。
+- `GET /api/practice/notes/{questionId}` → `{ok:true, note}`，含 `conflicts`。
+
+账号隔离：进度、作答与随手记按登录账号分键存储（未配置账号时为隐式 `local` 账号），跨课程共享，不写入共享学习空间；其他账号读不到也写不进。本地草稿（随手记未保存文本、临时作答、面试临时草稿）仅存浏览器、按账号隔离，不作为权威数据。
+
+前端路由：`#space/practice/hot100`、`#space/practice/foundation`、`#space/practice/interview`、`#space/review`；练习默认入口为 Hot 100。筛选、选中题目与列表位置走路由参数或本地浏览状态，不新增顶部导航项。
+
+验证：`python -m pytest -q tests/python/test_practice_bank.py tests/python/test_practice_rules.py tests/python/test_practice_api.py`，覆盖题库计数与形状、状态迁移、错误计数、等价答案纠正、幂等重放、账号隔离、随手记冲突保留两份。
+
+> `POST /api/topics`、`POST /api/questions` 的接口契约保持不变；AI 生成题目入口已按产品要求移除，服务端能力仍在，不影响既有契约调用方。
