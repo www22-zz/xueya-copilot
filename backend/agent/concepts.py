@@ -66,13 +66,25 @@ def build_learning_path(value):
     require(isinstance(targets, list) and not set(targets) & rejected, 'REJECTED_LEARNING_TARGET')
     order = prerequisite_order(graph, targets)
     require(not set(order) & rejected, 'REJECTED_PREREQUISITE')
+    concepts = {}
+    for concept in graph['concepts']:
+        # 保留原先 next 查找的首个同 ID 节点，不在路径构建中额外去重校验。
+        concepts.setdefault(concept['id'], concept)
+    prerequisites = {key: [] for key in order}
+    required_by = {key: [] for key in order}
+    for edge in graph['edges']:
+        if edge['type'] == 'prerequisite' and edge['status'] == 'confirmed':
+            if edge['to'] in prerequisites:
+                prerequisites[edge['to']].append(edge['from'])
+            if edge['from'] in required_by:
+                required_by[edge['from']].append(edge['to'])
+    target_ids = set(targets)
     entries = []
     for key in order:
-        c = next(c for c in graph['concepts'] if c['id'] == key)
+        c = concepts[key]
         estimate = estimates.get(key)
         state = ('needs-practice' if estimate['estimate'] < .6 else 'practice-supported') if estimate and estimate['status'] == 'estimated' else 'unknown'
-        edges = [e for e in graph['edges'] if e['type'] == 'prerequisite' and e['status'] == 'confirmed']
-        reason = '目标知识点的先修基础' if key not in targets else '近期作答证据提示需要巩固' if state == 'needs-practice' else '尚无充分练习证据，先核对原文再练习' if state == 'unknown' else '已有练习证据，仍需复习核验'
-        entries.append({'conceptId': key, 'name': c['name'], 'prerequisites': [e['from'] for e in edges if e['to'] == key], 'requiredBy': [e['to'] for e in edges if e['from'] == key],
+        reason = '目标知识点的先修基础' if key not in target_ids else '近期作答证据提示需要巩固' if state == 'needs-practice' else '尚无充分练习证据，先核对原文再练习' if state == 'unknown' else '已有练习证据，仍需复习核验'
+        entries.append({'conceptId': key, 'name': c['name'], 'prerequisites': prerequisites[key], 'requiredBy': required_by[key],
                         'state': state, 'reviewStatus': c.get('status', 'curated'), 'reason': reason, 'sourceEvidence': clone(c.get('evidence', [])), 'eventEvidence': estimate.get('evidence', []) if estimate else [], 'estimate': estimate})
     return {'courseId': course, 'targetIds': targets, 'entries': entries, 'ignoredCandidateEdges': sum(e['status'] != 'confirmed' for e in graph['edges']), 'algorithm': 'confirmed-prerequisites-v1'}

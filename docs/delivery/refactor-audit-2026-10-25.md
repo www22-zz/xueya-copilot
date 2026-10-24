@@ -30,24 +30,25 @@
 | --- | --- | --- | --- |
 | R01 死代码候选 | `backend/agent/learning_service.py:6` 的 `select_practice`、`recommendation_feedback.py:1` 的 `clone`、`review_service.py:1` 的 `SHANGHAI`；AST 中未出现对应 Load；`rg -n 'select_practice\|SHANGHAI\|clone' backend tests tests_python scripts -g '*.py'` 核对调用来源 | 低。存在未使用导入，但模块属性可能作为隐式导出，静态搜索不能排除仓库外使用 | 不删除。后续明确导出边界再处理，约 3 个文件；`study.py:4` 的计划函数同样保留 |
 | R02 历史契约候选 | `shared/contracts/platform.js:2` require Zod；`package.json:26` 无依赖；`rg -n 'contracts/platform\|shared/contracts/platform' frontend shared backend tests tests_python docs scripts README.md` 只发现历史说明、迁移脚本和静态访问拒绝测试；主页面 `frontend/index.html:15-53` 未加载它 | 低。当前无生产装载引用，单独执行需旧依赖，但属于历史契约，不能只据无调用删除 | 待确认文档归档政策；代码和文档约 2-4 文件，本轮保留，不新增 Zod |
-| R03 重复平台 | `backend/app.py:22` 与 `backend/xueya/app.py:90`；`tests_python/test_http.py:5`、`test_platform.py:10` 直接导入前者；`docs/delivery/main-C-integration.md:24` 明确保留兼容工厂 | 中。两套 HTTP/数据库/MCP 适配增加维护成本，但仍有真实调用 | 不合并平台。后续先清点兼容消费者再设计，跨约 20 文件，高风险，不列入本轮 |
+| R03 重复平台 | `backend/app.py:22` 与 `backend/xueya/app.py:90`；`tests_python/test_http.py:5`、`test_platform.py:10` 直接导入前者；`docs/delivery/main-C-integration.md:22` 明确保留兼容工厂 | 中。两套 HTTP/数据库/MCP 适配增加维护成本，但仍有真实调用 | 不合并平台。后续先清点兼容消费者再设计，跨约 20 文件，高风险，不列入本轮 |
 | R04 重复扫描／性能 | `backend/agent/concepts.py:70-75` 在每个输出节点内 `next` 扫描全部概念、筛选全部边，并再次扫描边；调用方为 `study_session.py:38`、`learning_ui_api.py:249` | 低。输出阶段约 O(V²+VE)，无需数据库查询也有重复工作 | 批次 2：仅用函数局部索引替代查找，保留输入、拓扑顺序、边顺序、重复边、返回引用和错误码；1 源文件＋专项测试 |
 | R05 重复扫描／性能 | `backend/agent/learning_service.py:74` 对每个提交 ID 重建题目 ID 列表，`:78` 对每题 `next` 查作答；`http_handler.py:153` 和 `agent_interactions.py:135` 调用 `submit_quiz` | 低。题目与作答交叉扫描；幂等请求不能因优化被重新评分 | 批次 3：只索引通过验证的作答，错误检查在索引前保持原顺序；1 源文件＋专项测试 |
 | R06 过长／职责混杂 | `backend/xueya/agent.py:264-471` `_learning_stream` 208 行；`learning_ui_api.py:113-333` dispatch 221 行，内部 execute 195 行；`app.py:90-365` 装配及路由 276 行 | 中。单函数串联路由、IO、预算、生成、取消、降级和持久化，拆分容易改变 await／清理时序 | 待办。先补断开、重启、错误事件轨迹，再讨论拆分，约 3-8 文件；本轮不整体重写 |
 | R07 命名／可读性 | `backend/agent/assessment.py:7-21,49-52,60,88` 多条件长行；`:21` 单条评分要点验证难以核对短路顺序 | 中。错误优先级、bool 与 int 区分不易读，直接改写判断可能改变行为 | 批次 1：仅展开原表达式，不提取新抽象、不更名外部函数；通过 AST 等价检查；1 源文件＋专项测试 |
 | R08 浏览器可读性 | `frontend/js/search-workspace.js:13` 单行 5634 字符，`library-workspace.js:22-23` 单行 3311／3653 字符；按逐行字符数统计 | 中。业务分派与 HTML 字符串密集，定位和审查困难 | 待办。浏览器保护网可运行后按单个函数整理；约 2-4 文件，不能以格式化代替 XSS 证明 |
-| R09 魔法常量／重复格式 | `backend/agent/question_service.py:84` 的探索比例 `.7`；`answer_policy.py:33` 与 `answer_service.py:31` 均生成引用编号，空格、推理标签和省略行为不同 | 低。配置意图不明显；相近生成逻辑不能直接合并 | 保留既定比例和两种格式。未来补算法依据与协议快照，约 2-3 文件，不改配置格式 |
+| R09 魔法常量／重复格式 | `backend/agent/question_service.py:82` 的探索比例 `.7`；`answer_policy.py:33` 与 `answer_service.py:31` 均生成引用编号，空格、推理标签和省略行为不同 | 低。配置意图不明显；相近生成逻辑不能直接合并 | 保留既定比例和两种格式。未来补算法依据与协议快照，约 2-3 文件，不改配置格式 |
 | R10 错误处理可观察性 | `backend/xueya/gateway.py:101-102` 忽略取消钩子 Exception；`rag_service.py:208-209,333-334` 捕获 AppError 后跳过来源；后者附近向量与重排失败另有 warnings | 中。清理／坏来源原因对诊断不可见；不能把所有空 except 都认定 bug，`run_service.py:93` 是取消清理 | 待办。需确定日志渠道与用户警告是否属于接口变化，约 2 源文件＋故障测试 |
 | R11 模型错误形状 bug | `backend/agent/answer_service.py:23-24` parse 后立即 `.get`；受控模型返回 JSON `[]`，实测 `AttributeError: 'list' object has no attribute 'get'` | 中。合法 JSON 但错误结构绕过 DomainError；`http_handler.py:83-85` 未捕获 AttributeError | 待办。增加对象校验会把现有异常／可能的 HTTP 500 改成领域错误，属于 bug 修复，不能混入本轮；约 1-3 文件 |
 | R12 评分要点结构 bug | `backend/agent/assessment.py:21` 对 rubric 每项直接 `.get`；传入 `rubric=['bad']`，实测 `AttributeError: 'str' object has no attribute 'get'` | 中。字段结构校验不完整，可能绕过领域错误返回 | 待办。补对象校验及 HTTP 错误映射会改变当前错误行为，约 1-3 文件；批次 1 不修复它 |
 | R13 工程配置 | `pytest.ini:2-5` 与 `pyproject.toml:15-19` 重复测试配置；`package.json:26` 未声明浏览器依赖，而三套 e2e 第 1-2 行均 require Playwright；`.github/workflows/quality.yml:31-36` 无独立 lint／类型检查 | 中（浏览器环境）／低（配置重复）。浏览器基线无法运行，测试配置可能漂移 | 待办。安装／声明依赖和选择配置入口均需单独工程变更；约 3-5 文件，本轮不新增依赖 |
 | R14 测试缺口 | `tests_python/test_domain.py:91-107` 仅对路径顺序／拒绝先修局部断言；`:144-146` 只验证典型提交和幂等 | 中。没有锁定完整路径输出、边重复顺序、缺答、乱序响应、错误优先级与旧评分快照 | 本轮三批分别增加行为测试，保留原测试不改；新增 Python 测试文件，不增加框架 |
+| R15 评测复现性（执行中追加） | `rag_service.py:87` 每次上传生成随机文档 UUID；`rag_parse.py:247-248` 将文档 ID 纳入片段 ID；`rag_search.py:46,64,73` 同分按片段 ID 排序。同一未修改实现独立重跑，structured-lexical 46 问中 16 问 returned 不同 | 中。不同临时导入的同分尾部证据不完全一致；不能对两次独立导入直接断言片段逐字等价 | 单列 B/F 待办，不修改检索顺序／测试。固定输入的新旧 C 实现精确比较负责验证本轮行为等价；检索评测保留原指标和返回片段记录 |
 
 ## 未确认为问题的检查
 
 - 未确认没有调用者的业务函数、必定不可达业务分支或可直接移除的 Python 依赖；不因 AST 未引用就删除导入／文件。
 - 顶层静态导入图无环；动态与延迟调用只作为待检查边界，不声称全局无环。
-- `library_fetch.py:30-34,75-79` 已校验公开地址并固定连接地址，不能仅因存在 URL 导入就报告 SSRF；`:113` 附近 finally 关闭连接。
+- `library_fetch.py:30-34,75-79` 已校验公开地址并固定连接地址，不能仅因存在 URL 导入就报告 SSRF；`:115-116` finally 关闭连接。
 - `database.py:54-67` 同步事务明确不允许 await；`learning_integration.py:46-65` 虽调用 async 方法，当前 get_operation 本体无挂起 IO，未复现跨任务事务串扰，不做无依据改造。
 - 未证实 N+1 数据库查询、资源泄漏或真实凭据泄露；上述性能项指 Python 容器重复扫描。
 
@@ -72,5 +73,7 @@
 
 - 已将现有 `feat/large-C-agent-learning` 从祖先 `015b3d5` 正常快进到最新 main `01c98fd`，没有重置、强推或覆盖独有提交。
 - 批次 1：新增 25 项特征测试在旧源码上全部通过；仅展开判断表达式，`ast.dump(ast.parse(...))` 与批次前完全相同。改后完整 pytest **520 passed / 90.46 秒**，前端 42 passed、pip check、MCP 4 工具／2 命中、Python 220／JS 56 文件语法和 diff --check 通过；离线检索仍为 43/46 与 40/46，分类通过数与基线一致。浏览器保持缺 Playwright 的基线限制；未改浏览器代码。
-- 批次 2、3 尚未开始。
+- 批次 2：11 项新特征测试在旧源码上通过，修改后路径／领域／跨语言专项 38 项通过；400 组固定随机种子的 DAG 完整输出与 main 旧实现一致且输入不变。500 节点合成星形图 7 轮中位耗时旧实现 27.142ms、索引实现 1.117ms，仅为本机合成微测量，不宣称真实课程延迟提升。
+- 批次 2 额外逐条比较两次独立导入的检索片段时断言失败，立即撤回该批源码并告知用户。旧实现两次对照也有 16 个案例返回片段不同，定位为 R15；分类通过数／召回／排名／边界指标一致。没有修改原测试或评测脚本；复现证据保存于忽略目录 `test-results/refactor-batch2/control-a/`、`control-b/`。排除此次改动导致差异后恢复同一索引补丁，重新完整 pytest **531 passed / 88.36 秒**；前端 42 passed、pip、MCP、Python 221／JS 56 文件语法、diff --check 通过，检索质量仍为 43/46 与 40/46。不采用撤回期间那次测试作为最终结果。
+- 批次 3 尚未开始。
 - 本轮未调用付费模型；当前验证以确定性行为和受控上游为准，非真实模型效果验收。
