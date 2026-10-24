@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 from .common import require
 
-BANK_VERSION = 'bank-2026-10-24'
+BANK_VERSION = 'bank-2026-10-25-official'
 DATA_FILE = Path(__file__).parent / 'data' / 'practice_bank.json'
 SUBJECTS = ('数据结构与算法', '计算机网络', '操作系统', '数据库', '面向对象基础')
 SUBJECT_CODE = {'dsa': '数据结构与算法', 'net': '计算机网络', 'os': '操作系统', 'db': '数据库', 'oop': '面向对象基础'}
@@ -96,6 +96,15 @@ def load(path: Path = DATA_FILE):
         if q['category'] == 'interview':
             subjects[(q['subject'], 'short')] = subjects.get((q['subject'], 'short'), 0) + 1
     require(counts == COUNTS, 'INVALID_BANK_COUNTS')
+    if Path(path).resolve() == DATA_FILE.resolve():
+        official = json.loads(DATA_FILE.with_name('hot100_official.json').read_text(encoding='utf-8'))['questions']
+        expected = {row['slug']: row for row in official}
+        hot = [q for q in questions if q['category'] == 'hot100']
+        slugs = [q['leetcodeUrl'].rstrip('/').split('/')[-1] for q in hot]
+        require(len(set(slugs)) == 100 and set(slugs) == set(expected), 'INVALID_OFFICIAL_HOT100')
+        for q, slug in zip(hot, slugs):
+            require(q.get('leetcodeNumber') == expected[slug]['number'] and q.get('topic') == expected[slug]['topic'],
+                    'INVALID_OFFICIAL_HOT100_METADATA')
     for subject in SUBJECTS:
         require(subjects.get((subject, 'single')) == 10, 'INVALID_BANK_COUNTS')
         require(subjects.get((subject, 'fill')) == 10, 'INVALID_BANK_COUNTS')
@@ -155,7 +164,7 @@ def matches(q, filters: dict) -> bool:
         return False
     keyword = (filters.get('keyword') or '').strip().lower()
     if keyword:
-        haystack = ' '.join([q['id'], q['title'], q['prompt'], ' '.join(q['tags'])]).lower()
+        haystack = ' '.join([q['id'], str(q.get('leetcodeNumber', '')), q['title'], q['prompt'], ' '.join(q['tags'])]).lower()
         if keyword not in haystack:
             return False
     return True

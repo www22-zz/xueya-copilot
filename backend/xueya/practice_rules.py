@@ -68,8 +68,13 @@ def apply(progress, question, action, payload):
         # PRD 6.3: 此答案也正确 — only 填空判错 after a wrong submit.
         if kind != 'fill':
             raise ValueError('FILL_ONLY')
-        if row['lastResult'] != 'wrong' or row['wrongCount'] <= 0:
+        attempt_id = payload.get('attemptId')
+        if attempt_id and attempt_id in row.get('correctedAttemptIds', []):
+            return row
+        if (not attempt_id and row['lastResult'] != 'wrong') or row['wrongCount'] <= 0:
             raise ValueError('NOTHING_TO_CORRECT')
+        if attempt_id:
+            row.setdefault('correctedAttemptIds', []).append(attempt_id)
         row['wrongCount'] -= 1
         row['correctCount'] += 1
         row['lastResult'] = 'correct'
@@ -151,7 +156,7 @@ def sort_wrong(rows, *, mode='recent'):
     """PRD 8.1: 最近出错优先 (default) or 错误次数最多. Ties break by question id ascending."""
     def stamp(item):
         row = item[1]
-        return row.get('lastWrongAt') or row.get('wrongEnteredAt') or ''
+        return max(row.get('lastWrongAt') or '', row.get('wrongEnteredAt') or '')
     ordered = sorted(rows, key=lambda item: item[0])
     ordered.sort(key=stamp, reverse=True)
     if mode == 'count':

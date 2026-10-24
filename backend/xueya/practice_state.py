@@ -146,6 +146,14 @@ class PracticeState:
                 merged['conflicts'] = []
             merged.pop('merged', None)
         else:
+            if action == 'correct' and payload.get('attemptId'):
+                guard(isinstance(payload['attemptId'], str) and len(payload['attemptId']) <= 120,
+                      'INVALID_CORRECTION_ATTEMPT')
+                target = self.repo.read(scope, 'event', payload['attemptId'])
+                target = target['value'] if target else None
+                guard(bool(target) and target.get('questionId') == question_id
+                      and target.get('action') == 'answer' and target.get('questionType') == 'fill'
+                      and (target.get('payload') or {}).get('result') == 'wrong', 'INVALID_CORRECTION_ATTEMPT')
             record['payload'] = payload
             question = {'id': question_id, 'type': record['questionType']}
             try:

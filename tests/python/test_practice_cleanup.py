@@ -100,3 +100,33 @@ def test_supplemental_purge_removes_retired_revisions_but_keeps_new_bank_and_cha
         assert db.one("SELECT id FROM entities WHERE id='new-practice'") is not None
     finally:
         db.close()
+
+
+def test_residue_cleanup_removes_jobs_checkpoints_and_raw_backups_only(tmp_path):
+    from backend.xueya.practice_cleanup import purge_retired_residue
+    db = Database(tmp_path / 'residue.sqlite')
+    try:
+        repo = Repository(db)
+        user = seed(db, repo)
+        keep = {'documents': [{'id': 'keep', 'notes': 'document metadata'}],
+                'messages': [{'role': 'user', 'text': 'keep conversation'}],
+                'cards': [{'text': 'REMOVE_NOTE'}], 'bank': [{'id': 'REMOVE_QUESTION'}]}
+        envelope = {'workspace': {'version': 3, 'courses': [{'data': keep}]},
+                    'raw': {'xueya-copilot-state-v1': dumps(keep)}}
+        db.execute('INSERT INTO imports VALUES(?,?,?,?,?)', (user, 'old', dumps(envelope), 1, utc_now()))
+        for name, kind in [('retired', 'learning-chapter'), ('keep-parse', 'parse-document')]:
+            db.execute('INSERT INTO jobs(id,user_id,course_id,type,input,resource,status,max_attempts,idempotency_key,available_at,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)',
+                       (name,user,'course-default',kind,dumps({'secret':'old chapter'}),'cpu','succeeded',1,name,0,utc_now(),utc_now()))
+            db.execute('INSERT INTO job_events(job_id,event,at) VALUES(?,?,?)',(name,'{}',utc_now()))
+        purge_retired_residue(db)
+        assert db.one("SELECT id FROM jobs WHERE id='retired'") is None
+        assert db.one("SELECT job_id FROM job_events WHERE job_id='retired'") is None
+        assert db.one("SELECT id FROM jobs WHERE id='keep-parse'") is not None
+        backup = db.one('SELECT backup FROM imports')['backup']
+        assert 'REMOVE_NOTE' not in backup and 'REMOVE_QUESTION' not in backup
+        assert 'keep conversation' in backup and 'document metadata' in backup
+        assert db.one("SELECT id FROM entities WHERE id='doc-1'") is not None
+        assert db.one("SELECT value FROM meta WHERE key='local-account-v1'") is not None
+        purge_retired_residue(db)
+    finally:
+        db.close()

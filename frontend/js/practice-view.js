@@ -22,12 +22,12 @@ function createPracticeView({store,client,toast=()=>{},navigate=()=>{}}={}){
   function matches(q,f){
     if(f.subject&&q.subject!==f.subject||f.difficulty&&q.difficulty!==f.difficulty||f.type&&q.type!==f.type||f.tag&&!(q.tags||[]).includes(f.tag))return false;
     const text=String(f.keyword||'').trim().toLowerCase();
-    return !text||[q.id,q.title,q.prompt,...(q.tags||[])].join(' ').toLowerCase().includes(text);
+    return !text||[q.id,q.leetcodeNumber||'',q.title,q.prompt,...(q.tags||[])].join(' ').toLowerCase().includes(text);
   }
   function listed(){
     const f=filters();let list=bank().filter(q=>matches(q,f)&&(view==='review'?statusOf(q.id)==='wrong':q.category===ui.category&&statusOf(q.id)===(f.status||'pending')));
     if(view==='review')list.sort((a,b)=>{
-      const pa=progress(a.id),pb=progress(b.id),stamp=p=>p.lastWrongAt||p.wrongEnteredAt||'';
+      const pa=progress(a.id),pb=progress(b.id),stamp=p=>[p.lastWrongAt||'',p.wrongEnteredAt||''].sort().pop();
       return (ui.wrongSort==='count'?(pb.wrongCount||0)-(pa.wrongCount||0):0)||stamp(pb).localeCompare(stamp(pa))||a.id.localeCompare(b.id);
     });
     return list;
@@ -39,7 +39,8 @@ function createPracticeView({store,client,toast=()=>{},navigate=()=>{}}={}){
   function resetSelection(){flushNote();clearTransient();position().selected=listed()[0]?.id||null;position().completed=false;position().scroll=0;ui.selectedQuestionId=position().selected;store.persist();}
   function select(id,{manual=true}={}){
     flushNote();savePosition();clearTransient();position().selected=id;position().completed=false;ui.selectedQuestionId=id;
-    if(manual){ui.mode='order';ui.detailFullscreen=matchMedia('(max-width:720px)').matches;}
+    if(manual)ui.mode='order';
+    ui.detailFullscreen=matchMedia('(max-width:720px)').matches;
     store.persist();render();
   }
   function randomPickLocal(pool){return globalThis.XueyaPracticeStore.randomPick(pool,store.state.statuses,{lastId:position().selected,roll:Math.random()});}
@@ -62,10 +63,10 @@ function createPracticeView({store,client,toast=()=>{},navigate=()=>{}}={}){
   }
   function statusChip(id){const status=statusOf(id);return `<span class="chip chip-${status}">${STATUS_LABEL[status]}</span>${progress(id).confidence==='fuzzy'&&status==='pending'?'<span class="chip chip-fuzzy">待巩固</span>':''}`;}
   function empty(){const complete=position().completed;return `<div class="practice-empty"><p>${view==='review'?'当前错题已清空。':complete?'当前筛选下的题目已刷完。':'当前筛选下没有题目。'}</p>${button('调整筛选','clear-filters')}${view==='review'?'':button('查看已掌握','show-mastered')}</div>`;}
-  function listRows(){const list=listed();return !list.length?empty():`<ul class="practice-list" role="listbox" aria-label="题目列表">${list.map(q=>`<li tabindex="0" class="practice-row ${q.id===position().selected?'is-active':''}" data-action="select" data-id="${e(q.id)}" role="option" aria-selected="${q.id===position().selected}"><span class="practice-row-id">${e(q.id)}</span><span class="practice-row-title">${e(q.title)}</span><span class="practice-row-meta">${e(q.difficulty)} · ${view==='review'?'错 '+(progress(q.id).wrongCount||0)+' 次':statusChip(q.id)}</span></li>`).join('')}</ul>`;}
+  function listRows(){const list=listed();let topic='';return !list.length?empty():`<ul class="practice-list" role="listbox" aria-label="题目列表">${list.map(q=>{const heading=view!=='review'&&topic!==q.topic?`<li class="practice-topic" role="presentation">${e(q.category==='hot100'?(q.topic||q.subject):q.subject+' · '+(q.topic||q.tags[0]))}</li>`:'';topic=q.topic;return heading+`<li tabindex="0" class="practice-row ${q.id===position().selected?'is-active':''}" data-action="select" data-id="${e(q.id)}" role="option" aria-selected="${q.id===position().selected}"><span class="practice-row-id">${e(q.leetcodeNumber?'#'+q.leetcodeNumber:q.id)}</span><span class="practice-row-title">${e(q.title)}</span><span class="practice-row-meta">${e(q.difficulty)} · ${view==='review'?'错 '+(progress(q.id).wrongCount||0)+' 次':statusChip(q.id)}</span></li>`;}).join('')}</ul>`;}
   function noteBlock(q){
     const note=store.state.notes[q.id]||{text:'',revision:0,conflicts:[]},text=store.hasDraft(q.id)?store.draft(q.id):note.text;
-    const state=saving.has(q.id)?'保存中':noteErrors.has(q.id)?'保存失败 · 草稿已保留':store.hasDraft(q.id)||store.pendingOps?'待同步':'已保存';
+    const state=saving.has(q.id)?'保存中':noteErrors.has(q.id)||store.rejectedNote(q.id,text)?'保存失败 · 草稿已保留':store.hasDraft(q.id)||store.pendingOps?'待同步':'已保存';
     return `<section class="practice-note"><header class="practice-note-head"><h3>随手记</h3><span class="practice-note-status" data-note-status role="status">${state}</span>${button(ui.notePreview?'编辑':'预览','note-mode')}</header>${ui.notePreview?`<div class="practice-note-preview rich-content">${globalThis.XueyaRich.render(text||'')}</div>`:`<textarea class="form-field practice-note-input" data-note="${e(q.id)}" rows="6" placeholder="记录你的思路与易错点">${e(text)}</textarea>`}
     ${(note.conflicts||[]).length?`<div class="practice-conflicts"><p>发现冲突副本，选择保留的内容：</p><pre>${e(note.text)}</pre>${button('保留当前','keep-server',`data-id="${e(q.id)}"`)}${note.conflicts.map((c,i)=>`<pre class="practice-conflict-preview">${e(c.text)}</pre>${button('使用副本 '+(i+1),'keep-conflict',`data-id="${e(q.id)}" data-index="${i}"`)}`).join('')}</div>`:''}</section>`;
   }
@@ -90,12 +91,18 @@ function createPracticeView({store,client,toast=()=>{},navigate=()=>{}}={}){
   }
   function render(){
     if(!root?.isConnected)return;ensureSelected();const focused=root.contains(document.activeElement)?document.activeElement:null;
-    const filterName=focused?.dataset.filter,selection=filterName==='keyword'?focused.selectionStart:null;
+    const filterName=focused?.dataset.filter,focusSelector=filterName?`[data-filter="${filterName}"]`:focused?.hasAttribute('data-note')?'[data-note]':focused?.hasAttribute('data-fill')?'[data-fill]':focused?.hasAttribute('data-short')?'[data-short]':null;
+    const selection=focused?.selectionStart,selectionEnd=focused?.selectionEnd;
+    const sameQuestion=root.dataset.renderedQuestion===(current()?.id||'');
+    const openDetails=sameQuestion?[...root.querySelectorAll('details')].map(el=>el.open):[],detailScroll=sameQuestion?root.querySelector('.practice-detail-pane')?.scrollTop||0:0;
+    root.dataset.renderedQuestion=current()?.id||'';
     root.innerHTML=`<div class="practice-module ${view==='review'?'practice-review':''} ${ui.detailFullscreen&&current()?'is-fullscreen':''}">${toolbar()}${loading?'<p role="status">正在加载题库…</p>':loadError?`<p role="alert">${e(loadError)}</p>`:''}<div class="practice-split"><section class="practice-list-pane">${listRows()}</section><section class="practice-detail-pane">${detail()}</section></div></div>`;
     root.querySelector('.practice-list-pane').scrollTop=position().scroll||0;
-    if(filterName){const input=root.querySelector(`[data-filter="${filterName}"]`);input?.focus({preventScroll:true});if(selection!==null)input?.setSelectionRange(selection,selection);}
+    root.querySelector('.practice-detail-pane').scrollTop=detailScroll;
+    root.querySelectorAll('details').forEach((el,i)=>{el.open=Boolean(openDetails[i]);});
+    if(focusSelector){const input=root.querySelector(focusSelector);input?.focus({preventScroll:true});if(selection!=null&&typeof input?.setSelectionRange==='function')try{input.setSelectionRange(selection,selectionEnd);}catch{}}
   }
-  function updateNoteStatus(id){if(current()?.id!==id||!root?.isConnected)return;const label=root.querySelector('[data-note-status]');if(label)label.textContent=saving.has(id)?'保存中':noteErrors.has(id)?'保存失败 · 草稿已保留':store.pendingOps||store.hasDraft(id)?'待同步':'已保存';}
+  function updateNoteStatus(id){if(current()?.id!==id||!root?.isConnected)return;const label=root.querySelector('[data-note-status]');if(label)label.textContent=saving.has(id)?'保存中':noteErrors.has(id)||store.rejectedNote(id,store.draft(id))?'保存失败 · 草稿已保留':store.pendingOps||store.hasDraft(id)?'待同步':'已保存';}
   async function flushOps(){try{await store.flush(client);for(const id of [...noteErrors])if(!store.hasDraft(id))noteErrors.delete(id);}catch(error){if(error.code==='AUTH_REQUIRED')toast('请重新登录原账号后同步，本地记录已保留');}if(root?.isConnected){const label=root.querySelector('.practice-sync');if(label)label.textContent=store.pendingOps?'待同步 · '+store.pendingOps:'已同步';if(current())updateNoteStatus(current().id);}}
   function flushNote(){
     clearTimeout(noteTimer);noteTimer=null;const id=noteTarget;noteTarget=null;if(!id||!store.hasDraft(id))return;
@@ -103,9 +110,9 @@ function createPracticeView({store,client,toast=()=>{},navigate=()=>{}}={}){
     if(text===note.text&&!store.queuedNote(id,text)){store.clearDraft(id);return;}
     if(!store.queuedNote(id,text))store.pushNote(id,text,note.revision);
     saving.add(id);updateNoteStatus(id);
-    store.flush(client).then(()=>{noteErrors.delete(id);}).catch(()=>{noteErrors.add(id);toast('保存失败，草稿已保留，恢复连接后重试');}).finally(()=>{saving.delete(id);updateNoteStatus(id);});
+    store.flush(client).then(()=>{if(store.hasDraft(id)&&store.draft(id)===text)throw Error('NOTE_NOT_ACCEPTED');noteErrors.delete(id);}).catch(()=>{noteErrors.add(id);toast('保存失败，草稿已保留，恢复连接后重试');}).finally(()=>{saving.delete(id);updateNoteStatus(id);});
   }
-  function onNoteInput(id,value){store.setDraft(id,value);noteTarget=id;clearTimeout(noteTimer);noteTimer=setTimeout(flushNote,1000);updateNoteStatus(id);}
+  function onNoteInput(id,value){store.setDraft(id,value);if(store.error.includes('存储空间')){noteErrors.add(id);toast(store.error+'；草稿会在连接恢复后重试');}noteTarget=id;clearTimeout(noteTimer);noteTimer=setTimeout(flushNote,1000);updateNoteStatus(id);}
   function answer(value){const q=current();if(!q||revealed)return;const correct=store.judgeAnswer(q,value);const op=store.push('answer',q.id,{result:correct?'correct':'wrong',questionType:q.type,selected:value});attempt={answer:value,correct,opId:op.opId};revealed=true;if(!correct)toast('已自动加入错题本');flushOps();render();}
   function act(action,payload={}){
     const q=current(),id=payload.id||q?.id;
@@ -146,19 +153,21 @@ function createPracticeView({store,client,toast=()=>{},navigate=()=>{}}={}){
   }
   async function sync(){
     if(syncing)return;syncing=true;
-    try{await store.flush(client);const state=await client.refreshState();store.applyServer(state);for(const id of Object.keys(store.state.drafts)){if(store.queuedNote(id,store.draft(id)))continue;noteTarget=id;flushNote();}loadError='';}
+    try{const before=JSON.stringify(store.state.statuses);await store.flush(client);const state=await client.refreshState();store.applyServer(state);
+      if(before!==JSON.stringify(store.state.statuses)){const p=position(),list=listed();if(p.completed&&list.length||p.selected&&!list.some(q=>q.id===p.selected)&&!(attempt&&statusOf(p.selected)==='wrong')){flushNote();clearTransient();p.completed=false;p.selected=list[0]?.id||null;ui.selectedQuestionId=p.selected;store.persist();}}
+      for(const id of Object.keys(store.state.drafts)){if(store.queuedNote(id,store.draft(id))||store.rejectedNote(id,store.draft(id)))continue;noteTarget=id;flushNote();}loadError='';}
     catch{if(store.pendingOps&&root?.isConnected){const label=root.querySelector('.practice-sync');if(label)label.textContent='待同步 · '+store.pendingOps;}}
     finally{syncing=false;}
   }
   async function initialize(){
     if(initialized)return;initialized=true;
-    try{await client.initialize();if(client.loaded)store.applyServer(client.state());await sync();}
+    try{await store.ready;await client.initialize();if(client.loaded)store.applyServer(client.state());await sync();}
     catch{loadError='题库暂不可用，请启动本机服务后重试。';}
     finally{loading=false;render();}
     window.addEventListener('online',()=>sync().then(render));
     window.addEventListener('focus',()=>sync().then(render));
     window.addEventListener('pagehide',()=>{flushNote();savePosition();});
-    setInterval(()=>{if(document.visibilityState==='visible'){const seq=store.state.serverSeq;sync().then(()=>{if(seq!==store.state.serverSeq&&!root?.contains(document.activeElement))render();else if(current())updateNoteStatus(current().id);});}},5000);
+    setInterval(()=>{if(document.visibilityState==='visible'){const seq=store.state.serverSeq;sync().then(()=>{if(seq!==store.state.serverSeq)render();else if(current())updateNoteStatus(current().id);});}},5000);
   }
   function mount(node,nextView,params={}){
     const switched=root!==node||view!==nextView;

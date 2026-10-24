@@ -100,6 +100,8 @@ class Repository:
 
     def save_workspace(self, user_id, value, expected_version=0):
         validate_workspace(value)
+        from .practice_cleanup import strip_retired_payload
+        value = strip_retired_payload(value)
         require(type(expected_version) is int and expected_version >= 0, "INVALID_VERSION")
         with self.db.transaction():
             old = self.get_workspace(user_id)
@@ -113,7 +115,7 @@ class Repository:
             self.ensure_course(user_id, {**course, "archived": False})
             scope, data = Scope(user_id=user_id, course_id=course["id"]), course["data"]
             sources = (SOURCES if course["id"] == "course-default" else []) + [s for d in data.get("documents", []) if not d.get("superseded") and not d.get("deleted") for s in d.get("chunks", [])]
-            groups = {"source": sources, "note": [{**n, "content": n.get("content", n.get("text"))} for n in data.get("cards", [])], "question": (QUESTIONS if course["id"] == "course-default" else []) + data.get("bank", []), "attempt": data.get("records", []), "plan": [{**d, "id": d.get("id") or f"day-{i}"} for i, d in enumerate(data.get("plan", []))], "session": data.get("sessions", []), "event": data.get("reviewLog", [])}
+            groups = {"source": sources, "session": data.get("sessions", [])}
             for kind, items in groups.items():
                 seen = set()
                 for i, item in enumerate(items):

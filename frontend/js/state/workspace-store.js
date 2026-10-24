@@ -8,6 +8,19 @@ function createStore({storage,learning:L,id=()=>globalThis.crypto.randomUUID(),n
   let error='';
   function read(key){try{const value=JSON.parse(storage.getItem(key)||'null');return value&&typeof value==='object'&&!Array.isArray(value)?value:null;}catch{return null;}}
   const workspace=read(KEY),legacy=read(LEGACY),old=read('xueya-copilot-state-v1');
+  // Erase retired payloads in raw compatibility keys and historical restore copies,
+  // preserving documents and conversations rather than deleting entire workspaces.
+  function scrub(value){
+    if(!value||typeof value!=='object'||Array.isArray(value))return value;
+    const out={...value};
+    for(const k of ['cards','bank','records','notes','plan','plans','planHistory','graph','chapters','reviewLog','quizDraft','corrections','examRun','quizFilter','quizPool','quizIndex'])delete out[k];
+    if(Array.isArray(out.courses))out.courses=out.courses.map(c=>({...c,data:scrub(c.data)}));
+    for(const k of ['data','workspace','previous'])if(out[k]&&typeof out[k]==='object')out[k]=scrub(out[k]);
+    return out;
+  }
+  const legacyKeys=['xueya-copilot-state-v1',LEGACY,KEY,'xueya-platform-pending-v1'];
+  for(let i=0;i<(storage.length||0);i++){const k=storage.key(i);if(k?.startsWith('xueya-platform-before-restore-'))legacyKeys.push(k);}
+  for(const k of legacyKeys){const v=read(k);if(v)try{storage.setItem(k,JSON.stringify(scrub(v)));}catch{error='旧版数据清理失败，请释放浏览器存储空间后刷新';}}
   const defaults=()=>({documents:[],messages:[],sessions:[],sessionId:'',libraryTags:[],mediaResults:[],feedback:[]});
   function normalize(value={}){
     const result={...defaults(),...value};

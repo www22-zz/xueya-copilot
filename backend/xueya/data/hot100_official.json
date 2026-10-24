@@ -1,0 +1,506 @@
+{
+  "source": "https://leetcode.cn/studyplan/top-100-liked/",
+  "verifiedAt": "2026-10-25",
+  "questions": [
+    {
+      "number": 1,
+      "slug": "two-sum",
+      "topic": "哈希"
+    },
+    {
+      "number": 49,
+      "slug": "group-anagrams",
+      "topic": "哈希"
+    },
+    {
+      "number": 128,
+      "slug": "longest-consecutive-sequence",
+      "topic": "哈希"
+    },
+    {
+      "number": 283,
+      "slug": "move-zeroes",
+      "topic": "双指针"
+    },
+    {
+      "number": 11,
+      "slug": "container-with-most-water",
+      "topic": "双指针"
+    },
+    {
+      "number": 15,
+      "slug": "3sum",
+      "topic": "双指针"
+    },
+    {
+      "number": 42,
+      "slug": "trapping-rain-water",
+      "topic": "双指针"
+    },
+    {
+      "number": 3,
+      "slug": "longest-substring-without-repeating-characters",
+      "topic": "滑动窗口"
+    },
+    {
+      "number": 438,
+      "slug": "find-all-anagrams-in-a-string",
+      "topic": "滑动窗口"
+    },
+    {
+      "number": 560,
+      "slug": "subarray-sum-equals-k",
+      "topic": "子串"
+    },
+    {
+      "number": 239,
+      "slug": "sliding-window-maximum",
+      "topic": "子串"
+    },
+    {
+      "number": 76,
+      "slug": "minimum-window-substring",
+      "topic": "子串"
+    },
+    {
+      "number": 53,
+      "slug": "maximum-subarray",
+      "topic": "普通数组"
+    },
+    {
+      "number": 56,
+      "slug": "merge-intervals",
+      "topic": "普通数组"
+    },
+    {
+      "number": 189,
+      "slug": "rotate-array",
+      "topic": "普通数组"
+    },
+    {
+      "number": 238,
+      "slug": "product-of-array-except-self",
+      "topic": "普通数组"
+    },
+    {
+      "number": 41,
+      "slug": "first-missing-positive",
+      "topic": "普通数组"
+    },
+    {
+      "number": 73,
+      "slug": "set-matrix-zeroes",
+      "topic": "矩阵"
+    },
+    {
+      "number": 54,
+      "slug": "spiral-matrix",
+      "topic": "矩阵"
+    },
+    {
+      "number": 48,
+      "slug": "rotate-image",
+      "topic": "矩阵"
+    },
+    {
+      "number": 240,
+      "slug": "search-a-2d-matrix-ii",
+      "topic": "矩阵"
+    },
+    {
+      "number": 160,
+      "slug": "intersection-of-two-linked-lists",
+      "topic": "链表"
+    },
+    {
+      "number": 206,
+      "slug": "reverse-linked-list",
+      "topic": "链表"
+    },
+    {
+      "number": 234,
+      "slug": "palindrome-linked-list",
+      "topic": "链表"
+    },
+    {
+      "number": 141,
+      "slug": "linked-list-cycle",
+      "topic": "链表"
+    },
+    {
+      "number": 142,
+      "slug": "linked-list-cycle-ii",
+      "topic": "链表"
+    },
+    {
+      "number": 21,
+      "slug": "merge-two-sorted-lists",
+      "topic": "链表"
+    },
+    {
+      "number": 2,
+      "slug": "add-two-numbers",
+      "topic": "链表"
+    },
+    {
+      "number": 19,
+      "slug": "remove-nth-node-from-end-of-list",
+      "topic": "链表"
+    },
+    {
+      "number": 24,
+      "slug": "swap-nodes-in-pairs",
+      "topic": "链表"
+    },
+    {
+      "number": 25,
+      "slug": "reverse-nodes-in-k-group",
+      "topic": "链表"
+    },
+    {
+      "number": 138,
+      "slug": "copy-list-with-random-pointer",
+      "topic": "链表"
+    },
+    {
+      "number": 148,
+      "slug": "sort-list",
+      "topic": "链表"
+    },
+    {
+      "number": 23,
+      "slug": "merge-k-sorted-lists",
+      "topic": "链表"
+    },
+    {
+      "number": 146,
+      "slug": "lru-cache",
+      "topic": "链表"
+    },
+    {
+      "number": 94,
+      "slug": "binary-tree-inorder-traversal",
+      "topic": "二叉树"
+    },
+    {
+      "number": 104,
+      "slug": "maximum-depth-of-binary-tree",
+      "topic": "二叉树"
+    },
+    {
+      "number": 226,
+      "slug": "invert-binary-tree",
+      "topic": "二叉树"
+    },
+    {
+      "number": 101,
+      "slug": "symmetric-tree",
+      "topic": "二叉树"
+    },
+    {
+      "number": 543,
+      "slug": "diameter-of-binary-tree",
+      "topic": "二叉树"
+    },
+    {
+      "number": 102,
+      "slug": "binary-tree-level-order-traversal",
+      "topic": "二叉树"
+    },
+    {
+      "number": 108,
+      "slug": "convert-sorted-array-to-binary-search-tree",
+      "topic": "二叉树"
+    },
+    {
+      "number": 98,
+      "slug": "validate-binary-search-tree",
+      "topic": "二叉树"
+    },
+    {
+      "number": 230,
+      "slug": "kth-smallest-element-in-a-bst",
+      "topic": "二叉树"
+    },
+    {
+      "number": 199,
+      "slug": "binary-tree-right-side-view",
+      "topic": "二叉树"
+    },
+    {
+      "number": 114,
+      "slug": "flatten-binary-tree-to-linked-list",
+      "topic": "二叉树"
+    },
+    {
+      "number": 105,
+      "slug": "construct-binary-tree-from-preorder-and-inorder-traversal",
+      "topic": "二叉树"
+    },
+    {
+      "number": 437,
+      "slug": "path-sum-iii",
+      "topic": "二叉树"
+    },
+    {
+      "number": 236,
+      "slug": "lowest-common-ancestor-of-a-binary-tree",
+      "topic": "二叉树"
+    },
+    {
+      "number": 124,
+      "slug": "binary-tree-maximum-path-sum",
+      "topic": "二叉树"
+    },
+    {
+      "number": 200,
+      "slug": "number-of-islands",
+      "topic": "图论"
+    },
+    {
+      "number": 994,
+      "slug": "rotting-oranges",
+      "topic": "图论"
+    },
+    {
+      "number": 207,
+      "slug": "course-schedule",
+      "topic": "图论"
+    },
+    {
+      "number": 208,
+      "slug": "implement-trie-prefix-tree",
+      "topic": "图论"
+    },
+    {
+      "number": 46,
+      "slug": "permutations",
+      "topic": "回溯"
+    },
+    {
+      "number": 78,
+      "slug": "subsets",
+      "topic": "回溯"
+    },
+    {
+      "number": 17,
+      "slug": "letter-combinations-of-a-phone-number",
+      "topic": "回溯"
+    },
+    {
+      "number": 39,
+      "slug": "combination-sum",
+      "topic": "回溯"
+    },
+    {
+      "number": 22,
+      "slug": "generate-parentheses",
+      "topic": "回溯"
+    },
+    {
+      "number": 79,
+      "slug": "word-search",
+      "topic": "回溯"
+    },
+    {
+      "number": 131,
+      "slug": "palindrome-partitioning",
+      "topic": "回溯"
+    },
+    {
+      "number": 51,
+      "slug": "n-queens",
+      "topic": "回溯"
+    },
+    {
+      "number": 35,
+      "slug": "search-insert-position",
+      "topic": "二分查找"
+    },
+    {
+      "number": 74,
+      "slug": "search-a-2d-matrix",
+      "topic": "二分查找"
+    },
+    {
+      "number": 34,
+      "slug": "find-first-and-last-position-of-element-in-sorted-array",
+      "topic": "二分查找"
+    },
+    {
+      "number": 33,
+      "slug": "search-in-rotated-sorted-array",
+      "topic": "二分查找"
+    },
+    {
+      "number": 153,
+      "slug": "find-minimum-in-rotated-sorted-array",
+      "topic": "二分查找"
+    },
+    {
+      "number": 4,
+      "slug": "median-of-two-sorted-arrays",
+      "topic": "二分查找"
+    },
+    {
+      "number": 20,
+      "slug": "valid-parentheses",
+      "topic": "栈"
+    },
+    {
+      "number": 155,
+      "slug": "min-stack",
+      "topic": "栈"
+    },
+    {
+      "number": 394,
+      "slug": "decode-string",
+      "topic": "栈"
+    },
+    {
+      "number": 739,
+      "slug": "daily-temperatures",
+      "topic": "栈"
+    },
+    {
+      "number": 84,
+      "slug": "largest-rectangle-in-histogram",
+      "topic": "栈"
+    },
+    {
+      "number": 215,
+      "slug": "kth-largest-element-in-an-array",
+      "topic": "堆"
+    },
+    {
+      "number": 347,
+      "slug": "top-k-frequent-elements",
+      "topic": "堆"
+    },
+    {
+      "number": 295,
+      "slug": "find-median-from-data-stream",
+      "topic": "堆"
+    },
+    {
+      "number": 121,
+      "slug": "best-time-to-buy-and-sell-stock",
+      "topic": "贪心算法"
+    },
+    {
+      "number": 55,
+      "slug": "jump-game",
+      "topic": "贪心算法"
+    },
+    {
+      "number": 45,
+      "slug": "jump-game-ii",
+      "topic": "贪心算法"
+    },
+    {
+      "number": 763,
+      "slug": "partition-labels",
+      "topic": "贪心算法"
+    },
+    {
+      "number": 70,
+      "slug": "climbing-stairs",
+      "topic": "动态规划"
+    },
+    {
+      "number": 118,
+      "slug": "pascals-triangle",
+      "topic": "动态规划"
+    },
+    {
+      "number": 198,
+      "slug": "house-robber",
+      "topic": "动态规划"
+    },
+    {
+      "number": 279,
+      "slug": "perfect-squares",
+      "topic": "动态规划"
+    },
+    {
+      "number": 322,
+      "slug": "coin-change",
+      "topic": "动态规划"
+    },
+    {
+      "number": 139,
+      "slug": "word-break",
+      "topic": "动态规划"
+    },
+    {
+      "number": 300,
+      "slug": "longest-increasing-subsequence",
+      "topic": "动态规划"
+    },
+    {
+      "number": 152,
+      "slug": "maximum-product-subarray",
+      "topic": "动态规划"
+    },
+    {
+      "number": 416,
+      "slug": "partition-equal-subset-sum",
+      "topic": "动态规划"
+    },
+    {
+      "number": 32,
+      "slug": "longest-valid-parentheses",
+      "topic": "动态规划"
+    },
+    {
+      "number": 62,
+      "slug": "unique-paths",
+      "topic": "多维动态规划"
+    },
+    {
+      "number": 64,
+      "slug": "minimum-path-sum",
+      "topic": "多维动态规划"
+    },
+    {
+      "number": 5,
+      "slug": "longest-palindromic-substring",
+      "topic": "多维动态规划"
+    },
+    {
+      "number": 1143,
+      "slug": "longest-common-subsequence",
+      "topic": "多维动态规划"
+    },
+    {
+      "number": 72,
+      "slug": "edit-distance",
+      "topic": "多维动态规划"
+    },
+    {
+      "number": 136,
+      "slug": "single-number",
+      "topic": "技巧"
+    },
+    {
+      "number": 169,
+      "slug": "majority-element",
+      "topic": "技巧"
+    },
+    {
+      "number": 75,
+      "slug": "sort-colors",
+      "topic": "技巧"
+    },
+    {
+      "number": 31,
+      "slug": "next-permutation",
+      "topic": "技巧"
+    },
+    {
+      "number": 287,
+      "slug": "find-the-duplicate-number",
+      "topic": "技巧"
+    }
+  ]
+}

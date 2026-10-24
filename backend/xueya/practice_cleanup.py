@@ -13,7 +13,7 @@ import json
 from .common import dumps, utc_now
 
 MARKER = 'cleanup:practice-v1'
-DELETED_ENTITY_KINDS = ('note', 'question', 'attempt', 'plan', 'concept', 'session')
+DELETED_ENTITY_KINDS = ('note', 'question', 'attempt', 'plan', 'concept')
 DELETED_ARTIFACT_KINDS = ('learning-package', 'chapter-summary', 'plan', 'concept-graph', 'note')
 DELETED_META_PREFIXES = ('learning:', 'practice-legacy:', 'practice:op:', 'practice:note-draft:')
 KEEP_META_PREFIXES = ('local-account-v1', 'account-v2:', 'invocation-context', MARKER)
@@ -88,10 +88,61 @@ def mark_done(db, counts, *, auto=False) -> None:
 
 
 PURGE_MARKER = 'cleanup:retired-learning-v2'
+RESIDUE_MARKER = 'cleanup:retired-learning-v3'
+
+
+def strip_retired_payload(value):
+    """Scrub workspace envelopes, including JSON raw mirrors; leave document/chat bodies intact."""
+    if not isinstance(value, dict):
+        return value
+    retired = {'cards', 'bank', 'records', 'notes', 'plan', 'plans', 'planHistory', 'graph',
+               'chapters', 'reviewLog', 'quizDraft', 'corrections', 'examRun', 'quizFilter', 'quizPool', 'quizIndex'}
+    result = {k: v for k, v in value.items() if k not in retired}
+    if isinstance(result.get('courses'), list):
+        result['courses'] = [{**c, 'data': strip_retired_payload(c.get('data', {}))} for c in result['courses']]
+    for key in ('workspace', 'previous', 'data'):
+        if isinstance(result.get(key), dict):
+            result[key] = strip_retired_payload(result[key])
+    if isinstance(result.get('raw'), dict):
+        raw = {}
+        for key, item in result['raw'].items():
+            if isinstance(item, str):
+                try:
+                    item = dumps(strip_retired_payload(json.loads(item)))
+                except ValueError:
+                    pass
+            elif isinstance(item, dict):
+                item = strip_retired_payload(item)
+            raw[key] = item
+        result['raw'] = raw
+    return result
+
+
+def purge_retired_residue(db):
+    if db.one('SELECT value FROM meta WHERE key=?', (RESIDUE_MARKER,)):
+        return
+    with db.transaction():
+        # v2 may already have run while legacy workspace projection was still active.
+        # Run its entity/revision purge once more after eliminating the reintroduction path.
+        db.execute('DELETE FROM meta WHERE key=?', (PURGE_MARKER,))
+        for row in db.all("SELECT key FROM meta WHERE key LIKE 'learning:%'"):
+            db.execute('DELETE FROM meta WHERE key=?', (row['key'],))
+        for row in db.all('SELECT user_id,data FROM workspaces'):
+            cleaned = strip_retired_payload(json.loads(row['data']))
+            db.execute('UPDATE workspaces SET data=? WHERE user_id=?', (dumps(cleaned), row['user_id']))
+        for row in db.all("SELECT id FROM jobs WHERE type IN ('learning-chapter','study-session')"):
+            db.execute('DELETE FROM job_events WHERE job_id=?', (row['id'],))
+            db.execute('DELETE FROM jobs WHERE id=?', (row['id'],))
+        for row in db.all('SELECT user_id,hash,backup FROM imports'):
+            cleaned = strip_retired_payload(json.loads(row['backup']))
+            db.execute('UPDATE imports SET backup=? WHERE user_id=? AND hash=?',
+                       (dumps(cleaned), row['user_id'], row['hash']))
+        db.execute('INSERT INTO meta(key,value) VALUES(?,?)', (RESIDUE_MARKER, dumps({'doneAt': utc_now()})))
 
 
 def purge_retired_learning(db):
     """Complete v1's soft deletion without touching fixed-bank events or retained course/chat data."""
+    purge_retired_residue(db)
     if db.one('SELECT value FROM meta WHERE key=?', (PURGE_MARKER,)):
         return
     retired = set(DELETED_ENTITY_KINDS) | {'review'}

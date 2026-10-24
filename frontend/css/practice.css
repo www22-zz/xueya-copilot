@@ -110,3 +110,5 @@
   .practice-module:not(.is-fullscreen) .practice-detail-pane{display:none}
   .practice-detail-head .practice-back{flex-basis:100%;justify-content:flex-start}
 }
+
+.practice-topic{list-style:none;padding:16px 14px 8px;color:#52658b;font-weight:700;font-size:.88rem;background:#eef2fc;position:sticky;top:0;z-index:1;}

@@ -75,11 +75,12 @@ def test_repository_cas_pagination_scope_archives_and_rollback(platform):
         r.put(other, "note", "forbidden", {})
 
 
-def test_migration_preserves_unbounded_history_and_raw_backup(platform, workspace):
+def test_migration_preserves_unbounded_chat_history_and_scrubs_retired_progress(platform, workspace):
     workspace["courses"][0]["data"]["records"] = [{"questionId": "q1", "correct": True} for _ in range(400)]
     p = platform.migration.preview(platform.user_id, {"workspace": workspace, "raw": {"v2": "literal bytes"}})
-    assert p["counts"]["messages"] == 40 and p["counts"]["records"] == 400
+    assert p["counts"]["messages"] == 40 and p["counts"]["records"] == 0
     applied = platform.migration.apply(platform.user_id, p)
+    assert "records" not in platform.repo.get_workspace(platform.user_id)["data"]["courses"][0]["data"]
     assert platform.migration.apply(platform.user_id, p)["alreadyImported"]
     assert platform.migration.backup(platform.user_id, applied["backupId"])["raw"]["v2"] == "literal bytes"
     with pytest.raises(AppError, match="VERSION_CONFLICT"):

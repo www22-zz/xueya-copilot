@@ -124,8 +124,13 @@ def test_master_conquer_reset_flow(client):
 
 def test_unknown_question_is_rejected(client):
     body = client.post('/api/practice/ops', json={'ops': [op('op-1', 'master', 'nope')]}).json()
-    assert body['ok'] is False
-    assert body['error'] == 'UNKNOWN_QUESTION'
+    assert body['ok'] is True
+    assert body['rejected'] == [{'opId': 'op-1', 'error': 'UNKNOWN_QUESTION'}]
+    assert body['accepted'] == []
+    mixed = client.post('/api/practice/ops', json={'ops': [op('old-q', 'master', 'removed-question'),
+        op('save-note', 'note-save', 'h100-01', {'text': 'bank upgrade cannot block this save', 'baseRevision': 0})]}).json()
+    assert mixed['accepted'] == ['save-note'] and mixed['rejected'][0]['opId'] == 'old-q'
+    assert mixed['notes']['h100-01']['text'] == 'bank upgrade cannot block this save'
 
 
 def test_illegal_action_is_rejected_without_mutating(client):
@@ -208,3 +213,21 @@ def test_real_registered_accounts_do_not_share_practice_state(client):
         assert state['statuses'] == {} and state['notes'] == {}
         client.post('/api/practice/ops', json={'ops': [op(username, 'master', 'h100-01')]})
         assert client.get('/api/practice/state').json()['statuses']['h100-01']['status'] == 'mastered'
+
+
+def test_corrections_target_distinct_attempts_and_cannot_correct_another_question(client):
+    q = 'b-dsa-f01'
+    def submit(*ops):
+        return client.post('/api/practice/ops', json={'ops': list(ops)}).json()
+    submit(op('wrong-A', 'answer', q, {'questionType': 'fill', 'result': 'wrong'}),
+           op('wrong-B', 'answer', q, {'questionType': 'fill', 'result': 'wrong'}))
+    first = submit(op('correct-A', 'correct', q, {'questionType': 'fill', 'attemptId': 'wrong-A'}))
+    assert first['statuses'][q]['wrongCount'] == 1
+    second = submit(op('correct-B', 'correct', q, {'questionType': 'fill', 'attemptId': 'wrong-B'}))
+    assert second['accepted'] == ['correct-B'] and second['statuses'][q]['wrongCount'] == 0
+    repeat = submit(op('repeat-A', 'correct', q, {'questionType': 'fill', 'attemptId': 'wrong-A'}))
+    assert repeat['statuses'][q]['correctCount'] == 2
+    invalid = submit(op('other-question', 'correct', 'b-dsa-f02', {'questionType': 'fill', 'attemptId': 'wrong-A'}),
+                     op('good-note', 'note-save', 'h100-01', {'text': 'not blocked', 'baseRevision': 0}))
+    assert invalid['rejected'][0]['error'] == 'INVALID_CORRECTION_ATTEMPT'
+    assert invalid['notes']['h100-01']['text'] == 'not blocked'

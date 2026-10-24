@@ -1,5 +1,6 @@
 """The built-in practice bank must satisfy the PRD counts and shapes exactly."""
 from backend.xueya import practice_bank
+import json
 
 
 def test_bank_loads_and_matches_the_prd_counts():
@@ -11,6 +12,33 @@ def test_bank_loads_and_matches_the_prd_counts():
     assert sum(q['category'] == 'basic' and q['type'] == 'single' for q in questions) == 50
     assert sum(q['category'] == 'basic' and q['type'] == 'fill' for q in questions) == 50
     assert sum(q['category'] == 'interview' for q in questions) == 50
+
+
+def test_official_hot100_unique_set_topics_numbers_difficulties_and_fixed_order():
+    official = json.loads(practice_bank.DATA_FILE.with_name('hot100_official.json').read_text(encoding='utf-8'))
+    expected = {q['slug']: q for q in official['questions']}
+    hot = [q for q in practice_bank.questions() if q['category'] == 'hot100']
+    assert len({q['leetcodeUrl'] for q in hot}) == 100
+    assert {q['leetcodeUrl'].rstrip('/').split('/')[-1] for q in hot} == set(expected)
+    topics = list(dict.fromkeys(q['topic'] for q in official['questions']))
+    assert len(topics) == 17
+    assert [(topics.index(q['topic']), practice_bank.DIFFICULTY_ORDER[q['difficulty']]) for q in hot] == sorted(
+        (topics.index(q['topic']), practice_bank.DIFFICULTY_ORDER[q['difficulty']]) for q in hot)
+    for q in hot:
+        m = expected[q['leetcodeUrl'].rstrip('/').split('/')[-1]]
+        assert q['leetcodeNumber'] == m['number'] and q['topic'] == m['topic']
+        if q['leetcodeNumber'] in (62, 72):
+            assert q['difficulty'] == '中等'
+    for category in ('basic', 'interview'):
+        rows = [q for q in practice_bank.questions() if q['category'] == category]
+        groups = []
+        for q in rows:
+            key = (q['subject'], q['topic'])
+            if not groups or groups[-1][0] != key:
+                assert key not in [g[0] for g in groups]
+                groups.append((key, []))
+            groups[-1][1].append(practice_bank.DIFFICULTY_ORDER[q['difficulty']])
+        assert all(difficulties == sorted(difficulties) for _, difficulties in groups)
 
 
 def test_hot100_carries_three_language_solutions_and_real_leetcode_links():

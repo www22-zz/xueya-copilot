@@ -35,7 +35,7 @@ test('workspace migration preserves messages and materials while retiring old le
   const legacy={messages:Array.from({length:52},(_,i)=>({role:'user',text:'message '+i})),records:Array.from({length:450},(_,i)=>({questionId:'q1',correct:i%2===0})),documents:[{id:'private',name:'my course.md',chunks:[]}],cards:[{id:'card',title:'mine',text:'note'}]};
   const original=JSON.stringify(legacy),{store,disk}=setup({[LEGACY]:original});
   assert.equal(store.state.messages.length,52);assert.equal(store.state.records,undefined);assert.equal(store.state.cards,undefined);
-  assert.equal(disk.getItem(LEGACY),original,'reading must not overwrite the legacy key');
+  const cleaned=JSON.parse(disk.getItem(LEGACY));assert.equal(cleaned.cards,undefined);assert.equal(cleaned.records,undefined);assert.deepEqual(cleaned.messages,legacy.messages);assert.deepEqual(cleaned.documents,legacy.documents);
   assert.equal(store.persist(),true);
   const reopened=createStore({storage:disk,learning:L});
   assert.equal(reopened.state.messages.length,52);assert.equal(reopened.state.records,undefined);assert.equal(reopened.state.cards,undefined);

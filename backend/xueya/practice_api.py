@@ -52,10 +52,18 @@ def install_practice(app):
         authorize(request)
         value = await json_body(request, 1_000_000)
         ops = value.get('ops')
-        require(isinstance(ops, list), 'INVALID_OPS')
+        require(isinstance(ops, list) and 1 <= len(ops) <= 200, 'INVALID_OPS')
+        valid, rejected = [], []
         for op in ops:
-            require(isinstance(op, dict) and question(op.get('questionId')) is not None, 'UNKNOWN_QUESTION')
-        return success(**store().accept(account_id(request), ops, device=str(value.get('deviceTag') or '')[:64]))
+            if not isinstance(op, dict) or question(op.get('questionId')) is None:
+                rejected.append({'opId': op.get('opId') if isinstance(op, dict) else None, 'error': 'UNKNOWN_QUESTION'})
+            else:
+                valid.append(op)
+        account = account_id(request)
+        result = store().accept(account, valid, device=str(value.get('deviceTag') or '')[:64]) if valid else {
+            'accepted': [], 'duplicates': [], 'rejected': [], **store().state(account)}
+        result['rejected'].extend(rejected)
+        return success(**result)
 
     @router.get('/notes/{question_id}')
     async def get_note(request: Request, question_id: str):
