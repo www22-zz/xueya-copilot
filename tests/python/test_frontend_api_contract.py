@@ -17,11 +17,19 @@ def read(path: str) -> str:
 
 
 def defined_names(source: str) -> set:
-    """Names that look like module members: `name(...)` methods, `name:` fields, `name,` shorthand."""
+    """Names that look like methods, fields, or shorthand members (including the last one)."""
     names = set(re.findall(r'(?:^|[,{;]\s*|\s)(?:async\s+)?(?:get\s+)?([A-Za-z_$][\w$]*)\s*\(', source, re.M))
     names |= set(re.findall(r'(?:^|[,{;]\s*|\s)([A-Za-z_$][\w$]*)\s*:', source, re.M))
-    names |= set(re.findall(r'(?:^|[,{;]\s*|\s)([A-Za-z_$][\w$]*)\s*,', source, re.M))
+    names |= set(re.findall(r'(?:^|[,{;]\s*|\s)([A-Za-z_$][\w$]*)\s*(?=[,}])', source, re.M))
     return names
+
+
+def test_defined_names_recognizes_final_shorthand_members():
+    for source in ('return {state, ready};', 'return {ready};',
+                   'return {\n  state,\n  ready\n};', 'return {state, ready,};'):
+        assert 'ready' in defined_names(source)
+        assert 'missing' not in defined_names(source)
+    assert 'ready' not in defined_names('const ready = new Promise(resolve => {}); return {state};')
 
 
 def called_methods(source: str, handle: str) -> set:
