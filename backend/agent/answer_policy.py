@@ -25,11 +25,15 @@ async def finalize_answer(content, sources, model, *, review=None, signal=None, 
         checked = await validate_claims(claims, {'sources': sources}, review, signal)
     except (ValueError, TypeError, KeyError, AttributeError):
         return fallback('INVALID_CLAIM_EVIDENCE')
-    if any(c['support'] != 'supported' for c in checked):
+    omitted = sum(c['support'] != 'supported' for c in checked)
+    checked = [c for c in checked if c['support'] == 'supported']
+    if not checked:
         return fallback('CLAIMS_NEED_REVIEW')
     ids = list(dict.fromkeys(ref['sourceId'] for c in checked for ref in c['evidence']))
-    answer = '\n\n'.join(c['text']+''.join(f" [{ids.index(r['sourceId'])+1}]" for r in c['evidence']) for c in checked)
+    answer = '\n\n'.join(('基于资料的推理：' if c['kind'] == 'inference' else '')+c['text']+''.join(f" [{ids.index(r['sourceId'])+1}]" for r in c['evidence']) for c in checked)
+    if omitted:
+        answer += '\n\n部分解释的资料依据不足，已省略。'
     require(len(answer) <= 16000, 'AI_INVALID_RESPONSE')
     points = parsed.get('knowledgePoints', [])
-    return {'ok': True, 'answer': answer, 'sources': ids, 'knowledgePoints': [p for p in points if isinstance(p, str) and any(p in s['quote'] for s in sources)][:8] if isinstance(points, list) else [],
-            'model': model, 'claims': checked, 'verification': 'verbatim-only' if all(c['kind'] == 'excerpt' for c in checked) else 'reviewed-claims', 'engine': 'xiaomi-mimo'}
+    return {'ok': True, 'answer': answer, 'sources': ids, 'knowledgePoints': [p for p in points if isinstance(p, str) and any(p in allowed[key]['quote'] for key in ids)][:8] if isinstance(points, list) else [],
+            'model': model, 'claims': checked, 'omittedClaims': omitted, 'verification': 'verbatim-only' if all(c['kind'] == 'excerpt' for c in checked) else 'reviewed-claims', 'engine': 'xiaomi-mimo'}

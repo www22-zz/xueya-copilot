@@ -1,5 +1,6 @@
 """Single-decision jobs using the existing learning run store and platform queue."""
 import asyncio
+from .evidence_review import EvidenceReviewer
 import json
 from uuid import uuid4
 from contextlib import aclosing
@@ -123,7 +124,7 @@ class DurableAgent:
                     tools = ReadOnlyTools(session, run['context']['library'], course_id=course,
                         verify=lambda: self.agent.evidence_current(scope, run['context']['library'], run['snapshot']))
                     flow = ReadOnlyWorkflow(Planner(ScopedModel(self.agent.model, scope), min(self.config.agent_decision_tokens, self.config.max_output_tokens)), tools,
-                        max_rounds=self.config.agent_max_rounds, max_replans=self.config.agent_max_replans, max_no_progress=self.config.agent_no_progress_limit)
+                        max_rounds=self.config.agent_max_rounds, max_replans=self.config.agent_max_replans, max_no_progress=self.config.agent_no_progress_limit, review=EvidenceReviewer(self.agent.model, scope))
                     terminal = None
                     async with aclosing(flow.stream(run['request'], run['context'], route_task(run['request']['question'], run['request']['mode']),
                         restore=run['state'], checkpoint=checkpoint, single_step=True)) as events:

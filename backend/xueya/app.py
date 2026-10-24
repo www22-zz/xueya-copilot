@@ -130,7 +130,7 @@ def create_app(config: Config | None = None, *, provider=None, start_jobs=True):
             if request.url.path.startswith("/api/platform/") and not re.fullmatch(r"(?:127\.0\.0\.1|localhost|\[::1\])(?::\d+)?", host):
                 return error_response("ORIGIN_FORBIDDEN")
         account = app.state.account
-        if account and request.url.path.startswith('/api/') and request.url.path not in ('/api/health', '/api/account/status', '/api/account/login', '/api/platform/shutdown') and not account.authorized(request):
+        if account and request.url.path.startswith('/api/') and request.url.path not in ('/api/health', '/api/account/status', '/api/account/login', '/api/account/register', '/api/platform/shutdown') and not account.authorized(request):
             return error_response('LOGIN_REQUIRED', 401)
         response = await call_next(request)
         response.headers["X-Content-Type-Options"] = "nosniff"

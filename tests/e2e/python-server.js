@@ -44,7 +44,7 @@ async function startPython({model,platform=false,dataDir}={}){
     }
     const bootstrap=platform?await fetch(base+'/api/platform/bootstrap').then(r=>r.json()):null;
     const headers=bootstrap?{'X-Xueya-Token':bootstrap.token}:{};
-    return{base,directory,address:()=>({port:info.port}),async api(route){return fetch(base+'/api/platform'+route,{headers}).then(r=>r.json());},closeAllConnections(){},async close(callback){
+    return{base,directory,async authenticate(page){const body={username:'browser-regression',password:'Regression123',confirmPassword:'Regression123'};let response=await page.request.post(base+'/api/account/register',{data:body});if(!response.ok())response=await page.request.post(base+'/api/account/login',{data:body});if(!response.ok())throw new Error('Browser fixture authentication failed');headers.Cookie=(await page.context().cookies(base)).map(c=>c.name+'='+c.value).join('; ');},address:()=>({port:info.port}),async api(route){return fetch(base+'/api/platform'+route,{headers}).then(r=>r.json());},closeAllConnections(){},async close(callback){
       try{
         const r=await fetch(base+'/api/platform/shutdown',{method:'POST',headers:{'X-Xueya-Stop':info.stopToken},signal:AbortSignal.timeout(1000)});if(!r.ok)throw new Error('Python stop rejected');
         await Promise.race([exited,delay(7000).then(()=>{throw new Error('Python shutdown timed out: '+logs);})]);

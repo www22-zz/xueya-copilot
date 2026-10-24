@@ -20,7 +20,7 @@
   let toastTimer;function toast(text){$('#toast').textContent=text;$('#toast').classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('#toast').classList.remove('show'),3500);}
   const workspace=window.XueyaWorkspace.createWorkspace({state,L:viewLearning,store,e,icon,persist,toast,render,sourceById,allSources,libraryService:window.XueyaLibrary});
   const {titles,renders,documentRows,cardRows,currentQuestions}=workspace.enhance(window.XueyaViews.createViews({state,L:viewLearning,e,icon,sourceById}));
-  titles.knowledge='知识库';renders.knowledge=()=>'';
+  titles.knowledge='课程资料';renders.knowledge=()=>'';
   const chatService=window.XueyaChat.createChatService();
   const experience=window.XueyaExperience?.create({state});
   let activeChat;
@@ -32,7 +32,7 @@
   const notesUI=window.XueyaPlatform?.available?window.XueyaNotes?.create({state,toast}):null;
   const libraryUI=window.XueyaPlatform?.available?window.XueyaLibraryWorkspace?.create({state,store,toast}):null;
   const knowledgeUI=window.XueyaKnowledgeBase?.create({state,store,toast,render});
-  const knowledgeLink=document.createElement('a');knowledgeLink.href='#space/knowledge';knowledgeLink.dataset.view='knowledge';knowledgeLink.textContent='知识库';document.querySelector('[data-view="library"]').after(knowledgeLink);
+  const materialLink=document.querySelector('[data-view="library"]');materialLink.href='#space/knowledge';materialLink.dataset.view='knowledge';
   const mediaUI=window.XueyaPlatform?.available?window.XueyaMediaWorkspace?.create({state,store,toast}):null;
   const {addQuestions,openBankDialog,generateBank,renderBankTopics,updateBankCount,generateFromTopics}=practiceUI;
   function render(){
@@ -42,7 +42,7 @@
     const thread=$('#chatThread');if(thread)thread.scrollTop=!sameSession||nearBottom?thread.scrollHeight:scrollTop;
     agentRuns?.refresh();
   }
-  let initialRoute=true;function route(){const parts=location.hash.replace(/^#/,'').split('/');const space=parts[0]==='space';$('#homePage').hidden=space;$('#spacePage').hidden=!space;document.body.classList.toggle('in-space',space);if(space){state.view=titles[parts[1]]?parts[1]:'overview';$$('[data-view]').forEach(a=>{a.classList.toggle('active',a.dataset.view===state.view);a.dataset.view===state.view?a.setAttribute('aria-current','page'):a.removeAttribute('aria-current');});render();document.title=`${titles[state.view]} · 学涯 Copilot`;if(!initialRoute){scrollTo({top:0,behavior:'instant'});$('#spaceContent').focus({preventScroll:true});}}else{document.title='学涯 Copilot — 让知识，真正连起来';if(['possibilities','evidence','rhythm'].includes(parts[0]))requestAnimationFrame(()=>document.getElementById(parts[0]).scrollIntoView());else if(!initialRoute)scrollTo({top:0,behavior:'instant'});}initialRoute=false;}
+  let initialRoute=true;function route(){const parts=location.hash.replace(/^#/,'').split('/');if(parts[0]==='space'&&parts[1]==='library'&&parts[2]!=='manage'&&window.XueyaPlatform?.available)parts[1]='knowledge';const space=parts[0]==='space';$('#homePage').hidden=space;$('#spacePage').hidden=!space;document.body.classList.toggle('in-space',space);if(space){state.view=titles[parts[1]]?parts[1]:'overview';$$('[data-view]').forEach(a=>{a.classList.toggle('active',a.dataset.view===state.view);a.dataset.view===state.view?a.setAttribute('aria-current','page'):a.removeAttribute('aria-current');});render();document.title=`${titles[state.view]} · 学涯 Copilot`;if(!initialRoute){scrollTo({top:0,behavior:'instant'});$('#spaceContent').focus({preventScroll:true});}}else{document.title='学涯 Copilot — 让知识，真正连起来';if(['possibilities','evidence','rhythm'].includes(parts[0]))requestAnimationFrame(()=>document.getElementById(parts[0]).scrollIntoView());else if(!initialRoute)scrollTo({top:0,behavior:'instant'});}initialRoute=false;}
   function sourceById(id){return [...viewLearning.sources,...state.documents.flatMap(d=>d.chunks||[])].find(s=>s.id===id)||state.messages.flatMap(m=>m.sources||[]).find(s=>s.id===id)||state.cards.flatMap(c=>c.sources||[]).find(s=>s.id===id);}
   function openSource(source){return workspace.openSource(source);}
   function saveCard(title,text,sources){if(state.cards.some(c=>c.text===text)){toast('这段重点已经在知识卡片里了。');return;}state.cards.unshift({id:crypto.randomUUID(),title:title.slice(0,80),text,sources,createdAt:new Date().toISOString()});if(persist())toast('理解，留下来了。已保存知识卡片。');}
@@ -60,6 +60,7 @@
       const stream=batch.length?((input,options)=>workspace.imageChat(input,options,batch)):chatService.stream.bind(chatService);
       const result=await stream(request,{workflow:true,signal:controller.signal,onUpdate(update){
         if(typeof update.answer==='string')ai.text=update.answer;
+        if(update.progress)ai.progress=update.progress;
         if(typeof update.reasoning==='string')ai.reasoning=update.reasoning;
         if(update.agent){ai.agent=update.agent;ai.toolCalls=window.XueyaMCPTrace.collect(ai.toolCalls,update.agent);}
         if(update.toolCalls)ai.toolCalls=update.toolCalls;
@@ -68,13 +69,13 @@
         if(state.view==='chat'){
           const body=$$('#chatThread .ai-message .message-body').at(-1);
           const paragraph=body?.querySelector('p');
-          if(paragraph)paragraph.textContent=ai.text||'正在思考中';
+          if(paragraph)paragraph.textContent=ai.text||ai.progress||'正在查找资料…';
 
         }
       }});
       controller.signal.throwIfAborted();
       if(result.transcript)userMessage.transcript=result.transcript;
-      Object.assign(ai,{text:result.answer,reasoning:result.reasoning||'',sources:result.sources,engine:result.engine,...(result.agent?{agent:result.agent}:{}),...(result.workflow?{workflow:result.workflow}:{}),...(result.artifacts?{artifacts:result.artifacts}:{})});
+      Object.assign(ai,{text:result.answer,reasoning:result.reasoning||'',sources:result.sources,engine:result.engine,...(result.timings?{timings:result.timings}:{}),...(result.agent?{agent:result.agent}:{}),...(result.workflow?{workflow:result.workflow}:{}),...(result.artifacts?{artifacts:result.artifacts}:{})});
       if(result.agent)ai.toolCalls=window.XueyaMCPTrace.collect(ai.toolCalls,result.agent);
       if(result.toolCalls)ai.toolCalls=result.toolCalls;
       if(result.runId)ai.runId=result.runId;

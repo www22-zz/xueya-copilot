@@ -13,8 +13,8 @@ FATAL_CODES = frozenset(('STALE_EVIDENCE', 'RESULT_SCOPE_MISMATCH', 'MCP_INVALID
 
 
 class ReadOnlyWorkflow:
-    def __init__(self, planner, tools, *, max_rounds=8, max_replans=2, max_no_progress=2):
-        self.planner, self.tools = planner, tools
+    def __init__(self, planner, tools, *, max_rounds=8, max_replans=2, max_no_progress=2, review=None):
+        self.planner, self.tools, self.review = planner, tools, review
         self.max_rounds, self.max_replans, self.max_no_progress = max_rounds, max_replans, max_no_progress
 
     async def stream(self, request, context, intent, signal=None, *, restore=None, checkpoint=None, single_step=False):
@@ -24,7 +24,7 @@ class ReadOnlyWorkflow:
         rounds, replans, no_progress = saved.get('decisionCount', 0), saved.get('replans', 0), saved.get('noProgress', 0)
         if saved.get('tools'):
             self.tools.restore(saved['tools'])
-        evaluator = ResultEvaluator(request, context, self.tools, intent)
+        evaluator = ResultEvaluator(request, context, self.tools, intent, review=self.review)
         catalogue = await self.tools.catalogue()
         require(catalogue, 'MCP_TOOL_MISSING')
 
@@ -47,6 +47,7 @@ class ReadOnlyWorkflow:
             check_cancel(signal)
             await self.tools.current()
             value = await evaluator.render(answer)
+            await self.tools.current()
             if question:
                 value['answer'] += '\n\n需要你补充信息才能继续：'+question
             elif status != 'completed':

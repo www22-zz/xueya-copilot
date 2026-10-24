@@ -20,6 +20,7 @@ class LocalAccount:
     def __init__(self, platform):
         self.platform = platform
         self.sessions = {}
+        self.identities = {}
         self.lock = asyncio.Lock()
         self.failures = 0
         self.blocked_until = 0
@@ -27,6 +28,18 @@ class LocalAccount:
     def record(self):
         row = self.platform.db.one('SELECT value FROM meta WHERE key=?', (KEY,))
         return json.loads(row['value']) if row else None
+
+    def find(self, username):
+        legacy = self.record()
+        if legacy and legacy['username'] == username:
+            return legacy, KEY
+        key = 'account-v2:' + hashlib.sha256(str(username).encode()).hexdigest()
+        row = self.platform.db.one('SELECT value FROM meta WHERE key=?', (key,))
+        return (json.loads(row['value']), key) if row else (None, key)
+
+    def current(self, request):
+        digest = hashlib.sha256(request.cookies.get(COOKIE, '').encode()).hexdigest()
+        return self.find(self.identities.get(digest))[0]
 
     def authorized(self, request):
         if not self.record():
@@ -50,6 +63,8 @@ class LocalAccount:
         self.sessions = {k: v for k, v in self.sessions.items() if v > now}
         token = secrets.token_urlsafe(32)
         self.sessions[hashlib.sha256(token.encode()).hexdigest()] = now+TTL
+        self.identities = {k: v for k, v in self.identities.items() if k in self.sessions}
+        self.identities[hashlib.sha256(token.encode()).hexdigest()] = username
         response = JSONResponse({'ok': True, 'username': username})
         response.set_cookie(COOKIE, token, max_age=TTL, httponly=True, samesite='strict', path='/')
         response.headers['Cache-Control'] = 'no-store'
@@ -80,7 +95,7 @@ def install_account(app):
         account = app.state.account
         row = account.record()
         return JSONResponse({'ok': True, 'configured': bool(row), 'authenticated': account.authorized(request),
-                             'username': row['username'] if row else None, 'sharedSpace': True}, headers={'Cache-Control': 'no-store'})
+                             'username': (account.current(request) or {}).get('username'), 'sharedSpace': True}, headers={'Cache-Control': 'no-store'})
 
     @router.post('/api/account/setup')
     async def setup(request: Request):
@@ -97,6 +112,27 @@ def install_account(app):
             account.platform.db.execute('INSERT INTO meta(key,value) VALUES(?,?)', (KEY, json.dumps({'username': username, 'salt': salt, 'hash': derived, 'iterations': ITERATIONS})))
             return account.issue(username)
 
+    @router.post('/api/account/register')
+    async def register(request: Request):
+        origin(request)
+        value = await json_body(request, 4096)
+        username = value.get('username')
+        require(isinstance(username, str) and bool(re.fullmatch(r'[a-zA-Z0-9_.-]{3,40}', username)), 'INVALID_USERNAME')
+        secret = value.get('password')
+        require(isinstance(secret, str) and 8 <= len(secret) <= 16
+                and re.search(r'[A-Za-z]', secret) and re.search(r'[0-9]', secret), 'PASSWORD_FORMAT')
+        require(secret == value.get('confirmPassword'), 'PASSWORD_MISMATCH')
+        account = app.state.account
+        async with account.lock:
+            existing, key = account.find(username)
+            require(existing is None, 'USERNAME_TAKEN')
+            if not account.record():
+                key = KEY
+            salt = secrets.token_hex(16)
+            derived = await asyncio.to_thread(account.derive, secret, salt)
+            account.platform.db.execute('INSERT INTO meta(key,value) VALUES(?,?)', (key, json.dumps({'username': username, 'salt': salt, 'hash': derived, 'iterations': ITERATIONS})))
+            return account.issue(username)
+
     @router.post('/api/account/login')
     async def login(request: Request):
         origin(request)
@@ -105,8 +141,14 @@ def install_account(app):
         async with account.lock:
             if time.monotonic() < account.blocked_until:
                 return error_response('LOGIN_THROTTLED', 429)
-            row = account.record()
-            require(row is not None, 'ACCOUNT_NOT_CONFIGURED')
+            row, _ = account.find(value.get('username'))
+            if row is None:
+                account.failures += 1
+                if account.failures >= 5:
+                    account.blocked_until = time.monotonic()+60
+                    account.failures = 0
+                await asyncio.to_thread(account.derive, '', '00'*16)
+                return error_response('LOGIN_INVALID', 401)
             supplied = value.get('password')
             if not isinstance(supplied, str) or len(supplied) > 256:
                 supplied = ''
@@ -138,7 +180,8 @@ def install_account(app):
         secret = password(value)
         account = app.state.account
         async with account.lock:
-            row = account.record()
+            row = account.current(request)
+            _, account_key = account.find(row['username'] if row else None)
             require(row is not None, 'ACCOUNT_NOT_CONFIGURED')
             current = value.get('currentPassword')
             require(isinstance(current, str) and len(current) <= 256, 'LOGIN_INVALID')
@@ -146,11 +189,14 @@ def install_account(app):
             require(secrets.compare_digest(derived, row['hash']), 'LOGIN_INVALID')
             if 'username' in value:
                 username = value['username']
+                existing, _ = account.find(username)
+                require(existing is None or username == row['username'], 'USERNAME_TAKEN')
                 require(isinstance(username, str) and bool(re.fullmatch(r'[a-zA-Z0-9_.-]{3,40}', username)), 'INVALID_USERNAME')
                 row['username'] = username
             row['salt'] = secrets.token_hex(16)
             row['hash'] = await asyncio.to_thread(account.derive, secret, row['salt'])
-            account.platform.db.execute('UPDATE meta SET value=? WHERE key=?', (json.dumps(row), KEY))
+            new_key = KEY if account_key == KEY else account.find(row['username'])[1]
+            account.platform.db.execute('UPDATE meta SET key=?,value=? WHERE key=?', (new_key, json.dumps(row), account_key))
             account.sessions.clear()
             return account.issue(row['username'])
 

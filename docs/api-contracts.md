@@ -275,3 +275,38 @@ P3–P5 增量：创建可带 `sourceIds`（1–48 个当前服务器来源 id�
 保留原 HTTP 基础字段和 SSE 事件类型。动态流程的 `agent.decisions` 在 `call_tool` 时增量携带 `arguments`；工具观察增量携带 `round`，与决策轮次关联。UI/检查点保留所有有界观察，后续模型上下文仍只使用最近 8 条。
 
 四工具固定流程的 `workflow`/`done` 可增量返回 `toolCalls`：`[{id,tool,arguments,status,data?}]`，运行中为 `running`，成功为 `completed`，失败为 `failed`。不新增固定流程的 `agent` 字段。浏览器保存记录供诊断，默认聊天界面只显示等待提示、正文和引用，不渲染工具明细或执行步骤。取消或断流时不得把没有返回的工具标为成功；诊断渲染器对参数与结果转义、限制长度并隐藏敏感键。
+
+
+### 账号注册与资料入口（2026-10-24）
+
+- 新增 `POST /api/account/register`，同源、本机 Host，JSON 为 `username`、`password`、`confirmPassword`。账号为3–40位字母、数字、点、横线、下划线；密码8–16个字符，至少一个英文字母和数字，两次一致。重复账号返回 `USERNAME_TAKEN`；密码格式和确认错误分别返回 `PASSWORD_FORMAT`、`PASSWORD_MISMATCH`（400）。成功返回 `{ok:true, username}` 并设置 HttpOnly / SameSite=Strict 会话 cookie。
+- 账号哈希仍保存在主平台 SQLite meta 中，PBKDF2-SHA256、独立盐、600000次；既有账号及登录、初始化、改密接口保持兼容。注册多个账号共用当前本机学习空间，不新增私人数据隔离语义。服务重启后需要重新登录。
+- 首页跳转学习空间前显示登录；未初始化空间可注册首个账号。`#space/knowledge` 为统一课程资料入口，原 `#space/library` 进入同一入口；详细阅读与版本管理保留在 `#space/library/manage`。
+- 资料首页只展示资料总量及上传/查看入口，列表点击后展开。上传、原件读取、问答选择及回答引用继续使用既有 API；独立检索表单不再展示，后台 RAG 检索契约保留。
+- 验证：`python -m scripts.check_auth_materials` 使用临时数据库与真实浏览器，覆盖注册校验、登录、上传解析、原文阅读、问答入口及移动端布局，不调用付费模型。
+
+
+### 普通资料问答提速与耗时（2026-10-24）
+
+`/api/agent`、`/api/agent/stream` 保留原有 HTTP/SSE 事件类型和必需字段。普通 `ask` 问题使用固定的检索、原文读取、单次模型回答流程，跳过外部模型规划。章节学习、复习计划、跨资料综合、多步骤任务、总结与出题保留原 Agent 路由。检索仍复用主平台 RAG、MCP、权限、资料范围与调用预算；不增设后端或本地模型。
+
+快速路径关闭回答模型的扩展思考，优先输出带证据的 `claims`。只有完整解析、通过既有逐字引用验证且资料版本仍有效的段落才会作为 `content` 事件提前发送；部分 JSON、伪造引用和未经审核的改写不发布。没有可提前验证的段落时等待完整验证。前端以最终 `done.answer` 和 `done.sources` 为准；取消、截断、错误、资料版本变化继续沿用既有中断与降级行为，不自动付费重试。复杂 Agent 的证据验证要求不变。
+
+完成事件新增可选 `timings` 对象：`route`（fast-qa/agent/general/no-evidence/direct）、`totalMs`、`firstContentMs`（首次已验证内容发出时间）、`firstModelTokenMs`（首次模型流式 token 时间）、`modelMs`（模型调用累计时间）、`modelCalls`、`phasesMs`（各流程阶段累计时间）。时间使用单调时钟，单位毫秒；未出现的首内容/首 token 为 null。非流式规划不能观测首 token，故该值可能为 null。阶段时间与模型时间有包含关系，不应直接相加。API 并发满时沿用 API_BUSY，不虚报排队耗时。
+
+耗时附在已有主平台 run.result、浏览器会话消息中，取消/中断 run 也记录当前耗时；同时提供只含耗时及结果状态的 `qa_latency` INFO 日志，不记录问题、原文或密钥。回答旁显示总耗时。离线验证：`python -m pytest -q tests/python/test_fast_qa.py`、`python -m scripts.check_fast_qa`。浏览器验证用受控上游故意阻塞后半段，确认首段在上游完成前可见、点击引用能打开原文、普通问答1次模型调用而复杂问题继续多轮 Agent；不产生真实模型费用。
+
+
+### 可解释的资料回答与语义核对（2026-10-24）
+
+本节更新上节“普通问答单次模型调用”的说明：仍跳过多轮任务规划，但自然语言改写需要单独的批量证据核对，因此通常为一次回答生成加一次核对；纯逐字摘录仍只调用一次。复杂只读 Agent 和可恢复只读 run 共享相同核对逻辑。
+
+- 提示词要求先直接回答，再用自己的话解释原因，必要时给出标注为假设的例子。每段用 `claims[].text` 表达，`kind` 为 paraphrase/inference，`evidence[].quote` 保留逐字原文，不再要求解释正文等于引文。answer 不可绕过 claims 校验。
+- 第一层在服务端核对来源ID与逐字引文，并在生成、核对完成及发布前复查已有资料版本。无效引用在模型语义核对前拒绝。逐字摘录仅保留实际匹配该段文字的引用，避免附带无关来源。
+- 第二层只把需要核对的改写/推理与有效引文发送到外部模型的新调用。判断包含条件、否定、数量、大小关系、因果与范围是否保持；推理只允许直接逻辑或基本算术推导。由服务端按 claim 索引关联 verdict，不接受回答模型自报审核结果，也不允许核对模型新增引用。
+- 每个答案最多一次批量核对、最多12项改写或推理，输入最大96000 UTF-8字节，20秒上限及最多1536输出tokens（同时受总预算约束）。复用主平台provider、并发、调用账本与同一执行预算。失败、预算不足、结果不明、重复/缺失索引、非严格状态值均不授权解释；不自动重试，不额外引入模型服务。
+- 只发布 supported 的解释，inference 在正文标为“基于资料的推理”。部分未通过则省略并提示；全部未通过时保留现有原文摘录降级。伪造引文、未审核改写不流入正文。语义核对仍是自动模型判断，并不等同于人工验收或事实正确性的数学保证。
+- 原文片段仍可通过现有流式路径提前发布；改写/推理等核对通过后再通过既有 content/done SSE输出，前端以 done 为准。含原文前缀的流会补齐已核对解释，保持同一份合法JSON；取消与资料更新会停止发布。
+- 新增可选 `omittedClaims` 数量；保留 `verification` 为 verbatim-only/reviewed-claims。`timings.phasesMs.evidenceReview` 记录语义核对耗时，modelCalls 与 modelMs 同时计入核对调用。
+
+验证：`python -m pytest -q tests/python/test_explanatory_qa.py`，覆盖四个HTTP/SSE端点、改写、推理、部分拒绝、真实引文不支持结论、伪造引文、核对失败、预算限制、取消、资料版本变化和复杂Agent；`python -m scripts.check_fast_qa` 通过真实浏览器验证通俗解释、原文引用与调用次数。所有测试使用受控上游，不调用付费API。

@@ -54,3 +54,26 @@ def test_login_throttle_and_setup_race_guard(client):
     for _ in range(5):
         assert client.post('/api/account/login',json={**body,'password':'bad'}).status_code==401
     assert client.post('/api/account/login',json=body).status_code==429
+
+def test_registration_validation_multiple_accounts_and_restart(tmp_path):
+    config = Config(data_dir=tmp_path/'data')
+    app = create_app(config)
+    body = {'username': 'student-one', 'password': 'Learning123', 'confirmPassword': 'Learning123'}
+    with TestClient(app, base_url='http://127.0.0.1') as client:
+        for password in ['short1', 'abcdefgh', '12345678', 'a1'*9]:
+            assert client.post('/api/account/register', json={**body, 'password': password, 'confirmPassword': password}).status_code == 400
+        assert client.post('/api/account/register', json={**body, 'confirmPassword': 'Other123'}).status_code == 400
+        assert client.post('/api/account/register', json=body, headers={'Origin': 'https://evil.invalid'}).status_code == 403
+        assert client.post('/api/account/register', json=body).status_code == 200
+        assert client.get('/api/account/status').json()['username'] == body['username']
+        assert client.post('/api/account/register', json=body).json()['error'] == 'USERNAME_TAKEN'
+        second = {**body, 'username': 'student-two'}
+        assert client.post('/api/account/register', json=second).status_code == 200
+        assert client.get('/api/account/status').json()['username'] == second['username']
+        client.cookies.clear()
+        assert client.get('/api/platform/bootstrap').status_code == 401
+        assert client.post('/api/account/login', json=body).status_code == 200
+        assert client.get('/api/platform/bootstrap').status_code == 200
+    with TestClient(create_app(config), base_url='http://127.0.0.1') as client:
+        assert client.post('/api/account/login', json=second).status_code == 200
+        assert client.get('/api/account/status').json()['username'] == second['username']

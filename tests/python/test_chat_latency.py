@@ -83,7 +83,8 @@ def test_browser_library_uses_scoped_mcp_without_starting_process(monkeypatch, q
         config = SimpleNamespace(model='controlled')
 
         async def stream(self, messages, **options):
-            if options.get('thinking'):
+            assert options.get('thinking') == {'type': 'disabled'}
+            if '本次为通用问答' in messages[0]['content']:
                 yield {'type': 'content', 'text': '星期五。', 'model': 'controlled'}
                 return
             else:

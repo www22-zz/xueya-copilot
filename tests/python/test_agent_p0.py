@@ -72,7 +72,8 @@ def test_valid_source_id_cannot_publish_unsupported_text(tmp_path, stream, claim
         assert FORGED not in result['answer']
         assert SOURCE['quote'] in result['answer'] and result['verification'] == 'verbatim-only'
         assert result['knowledgePoints'] == []
-        assert len(requests) == 1 and requests[0]['max_completion_tokens'] == 4096
+        expected_calls = 2 if claims and isinstance(claims[0], dict) and claims[0].get('evidence') == [{'sourceId': SOURCE['id'], 'quote': SOURCE['quote']}] else 1
+        assert len(requests) == expected_calls and requests[0]['max_completion_tokens'] == 4096
         assert 'thinking' not in requests[0]  # Course evidence tasks keep the provider's reasoning mode.
 
 

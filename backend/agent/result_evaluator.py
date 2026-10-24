@@ -6,8 +6,9 @@ from .tasks import local_answer, study_text
 
 
 class ResultEvaluator:
-    def __init__(self, request, context, tools, intent):
+    def __init__(self, request, context, tools, intent, review=None):
         self.request, self.context, self.tools, self.intent = request, context, tools, intent
+        self.review = review
         self.required = {'progress', 'review_plan'} if intent == 'plan' else {'progress'} if intent == 'review' else {'evidence'}
         if re.search(r'错题', request['question']):
             self.required |= {'progress', 'wrong_questions'}
@@ -29,6 +30,7 @@ class ResultEvaluator:
 
     async def render(self, answer=None):
         results, sources, parts, artifacts = self.tools.results, list(self.tools.evidence.values()), [], {}
+        used_ids = [s['id'] for s in sources]
         verification, model, engine = 'tool-results-only', 'local-learning-tools', 'local-workflow'
         if 'analyze_progress' in results:
             stats, plan = results['analyze_progress'], results.get('build_review_plan')
@@ -39,8 +41,9 @@ class ResultEvaluator:
         if sources:
             if answer and isinstance(answer.get('answer'), str) and isinstance(answer.get('sources'), list):
                 try:
-                    value = await finalize_answer(dumps(answer), sources, 'external-planner', question=self.request['question'], mode=self.request['mode'])
+                    value = await finalize_answer(dumps(answer), sources, 'external-planner', question=self.request['question'], mode=self.request['mode'], review=self.review)
                     parts.append(value['answer'])
+                    used_ids = value['sources']
                     verification, model, engine = value['verification'], value['model'], value['engine']
                 except (ValueError, TypeError, KeyError, AttributeError):
                     parts.append(local_answer(self.request['question'], self.request['mode'], sources))
@@ -56,5 +59,5 @@ class ResultEvaluator:
             graph = results['get_course_graph'].get('content', results['get_course_graph'])
             parts.append(f"已读取课程图谱：{len(graph['concepts'])} 个概念、{len(graph['edges'])} 条关系。")
         return {'ok': True, 'answer': '\n\n'.join(parts) or '当前还没有足够的已核验工具结果，请补充学习目标或相关课程资料。',
-                'sources': [s['id'] for s in sources], 'knowledgePoints': [], 'model': model, 'engine': engine,
+                'sources': used_ids, 'knowledgePoints': [], 'model': model, 'engine': engine,
                 'verification': verification, 'artifacts': artifacts}

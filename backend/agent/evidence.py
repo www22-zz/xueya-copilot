@@ -16,17 +16,29 @@ def evidence_package(value):
 
 async def validate_claims(claims, pack, review=None, signal=None):
     require(isinstance(claims, list) and 0 < len(claims) <= 100, 'INVALID_CLAIMS')
-    sources, checked = {s['id']: s for s in pack['sources']}, []
+    sources, candidates, checked = {s['id']: s for s in pack['sources']}, [], []
     for claim in claims:
         check_cancel(signal)
-        require(isinstance(claim.get('text'), str) and claim['text'].strip() and isinstance(claim.get('evidence'), list) and claim['evidence'], 'UNSUPPORTED_CLAIM')
+        require(isinstance(claim, dict) and isinstance(claim.get('text'), str) and claim['text'].strip()
+                and len(claim['text']) <= 8000 and isinstance(claim.get('evidence'), list)
+                and 0 < len(claim['evidence']) <= 12, 'UNSUPPORTED_CLAIM')
         refs = []
         for ref in claim['evidence']:
+            require(isinstance(ref, dict), 'INVALID_CITATION')
             source = sources.get(ref.get('sourceId'))
             require(source and isinstance(ref.get('quote'), str) and ref['quote'].strip() and ref['quote'] in source['quote'], 'INVALID_CITATION')
             refs.append({'sourceId': source['id'], 'documentId': source.get('documentId'), 'version': source.get('version'), 'quote': ref['quote'], 'location': source.get('location')})
-        exact = any(ref['quote'] == claim['text'] for ref in refs)
-        result = {'supported': True, 'method': 'exact-excerpt'} if exact else await resolve(review({'text': claim['text'], 'evidence': refs}, signal=signal)) if review else {'supported': False, 'method': 'needs-review'}
+        exact = [ref for ref in refs if ref['quote'] == claim['text']]
+        candidates.append({'text': claim['text'], 'evidence': exact or refs,
+                           'kind': 'excerpt' if exact else 'inference' if claim.get('kind') == 'inference' else 'paraphrase'})
+    # Validate every citation before any external review; one batch per answer.
+    prepare = getattr(review, 'prepare', None)
+    if prepare and any(c['kind'] != 'excerpt' for c in candidates):
+        await resolve(prepare(candidates, signal=signal))
+    for item in candidates:
         check_cancel(signal)
-        checked.append({'text': claim['text'], 'evidence': refs, 'kind': 'excerpt' if exact else 'inference' if claim.get('kind') == 'inference' else 'paraphrase', 'support': 'supported' if result.get('supported') is True else 'unverified', 'review': result})
+        result = ({'supported': True, 'method': 'exact-excerpt'} if item['kind'] == 'excerpt'
+                  else await resolve(review(item, signal=signal)) if review else {'supported': False, 'method': 'needs-review'})
+        check_cancel(signal)
+        checked.append({**item, 'support': 'supported' if isinstance(result, dict) and result.get('supported') is True else 'unverified', 'review': result})
     return checked

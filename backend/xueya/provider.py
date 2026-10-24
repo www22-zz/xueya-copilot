@@ -2,6 +2,8 @@
 from __future__ import annotations
 import asyncio
 import json
+from time import perf_counter
+from .qa_latency import current_timing
 from contextlib import asynccontextmanager
 from uuid import uuid4
 import httpx
@@ -24,6 +26,7 @@ class MimoProvider:
         require(type(output_limit) is int and 0 < output_limit <= self.config.max_output_tokens, 'AI_OUTPUT_BUDGET_EXCEEDED')
         with budget_scope(self.config) as budget:
             request_id, release = None, None
+            timing, model_started = current_timing.get(), None
             state = {'usage': None, 'complete': False, 'usable': False, 'finishReason': None, 'outputLimit': output_limit}
             if self.platform:
                 release = (lambda: None) if api_permit_held(self.platform) else self.platform.resources.acquire('api')
@@ -37,8 +40,13 @@ class MimoProvider:
                     from .invocation_context import attach_invocation
                     attach_invocation(self.platform, scope, request_id, capability=capability, model=model or self.config.model,
                                       base_url=self.config.base_url, key=self.config.api_key)
+                if timing:
+                    model_started = perf_counter()
+                    timing.model_calls += 1
                 yield state
             finally:
+                if timing and model_started is not None:
+                    timing.model_ms += (perf_counter()-model_started)*1000
                 try:
                     if request_id:
                         status = 'succeeded' if state['usable'] else 'failed' if state['complete'] else 'unknown'
@@ -158,6 +166,9 @@ class MimoProvider:
                             self.check_finish(reason)
                             ended = True
                         delta = choice.get('delta') or {}
+                        timing = current_timing.get()
+                        if timing and timing.first_token is None and isinstance(delta, dict) and (delta.get('content') or delta.get('reasoning_content')):
+                            timing.first_token = timing.elapsed()
                         require(isinstance(delta, dict), 'AI_INVALID_RESPONSE')
                         require(not delta.get('tool_calls') and not delta.get('function_call'), 'AI_UNEXPECTED_TOOL_CALL')
                         return [{'type': kind, 'text': delta[key], 'model': self.config.model}
