@@ -4,21 +4,62 @@ TYPES = {'single', 'multiple', 'boolean', 'fill', 'short'}
 
 
 def validate_question(q, sources):
-    require(q.get('id') and q.get('courseId') and q.get('version') and q.get('type') in TYPES and isinstance(q.get('prompt'), str) and q['prompt'].strip(), 'INVALID_QUESTION')
-    source = next((s for s in sources if s['id'] == q.get('sourceId') and s.get('courseId') == q['courseId'] and s.get('version') == q.get('sourceVersion')), None)
-    require(source and isinstance(q.get('evidenceQuote'), str) and q['evidenceQuote'].strip() and q['evidenceQuote'] in source['quote'], 'INVALID_QUESTION_EVIDENCE')
+    require(
+        q.get('id') and q.get('courseId') and q.get('version')
+        and q.get('type') in TYPES
+        and isinstance(q.get('prompt'), str) and q['prompt'].strip(),
+        'INVALID_QUESTION',
+    )
+    source = next((
+        s for s in sources
+        if s['id'] == q.get('sourceId')
+        and s.get('courseId') == q['courseId']
+        and s.get('version') == q.get('sourceVersion')
+    ), None)
+    require(
+        source and isinstance(q.get('evidenceQuote'), str)
+        and q['evidenceQuote'].strip() and q['evidenceQuote'] in source['quote'],
+        'INVALID_QUESTION_EVIDENCE',
+    )
     if q['type'] in ('single', 'multiple'):
         options = q.get('options')
-        require(isinstance(options, list) and 2 <= len(options) <= 8 and all(isinstance(x, str) and x.strip() for x in options) and len({normalized(x) for x in options}) == len(options), 'INVALID_OPTIONS')
+        require(
+            isinstance(options, list) and 2 <= len(options) <= 8
+            and all(isinstance(x, str) and x.strip() for x in options)
+            and len({normalized(x) for x in options}) == len(options),
+            'INVALID_OPTIONS',
+        )
         answers = [q.get('answer')] if q['type'] == 'single' else q.get('answer')
-        require(isinstance(answers, list) and answers and all(type(x) is int and 0 <= x < len(options) for x in answers) and len(set(answers)) == len(answers), 'INVALID_ANSWER')
+        require(
+            isinstance(answers, list) and answers
+            and all(type(x) is int and 0 <= x < len(options) for x in answers)
+            and len(set(answers)) == len(answers),
+            'INVALID_ANSWER',
+        )
     if q['type'] == 'boolean':
         require(type(q.get('answer')) is bool, 'INVALID_ANSWER')
     if q['type'] == 'fill':
-        require(isinstance(q.get('answers'), list) and q['answers'] and all(isinstance(g, list) and g and all(isinstance(v, str) and v.strip() for v in g) for g in q['answers']), 'INVALID_ANSWER')
+        require(
+            isinstance(q.get('answers'), list) and q['answers']
+            and all(
+                isinstance(g, list) and g
+                and all(isinstance(v, str) and v.strip() for v in g)
+                for g in q['answers']
+            ),
+            'INVALID_ANSWER',
+        )
     if q['type'] == 'short':
         rubric = q.get('rubric')
-        require(isinstance(rubric, list) and rubric and all(x.get('id') and isinstance(x.get('description'), str) and finite(x.get('points')) and x['points'] > 0 for x in rubric) and len({x['id'] for x in rubric}) == len(rubric), 'INVALID_RUBRIC')
+        require(
+            isinstance(rubric, list) and rubric
+            and all(
+                x.get('id') and isinstance(x.get('description'), str)
+                and finite(x.get('points')) and x['points'] > 0
+                for x in rubric
+            )
+            and len({x['id'] for x in rubric}) == len(rubric),
+            'INVALID_RUBRIC',
+        )
     return {**clone(q), 'status': 'approved' if q.get('status') == 'approved' else 'candidate'}
 
 
@@ -36,10 +77,19 @@ def grade(q, answer):
         require(type(answer) is bool, 'INVALID_RESPONSE')
         correct = answer == q['answer']
     elif kind == 'multiple':
-        require(isinstance(answer, list) and all(type(x) is int and 0 <= x < len(q['options']) for x in answer) and len(set(answer)) == len(answer), 'INVALID_RESPONSE')
+        require(
+            isinstance(answer, list)
+            and all(type(x) is int and 0 <= x < len(q['options']) for x in answer)
+            and len(set(answer)) == len(answer),
+            'INVALID_RESPONSE',
+        )
         correct = set(answer) == set(q['answer'])
     elif kind == 'fill':
-        require(isinstance(answer, list) and len(answer) == len(q['answers']) and all(isinstance(x, str) for x in answer), 'INVALID_RESPONSE')
+        require(
+            isinstance(answer, list) and len(answer) == len(q['answers'])
+            and all(isinstance(x, str) for x in answer),
+            'INVALID_RESPONSE',
+        )
         correct = all(any(normalized(a) == normalized(value) for a in accepted) for accepted, value in zip(q['answers'], answer))
     else:
         require(False, 'INVALID_QUESTION')
@@ -47,9 +97,22 @@ def grade(q, answer):
 
 
 def review_subjective(q, value):
-    require(q['type'] == 'short' and value.get('reviewer') and value.get('reason') and value.get('sourceVersion') == q['sourceVersion'] and isinstance(value.get('points'), list) and len(value['points']) == len(q['rubric']), 'INVALID_REVIEW')
+    require(
+        q['type'] == 'short' and value.get('reviewer') and value.get('reason')
+        and value.get('sourceVersion') == q['sourceVersion']
+        and isinstance(value.get('points'), list)
+        and len(value['points']) == len(q['rubric']),
+        'INVALID_REVIEW',
+    )
     scores = {x['id']: x['score'] for x in value['points']}
-    require(len(scores) == len(q['rubric']) and all(finite(scores.get(x['id'])) and 0 <= scores[x['id']] <= x['points'] for x in q['rubric']), 'INVALID_REVIEW')
+    require(
+        len(scores) == len(q['rubric'])
+        and all(
+            finite(scores.get(x['id'])) and 0 <= scores[x['id']] <= x['points']
+            for x in q['rubric']
+        ),
+        'INVALID_REVIEW',
+    )
     return {'status': 'graded', 'score': sum(scores.values()), 'maxScore': sum(x['points'] for x in q['rubric']), 'method': 'human-rubric', **{k: clone(value[k]) for k in ('reviewer', 'reason', 'points')}}
 
 
@@ -58,7 +121,12 @@ def assemble_quiz(questions, options):
     require(type(count) is int and 1 <= count <= 100, 'INVALID_QUIZ_SIZE')
     seen, selected = set(), []
     for q in questions:
-        if q['courseId'] != course or q.get('status') != 'approved' or q['id'] in options.get('exclude', []) or options.get('difficulty') and q.get('difficulty') != options['difficulty'] or options.get('conceptIds') and not set(q.get('conceptIds', [])) & set(options['conceptIds']):
+        if (
+            q['courseId'] != course or q.get('status') != 'approved'
+            or q['id'] in options.get('exclude', [])
+            or options.get('difficulty') and q.get('difficulty') != options['difficulty']
+            or options.get('conceptIds') and not set(q.get('conceptIds', [])) & set(options['conceptIds'])
+        ):
             continue
         key = normalized(q['prompt'])
         if key not in seen:
@@ -85,7 +153,12 @@ def public_quiz(quiz):
 
 
 def attempt_event(q, value):
-    require(value.get('id') and finite(value.get('elapsedMs', 0)) and value.get('elapsedMs', 0) >= 0 and (value.get('confidence') is None or finite(value['confidence']) and 0 <= value['confidence'] <= 1), 'INVALID_ATTEMPT')
+    require(
+        value.get('id') and finite(value.get('elapsedMs', 0))
+        and value.get('elapsedMs', 0) >= 0
+        and (value.get('confidence') is None or finite(value['confidence']) and 0 <= value['confidence'] <= 1),
+        'INVALID_ATTEMPT',
+    )
     instant(value.get('createdAt'))
     require(not value.get('gradeOverride'), 'USE_REVIEW_SERVICE')
     return {**{k: q[k] for k in ('courseId', 'sourceId', 'sourceVersion')}, 'questionId': q['id'], 'questionVersion': q['version'],
