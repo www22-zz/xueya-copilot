@@ -221,7 +221,7 @@ G5 复用同一学习主平台，新增分段媒体任务与有出处复习音�
 
 ### 提问附件与麦克风输入（2026-10-20）
 
-加号选择图片/文档；直接录音停止后，客户端转换为16kHz单声道PCM WAV，复用现有 `media/upload`、`media/transcribe`。ASR 使用 `mimo-v2.5-asr`，识别文字回填草稿，用户发送后才调用配置的 LLM（默认 `mimo-v2.6-flash`）。文档复用原上传/解析接口，并加入该次问答的 `documentIds` 及有效来源范围；无新增HTTP/SSE接口。详见[交付与使用说明](delivery/composer-input.md)。
+加号选择图片/文档；直接录音停止后，客户端转换为16kHz单声道PCM WAV，复用现有 `media/upload`、`media/transcribe`。ASR 使用 `mimo-v2.5-asr`，识别文字回填草稿，用户发送后才调用配置的 LLM（默认 `mimo-v2.6-flash`）。文档复用原上传/解析接口，并加入该次问答的 `documentIds` 及有效来源范围；无新增HTTP/SSE接口。详见[交付与使用说明](delivery/FINAL-DELIVERY.md)。
 
 ### Agent P0 可信执行（2026-10-20）
 
@@ -237,7 +237,7 @@ G5 复用同一学习主平台，新增分段媒体任务与有出处复习音�
 
 主模型调用增加输出上限与结束状态检查；原 `error` 字段可返回 `AI_TRUNCATED`、`AI_INCOMPLETE`、`AI_UNEXPECTED_TOOL_CALL`、`STALE_EVIDENCE`、`AI_RUN_TIMEOUT`、`AI_MODEL_BUDGET_EXCEEDED`、`AI_TOOL_BUDGET_EXCEEDED`、`AI_OUTPUT_BUDGET_EXCEEDED`、`AI_COST_BUDGET_EXCEEDED`、`AI_PRICING_REQUIRED`。工作流可继续采用已存在的原文/规则回退，但不发布被拒绝的模型正文，也不额外重试收费请求。
 
-预算仅由服务器 `.env` 配置；请求体不能提高限额或工具权限。主聊天 MCP 仅能使用四个兼容只读工具；原宿主鉴权和具体预览确认写入路径保留。默认限额、费用计价边界及验收见 [P0 交付说明](delivery/agent-P0.md)。
+预算仅由服务器 `.env` 配置；请求体不能提高限额或工具权限。主聊天 MCP 仅能使用四个兼容只读工具；原宿主鉴权和具体预览确认写入路径保留。默认限额、费用计价边界及验收见 [P0 交付说明](delivery/FINAL-DELIVERY.md)。
 
 ### Agent P1 动态只读流程（2026-10-20）
 
@@ -247,7 +247,7 @@ G5 复用同一学习主平台，新增分段媒体任务与有出处复习音�
 
 完成指本轮只读准备，不是学习掌握或保存确认。缺少条件时显示补充问题；用户下条消息仍走原接口，不新增或承诺P2恢复协议。现有run/checkpoint保存审计状态；partial/awaiting_user不会伪装为整个任务成功。
 
-动态工具白名单在P0基础上增加现有平台的错题、到期复习卡和课程图谱只读查询；仅暴露实际可用项。`build_review_plan`兼容增加可选examDate/minutes，生成只读预览，不修改设置或采纳计划。原固定流程四工具、宿主鉴权与人工确认写入路径保持。开关与限额见 [P1交付说明](delivery/agent-P1.md)。
+动态工具白名单在P0基础上增加现有平台的错题、到期复习卡和课程图谱只读查询；仅暴露实际可用项。`build_review_plan`兼容增加可选examDate/minutes，生成只读预览，不修改设置或采纳计划。原固定流程四工具、宿主鉴权与人工确认写入路径保持。开关与限额见 [P1交付说明](delivery/FINAL-DELIVERY.md)。
 # 动态 Agent 持久化运行（P2，增量接口）
 
 `POST /api/learning/agent-runs?courseId=...` 接收 `{id,question,mode?,documentIds?,context?,scenario?}`，scenario 为 prepare/chapter/wrong/exam，返回 `{ok:true,result:{id,courseId,revision,status,state,result,budget}}`。相同 id/请求幂等，内容不同冲突。

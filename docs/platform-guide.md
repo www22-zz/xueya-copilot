@@ -15,7 +15,7 @@ python -m venv .venv
 
 也可运行`scripts/start.ps1`。后端运行不需要Node；安装了npm仍可用`npm start`调用Python。访问`http://127.0.0.1:4173`，只监听本机。原JS后端已移除，不能再运行旧命令。macOS/Linux用`.venv/bin/python`。
 
-从旧版本切换前先安全停止旧服务、备份；保留原数据目录、.env和访问地址。Python直接兼容SQLite v3和workspace v3，不清空浏览器存储；详见[迁移记录](delivery/python-backend-migration.md)。
+从旧版本切换前先安全停止旧服务、备份；保留原数据目录、.env和访问地址。Python直接兼容SQLite v3和workspace v3，不清空浏览器存储；详见[迁移记录](delivery/FINAL-DELIVERY.md)。
 
 `.env.example`列出MiMo、工具超时、API并发和数据目录选项。真实`.env`不提交。`API_MAX_CONCURRENT=2`是所有模型调用共用的默认并发许可；普通解析CPU并发2。API忙时明确失败/回退，不建立无界等待队列。
 

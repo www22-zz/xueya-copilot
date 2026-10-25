@@ -65,4 +65,4 @@ macOS/Linux使用 `.venv/bin/python` 运行同一模块。导入期间不要同�
 
 这是带来源标记的辅助视觉整理，未独立人审，不等于自动OCR服务已经配置。向量、重排及问答生成仍使用各自的服务配置。源PPT重新解析会从原件发布新修订，旧补录保存在历史中，可重新运行本导入工具补入尚未处理的图片。
 
-测试和交接见 [共享资料交付](../../docs/delivery/shared-course-materials.md)。
+当前交付验证与限制见 [最终交付说明](../../docs/delivery/FINAL-DELIVERY.md)。
