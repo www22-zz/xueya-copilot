@@ -158,18 +158,7 @@ class ReadOnlyWorkflow:
                 require(step_id in {s['id'] for s in plan['steps']}, 'AGENT_UNKNOWN_STEP')
                 if action['type'] == 'finish':
                     missing, pending = evaluator.missing(plan, completed, step_id)
-                    if action['completion'] == 'completed' and (missing or pending):
-                        observations.append(
-                            {
-                                'stepId': step_id,
-                                'status': 'rejected',
-                                'kind': 'completion-check',
-                                'data': {'missingRequirements': missing, 'pendingSteps': pending},
-                            },
-                        )
-                        no_progress += 1
-                        yield event('evaluate', '完成条件尚未满足，正在选择补充步骤', 'degraded')
-                    else:
+                    if not (action['completion'] == 'completed' and (missing or pending)):
                         if action['completion'] == 'completed':
                             completed.add(step_id)
                         yield event('validate', '已核对本轮工具结果与来源', 'completed')
@@ -179,6 +168,16 @@ class ReadOnlyWorkflow:
                             action.get('answer'),
                         )
                         return
+                    observations.append(
+                        {
+                            'stepId': step_id,
+                            'status': 'rejected',
+                            'kind': 'completion-check',
+                            'data': {'missingRequirements': missing, 'pendingSteps': pending},
+                        },
+                    )
+                    no_progress += 1
+                    yield event('evaluate', '完成条件尚未满足，正在选择补充步骤', 'degraded')
                 else:
                     yield event('tool', TOOL_LABELS.get(action['tool'], '正在核对工具权限'))
                     await save('calling_tool')

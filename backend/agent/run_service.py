@@ -197,13 +197,15 @@ class RunService:
         require(run['status'] != 'awaiting_user' or 'userInput' in options, 'USER_INPUT_REQUIRED')
         steps = clone(run['steps'])
         for step in steps:
-            if step['status'] != 'completed':
-                step['status'] = 'pending'
-                if step['id'] == run.get('waitingStep'):
-                    if options.get('confirmation') is True:
-                        step['confirmed'] = True
-                    if 'userInput' in options:
-                        step['userInput'] = clone(options['userInput'])
+            if step['status'] == 'completed':
+                continue
+            step['status'] = 'pending'
+            if step['id'] != run.get('waitingStep'):
+                continue
+            if options.get('confirmation') is True:
+                step['confirmed'] = True
+            if 'userInput' in options:
+                step['userInput'] = clone(options['userInput'])
         return await self._save(run, 'queued', steps=steps, error=None, waitingStep=None, prompt=None)
 
     async def recover(self, course, key, lease_expired=False):

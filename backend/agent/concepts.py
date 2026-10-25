@@ -122,15 +122,14 @@ def build_learning_path(value):
             if (estimate and estimate['status'] == 'estimated')
             else 'unknown'
         )
-        reason = (
-            '目标知识点的先修基础'
-            if key not in target_ids
-            else (
-                '近期作答证据提示需要巩固'
-                if state == 'needs-practice'
-                else ('尚无充分练习证据，先核对原文再练习' if state == 'unknown' else '已有练习证据，仍需复习核验')
-            )
-        )
+        if key not in target_ids:
+            reason = '目标知识点的先修基础'
+        elif state == 'needs-practice':
+            reason = '近期作答证据提示需要巩固'
+        elif state == 'unknown':
+            reason = '尚无充分练习证据，先核对原文再练习'
+        else:
+            reason = '已有练习证据，仍需复习核验'
         entries.append(
             {
                 'conceptId': key,

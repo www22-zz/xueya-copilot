@@ -206,10 +206,11 @@ def revise_plan(plan, change):
     result, found, start = clone(plan), None, None
     for day in result['days']:
         for task in day['tasks']:
-            if task['id'] == key and task.get('part', 1) == part:
-                found, start = task, day['date']
-                day['tasks'].remove(task)
-                break
+            if not (task['id'] == key and task.get('part', 1) == part):
+                continue
+            found, start = task, day['date']
+            day['tasks'].remove(task)
+            break
         if found:
             break
     require(found, 'PLAN_TASK_NOT_FOUND')
@@ -217,20 +218,21 @@ def revise_plan(plan, change):
         result.setdefault('completed' if action == 'complete' else 'skipped', []).append(
             {'id': key, 'part': part, 'minutes': found['minutes'], 'date': start},
         )
-    else:
-        date = change.get('date')
-        require(valid_date(date) and start <= date <= plan['examDate'], 'INVALID_POSTPONE_DATE')
-        original = [(d['date'], t) for d in plan['days'] for t in d['tasks']]
-        index = next(i for i, (_, t) in enumerate(original) if t['id'] == key and t.get('part', 1) == part)
-        require(not any(d < date for d, _ in original[index + 1:]), 'PLAN_ORDER_REQUIRES_REBUILD')
-        target = next((d for d in result['days'] if d['date'] == date), None)
-        if target is None:
-            target = {'date': date, 'tasks': []}
-            result['days'].append(target)
-        require(
-            sum(t['minutes'] for t in target['tasks']) + found['minutes'] <= daily_budget(date, plan['minutes'], plan.get('availability', {})),
-            'PLAN_DAILY_BUDGET',
-        )
-        target['tasks'].append(found)
-        result['days'].sort(key=lambda d: d['date'])
+        return {**result, 'status': 'preview', 'requiresConfirmation': True}
+
+    date = change.get('date')
+    require(valid_date(date) and start <= date <= plan['examDate'], 'INVALID_POSTPONE_DATE')
+    original = [(d['date'], t) for d in plan['days'] for t in d['tasks']]
+    index = next(i for i, (_, t) in enumerate(original) if t['id'] == key and t.get('part', 1) == part)
+    require(not any(d < date for d, _ in original[index + 1:]), 'PLAN_ORDER_REQUIRES_REBUILD')
+    target = next((d for d in result['days'] if d['date'] == date), None)
+    if target is None:
+        target = {'date': date, 'tasks': []}
+        result['days'].append(target)
+    require(
+        sum(t['minutes'] for t in target['tasks']) + found['minutes'] <= daily_budget(date, plan['minutes'], plan.get('availability', {})),
+        'PLAN_DAILY_BUDGET',
+    )
+    target['tasks'].append(found)
+    result['days'].sort(key=lambda d: d['date'])
     return {**result, 'status': 'preview', 'requiresConfirmation': True}
