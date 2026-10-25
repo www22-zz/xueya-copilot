@@ -1,30 +1,474 @@
 /* G2 course library and reader, using the host's existing storage and queue. */
 (() => {
-'use strict';
-window.XueyaLibraryWorkspace={create({state,store,toast}){
- const e=window.XueyaRich.escape,uid=()=>crypto.randomUUID();let course='',catalog=null,epoch=0,loading=false,reader=null,readerData=null,activeURL=null,controller=null;
- const errors={PRIVATE_URL_FORBIDDEN:'网址解析到了内网或保留地址，已拒绝抓取。请核对公开链接和本机 DNS/代理。',URL_NOT_ACCESSIBLE:'网页无法公开访问，可能需要登录或已失效；可改用粘贴文字。',URL_FETCH_FAILED:'网页连接失败，请核对网络或改用粘贴文字。',URL_CONTENT_UNSUPPORTED:'该网址不是普通网页或文字，请下载文件后导入。',URL_TOO_LARGE:'网页正文超过 1MB，请选择较短文章或分段粘贴。',VERSION_CONFLICT:'资料或设置已更新，请刷新后重新核对。',DOCUMENT_ARCHIVED:'资料已归档，请先恢复。',INVALID_PAGE:'这份资料没有该实际页码；文字资料请留空页码。',INVALID_MEDIA_LOCATION:'片段时间必须在原件时长内，且结束晚于开始。'};
- const $=s=>document.querySelector(s),btn=(label,action,id='',extra='')=>`<button type="button" class="button button-outline button-small" data-lib="${action}" data-id="${e(id)}" ${extra}>${e(label)}</button>`;
- const input=(label,name,value='',type='text')=>`<label class="form-field">${e(label)}<input name="${name}" type="${type}" ${type==='number'?'step="any"':''} value="${e(value)}" maxlength="4000"></label>`;
- const area=(label,name,value='')=>`<label class="form-field">${e(label)}<textarea name="${name}" rows="4">${e(value)}</textarea></label>`;
- const chapter=()=>input('所属章节或课次（可空）','chapter');
- const form=(kind,body,label)=>`<form data-lib-form="${kind}" class="c-form">${body}<button class="button button-blue button-small">${e(label)}</button></form>`;
- async function api(path,body,options={}){const id=state.courseId;const response=await fetch('/api/platform/bootstrap');if(!response.ok)throw new Error('请启动本地服务后使用资料库');const bootstrap=await response.json(),token=bootstrap.token;if(!bootstrap.courses.some(c=>c.id===id)){const c=store.courses.find(c=>c.id===id);const r=await fetch('/api/platform/courses',{method:'POST',headers:{'Content-Type':'application/json','X-Xueya-Token':token},body:JSON.stringify({id,name:c?.name||'课程'})});if(!r.ok)throw new Error('课程尚未同步');}const response2=await fetch('/api/platform/'+(options.platformPath||'library/'+path)+(path.includes('?')?'&':'?')+'courseId='+encodeURIComponent(id),{method:body?'POST':'GET',headers:{'X-Xueya-Token':token,...(body?{'Content-Type':'application/json'}:{}),...(options.headers||{})},body:body?JSON.stringify({...body,courseId:id}):undefined,signal:options.signal});if(options.blob){if(!response2.ok)throw new Error('原件不可用或已更新');return response2.blob();}const data=await response2.json();if(!response2.ok||!data.ok)throw new Error(errors[data.error]||data.error||'处理未完成');return data;}
- function saveDraft(f){if(f.dataset.libForm!=='text')return;try{localStorage.setItem('xueya-library-draft:'+course,JSON.stringify(Object.fromEntries(new FormData(f))));}catch{toast('草稿未保存，请复制重要文字');}}
- async function load(){if(loading)return;loading=true;const generation=epoch;try{const data=await api('catalog');if(generation!==epoch)return;catalog=data;state.documents=[...state.documents.filter(d=>!d.remote),...data.documents];store.persist();if($('#documentCount'))$('#documentCount').textContent=state.documents.filter(d=>!d.superseded).length;draw();}catch(error){if(generation===epoch&&$('#libraryWorkspace'))$('#libraryWorkspace').textContent='资料库未能加载：'+error.message;}finally{loading=false;}}
- function rows(){const filter=$('#libraryChapter')?.value||'',find=($('#libraryFind')?.value||'').trim().toLowerCase();const docs=catalog.documents.filter(d=>(filter==='__archived'?d.archived:!d.archived&&(!filter||d.chapter===filter))&&(!find||(d.name+' '+(d.chapter||'')+' '+(d.tags||[]).join(' ')+' '+(d.chunks||[]).map(s=>s.quote||'').join('\n')).toLowerCase().includes(find)));$('#libraryRows').innerHTML=docs.map(d=>`<article class="c-item"><h3>${e(d.name)}</h3><p>${e(d.chapter||'尚未分章')} · ${e(d.status||'待处理')} · 版本 ${d.version}${d.archived?' · 已归档':''}</p>${d.origin?.type==='web-snapshot'?`<p>网页正文快照 · ${e(d.origin.capturedAt)}</p>`:''}<div class="c-actions">${btn('阅读与版本','read',d.id)}${!d.archived?btn('按这份资料学习','learn',d.id):''}<details class="library-row-more"><summary>更多</summary><div class="c-actions">${btn('整理位置','organize',d.id)}${btn(d.archived?'恢复到课程':'归档资料',d.archived?'restore':'archive',d.id)}${!d.archived?btn('复用到另一课程','reuse',d.id):''}${d.origin?.type==='web-snapshot'&&!d.archived?btn('刷新网页为新版本','refresh-url',d.id):''}</div></details></div></article>`).join('')||'<div class="library-empty"><p>还没有上传资料</p><small>点击上方“上传资料”，选择文件即可自动上传和解析。</small></div>';}
- function draw(){const root=$('#libraryWorkspace');if(!root||!catalog)return;const p=catalog.profile;root.innerHTML=`<div class="library-catalog-heading"><h2>已上传资料 <small>${catalog.documents.filter(d=>!d.archived).length} 份</small></h2>${btn('刷新','reload')}</div><div id="libraryImportStatus" role="status" aria-live="polite"></div><div class="c-fields" ${catalog.documents.length?'':'hidden'}><label class="form-field">章节筛选<select id="libraryChapter"><option value="">全部在用资料</option>${[...new Set([...(p.chapters||[]),...catalog.documents.map(d=>d.chapter).filter(Boolean)])].map(c=>`<option value="${e(c)}">${e(c)}</option>`).join('')}<option value="__archived">已归档资料</option></select></label><label class="form-field">在资料正文中查找<input id="libraryFind" type="search" placeholder="标题、章节或正文关键词"></label></div><div id="libraryRows"></div><details class="library-secondary-tools"><summary>其他资料工具</summary><details><summary>其他导入方式</summary><div class="library-import-grid"><details><summary>粘贴课堂文字</summary>${form('text',input('资料标题','title')+chapter()+area('正文（最多 1MB）','text'),'导入文字')}</details><details><summary>公开网页链接</summary>${form('url',input('公开网址','url','','url')+input('显示标题（可空）','title')+chapter()+'<p>仅抓取公开正文，不读取登录凭据。每次刷新保留新的正文快照。</p><label><input type="checkbox" name="confirmed" required>确认读取此公开网址并保存快照</label>','导入网页')}</details><details><summary>图片、录音或视频原件</summary>${form('media','<label class="form-field">选择媒体<input name="file" type="file" accept="image/png,image/jpeg,image/webp,audio/wav,audio/mpeg,video/mp4,video/webm" required></label><p>保存原件无需识别服务；录音 7MB、图片 8MB、视频 50MB 以内。图片和语音可直接加入问答；录音与视频工具在设置的“服务与数据”中。</p>','保存媒体原件')}</details></div></details><details><summary>课程目标与章节目录</summary>${form('profile',input('课程描述','description',p.description||'')+area('学习目标','goals',p.goals||'')+area('先修要求','prerequisites',p.prerequisites||'')+area('考试范围','examScope',p.examScope||'')+area('章节或课次（每行一项）','chapters',(p.chapters||[]).join('\n')),'确认保存课程设置')}</details><details><summary>媒体原件与位置关联</summary><h3>媒体与人工位置关联</h3><p>只记录实际页码和片段时间；人工关联不代表模型已经理解媒体内容。</p>${catalog.media.map(m=>`<article class="c-item"><strong>${e(m.name||m.kind)}</strong><p>${e(m.kind)} · v${m.revision}${m.durationMs?' · '+(m.durationMs/1000).toFixed(1)+' 秒':''}</p>${btn('打开原件','media',m.id)}${btn('关联讲义位置','link',m.id)}</article>`).join('')||'<p>还没有媒体原件。</p>'}<div>${catalog.links.map(l=>`<p>已确认关联：${e(catalog.documents.find(d=>d.id===l.documentId)?.name||l.documentId)} v${l.documentVersion} · ${e(JSON.stringify(l.location))} ${btn('回到媒体片段','linked-media',l.mediaId,`data-start="${l.location.startMs||0}"`)}</p>`).join('')}</div></details></details>`;rows();try{const d=JSON.parse(localStorage.getItem('xueya-library-draft:'+course)||'null');if(d)for(const [k,v] of Object.entries(d)){const field=root.querySelector(`[data-lib-form=text] [name="${k}"]`);if(field)field.value=v;}}catch{}}
- function dialog(title,html){if(!reader){reader=document.createElement('dialog');reader.id='libraryReader';reader.className='source-dialog c-dialog';reader.setAttribute('aria-label','课程阅读与原件');document.body.append(reader);reader.addEventListener('close',()=>{if(activeURL){URL.revokeObjectURL(activeURL);activeURL=null;}});}reader.innerHTML=`<div class="dialog-head"><strong>${e(title)}</strong>${btn('关闭','close')}</div><div class="c-dialog-body">${html}</div>`;if(!reader.open)reader.showModal();}
- async function read(id,version=''){const generation=epoch;readerData=await api('read?'+new URLSearchParams({documentId:id,...(version?{version}: {})}));if(generation!==epoch)return;const d=readerData.document;dialog(d.name,`<p>${readerData.historical?'正在查看历史快照；不作为当前资料自动使用。':'当前资料'} · 内容修订 ${d.contentRevision||0}</p>${d.origin?`<details><summary>来源与快照</summary><pre>${e(JSON.stringify(d.origin,null,2))}</pre></details>`:''}<label class="form-field">版本<select id="libraryVersion">${readerData.versions.map(v=>`<option value="${v.version}" ${d.version===v.version?'selected':''}>v${v.version} · ${e(v.at)}</option>`).join('')}</select></label><label class="form-field">在原文中查找<input id="readerFind" type="search"></label><div class="c-actions">${btn('下载原件或文字快照','original',d.id)}${btn('用当前版本开始学习','learn',d.id)}</div><div id="readerBlocks"></div>`);blocks();}
- function blocks(){const find=($('#readerFind')?.value||'').trim();const list=readerData?.artifact?.blocks||[];$('#readerBlocks').innerHTML=list.filter(b=>!find||String(b.text||'').includes(find)).map(b=>{const text=b.text||'',i=find?text.indexOf(find):-1;return `<article class="c-item"><small>${Number.isInteger(b.page)?'实际位置：第 '+b.page+' 页':(Number.isInteger(b.start)?'实际位置：字符 '+b.start+'–'+b.end:'没有页码信息')} · ${e(b.id||'')}</small><div class="library-original">${i<0?e(text):e(text.slice(0,i))+'<mark>'+e(find)+'</mark>'+e(text.slice(i+find.length))}</div></article>`;}).join('')||'<p>没有可显示的正文块；解析可能仍在处理或需要 OCR。原件仍然保留。</p>';}
- async function poll(job,signal){for(let n=0;n<300;n++){signal.throwIfAborted();if(['succeeded','failed','cancelled','unknown'].includes(job.status)){if(job.status!=='succeeded')throw new Error(job.status==='unknown'?'远端结果不明，请先到任务中心核对':(errors[job.error]||'处理未完成，请到任务中心查看'));if(job.result?.parseJobId){job={id:job.result.parseJobId,status:'queued'};continue;}return job;}await new Promise(resolve=>setTimeout(resolve,200));const r=await api('jobs/status?id='+encodeURIComponent(job.id),undefined,{platformPath:'jobs/status?id='+encodeURIComponent(job.id),signal});job=r.job;}throw new Error('仍在后台处理，请到任务中心查看');}
- async function mediaDuration(file){if(file.type.startsWith('image/'))return null;return new Promise((resolve,reject)=>{const el=document.createElement(file.type.startsWith('video/')?'video':'audio'),url=URL.createObjectURL(file);const clear=()=>{clearTimeout(timer);URL.revokeObjectURL(url);el.removeAttribute('src');el.load();};const timer=setTimeout(()=>{clear();reject(new Error('无法读取真实媒体时长'));},10000);el.onloadedmetadata=()=>{const ms=Math.ceil(el.duration*1000);clear();Number.isFinite(ms)&&ms>0?resolve(ms):reject(new Error('媒体时长无效'));};el.onerror=()=>{clear();reject(new Error('浏览器无法读取媒体'));};el.src=url;});}
- async function submit(f,inputFiles=null){if(controller)return;const generation=epoch,values=new FormData(f),kind=f.dataset.libForm,sourceCourse=state.courseId;controller=new AbortController();const signal=controller.signal;const status=$('#libraryImportStatus');if(status)status.innerHTML='处理中… '+btn('停止等待','stop');const buttons=[...f.querySelectorAll('button')];buttons.forEach(b=>b.disabled=true);try{if(kind==='text'||kind==='url'){const value=Object.fromEntries(values);value.idempotencyKey=f.dataset.operation||uid();f.dataset.operation=value.idempotencyKey;if(kind==='url')value.confirmed=values.has('confirmed');const result=await api(kind,value);await poll(result.job,signal);delete f.dataset.operation;if(kind==='text')localStorage.removeItem('xueya-library-draft:'+course);if(reader?.open)reader.close();}else if(kind==='files'){const files=inputFiles||values.getAll('files');let done=0;const failures=[];for(const file of files){signal.throwIfAborted();try{const doc=await window.XueyaWorkspaceBackend.uploadDocument({courseId:sourceCourse,file},{signal});if(values.get('chapter'))await api('organize',{documentId:doc.id,version:doc.version,action:'chapter',chapter:values.get('chapter'),confirmed:true});done++;}catch(error){if(error.name==='AbortError')throw error;failures.push(file.name+'：'+error.message);}if(status)status.textContent=`已处理 ${done}/${files.length}，失败 ${failures.length}`;}if(failures.length)throw new Error(failures.join('；'));}else if(kind==='media'){const file=values.get('file'),duration=await mediaDuration(file);await window.XueyaPlatform.learningRequest('media/upload?'+new URLSearchParams({name:file.name,...(duration?{durationMs:duration}:{})}),{courseId:sourceCourse,body:file,method:'POST',signal});}else if(kind==='profile'){const value=Object.fromEntries(values);value.version=catalog.profile.version;value.chapters=String(value.chapters).split('\n').map(s=>s.trim()).filter(Boolean);await api('profile',value);}else if(kind==='organize'){await api('organize',{...Object.fromEntries(values),version:Number(values.get('version')),confirmed:true});reader.close();}else if(kind==='reuse'){const result=await api('reuse',{...Object.fromEntries(values),version:Number(values.get('version')),confirmed:true,idempotencyKey:f.dataset.operation||(f.dataset.operation=uid())});await poll(result.job,signal);if(values.has('moveSource'))await api('organize',{documentId:values.get('documentId'),version:Number(values.get('version')),action:'archive',confirmed:true});reader.close();}else if(kind==='link'){const value=Object.fromEntries(values),doc=catalog.documents.find(d=>d.id===value.documentId),media=catalog.media.find(m=>m.id===value.mediaId),location={};for(const k of ['page','startMs','endMs'])if(value[k]!==undefined&&value[k]!=='')location[k]=Number(value[k])*(k==='page'?1:1000);await api('media-link',{documentId:doc.id,documentVersion:doc.version,mediaId:media.id,mediaVersion:media.revision,location,confirmed:true,idempotencyKey:uid()});reader.close();}if(generation!==epoch)return;await load();toast('资料已保存到当前课程。');}catch(error){if(generation===epoch){const message=error.name==='AbortError'?'已停止等待，后台任务仍可在任务中心查看。':error.message;toast(message);if(status?.isConnected)status.textContent=message;}}finally{controller=null;buttons.forEach(b=>b.disabled=false);}}
- async function action(action,id,el){const d=catalog?.documents.find(d=>d.id===id);try{if(action==='close'){reader.close();return;}if(action==='reload'){await load();return;}if(action==='tasks'){$('#workbenchTasks').click();return;}if(action==='stop'){controller?.abort();return;}if(action==='read'){await read(id);return;}if(action==='learn'){if(reader?.open)reader.close();state.selectedDocuments=[id];try{localStorage.setItem('xueya-c-learning:'+state.courseId+':scope:'+state.sessionId,JSON.stringify([id]));}catch{}store.persist();location.hash='space/ask';return;}if(action==='original'){const blob=await api('documents/original?documentId='+encodeURIComponent(id),undefined,{platformPath:'documents/original?documentId='+encodeURIComponent(id),blob:true});const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=readerData?.document.name||'资料';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);return;}if(['archive','restore','organize'].includes(action)){dialog('预览资料位置变更',`<p>${e(d.name)} · v${d.version}</p><p>${action==='archive'?'归档后不参与当前检索；原件、历史笔记和成绩保留。':action==='restore'?'恢复当前课程检索；不改写历史学习记录。':'移动到新章只改变组织位置，不删除原文；章节留空即移出本章。'}</p>${form('organize',`<input type="hidden" name="documentId" value="${e(id)}"><input type="hidden" name="version" value="${d.version}"><input type="hidden" name="action" value="${action==='organize'?'chapter':action}">${action==='organize'?input('章节或课次','chapter',d.chapter||''):''}`,'确认变更')}`);return;}if(action==='reuse'){dialog('显式复用到其他课程',`<p>共享不可变原件，创建独立课程资料、来源与索引；不会复制个人成绩。</p>${form('reuse',`<input type="hidden" name="documentId" value="${e(id)}"><input type="hidden" name="version" value="${d.version}"><label class="form-field">目标课程<select name="targetCourseId" required>${catalog.courses.filter(c=>c.id!==state.courseId&&!c.archived).map(c=>`<option value="${e(c.id)}">${e(c.name)}</option>`).join('')}</select></label>${chapter()}<label><input type="checkbox" name="moveSource">复用成功后，将原课程中的资料归档（可恢复）</label>`,'确认复用')}`);return;}if(action==='refresh-url'){dialog('刷新网页快照',`<p>生成新版本，成功发布前保留当前正文；已有笔记继续保留旧证据。</p>${form('url',`<input type="hidden" name="previousDocumentId" value="${e(id)}">${input('原网址','url',d.origin.originalUrl,'url')}${input('标题','title',d.name.replace(/\.md$/,''))}${input('章节','chapter',d.chapter||'')}<label><input type="checkbox" name="confirmed" required>确认重新抓取公开网页</label>`,'确认刷新')}`);return;}if(action==='link'){const m=catalog.media.find(m=>m.id===id);dialog('核对并关联真实位置',form('link',`<input name="mediaId" type="hidden" value="${e(id)}"><label class="form-field">关联讲义<select name="documentId">${catalog.documents.filter(d=>!d.archived&&d.activeArtifact).map(d=>`<option value="${e(d.id)}">${e(d.name)}</option>`).join('')}</select></label>${input('实际页码（可空）','page','','number')}${m.durationMs?input('片段开始（秒）','startMs','0','number')+input('片段结束（秒）','endMs',String(m.durationMs/1000),'number'):''}`,'我已核对，确认关联'));return;}if(action==='media'||action==='linked-media'){const m=catalog.media.find(m=>m.id===id);const blob=await api('media-original?'+new URLSearchParams({id,version:m.revision}),undefined,{blob:true});if(activeURL)URL.revokeObjectURL(activeURL);activeURL=URL.createObjectURL(blob);dialog(m.name||'媒体原件',m.kind==='image'?`<img class="library-image" src="${e(activeURL)}" alt="课程原件">`:`<${m.kind==='video'?'video':'audio'} class="library-player" controls src="${e(activeURL)}"></${m.kind==='video'?'video':'audio'}>`);if(el.dataset.start){const player=reader.querySelector('video,audio');if(player)player.onloadedmetadata=()=>{player.currentTime=Number(el.dataset.start)/1000;};}return;}}catch(error){toast(error.message);}}
- document.addEventListener('click',event=>{const b=event.target.closest('[data-lib]');if(!b)return;event.preventDefault();void action(b.dataset.lib,b.dataset.id,b);});
- document.addEventListener('submit',event=>{if(!event.target.matches('[data-lib-form]'))return;event.preventDefault();void submit(event.target);});
- document.addEventListener('input',event=>{const f=event.target.closest('[data-lib-form]');if(f){delete f.dataset.operation;saveDraft(f);}if(event.target.id==='libraryFind')rows();if(event.target.id==='readerFind')blocks();});
- document.addEventListener('change',event=>{if(event.target.id==='libraryChapter')rows();if(event.target.id==='libraryVersion')void read(readerData.document.id,event.target.value);});
- return {uploadFiles(files){if(!files.length)return;const f=document.createElement('form');f.dataset.libForm='files';return submit(f,files);},mount(){if(location.protocol==='file:')return;if(course!==state.courseId){epoch++;controller?.abort();course=state.courseId;catalog=null;loading=false;reader?.close();}if(state.view!=='library')return;const root=document.createElement('section');root.id='libraryWorkspace';root.className='panel c-learning';root.setAttribute('aria-label','课程资料与阅读');$('#uploadProgress').after(root);if(catalog)draw();void load();}};
-}};
+  'use strict';
+  window.XueyaLibraryWorkspace = {
+    create({ state, store, toast }) {
+      const e = window.XueyaRich.escape,
+        uid = () => crypto.randomUUID();
+      let course = '',
+        catalog = null,
+        epoch = 0,
+        loading = false,
+        reader = null,
+        readerData = null,
+        activeURL = null,
+        controller = null;
+      const errors = {
+        PRIVATE_URL_FORBIDDEN: '网址解析到了内网或保留地址，已拒绝抓取。请核对公开链接和本机 DNS/代理。',
+        URL_NOT_ACCESSIBLE: '网页无法公开访问，可能需要登录或已失效；可改用粘贴文字。',
+        URL_FETCH_FAILED: '网页连接失败，请核对网络或改用粘贴文字。',
+        URL_CONTENT_UNSUPPORTED: '该网址不是普通网页或文字，请下载文件后导入。',
+        URL_TOO_LARGE: '网页正文超过 1MB，请选择较短文章或分段粘贴。',
+        VERSION_CONFLICT: '资料或设置已更新，请刷新后重新核对。',
+        DOCUMENT_ARCHIVED: '资料已归档，请先恢复。',
+        INVALID_PAGE: '这份资料没有该实际页码；文字资料请留空页码。',
+        INVALID_MEDIA_LOCATION: '片段时间必须在原件时长内，且结束晚于开始。'
+      };
+      const $ = s => document.querySelector(s),
+        btn = (label, action, id = '', extra = '') => `<button type="button" class="button button-outline button-small" data-lib="${action}" data-id="${e(id)}" ${extra}>${e(label)}</button>`;
+      const input = (label, name, value = '', type = 'text') => `<label class="form-field">${e(label)}<input name="${name}" type="${type}" ${type==='number'?'step="any"':''} value="${e(value)}" maxlength="4000"></label>`;
+      const area = (label, name, value = '') => `<label class="form-field">${e(label)}<textarea name="${name}" rows="4">${e(value)}</textarea></label>`;
+      const chapter = () => input('所属章节或课次（可空）', 'chapter');
+      const form = (kind, body, label) => `<form data-lib-form="${kind}" class="c-form">${body}<button class="button button-blue button-small">${e(label)}</button></form>`;
+      async function api(path, body, options = {}) {
+        const id = state.courseId;
+        const response = await fetch('/api/platform/bootstrap');
+        if (!response.ok) throw new Error('请启动本地服务后使用资料库');
+        const bootstrap = await response.json(),
+          token = bootstrap.token;
+        if (!bootstrap.courses.some(c => c.id === id)) {
+          const c = store.courses.find(c => c.id === id);
+          const r = await fetch('/api/platform/courses', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Xueya-Token': token
+            },
+            body: JSON.stringify({
+              id,
+              name: c?.name || '课程'
+            })
+          });
+          if (!r.ok) throw new Error('课程尚未同步');
+        }
+        const response2 = await fetch('/api/platform/' +(options.platformPath || 'library/' + path) +(path.includes('?') ? '&' : '?') + 'courseId=' + encodeURIComponent(id), {
+          method: body ? 'POST' : 'GET',
+          headers: {
+            'X-Xueya-Token': token,
+            ...(body ? {
+              'Content-Type': 'application/json'
+            } : {}),
+            ...(options.headers || {})
+          },
+          body: body ? JSON.stringify({
+            ...body,
+            courseId: id
+          }) : undefined,
+          signal: options.signal
+        });
+        if (options.blob) {
+          if (!response2.ok) throw new Error('原件不可用或已更新');
+          return response2.blob();
+        }
+        const data = await response2.json();
+        if (!response2.ok || !data.ok) throw new Error(errors[data.error] || data.error || '处理未完成');
+        return data;
+      }
+      function saveDraft(f) {
+        if (f.dataset.libForm !== 'text') return;
+        try {
+          localStorage.setItem('xueya-library-draft:' + course, JSON.stringify(Object.fromEntries(new FormData(f))));
+        } catch {
+          toast('草稿未保存，请复制重要文字');
+        }
+      }
+      async function load() {
+        if (loading) return;
+        loading = true;
+        const generation = epoch;
+        try {
+          const data = await api('catalog');
+          if (generation !== epoch) return;
+          catalog = data;
+          state.documents = [...state.documents.filter(d => !d.remote), ...data.documents];
+          store.persist();
+          if ($('#documentCount')) $('#documentCount').textContent = state.documents.filter(d => !d.superseded).length;
+          draw();
+        } catch (error) {
+          if (generation === epoch && $('#libraryWorkspace')) $('#libraryWorkspace').textContent = '资料库未能加载：' + error.message;
+        } finally {
+          loading = false;
+        }
+      }
+      function rows() {
+        const filter = $('#libraryChapter')?.value || '',
+          find = ($('#libraryFind')?.value || '').trim().toLowerCase();
+        const docs = catalog.documents.filter(d => (filter === '__archived' ? d.archived : !d.archived && (!filter || d.chapter === filter)) && (!find || (d.name + ' ' +(d.chapter || '') + ' ' +(d.tags ||[]).join(' ') + ' ' +(d.chunks ||[]).map(s => s.quote || '').join('\n')).toLowerCase().includes(find)));
+        $('#libraryRows').innerHTML = docs.map(d => `<article class="c-item"><h3>${e(d.name)}</h3><p>${e(d.chapter||'尚未分章')} · ${e(d.status||'待处理')} · 版本 ${d.version}${d.archived?' · 已归档':''}</p>${d.origin?.type==='web-snapshot'?`<p>网页正文快照 · ${e(d.origin.capturedAt)}</p>`:''}<div class="c-actions">${btn('阅读与版本','read',d.id)}${!d.archived?btn('按这份资料学习','learn',d.id):''}<details class="library-row-more"><summary>更多</summary><div class="c-actions">${btn('整理位置','organize',d.id)}${btn(d.archived?'恢复到课程':'归档资料',d.archived?'restore':'archive',d.id)}${!d.archived?btn('复用到另一课程','reuse',d.id):''}${d.origin?.type==='web-snapshot'&&!d.archived?btn('刷新网页为新版本','refresh-url',d.id):''}</div></details></div></article>`).join('') || '<div class="library-empty"><p>还没有上传资料</p><small>点击上方“上传资料”，选择文件即可自动上传和解析。</small></div>';
+      }
+      function draw() {
+        const root = $('#libraryWorkspace');
+        if (!root || !catalog) return;
+        const p = catalog.profile;
+        root.innerHTML = `<div class="library-catalog-heading"><h2>已上传资料 <small>${catalog.documents.filter(d=>!d.archived).length} 份</small></h2>${btn('刷新','reload')}</div><div id="libraryImportStatus" role="status" aria-live="polite"></div><div class="c-fields" ${catalog.documents.length?'':'hidden'}><label class="form-field">章节筛选<select id="libraryChapter"><option value="">全部在用资料</option>${[...new Set([...(p.chapters||[]),...catalog.documents.map(d=>d.chapter).filter(Boolean)])].map(c=>`<option value="${e(c)}">${e(c)}</option>`).join('')}<option value="__archived">已归档资料</option></select></label><label class="form-field">在资料正文中查找<input id="libraryFind" type="search" placeholder="标题、章节或正文关键词"></label></div><div id="libraryRows"></div><details class="library-secondary-tools"><summary>其他资料工具</summary><details><summary>其他导入方式</summary><div class="library-import-grid"><details><summary>粘贴课堂文字</summary>${form('text',input('资料标题','title')+chapter()+area('正文（最多 1MB）','text'),'导入文字')}</details><details><summary>公开网页链接</summary>${form('url',input('公开网址','url','','url')+input('显示标题（可空）','title')+chapter()+'<p>仅抓取公开正文，不读取登录凭据。每次刷新保留新的正文快照。</p><label><input type="checkbox" name="confirmed" required>确认读取此公开网址并保存快照</label>','导入网页')}</details><details><summary>图片、录音或视频原件</summary>${form('media','<label class="form-field">选择媒体<input name="file" type="file" accept="image/png,image/jpeg,image/webp,audio/wav,audio/mpeg,video/mp4,video/webm" required></label><p>保存原件无需识别服务；录音 7MB、图片 8MB、视频 50MB 以内。图片和语音可直接加入问答；录音与视频工具在设置的“服务与数据”中。</p>','保存媒体原件')}</details></div></details><details><summary>课程目标与章节目录</summary>${form('profile',input('课程描述','description',p.description||'')+area('学习目标','goals',p.goals||'')+area('先修要求','prerequisites',p.prerequisites||'')+area('考试范围','examScope',p.examScope||'')+area('章节或课次（每行一项）','chapters',(p.chapters||[]).join('\n')),'确认保存课程设置')}</details><details><summary>媒体原件与位置关联</summary><h3>媒体与人工位置关联</h3><p>只记录实际页码和片段时间；人工关联不代表模型已经理解媒体内容。</p>${catalog.media.map(m=>`<article class="c-item"><strong>${e(m.name||m.kind)}</strong><p>${e(m.kind)} · v${m.revision}${m.durationMs?' · '+(m.durationMs/1000).toFixed(1)+' 秒':''}</p>${btn('打开原件','media',m.id)}${btn('关联讲义位置','link',m.id)}</article>`).join('')||'<p>还没有媒体原件。</p>'}<div>${catalog.links.map(l=>`<p>已确认关联：${e(catalog.documents.find(d=>d.id===l.documentId)?.name||l.documentId)} v${l.documentVersion} · ${e(JSON.stringify(l.location))} ${btn('回到媒体片段','linked-media',l.mediaId,`data-start="${l.location.startMs||0}"`)}</p>`).join('')}</div></details></details>`;
+        rows();
+        try {
+          const d = JSON.parse(localStorage.getItem('xueya-library-draft:' + course) || 'null');
+          if (d) for (const[k, v] of Object.entries(d)) {
+            const field = root.querySelector(`[data-lib-form=text] [name="${k}"]`);
+            if (field) field.value = v;
+          }
+        } catch {}
+      }
+      function dialog(title, html) {
+        if (!reader) {
+          reader = document.createElement('dialog');
+          reader.id = 'libraryReader';
+          reader.className = 'source-dialog c-dialog';
+          reader.setAttribute('aria-label', '课程阅读与原件');
+          document.body.append(reader);
+          reader.addEventListener('close',() => {
+            if (activeURL) {
+              URL.revokeObjectURL(activeURL);
+              activeURL = null;
+            }
+          });
+        }
+        reader.innerHTML = `<div class="dialog-head"><strong>${e(title)}</strong>${btn('关闭','close')}</div><div class="c-dialog-body">${html}</div>`;
+        if (!reader.open) reader.showModal();
+      }
+      async function read(id, version = '') {
+        const generation = epoch;
+        readerData = await api('read?' + new URLSearchParams({
+          documentId: id,
+          ...(version ? {
+            version
+          } : {})
+        }));
+        if (generation !== epoch) return;
+        const d = readerData.document;
+        dialog(d.name, `<p>${readerData.historical?'正在查看历史快照；不作为当前资料自动使用。':'当前资料'} · 内容修订 ${d.contentRevision||0}</p>${d.origin?`<details><summary>来源与快照</summary><pre>${e(JSON.stringify(d.origin,null,2))}</pre></details>`:''}<label class="form-field">版本<select id="libraryVersion">${readerData.versions.map(v=>`<option value="${v.version}" ${d.version===v.version?'selected':''}>v${v.version} · ${e(v.at)}</option>`).join('')}</select></label><label class="form-field">在原文中查找<input id="readerFind" type="search"></label><div class="c-actions">${btn('下载原件或文字快照','original',d.id)}${btn('用当前版本开始学习','learn',d.id)}</div><div id="readerBlocks"></div>`);
+        blocks();
+      }
+      function blocks() {
+        const find = ($('#readerFind')?.value || '').trim();
+        const list = readerData?.artifact?.blocks ||[];
+        $('#readerBlocks').innerHTML = list.filter(b => !find || String(b.text || '').includes(find)).map(b => {
+          const text = b.text || '',
+            i = find ? text.indexOf(find) : - 1;
+          return `<article class="c-item"><small>${Number.isInteger(b.page)?'实际位置：第 '+b.page+' 页':(Number.isInteger(b.start)?'实际位置：字符 '+b.start+'–'+b.end:'没有页码信息')} · ${e(b.id||'')}</small><div class="library-original">${i<0?e(text):e(text.slice(0,i))+'<mark>'+e(find)+'</mark>'+e(text.slice(i+find.length))}</div></article>`;
+        }).join('') || '<p>没有可显示的正文块；解析可能仍在处理或需要 OCR。原件仍然保留。</p>';
+      }
+      async function poll(job, signal) {
+        for (let n = 0; n < 300; n ++) {
+          signal.throwIfAborted();
+          if (['succeeded', 'failed', 'cancelled', 'unknown'].includes(job.status)) {
+            if (job.status !== 'succeeded') throw new Error(job.status === 'unknown' ? '远端结果不明，请先到任务中心核对' : (errors[job.error] || '处理未完成，请到任务中心查看'));
+            if (job.result?.parseJobId) {
+              job = {
+                id: job.result.parseJobId,
+                status: 'queued'
+              };
+              continue;
+            }
+            return job;
+          }
+          await new Promise(resolve => setTimeout(resolve, 200));
+          const r = await api('jobs/status?id=' + encodeURIComponent(job.id), undefined, {
+            platformPath: 'jobs/status?id=' + encodeURIComponent(job.id),
+            signal
+          });
+          job = r.job;
+        }
+        throw new Error('仍在后台处理，请到任务中心查看');
+      }
+      async function mediaDuration(file) {
+        if (file.type.startsWith('image/')) return null;
+        return new Promise((resolve, reject) => {
+          const el = document.createElement(file.type.startsWith('video/') ? 'video' : 'audio'),
+            url = URL.createObjectURL(file);
+          const clear = () => {
+            clearTimeout(timer);
+            URL.revokeObjectURL(url);
+            el.removeAttribute('src');
+            el.load();
+          };
+          const timer = setTimeout(() => {
+            clear();
+            reject(new Error('无法读取真实媒体时长'));
+          }, 10000);
+          el.onloadedmetadata = () => {
+            const ms = Math.ceil(el.duration * 1000);
+            clear();
+            Number.isFinite(ms) && ms > 0 ? resolve(ms) : reject(new Error('媒体时长无效'));
+          };
+          el.onerror = () => {
+            clear();
+            reject(new Error('浏览器无法读取媒体'));
+          };
+          el.src = url;
+        });
+      }
+      async function submit(f, inputFiles = null) {
+        if (controller) return;
+        const generation = epoch,
+          values = new FormData(f),
+          kind = f.dataset.libForm,
+          sourceCourse = state.courseId;
+        controller = new AbortController();
+        const signal = controller.signal;
+        const status = $('#libraryImportStatus');
+        if (status) status.innerHTML = '处理中… ' + btn('停止等待', 'stop');
+        const buttons = [...f.querySelectorAll('button')];
+        buttons.forEach(b => b.disabled = true);
+        try {
+          if (kind === 'text' || kind === 'url') {
+            const value = Object.fromEntries(values);
+            value.idempotencyKey = f.dataset.operation || uid();
+            f.dataset.operation = value.idempotencyKey;
+            if (kind === 'url') value.confirmed = values.has('confirmed');
+            const result = await api(kind, value);
+            await poll(result.job, signal);
+            delete f.dataset.operation;
+            if (kind === 'text') localStorage.removeItem('xueya-library-draft:' + course);
+            if (reader?.open) reader.close();
+          } else if (kind === 'files') {
+            const files = inputFiles || values.getAll('files');
+            let done = 0;
+            const failures = [];
+            for (const file of files) {
+              signal.throwIfAborted();
+              try {
+                const doc = await window.XueyaWorkspaceBackend.uploadDocument({
+                  courseId: sourceCourse,
+                  file
+                }, {
+                  signal
+                });
+                if (values.get('chapter')) await api('organize', {
+                  documentId: doc.id,
+                  version: doc.version,
+                  action: 'chapter',
+                  chapter: values.get('chapter'),
+                  confirmed: true
+                });
+                done ++;
+              } catch (error) {
+                if (error.name === 'AbortError') throw error;
+                failures.push(file.name + '：' + error.message);
+              }
+              if (status) status.textContent = `已处理 ${done}/${files.length}，失败 ${failures.length}`;
+            }
+            if (failures.length) throw new Error(failures.join('；'));
+          } else if (kind === 'media') {
+            const file = values.get('file'),
+              duration = await mediaDuration(file);
+            await window.XueyaPlatform.learningRequest('media/upload?' + new URLSearchParams({
+              name: file.name,
+              ...(duration ? {
+                durationMs: duration
+              } : {})
+            }), {
+              courseId: sourceCourse,
+              body: file,
+              method: 'POST',
+              signal
+            });
+          } else if (kind === 'profile') {
+            const value = Object.fromEntries(values);
+            value.version = catalog.profile.version;
+            value.chapters = String(value.chapters).split('\n').map(s => s.trim()).filter(Boolean);
+            await api('profile', value);
+          } else if (kind === 'organize') {
+            await api('organize', {
+              ...Object.fromEntries(values),
+              version: Number(values.get('version')),
+              confirmed: true
+            });
+            reader.close();
+          } else if (kind === 'reuse') {
+            const result = await api('reuse', {
+              ...Object.fromEntries(values),
+              version: Number(values.get('version')),
+              confirmed: true,
+              idempotencyKey: f.dataset.operation || (f.dataset.operation = uid())
+            });
+            await poll(result.job, signal);
+            if (values.has('moveSource')) await api('organize', {
+              documentId: values.get('documentId'),
+              version: Number(values.get('version')),
+              action: 'archive',
+              confirmed: true
+            });
+            reader.close();
+          } else if (kind === 'link') {
+            const value = Object.fromEntries(values),
+              doc = catalog.documents.find(d => d.id === value.documentId),
+              media = catalog.media.find(m => m.id === value.mediaId),
+              location = {};
+            for (const k of['page', 'startMs', 'endMs']) if (value[k] !== undefined && value[k] !== '') location[k] = Number(value[k]) *(k === 'page' ? 1 : 1000);
+            await api('media-link', {
+              documentId: doc.id,
+              documentVersion: doc.version,
+              mediaId: media.id,
+              mediaVersion: media.revision,
+              location,
+              confirmed: true,
+              idempotencyKey: uid()
+            });
+            reader.close();
+          }
+          if (generation !== epoch) return;
+          await load();
+          toast('资料已保存到当前课程。');
+        } catch (error) {
+          if (generation === epoch) {
+            const message = error.name === 'AbortError' ? '已停止等待，后台任务仍可在任务中心查看。' : error.message;
+            toast(message);
+            if (status?.isConnected) status.textContent = message;
+          }
+        } finally {
+          controller = null;
+          buttons.forEach(b => b.disabled = false);
+        }
+      }
+      async function action(action, id, el) {
+        const d = catalog?.documents.find(d => d.id === id);
+        try {
+          if (action === 'close') {
+            reader.close();
+            return;
+          }
+          if (action === 'reload') {
+            await load();
+            return;
+          }
+          if (action === 'tasks') {
+            $('#workbenchTasks').click();
+            return;
+          }
+          if (action === 'stop') {
+            controller?.abort();
+            return;
+          }
+          if (action === 'read') {
+            await read(id);
+            return;
+          }
+          if (action === 'learn') {
+            if (reader?.open) reader.close();
+            state.selectedDocuments = [id];
+            try {
+              localStorage.setItem('xueya-c-learning:' + state.courseId + ':scope:' + state.sessionId, JSON.stringify([id]));
+            } catch {}
+            store.persist();
+            location.hash = 'space/ask';
+            return;
+          }
+          if (action === 'original') {
+            const blob = await api('documents/original?documentId=' + encodeURIComponent(id), undefined, {
+              platformPath: 'documents/original?documentId=' + encodeURIComponent(id),
+              blob: true
+            });
+            const url = URL.createObjectURL(blob),
+              a = document.createElement('a');
+            a.href = url;
+            a.download = readerData?.document.name || '资料';
+            a.click();
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+            return;
+          }
+          if (['archive', 'restore', 'organize'].includes(action)) {
+            dialog('预览资料位置变更', `<p>${e(d.name)} · v${d.version}</p><p>${action==='archive'?'归档后不参与当前检索；原件、历史笔记和成绩保留。':action==='restore'?'恢复当前课程检索；不改写历史学习记录。':'移动到新章只改变组织位置，不删除原文；章节留空即移出本章。'}</p>${form('organize',`<input type="hidden" name="documentId" value="${e(id)}"><input type="hidden" name="version" value="${d.version}"><input type="hidden" name="action" value="${action==='organize'?'chapter':action}">${action==='organize'?input('章节或课次','chapter',d.chapter||''):''}`,'确认变更')}`);
+            return;
+          }
+          if (action === 'reuse') {
+            dialog('显式复用到其他课程', `<p>共享不可变原件，创建独立课程资料、来源与索引；不会复制个人成绩。</p>${form('reuse',`<input type="hidden" name="documentId" value="${e(id)}"><input type="hidden" name="version" value="${d.version}"><label class="form-field">目标课程<select name="targetCourseId" required>${catalog.courses.filter(c=>c.id!==state.courseId&&!c.archived).map(c=>`<option value="${e(c.id)}">${e(c.name)}</option>`).join('')}</select></label>${chapter()}<label><input type="checkbox" name="moveSource">复用成功后，将原课程中的资料归档（可恢复）</label>`,'确认复用')}`);
+            return;
+          }
+          if (action === 'refresh-url') {
+            dialog('刷新网页快照', `<p>生成新版本，成功发布前保留当前正文；已有笔记继续保留旧证据。</p>${form('url',`<input type="hidden" name="previousDocumentId" value="${e(id)}">${input('原网址','url',d.origin.originalUrl,'url')}${input('标题','title',d.name.replace(/\.md$/,''))}${input('章节','chapter',d.chapter||'')}<label><input type="checkbox" name="confirmed" required>确认重新抓取公开网页</label>`,'确认刷新')}`);
+            return;
+          }
+          if (action === 'link') {
+            const m = catalog.media.find(m => m.id === id);
+            dialog('核对并关联真实位置', form('link', `<input name="mediaId" type="hidden" value="${e(id)}"><label class="form-field">关联讲义<select name="documentId">${catalog.documents.filter(d=>!d.archived&&d.activeArtifact).map(d=>`<option value="${e(d.id)}">${e(d.name)}</option>`).join('')}</select></label>${input('实际页码（可空）','page','','number')}${m.durationMs?input('片段开始（秒）','startMs','0','number')+input('片段结束（秒）','endMs',String(m.durationMs/1000),'number'):''}`, '我已核对，确认关联'));
+            return;
+          }
+          if (action === 'media' || action === 'linked-media') {
+            const m = catalog.media.find(m => m.id === id);
+            const blob = await api('media-original?' + new URLSearchParams({
+              id,
+              version: m.revision
+            }), undefined, {
+              blob: true
+            });
+            if (activeURL) URL.revokeObjectURL(activeURL);
+            activeURL = URL.createObjectURL(blob);
+            dialog(m.name || '媒体原件', m.kind === 'image' ? `<img class="library-image" src="${e(activeURL)}" alt="课程原件">` : `<${m.kind==='video'?'video':'audio'} class="library-player" controls src="${e(activeURL)}"></${m.kind==='video'?'video':'audio'}>`);
+            if (el.dataset.start) {
+              const player = reader.querySelector('video,audio');
+              if (player) player.onloadedmetadata = () => {
+                player.currentTime = Number(el.dataset.start) / 1000;
+              };
+            }
+            return;
+          }
+        } catch (error) {
+          toast(error.message);
+        }
+      }
+      document.addEventListener('click', event => {
+        const b = event.target.closest('[data-lib]');
+        if (!b) return;
+        event.preventDefault();
+        void action(b.dataset.lib, b.dataset.id, b);
+      });
+      document.addEventListener('submit', event => {
+        if (!event.target.matches('[data-lib-form]')) return;
+        event.preventDefault();
+        void submit(event.target);
+      });
+      document.addEventListener('input', event => {
+        const f = event.target.closest('[data-lib-form]');
+        if (f) {
+          delete f.dataset.operation;
+          saveDraft(f);
+        }
+        if (event.target.id === 'libraryFind') rows();
+        if (event.target.id === 'readerFind') blocks();
+      });
+      document.addEventListener('change', event => {
+        if (event.target.id === 'libraryChapter') rows();
+        if (event.target.id === 'libraryVersion') void read(readerData.document.id, event.target.value);
+      });
+      return {
+        uploadFiles(files) {
+          if (!files.length) return;
+          const f = document.createElement('form');
+          f.dataset.libForm = 'files';
+          return submit(f, files);
+        },
+        mount() {
+          if (location.protocol === 'file:') return;
+          if (course !== state.courseId) {
+            epoch ++;
+            controller?.abort();
+            course = state.courseId;
+            catalog = null;
+            loading = false;
+            reader?.close();
+          }
+          if (state.view !== 'library') return;
+          const root = document.createElement('section');
+          root.id = 'libraryWorkspace';
+          root.className = 'panel c-learning';
+          root.setAttribute('aria-label', '课程资料与阅读');
+          $('#uploadProgress').after(root);
+          if (catalog) draw();
+          void load();
+        }
+      };
+    }
+  };
 })();
