@@ -6,18 +6,55 @@ from .planner import validate_plan
 from .result_evaluator import ResultEvaluator
 from .tool_adapter import TOOL_LABELS
 
-FATAL_CODES = frozenset(('STALE_EVIDENCE', 'RESULT_SCOPE_MISMATCH', 'MCP_INVALID_RESULT',
-    'AI_MODEL_BUDGET_EXCEEDED', 'AI_TOOL_BUDGET_EXCEEDED', 'AI_OUTPUT_BUDGET_EXCEEDED',
-    'AI_COST_BUDGET_EXCEEDED', 'AI_PRICING_REQUIRED', 'AI_RUN_TIMEOUT',
-    'AI_TRUNCATED', 'AI_INCOMPLETE', 'AI_UNAVAILABLE', 'AI_TIMEOUT', 'API_BUSY'))
+FATAL_CODES = frozenset(
+    (
+        'STALE_EVIDENCE',
+        'RESULT_SCOPE_MISMATCH',
+        'MCP_INVALID_RESULT',
+        'AI_MODEL_BUDGET_EXCEEDED',
+        'AI_TOOL_BUDGET_EXCEEDED',
+        'AI_OUTPUT_BUDGET_EXCEEDED',
+        'AI_COST_BUDGET_EXCEEDED',
+        'AI_PRICING_REQUIRED',
+        'AI_RUN_TIMEOUT',
+        'AI_TRUNCATED',
+        'AI_INCOMPLETE',
+        'AI_UNAVAILABLE',
+        'AI_TIMEOUT',
+        'API_BUSY',
+    ),
+)
 
 
 class ReadOnlyWorkflow:
-    def __init__(self, planner, tools, *, max_rounds=8, max_replans=2, max_no_progress=2, review=None):
+    def __init__(
+        self,
+        planner,
+        tools,
+        *,
+        max_rounds=8,
+        max_replans=2,
+        max_no_progress=2,
+        review=None,
+    ):
         self.planner, self.tools, self.review = planner, tools, review
-        self.max_rounds, self.max_replans, self.max_no_progress = max_rounds, max_replans, max_no_progress
+        self.max_rounds, self.max_replans, self.max_no_progress = (
+            max_rounds,
+            max_replans,
+            max_no_progress,
+        )
 
-    async def stream(self, request, context, intent, signal=None, *, restore=None, checkpoint=None, single_step=False):
+    async def stream(
+        self,
+        request,
+        context,
+        intent,
+        signal=None,
+        *,
+        restore=None,
+        checkpoint=None,
+        single_step=False,
+    ):
         saved = restore or {}
         plan, completed = clone(saved.get('plan')), set(saved.get('completedStepIds', []))
         observations, decisions, revisions = [clone(saved.get(k, [])) for k in ('observations', 'decisions', 'planHistory')]
@@ -29,12 +66,21 @@ class ReadOnlyWorkflow:
         require(catalogue, 'MCP_TOOL_MISSING')
 
         def state(status='running', reason=None):
-            return {'status': status, 'planRevision': len(revisions), 'plan': clone(plan),
-                    'planHistory': clone(revisions), 'completedStepIds': sorted(completed),
-                    'observations': clone(observations), 'decisions': clone(decisions),
-                    'decisionCount': rounds, 'replans': replans, 'stopReason': reason,
-                    'scope': 'durable-run' if checkpoint else 'read-only-request', 'persistedResume': bool(checkpoint),
-                    'noProgress': no_progress}
+            return {
+                'status': status,
+                'planRevision': len(revisions),
+                'plan': clone(plan),
+                'planHistory': clone(revisions),
+                'completedStepIds': sorted(completed),
+                'observations': clone(observations),
+                'decisions': clone(decisions),
+                'decisionCount': rounds,
+                'replans': replans,
+                'stopReason': reason,
+                'scope': ('durable-run' if checkpoint else 'read-only-request'),
+                'persistedResume': bool(checkpoint),
+                'noProgress': no_progress,
+            }
 
         async def save(phase='ready'):
             if checkpoint:
@@ -49,7 +95,7 @@ class ReadOnlyWorkflow:
             value = await evaluator.render(answer)
             await self.tools.current()
             if question:
-                value['answer'] += '\n\n需要你补充信息才能继续：'+question
+                value['answer'] += '\n\n需要你补充信息才能继续：' + question
             elif status != 'completed':
                 value['answer'] += '\n\n本轮只读准备尚未全部完成。请补充条件或资料后继续。'
             value['answer'] = value['answer'][:16000]
@@ -57,16 +103,26 @@ class ReadOnlyWorkflow:
 
         yield event('plan', '正在根据学习目标制定执行计划')
         try:
-            for rounds in range(rounds+1, self.max_rounds+1):
+            for rounds in range(rounds + 1, self.max_rounds + 1):
                 check_cancel(signal)
                 await self.tools.current()
                 await save('deciding')
-                decision = await self.planner.decide({'request': {'question': request['question'], 'mode': request['mode'],
-                    'history': [{**m, 'content': m['content'][:2000]} for m in request['history'][-4:]]},
-                    'context': {k: context[k] for k in ('baseDate', 'examDate', 'minutes', 'previousSourceIds', 'settingsProvided') if k in context},
-                    'sources': [{k: s.get(k) for k in ('id', 'title', 'location')} for s in context['library']],
-                    'tools': catalogue, 'state': {**state(), 'observations': clone(observations[-8:])}, 'hostRequirements': sorted(evaluator.required),
-                    'limits': {'remainingRounds': self.max_rounds-rounds, 'remainingReplans': self.max_replans-replans}}, signal)
+                decision = await self.planner.decide(
+                    {
+                        'request': {
+                            'question': request['question'],
+                            'mode': request['mode'],
+                            'history': [{**m, 'content': m['content'][:2000]} for m in request['history'][-4:]],
+                        },
+                        'context': {k: context[k] for k in ('baseDate', 'examDate', 'minutes', 'previousSourceIds', 'settingsProvided') if k in context},
+                        'sources': [{k: s.get(k) for k in ('id', 'title', 'location')} for s in context['library']],
+                        'tools': catalogue,
+                        'state': {**state(), 'observations': clone(observations[-8:])},
+                        'hostRequirements': sorted(evaluator.required),
+                        'limits': {'remainingRounds': self.max_rounds-rounds, 'remainingReplans': self.max_replans-replans},
+                    },
+                    signal,
+                )
                 check_cancel(signal)
                 await self.tools.current()
                 action = decision['action']
@@ -77,7 +133,9 @@ class ReadOnlyWorkflow:
                     yield event('plan', '学习计划：'+' → '.join(s['title'] for s in plan['steps']), 'completed')
                 else:
                     require('plan' not in decision, 'AGENT_PLAN_CHANGE_REQUIRES_REVISION')
-                decisions.append({k: clone(action[k]) for k in ('type', 'stepId', 'tool', 'arguments') if k in action} | {'round': rounds})
+                decisions.append(
+                    {k: clone(action[k]) for k in ('type', 'stepId', 'tool', 'arguments') if k in action} | {'round': rounds},
+                )
                 if action['type'] == 'revise_plan':
                     require(replans < self.max_replans, 'AGENT_REPLAN_LIMIT')
                     plan = validate_plan(action['plan'], plan, completed)
@@ -89,7 +147,10 @@ class ReadOnlyWorkflow:
                         return
                     continue
                 if action['type'] == 'ask_user':
-                    require(not re.search(r'密钥|密码|api[ _-]?key|token|令牌', action['question'], re.I), 'AGENT_INVALID_QUESTION')
+                    require(
+                        not re.search(r'密钥|密码|api[ _-]?key|token|令牌', action['question'], re.I),
+                        'AGENT_INVALID_QUESTION',
+                    )
                     yield event('clarify', '需要补充学习条件或实际作答', 'completed')
                     yield await terminal('awaiting_user', 'USER_INPUT_REQUIRED', question=action['question'])
                     return
@@ -98,15 +159,25 @@ class ReadOnlyWorkflow:
                 if action['type'] == 'finish':
                     missing, pending = evaluator.missing(plan, completed, step_id)
                     if action['completion'] == 'completed' and (missing or pending):
-                        observations.append({'stepId': step_id, 'status': 'rejected', 'kind': 'completion-check',
-                            'data': {'missingRequirements': missing, 'pendingSteps': pending}})
+                        observations.append(
+                            {
+                                'stepId': step_id,
+                                'status': 'rejected',
+                                'kind': 'completion-check',
+                                'data': {'missingRequirements': missing, 'pendingSteps': pending},
+                            },
+                        )
                         no_progress += 1
                         yield event('evaluate', '完成条件尚未满足，正在选择补充步骤', 'degraded')
                     else:
                         if action['completion'] == 'completed':
                             completed.add(step_id)
                         yield event('validate', '已核对本轮工具结果与来源', 'completed')
-                        yield await terminal(action['completion'], 'FINISHED' if action['completion'] == 'completed' else 'INSUFFICIENT_RESULTS', action.get('answer'))
+                        yield await terminal(
+                            action['completion'],
+                            ('FINISHED' if action['completion'] == 'completed' else 'INSUFFICIENT_RESULTS'),
+                            action.get('answer'),
+                        )
                         return
                 else:
                     yield event('tool', TOOL_LABELS.get(action['tool'], '正在核对工具权限'))
@@ -120,7 +191,15 @@ class ReadOnlyWorkflow:
                         if code in FATAL_CODES or not hasattr(error, 'code'):
                             raise
                         result = {'status': 'failed', 'data': {'error': code}, 'newInformation': False}
-                    observations.append({'stepId': step_id, 'round': rounds, 'tool': action['tool'], 'arguments': clone(action['arguments']), **result})
+                    observations.append(
+                        {
+                            'stepId': step_id,
+                            'round': rounds,
+                            'tool': action['tool'],
+                            'arguments': clone(action['arguments']),
+                            **result,
+                        },
+                    )
                     if result['status'] == 'completed':
                         completed.add(step_id)
                     no_progress = 0 if result['newInformation'] else no_progress+1
@@ -138,10 +217,17 @@ class ReadOnlyWorkflow:
         except Exception as error:
             code = getattr(error, 'code', 'AGENT_EXECUTION_FAILED')
             if code == 'STALE_EVIDENCE':
-                # Never publish facts gathered from a now-invalid snapshot.
-                yield {'type': 'done', 'ok': True, 'answer': '资料已更新或移除，请重新选择有效资料后再提问。',
-                    'sources': [], 'knowledgePoints': [], 'model': 'local-learning-tools', 'engine': 'local-workflow',
-                    'agent': state('partial', code)}
+                # 资料快照失效后，不发布基于旧快照收集的结论。
+                yield {
+                    'type': 'done',
+                    'ok': True,
+                    'answer': '资料已更新或移除，请重新选择有效资料后再提问。',
+                    'sources': [],
+                    'knowledgePoints': [],
+                    'model': 'local-learning-tools',
+                    'engine': 'local-workflow',
+                    'agent': state('partial', code),
+                }
                 return
             yield event('evaluate', '本轮自动执行已停止，保留已核验结果', 'degraded')
             yield await terminal('partial', code)
