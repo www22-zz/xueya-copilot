@@ -71,6 +71,37 @@ def install_practice(app):
         require(question(question_id) is not None, 'UNKNOWN_QUESTION')
         return success(note=store().note(account_id(request), question_id))
 
+    @router.get('/analysis')
+    async def list_analysis(request: Request):
+        authorize(request)
+        return success(**app.state.practice_analysis.listing(account_id(request)))
+
+    @router.post('/analysis')
+    async def create_analysis(request: Request):
+        authorize(request)
+        value = await json_body(request, 4096)
+        return success(job=app.state.practice_analysis.submit(account_id(request), value))
+
+    @router.get('/analysis/reports/{report_id}')
+    async def read_analysis(request: Request, report_id: str):
+        authorize(request)
+        return success(report=app.state.practice_analysis.report(account_id(request), report_id))
+
+    @router.post('/analysis/reports/{report_id}/chat')
+    async def ask_analysis(request: Request, report_id: str):
+        authorize(request)
+        value = await json_body(request, 8192)
+        value['reportId'] = report_id
+        return success(job=app.state.practice_analysis.submit(account_id(request), value, chat=True))
+
+    @router.get('/analysis/jobs/{job_id}')
+    async def read_analysis_job(request: Request, job_id: str):
+        authorize(request)
+        scope = app.state.practice_analysis.scope(account_id(request))
+        job = app.state.platform.jobs.get(job_id, scope.user_id)
+        require(job and job['type'] in ('practice-analysis', 'practice-analysis-chat'), 'ANALYSIS_NOT_FOUND')
+        return success(job=job)
+
     count = len(app.router.routes)
     app.include_router(router)
     added = app.router.routes[count:]

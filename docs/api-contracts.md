@@ -314,7 +314,7 @@ P3–P5 增量：创建可带 `sourceIds`（1–48 个当前服务器来源 id�
 
 ### 练习模块 /api/practice/*（2026-10-25）
 
-固定内置题库的练习与复习接口。题库不依赖 AI 生成，作答判定在本地完成，本节接口不发起任何付费模型调用。
+固定内置题库的练习与复习接口。题库不依赖 AI 生成，作答判定在本地完成；以下题库、状态、作答及笔记接口不发起任何付费模型调用。新增的 AI 学习分析接口见下一节。
 调用需同源、本机 Host，并带 `/api/platform/bootstrap` 返回的 `X-Xueya-Token`。已配置账号时还需有效的会话 cookie。
 
 - `GET /api/practice/bank` → `{ok:true, version:'bank-2026-10-24', questions:[Question…]}`。整份 250 题随响应下发，数组顺序即题目列表的固定顺序；浏览器缓存后离线可练。题目按 `category` 区分形状：
@@ -340,3 +340,17 @@ P3–P5 增量：创建可带 `sourceIds`（1–48 个当前服务器来源 id�
 验证：`python -m pytest -q tests/python/test_practice_bank.py tests/python/test_practice_rules.py tests/python/test_practice_api.py`，覆盖题库计数与形状、状态迁移、错误计数、等价答案纠正、幂等重放、账号隔离、随手记冲突保留两份。
 
 > `POST /api/topics`、`POST /api/questions` 的接口契约保持不变；AI 生成题目入口已按产品要求移除，服务端能力仍在，不影响既有契约调用方。
+
+### AI 学习分析 /api/practice/analysis（2026-10-27）
+
+沿用练习接口的同源、本机 Host、令牌与账号会话鉴权。所有报告、快照、作业和追问按账号隔离，跨课程共享。仅明确提交生成或追问时调用外部模型，每个任务最多调用一次，无自动付费重试。
+
+- `GET /api/practice/analysis` → `{ok:true, available, reports:[{id,createdAt,filters,title,cutoff,serverSeq}], jobs:[Job]}`。返回最近30份报告摘要及最近20个分析/追问任务。读取不调用模型。
+- `POST /api/practice/analysis` 请求 `{days:7|30|0, category:'all'|'hot100'|'basic'|'interview', includeNotes:boolean, idempotencyKey:string}` → `{ok:true,job:Job}`。默认最近7天、全部题库、附带随手记摘录；0为全部历史。服务器从当前账号的已同步权威记录制作快照，不接受客户端传入统计或其他账号。无练习记录返回 `ANALYSIS_NO_RECORDS`，不发起模型调用。
+- `GET /api/practice/analysis/reports/{reportId}` → `{ok:true,report:{id,kind:'practice-analysis',createdAt,filters,cutoff,serverSeq,title,model,analysis,snapshot,conversation}}`。`analysis` 为 `{title,summary,findings:[{kind,title,detail,questionIds}],recommendations:[{title,reason,questionIds}],limitations}`；kind取weakness/progress/pattern/coverage。题目ID必须属于快照范围，前端以纯文本安全展示模型输出。
+- `POST /api/practice/analysis/reports/{reportId}/chat` 请求 `{message:string,idempotencyKey:string}` → `{ok:true,job:Job}`。message为1～1000字，结合报告快照与最近6条对话回答。会话保留最近30条消息，不重新读取最新学习记录。
+- `GET /api/practice/analysis/jobs/{jobId}` → `{ok:true,job:Job}`。使用主平台 JobQueue 状态与字段，成功结果为 `{reportId}`。异步生成可在刷新后恢复，同一账号同时仅有一个分析或追问任务。
+
+重复提交同一幂等键及同一请求返回原任务，即使之后有新练习记录也不重复调用；同一键参数变化返回 `IDEMPOTENCY_CONFLICT`。已有进行中任务返回 `ANALYSIS_BUSY`。未知调用结果保留 `unknown`，用户核对后才可用新的幂等键发起新的任务。
+
+时间范围按 Asia/Shanghai 自然日计算，截止于快照生成时刻。单选/填空的作答数和正确数与掌握自评分别统计，填空纠正修改原作答的结果与原作答日期，不新增作答次数。当前错题、自评掌握数单独标明为截止时状态。报告保存当时快照，后续练习不改写历史报告。随手记最多每题240字，过大时明确标记省略。快照有大小上限，避免长历史造成无界模型请求。

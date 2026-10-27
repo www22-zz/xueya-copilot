@@ -103,6 +103,9 @@ def create_app(config: Config | None = None, *, provider=None, start_jobs=True):
             app.state.provider.platform = platform
         app.state.agent = Agent(app.state.provider, platform)
         app.state.token = secrets.token_hex(32)
+        if platform:
+            from .practice_analysis import PracticeAnalysis
+            app.state.practice_analysis = PracticeAnalysis(platform, app.state.provider, config)
         if platform and start_jobs:
             platform.jobs.start()
         async with AsyncExitStack() as resources:

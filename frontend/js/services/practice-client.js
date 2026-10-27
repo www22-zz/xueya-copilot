@@ -70,6 +70,11 @@ function createPracticeClient({request,storage=globalThis.localStorage,accountId
       return result&&result.ok?result.note:null;
     },
     setToken(value){token=value||'';},
+    async analysisList(){await authenticate();return call('/analysis');},
+    async analysisReport(id){await authenticate();return call('/analysis/reports/'+encodeURIComponent(id));},
+    async analysisJob(id){await authenticate();return call('/analysis/jobs/'+encodeURIComponent(id));},
+    async createAnalysis(value){await authenticate();return call('/analysis',{method:'POST',body:value,timeout:15000});},
+    async askAnalysis(id,value){await authenticate();return call('/analysis/reports/'+encodeURIComponent(id)+'/chat',{method:'POST',body:value,timeout:15000});},
   };
 }
 return{createPracticeClient,BANK};

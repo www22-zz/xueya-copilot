@@ -102,15 +102,17 @@ class MimoProvider:
         require(isinstance(choices, list) and isinstance(choices[0], dict), 'AI_INVALID_RESPONSE')
         return choices[0]
 
-    async def generate(self, messages, *, scope=None, temperature=.2, timeout=25, max_output_tokens=None, response_format=None):
+    async def generate(self, messages, *, scope=None, temperature=.2, timeout=25, max_output_tokens=None, response_format=None, thinking=None):
         require(response_format is None or response_format == {'type': 'json_object'}, 'AI_INVALID_RESPONSE_FORMAT')
+        require(thinking is None or thinking in ({'type': 'enabled'}, {'type': 'disabled'}), 'AI_INVALID_THINKING_MODE')
         async with self.invocation(messages, scope, max_output_tokens=max_output_tokens) as state:
             timeout = min(timeout, current_budget.get().remaining())
             async with asyncio.timeout(timeout), self.client(timeout) as client:
                 async with client.stream('POST', self.config.base_url.rstrip('/')+'/chat/completions', timeout=timeout,
                     json={'model': self.config.model, 'temperature': temperature, 'messages': messages,
                           'max_completion_tokens': state['outputLimit'],
-                          **({'response_format': response_format} if response_format else {})}) as response:
+                          **({'response_format': response_format} if response_format else {}),
+                          **({'thinking': thinking} if thinking else {})}) as response:
                     require(response.is_success, 'AI_UNAVAILABLE')
                     buffer = bytearray()
                     async for part in response.aiter_bytes():
