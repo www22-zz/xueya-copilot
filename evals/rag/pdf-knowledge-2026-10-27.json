@@ -119,5 +119,6 @@
   },
   "pullRequest": "https://github.com/www22-zz/xueya-copilot/pull/18",
   "gcDryRunPreservesOcrCompanions": true,
-  "implementationCommit": "85630d2"
+  "implementationCommit": "85630d2",
+  "followUpAnswerAudit": "evals/rag/chat-answer-boundary-2026-10-27.json"
 }

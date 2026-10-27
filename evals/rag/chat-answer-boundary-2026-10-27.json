@@ -1,0 +1,115 @@
+{
+  "date": "2026-10-27",
+  "status": "delivered-awaiting-review",
+  "reproduction": {
+    "question": "你的大语言模型是？",
+    "faults": [
+      "assistant identity routed to course model vocabulary",
+      "model/verification failure pasted raw OCR text into answer",
+      "server citations missing from bounded browser candidate list",
+      "bounded preview truncated course evidence before relevant retrieval"
+    ]
+  },
+  "fixes": [
+    "host-owned assistant identity",
+    "query-ranked evidence before preview truncation within selected documents",
+    "definition question prioritizes defining prose",
+    "generation failure explicit and raw text kept only as citations",
+    "server sourceDetails resolved by the existing client",
+    "duplicate source numbers removed per paragraph",
+    "unverified multi-step answers end partial"
+  ],
+  "liveBrowser": {
+    "status": "passed",
+    "checks": [
+      "identity-from-host-config-with-zero-model-calls",
+      "real-mimo-paraphrase-with-evidence-review",
+      "server-citations-rendered-beyond-client-preview",
+      "all-final-citations-validate",
+      "clickable-original-citation"
+    ],
+    "browserErrors": [],
+    "identityModelCalls": 0,
+    "basicQuestion": {
+      "question": "栈是什么？",
+      "engine": "xiaomi-mimo",
+      "verification": "reviewed-claims",
+      "sources": 1,
+      "omittedClaims": 0,
+      "definitionPage": 84
+    },
+    "explanationQuestion": {
+      "question": "请用自己的话解释什么是栈，为什么后进先出？",
+      "engine": "xiaomi-mimo",
+      "sources": 2
+    },
+    "retainedFailure": {
+      "question": "栈是什么？",
+      "beforeDefinitionPriority": "Only a linked-stack implementation detail survived; the basic definition was missing.",
+      "status": "failed-and-fixed"
+    }
+  },
+  "liveProviderRequests": 6,
+  "liveProviderStates": {
+    "succeeded": 6
+  },
+  "knownTokens": 16619,
+  "unknownAutomaticallyRetried": false,
+  "privateHistoryModified": false,
+  "apiCompatibility": {
+    "requiredFieldsUnchanged": true,
+    "additiveFields": [
+      "sourceDetails",
+      "answerStatus"
+    ],
+    "newVerification": [
+      "not-generated",
+      "server-config"
+    ],
+    "newDatabaseMigration": false
+  },
+  "frontendPassed": 42,
+  "targetedPythonPassed": 61,
+  "pythonFinal": {
+    "passed": 590,
+    "deselected": 1,
+    "seconds": 359.48,
+    "deselectedTest": "test_host_reuses_real_upstream_connection_and_closes_pool; reproduced on unchanged main"
+  },
+  "offlineRetrieval": {
+    "before": {
+      "fixed-lexical": {
+        "cases": 46,
+        "passed": 43,
+        "allEvidenceRecallAt6": 1.0,
+        "invalidLocations": 0,
+        "overBudget": 0
+      },
+      "structured-lexical": {
+        "cases": 46,
+        "passed": 40,
+        "allEvidenceRecallAt6": 0.925,
+        "invalidLocations": 0,
+        "overBudget": 0
+      }
+    },
+    "after": {
+      "fixed-lexical": {
+        "cases": 46,
+        "passed": 43,
+        "allEvidenceRecallAt6": 1.0,
+        "invalidLocations": 0,
+        "overBudget": 0
+      },
+      "structured-lexical": {
+        "cases": 46,
+        "passed": 40,
+        "allEvidenceRecallAt6": 0.925,
+        "invalidLocations": 0,
+        "overBudget": 0
+      }
+    }
+  },
+  "pr": "https://github.com/www22-zz/xueya-copilot/pull/18",
+  "newBoundaryTests": 17
+}

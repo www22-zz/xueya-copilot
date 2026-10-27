@@ -340,3 +340,10 @@ P3–P5 增量：创建可带 `sourceIds`（1–48 个当前服务器来源 id�
 验证：`python -m pytest -q tests/python/test_practice_bank.py tests/python/test_practice_rules.py tests/python/test_practice_api.py`，覆盖题库计数与形状、状态迁移、错误计数、等价答案纠正、幂等重放、账号隔离、随手记冲突保留两份。
 
 > `POST /api/topics`、`POST /api/questions` 的接口契约保持不变；AI 生成题目入口已按产品要求移除，服务端能力仍在，不影响既有契约调用方。
+
+
+## 2026-10-27 问答结果兼容补充
+
+原`ok/answer/sources/knowledgePoints/model`及SSE事件形状保留。`sources`继续为ID数组；可选`sourceDetails`包含这些ID对应的真实来源对象（含title/quote/location及已有资料版本字段），用于显示服务端新检索到、浏览器初始预览中没有的引用。客户端只使用`sources`声明的条目。
+
+新增可选`answerStatus=unavailable`与`reason`用于明确生成/审核未完成，`verification=not-generated`不表示内容已验证；此时正文不粘贴原文、不作为可学习的已完成回答，多步Agent以partial结束。`ok=true`仅表示请求已处理，不能忽略`answerStatus`。模型身份响应可为`engine=assistant-info / verification=server-config`，来自当前应用配置，无模型调用或课程证据。
