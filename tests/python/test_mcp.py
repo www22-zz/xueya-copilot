@@ -91,7 +91,8 @@ def test_official_sdk_cancellation_reaches_business_handler_and_releases_permit(
 def test_stdio_crash_and_cancel_release_owned_connection():
     async def run():
         async with open_session(stdio=True) as session:
-            assert len(session.definitions) == 4
+            assert set(session.definitions) == {
+                'search_materials', 'read_source', 'search_web', 'analyze_progress', 'build_review_plan'}
             with pytest.raises(AppError, match="INVALID_TOOL_ARGUMENTS"):
                 await session.call("read_source", {"sourceId": "missing", "sources": "wrong"})
         assert STDIO_CONNECTIONS.active == 0
