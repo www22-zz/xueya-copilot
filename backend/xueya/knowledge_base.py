@@ -80,7 +80,7 @@ class KnowledgeBase:
     def catalog(self, scope):
         # Latest task per document, including retries/reparses and external index jobs.
         latest = {}
-        for row in self.p.db.all("SELECT id,input FROM jobs WHERE user_id=? AND course_id=? AND type IN ('rag-parse','rag-index','rag-ocr','rag-visual-apply') ORDER BY created_at DESC, rowid DESC", (scope.user_id, scope.course_id)):
+        for row in self.p.db.all("SELECT id,input FROM jobs WHERE user_id=? AND course_id=? AND type IN ('rag-parse','rag-index','rag-ocr','rag-visual-apply','rag-prepared-pdf') ORDER BY created_at DESC, rowid DESC", (scope.user_id, scope.course_id)):
             document_id = json.loads(row['input']).get('documentId')
             if not document_id:
                 preview = self.p.repo.read(scope, 'artifact', json.loads(row['input']).get('previewId', ''))
@@ -103,7 +103,7 @@ class KnowledgeBase:
                           partialImages=sum(bool(r.get('partial')) for r in image_reviews),
                           unreadableImages=sum(r['kind'] == 'unreadable' for r in image_reviews))
             documents.append({**{k: doc.get(k) for k in ('id', 'name', 'chapter', 'version', 'contentRevision', 'kind', 'size', 'status', 'indexStatus', 'archived', 'quality')},
-                              'review': review,
+                              'review': review, 'ocrPreparation': doc.get('ocrPreparation'),
                               'sourceCount': len(doc.get('chunks', [])), 'task': latest.get(doc['id']),
                               'vectorReady': bool(self.rag.embedding and doc.get('embeddingIdentity') == self.rag.embedding.identity and doc.get('indexStatus') == 'ready')})
         active = [d for d in documents if not d['archived']]

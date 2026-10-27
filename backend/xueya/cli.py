@@ -35,7 +35,7 @@ async def main(args=None):
         lock = config.data_dir / "server.json"
         require(lock.exists(), "SERVER_PID_NOT_FOUND")
         info = json.loads(lock.read_text(encoding="utf-8"))
-        async with httpx.AsyncClient(timeout=3, follow_redirects=False) as client:
+        async with httpx.AsyncClient(timeout=3, follow_redirects=False, trust_env=False) as client:
             base = "http://127.0.0.1:"+str(int(info["port"]))
             response = await client.get(base+"/api/health")
             require(response.json().get("instanceId") == info["instanceId"], "SERVER_IDENTITY_MISMATCH")
@@ -43,7 +43,7 @@ async def main(args=None):
             require(response.is_success, "STOP_REJECTED")
         print("已请求安全停止")
         return
-    platform = Platform(config.data_dir, config.api_slots, recover=False)
+    platform = Platform(config.data_dir, config.api_slots, recover=False, preserve_legacy_data=config.preserve_legacy_data)
     try:
         if command == "init":
             print(dumps({"ok": True, "dataDir": str(config.data_dir), "courses": platform.repo.courses(platform.user_id)}))
@@ -54,6 +54,8 @@ async def main(args=None):
             print("导出完成")
         elif command == "gc":
             refs = {value["fileHash"] for row in platform.db.all("SELECT data FROM revisions WHERE kind='document'") if (value := json.loads(row["data"])).get("fileHash")}
+            refs.update(value['bundleHash'] for row in platform.db.all("SELECT input FROM jobs WHERE type='rag-prepared-pdf'")
+                        if (value := json.loads(row['input'])).get('bundleHash'))
             candidates = [f for f in inventory(platform.files) if f["hash"] not in refs]
             if options.apply:
                 for file in candidates:

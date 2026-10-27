@@ -15,7 +15,8 @@ class BrowserMigration:
         raw = args.get("raw") or {}
         require(len(dumps({"workspace": workspace, "raw": raw}).encode()) <= 24000000, "IMPORT_TOO_LARGE")
         from .practice_cleanup import strip_retired_payload
-        cleaned = strip_retired_payload({'workspace': workspace, 'raw': raw})
+        cleaned = ({'workspace': workspace, 'raw': raw} if self.repo.preserve_legacy_data
+                   else strip_retired_payload({'workspace': workspace, 'raw': raw}))
         workspace, raw = cleaned['workspace'], cleaned['raw']
         value_hash = digest({"workspace": workspace, "raw": raw})
         now = int(time.time()*1000)

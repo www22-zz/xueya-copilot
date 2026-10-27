@@ -27,6 +27,8 @@ class RagService:
         self.embedding, self.ocr, self.rerank = embedding, ocr, rerank
         for name, handler in (("rag-parse", self.parse_job), ("rag-ocr", self.ocr_job), ("rag-index", self.index_job)):
             platform.jobs.register(name, handler)
+        from .prepared_pdf import PreparedPdf
+        self.prepared_pdf = PreparedPdf(self)
 
     def document(self, scope, document_id, *, active=False):
         identifier(document_id)
@@ -145,6 +147,8 @@ class RagService:
                    "quality": {"warnings": parsed["warnings"], "pages": parsed["pages"], "empty": parsed["empty"]},
                    "status": "需要OCR或原图核对" if parsed["warnings"] or not sources else "已解析，可检索",
                    "meta": f"{len(sources)}个原文片段"}
+        if parsed.get('preparation'):
+            updated['ocrPreparation'] = parsed['preparation']
         saved = self.repo.put(scope, "document", doc["id"], updated, doc["version"])
         self._prune_vectors(scope)
         return {"documentId": doc["id"], "version": saved["version"], "contentRevision": revision, "sourceCount": len(sources), "warnings": parsed["warnings"]}

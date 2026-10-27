@@ -92,7 +92,7 @@ def create_app(config: Config | None = None, *, provider=None, start_jobs=True):
 
     @asynccontextmanager
     async def lifespan(app):
-        platform = Platform(config.data_dir, config.api_slots) if config.platform_enabled else None
+        platform = Platform(config.data_dir, config.api_slots, preserve_legacy_data=config.preserve_legacy_data) if config.platform_enabled else None
         app.state.platform = platform
         if platform:
             platform.jobs.budget_config = config

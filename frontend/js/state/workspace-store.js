@@ -20,7 +20,14 @@ function createStore({storage,learning:L,id=()=>globalThis.crypto.randomUUID(),n
   }
   const legacyKeys=['xueya-copilot-state-v1',LEGACY,KEY,'xueya-platform-pending-v1'];
   for(let i=0;i<(storage.length||0);i++){const k=storage.key(i);if(k?.startsWith('xueya-platform-before-restore-'))legacyKeys.push(k);}
-  for(const k of legacyKeys){const v=read(k);if(v)try{storage.setItem(k,JSON.stringify(scrub(v)));}catch{error='旧版数据清理失败，请释放浏览器存储空间后刷新';}}
+  // Keep the original private payload before the current UI hides retired fields.
+  // This archive is never fed back into the active learning modules.
+  const archiveKey='xueya-retained-learning-v1',retainedArchive=read(archiveKey)||{version:1,keys:{}};
+  retainedArchive.keys=retainedArchive.keys||{};
+  for(const k of legacyKeys){const v=read(k);if(v){const clean=scrub(v);if(JSON.stringify(clean)!==JSON.stringify(v)&&!retainedArchive.keys[k]){
+    retainedArchive.keys[k]=v;
+    try{storage.setItem(archiveKey,JSON.stringify(retainedArchive));}catch{throw Error('无法保留旧学习记录，请先导出浏览器备份并释放存储空间');}
+  }try{storage.setItem(k,JSON.stringify(clean));}catch{error='旧版数据清理失败，请释放浏览器存储空间后刷新';}}}
   const defaults=()=>({documents:[],messages:[],sessions:[],sessionId:'',libraryTags:[],mediaResults:[],feedback:[]});
   function normalize(value={}){
     const result={...defaults(),...value};

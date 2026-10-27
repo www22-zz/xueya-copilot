@@ -16,7 +16,7 @@ def ordinary_question(request, intent):
 def fast_messages(messages):
     messages[0] = {**messages[0], 'content': messages[0]['content'] +
         '这是普通资料问答，请直接简短回答，不要规划任务。请先输出 claims 数组，再输出 answer、sources、knowledgePoints。'
-        '每个claim.text用自己的话讲清楚一个要点，kind使用paraphrase或inference，evidence.quote必须逐字引用资料。先给直观结论再解释原因，最多6项，不要把原文重复粘贴成答案。'
+        '每个claim.text用自己的话讲清楚一个要点，kind使用paraphrase或inference，evidence优先只填写sourceId和quoteId，不重写OCR原文；兼容的quote字段必须逐字引用。先给直观结论再解释原因，最多6项，不要把原文重复粘贴成答案。'
         '不得为了提前输出而省略证据。'}
     return messages
 
