@@ -4,7 +4,7 @@
 
 新增独立模块 `knowledge_base.py`，挂接 `/api/platform/knowledge/*`，保持同源、账号与 token 校验。根装配仅增加 installer；前端增加独立 `#space/knowledge` 页面。
 
-接口：GET bases（有效课程）；POST create（name、description、idempotencyKey，创建新课程，不覆盖已有课程）；GET catalog（courseId，资料元信息、最新任务、汇总、能力）；POST upload（二进制，查询 courseId/name/chapter，Idempotency-Key，最大10MiB，同请求幂等）；POST search（courseId/query/documentIds?/chapter?/mode，默认 lexical，外部检索须 confirmedExternal）；POST process（documentId/version/action=parse|index|ocr/idempotencyKey，付费动作须 confirmedExternal）；POST task（id/action=cancel|retry，仅本课程 RAG 任务，retry 仅本地解析）。原件/阅读/归档继续调用 G2/B 原接口。
+接口：GET bases（有效课程）；POST create（name、description、idempotencyKey，创建新课程，不覆盖已有课程）；GET catalog（courseId，资料元信息、最新任务、汇总、能力）；POST upload（二进制，查询 courseId/name/chapter，Idempotency-Key，PDF最大64MiB、其他二进制10MiB、文本1MiB，同请求幂等）；POST search（courseId/query/documentIds?/chapter?/mode，默认 lexical，外部检索须 confirmedExternal）；POST process（documentId/version/action=parse|index|ocr/idempotencyKey，OCR可选pages，付费动作须 confirmedExternal）；POST task（id/action=cancel|retry，仅本课程 RAG 任务，retry 仅本地解析）。原件/阅读/归档继续调用 G2/B 原接口。大扫描PDF显式分批识别及新PDF验收后替换旧PPT的预览接口见 [PDF教材换库契约](pdf-knowledge.md)。
 
 上传时先在事务中写入章节元信息，再由原解析作业发布版本。目录不携带完整正文；检索来源保留 B 的原文位置、版本与引用校验。默认关键词检索、解析和导入不调用供应商；向量索引、OCR、混合与重排必须明确确认，配置缺失如实展示。
 

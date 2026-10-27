@@ -1,0 +1,71 @@
+{
+  "date": "2026-10-27",
+  "status": "preparation-complete-awaiting-service-configuration-and-budget",
+  "baseline": "3b73f50",
+  "actualPdf": {
+    "status": "passed-pending-external-ocr",
+    "bytes": 54355583,
+    "pages": 324,
+    "sources": 0,
+    "originalHashVerified": true,
+    "oldPptPreserved": true,
+    "emptyReplacementBlocked": true,
+    "desktopAnd390px": true,
+    "applicationProviderRequests": 0,
+    "privateDatabaseOpened": false
+  },
+  "oldPrivateKnowledgeRemoved": false,
+  "privateEntitiesAndWorkspaceUnchanged": true,
+  "python": {
+    "selectedSuitePassed": 570,
+    "deselectedMainBaselineFailure": 1,
+    "seconds": 333.36,
+    "newTargetedTestsPassed": 4,
+    "knownFailure": "test_host_reuses_real_upstream_connection_and_closes_pool; reproduced on unchanged origin/main"
+  },
+  "frontendPassed": 42,
+  "mcp": {
+    "tools": 4,
+    "matched": 2
+  },
+  "offlineRetrieval": {
+    "before": {
+      "fixed-lexical": {
+        "cases": 46,
+        "passed": 43,
+        "allEvidenceRecallAt6": 1.0,
+        "invalidLocations": 0,
+        "overBudget": 0
+      },
+      "structured-lexical": {
+        "cases": 46,
+        "passed": 40,
+        "allEvidenceRecallAt6": 0.925,
+        "invalidLocations": 0,
+        "overBudget": 0
+      }
+    },
+    "after": {
+      "fixed-lexical": {
+        "cases": 46,
+        "passed": 43,
+        "allEvidenceRecallAt6": 1.0,
+        "invalidLocations": 0,
+        "overBudget": 0
+      },
+      "structured-lexical": {
+        "cases": 46,
+        "passed": 40,
+        "allEvidenceRecallAt6": 0.925,
+        "invalidLocations": 0,
+        "overBudget": 0
+      }
+    }
+  },
+  "realModelEvaluation": false,
+  "realOcrEvaluation": false,
+  "realVectorEvaluation": false,
+  "applicationPaidApiRequests": 0,
+  "originalPdfCommitted": false,
+  "pendingPrivateSource": ".xueya-pending/pdf-knowledge/source.pdf"
+}

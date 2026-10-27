@@ -29,6 +29,8 @@ python -m venv .venv
 
 新数据目录首次启动会自动准备仓库内 17 份数据结构课件；进入知识库查看进度。已有资料历史的目录不会重复导入，可用 `XUEYA_AUTO_IMPORT_DEMO=0` 关闭。课件、图片补录及手动导入见 [共享资料包](materials/data-structures-algorithms/README.md)。私人数据库不随 Git 同步。
 
+知识库支持最大64MiB的PDF；扫描教材须先完成文字识别，之后才能预览并确认替换旧PPT资料。OCR每次仅处理显式选择的一批，不会自动调用整本教材；未配置服务时显示待识别。接口、当前扫描教材准备状态及限制见 [PDF教材换库](docs/contracts/pdf-knowledge.md)。
+
 ## 验证
 
 ```powershell
