@@ -10,6 +10,7 @@ from xml.etree import ElementTree as ET
 from pypdf import PdfReader
 
 from .common import AppError, require
+from .document_limits import document_limit
 
 PARSER = "structured-v1"
 MAX_TEXT = 1_200_000
@@ -189,7 +190,7 @@ def office_pages(buffer, kind):
 
 def parse_structured(buffer: bytes, kind: str):
     require(kind in KINDS, "UNSUPPORTED_DOCUMENT_TYPE")
-    require(isinstance(buffer, bytes) and 0 < len(buffer) <= 10_485_760, "FILE_TOO_LARGE")
+    require(isinstance(buffer, bytes) and 0 < len(buffer) <= document_limit(kind), "FILE_TOO_LARGE")
     try:
         if kind in ("txt", "md"):
             require(len(buffer) <= 1_048_576, "FILE_TOO_LARGE")

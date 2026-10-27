@@ -4,14 +4,30 @@ from __future__ import annotations
 from collections import Counter
 import math
 import re
+import hashlib
 
 from .common import require
 
 # Small transparent domain dictionary, injectable for other courses. No hidden model.
 TERMS = {"二叉搜索树": ("bst", "binary search tree", "二叉查找树"), "广度优先": ("bfs", "宽度优先"),
          "深度优先": ("dfs",), "光合作用": ("photosynthesis",), "叶绿体": ("chloroplast",),
-         "时间复杂度": ("time complexity",), "栈": ("stack", "后进先出", "lifo"), "队列": ("queue", "先进先出", "fifo")}
+         "时间复杂度": ("time complexity",), "栈": ("stack", "后进先出", "lifo"), "队列": ("queue", "先进先出", "fifo"),
+         "先序遍历": ("前序遍历", "先根遍历", "preorder", "pre-order"),
+         "中序遍历": ("inorder", "in-order"), "后序遍历": ("后根遍历", "postorder", "post-order"),
+         "层序遍历": ("level order", "level-order"), "二分查找": ("折半查找", "binary search"),
+         "散列表": ("哈希表", "hash table", "hashtable", "hashmap"),
+         "哈夫曼树": ("霍夫曼树", "huffman tree", "huffman"),
+         "最小生成树": ("最小支撑树", "minimum spanning tree", "mst"),
+         "邻接矩阵": ("adjacency matrix",), "快速排序": ("quicksort", "quick sort"),
+         "堆排序": ("heapsort", "heap sort"), "冒泡排序": ("起泡排序", "bubble sort")}
 STOP = {"什么", "怎么", "如何", "为何", "为什么", "哪里", "哪些", "这个", "那个", "请问", "一下", "可以", "是否", "介绍", "解释"}
+
+
+def source_order(source):
+    """Content/location breaks ties before random per-import entity IDs."""
+    quote = source.get('quote', '')
+    return (source.get('title', '').casefold(), source.get('fileHash') or hashlib.sha256(quote.encode()).hexdigest(),
+            source.get('page') or 0, source.get('start', 0), source.get('end', 0), quote, source.get('id', ''))
 
 
 def terms(text, dictionary=None):
@@ -43,7 +59,7 @@ def lexical(query, sources, *, limit=24):
             score += idf*freq*2.2/(freq+1.2*(.25+.75*length/average))
         if score > 0:
             rows.append((score, source))
-    return sorted(rows, key=lambda row: (-row[0], row[1]["id"]))[:limit]
+    return sorted(rows, key=lambda row: (-row[0], source_order(row[1])))[:limit]
 
 
 def normalize(vector, dimension):
@@ -61,7 +77,7 @@ def exact(query_vector, rows, *, limit=24, threshold=.25):
         score = sum(a*b for a, b in zip(query_vector, vector))
         if score >= threshold:
             result.append((score, source))
-    return sorted(result, key=lambda row: (-row[0], row[1]["id"]))[:limit]
+    return sorted(result, key=lambda row: (-row[0], source_order(row[1])))[:limit]
 
 
 def fuse(*rankings, limit=24):
@@ -70,7 +86,7 @@ def fuse(*rankings, limit=24):
         for rank, (_, source) in enumerate(ranking, 1):
             scores[source["id"]] += 1/(60+rank)
             catalog[source["id"]] = source
-    return [(score, catalog[key]) for key, score in sorted(scores.items(), key=lambda p: (-p[1], p[0]))[:limit]]
+    return [(score, catalog[key]) for key, score in sorted(scores.items(), key=lambda p: (-p[1], source_order(catalog[p[0]])))[:limit]]
 
 
 def rewrite_query(query, history=(), *, new_topic=False):

@@ -16,6 +16,7 @@ import httpx
 from .common import AppError, digest, identifier, require, utc_now
 from .parse_worker import parse_artifact
 from .rag_api import borrowed_api_permit
+from .document_limits import document_limit
 from .rag_parse import KINDS, assemble, quality, structured_chunks, text_blocks
 from .rag_search import compress, conflicts, exact, fuse, lexical, normalize, rewrite_query
 
@@ -42,7 +43,7 @@ class RagService:
         require(row is not None and row["value"].get("documentId") == doc["id"] and row["value"].get("contentRevision") == doc.get("contentRevision"), "ARTIFACT_NOT_FOUND")
         return row["value"]
 
-    def submit(self, scope, job_type, document_id, key, *, expected_version=None):
+    def submit(self, scope, job_type, document_id, key, *, expected_version=None, pages=None):
         self.repo.require_course(scope)
         identifier(key)
         identifier(document_id)
@@ -50,7 +51,8 @@ class RagService:
         if prior:
             import json
             original = json.loads(prior["input"])
-            require(original.get("documentId") == document_id and (expected_version is None or expected_version == original.get("expectedVersion")), "IDEMPOTENCY_CONFLICT")
+            require(original.get("documentId") == document_id and (expected_version is None or expected_version == original.get("expectedVersion"))
+                    and original.get('pages') == pages, "IDEMPOTENCY_CONFLICT")
             return self.p.jobs.get(prior["id"], scope.user_id)
         doc = self.document(scope, document_id, active=True)
         require(expected_version is None or doc["version"] == expected_version, "VERSION_CONFLICT")
@@ -58,12 +60,19 @@ class RagService:
         require(job_type in ("rag-parse", "rag-ocr", "rag-index"), "JOB_TYPE_UNAVAILABLE")
         if job_type == "rag-ocr":
             require(self.ocr is not None and self.ocr.settings.key, "OCR_UNAVAILABLE")
+            require(doc['kind'] == 'pdf', 'OCR_PDF_REQUIRED')
+        if pages is not None:
+            require(job_type == 'rag-ocr' and isinstance(pages, list) and 0 < len(pages) <= 64
+                    and all(type(page) is int for page in pages) and len(pages) == len(set(pages)), 'INVALID_OCR_PAGES')
+            pending = {page['number'] for page in self.artifact(scope, doc)['pages'] if page['needsOcr']}
+            require(set(pages) <= pending, 'INVALID_OCR_PAGES')
         if job_type == "rag-index":
             require(self.embedding is not None and self.embedding.settings.key, "EMBEDDING_UNAVAILABLE")
         provider = self.embedding if job_type == "rag-index" else self.ocr if job_type == "rag-ocr" else None
         return self.p.jobs.submit(scope.user_id, {"type": job_type, "courseId": scope.course_id, "resource": resource,
                                                 "maxAttempts": 1 if resource == "api" else 3, "idempotencyKey": identifier(key),
                                                 "input": {"documentId": document_id, "expectedVersion": doc["version"], "jobKey": key,
+                                                          **({'pages': pages} if pages is not None else {}),
                                                           **({"providerIdentity": provider.identity} if provider else {})}})
 
     def upload(self, scope, buffer, name, key, *, previous_document_id=None, tags=None):
@@ -72,6 +81,7 @@ class RagService:
         require(isinstance(name, str) and 0 < len(name.strip()) <= 200, "INVALID_FILE_NAME")
         kind = name.rsplit(".", 1)[-1].lower()
         require(kind in KINDS, "UNSUPPORTED_FILE_TYPE")
+        require(isinstance(buffer, bytes) and 0 < len(buffer) <= document_limit(kind), 'FILE_TOO_LARGE')
         require(kind not in ("txt", "md") or len(buffer) <= 1_048_576, "FILE_TOO_LARGE")
         require(tags is None or isinstance(tags, list) and len(tags) <= 30 and all(isinstance(t, str) and 0 < len(t) <= 100 for t in tags), "INVALID_TAGS")
         request_hash = digest({"file": hashlib.sha256(buffer).hexdigest(), "name": name, "previous": previous_document_id, "tags": tags})
@@ -92,7 +102,8 @@ class RagService:
             return self.submit(scope, "rag-parse", document_id, key)
 
     def _job_doc(self, scope, args, job_type, *, paid=False):
-        require(isinstance(args, dict) and not set(args)-{"documentId", "expectedVersion", "jobKey", "providerIdentity"}, "INVALID_JOB")
+        allowed = {"documentId", "expectedVersion", "jobKey", "providerIdentity"} | ({'pages'} if job_type == 'rag-ocr' else set())
+        require(isinstance(args, dict) and not set(args)-allowed, "INVALID_JOB")
         # Public generic queue cannot accidentally run paid work as a retryable CPU job.
         row = self.p.db.one("SELECT resource,max_attempts,status FROM jobs WHERE user_id=? AND course_id=? AND type=? AND idempotency_key=?", (scope.user_id, scope.course_id, job_type, args.get("jobKey")))
         require(row is not None and row["status"] == "running" and (not paid or row["resource"] == "api" and row["max_attempts"] == 1), "NOT_SENT")
@@ -151,7 +162,10 @@ class RagService:
         doc = self._job_doc(scope, args, "rag-ocr", paid=True)
         require(self.ocr is not None and doc["kind"] == "pdf", "NOT_SENT")
         old = self.artifact(scope, doc)
-        pages = [page["number"] for page in old["pages"] if page["needsOcr"]]
+        pending = [page["number"] for page in old["pages"] if page["needsOcr"]]
+        pages = args.get('pages', pending)
+        require(isinstance(pages, list) and all(type(p) is int for p in pages) and len(pages) == len(set(pages))
+                and set(pages) <= set(pending), 'INVALID_OCR_PAGES')
         require(0 < len(pages) <= 64, "OCR_PAGE_LIMIT")
         progress({"percent": 10, "label": "正在调用OCR API"})
         with borrowed_api_permit(self.p):
@@ -161,10 +175,12 @@ class RagService:
             number = page["number"]
             replacement = recognized.get(number)
             part = replacement["text"] if replacement else old["text"][page["start"]:page["end"]]
+            blocks = (text_blocks(part, number, markdown=True, method=replacement['method']) if replacement else
+                      [{**b, 'start': b['start']-page['start'], 'end': b['end']-page['start']} for b in old['blocks'] if b['page'] == number])
             rebuilt.append({**page, "text": part, "method": replacement["method"] if replacement else page["method"],
                             "needsOcr": not part.strip() or quality(part) < .85 if replacement else page["needsOcr"],
                             **({"images": replacement.get("images", []), "ocrDimensions": replacement.get("dimensions", {})} if replacement else {}),
-                            "blocks": text_blocks(part, number, markdown=bool(replacement), method=replacement["method"] if replacement else page["method"])})
+                            "blocks": blocks})
         parsed = assemble(rebuilt, doc["kind"], doc["fileHash"])
         checkpoint({"documentId": doc["id"], "stage": "ocr-returned"})
         return commit(lambda: self._publish(scope, doc, parsed))
