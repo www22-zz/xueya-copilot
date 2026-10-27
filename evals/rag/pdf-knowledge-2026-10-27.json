@@ -1,28 +1,37 @@
 {
   "date": "2026-10-27",
-  "status": "preparation-complete-awaiting-service-configuration-and-budget",
+  "status": "delivered-real-pdf-ocr-and-mimo-grounded-qa",
   "baseline": "3b73f50",
   "actualPdf": {
-    "status": "passed-pending-external-ocr",
+    "status": "passed-prepared-ocr-imported",
     "bytes": 54355583,
     "pages": 324,
-    "sources": 0,
+    "sources": 821,
     "originalHashVerified": true,
-    "oldPptPreserved": true,
+    "oldPptPreserved": false,
     "emptyReplacementBlocked": true,
     "desktopAnd390px": true,
     "usableTextPdfConfirmationFlow": true,
-    "applicationProviderRequests": 0,
-    "privateDatabaseOpened": false
+    "applicationProviderRequests": 6,
+    "privateDatabaseOpened": true,
+    "ocrPages": 324,
+    "reviewedBlankPages": [
+      81,
+      111,
+      183,
+      301
+    ],
+    "normalizedTextCharacters": 296358,
+    "oldOriginalsAndRevisionsPreserved": true
   },
-  "oldPrivateKnowledgeRemoved": false,
-  "privateEntitiesAndWorkspaceUnchanged": true,
+  "oldPrivateKnowledgeRemoved": true,
   "python": {
-    "selectedSuitePassed": 570,
+    "selectedSuitePassed": 573,
     "deselectedMainBaselineFailure": 1,
-    "seconds": 333.36,
-    "newTargetedTestsPassed": 4,
-    "knownFailure": "test_host_reuses_real_upstream_connection_and_closes_pool; reproduced on unchanged origin/main"
+    "seconds": 321.01,
+    "newTargetedTestsPassed": 7,
+    "knownFailure": "test_host_reuses_real_upstream_connection_and_closes_pool; reproduced on unchanged origin/main",
+    "finalSuiteTotal": 574
   },
   "frontendPassed": 42,
   "mcp": {
@@ -63,11 +72,52 @@
       }
     }
   },
-  "realModelEvaluation": false,
-  "realOcrEvaluation": false,
+  "realModelEvaluation": true,
+  "realOcrEvaluation": "system-ocr-all-pages-with-limited-visual-spot-checks-not-full-human-review",
   "realVectorEvaluation": false,
-  "applicationPaidApiRequests": 0,
-  "originalPdfCommitted": false,
+  "applicationPaidApiRequests": 6,
+  "originalPdfCommitted": true,
   "pendingPrivateSource": ".xueya-pending/pdf-knowledge/source.pdf",
-  "draftPullRequest": "https://github.com/www22-zz/xueya-copilot/pull/18"
+  "privateNonRagRecordsAndLearningMetaPreserved": true,
+  "liveMimo": {
+    "question": "根据教材，队列的入队和出队操作各发生在哪一端？",
+    "model": "mimo-v2.6-flash",
+    "engine": "xiaomi-mimo",
+    "verification": "reviewed-claims",
+    "sourcePages": [
+      92,
+      98
+    ],
+    "omittedClaims": 1,
+    "totalKnownTokens": 14969,
+    "succeededInvocations": 5,
+    "unknownInvocations": 1,
+    "unknownAutomaticallyRetried": false,
+    "asrRealAudioTested": false
+  },
+  "realBrowser": {
+    "status": "passed",
+    "documents": 1,
+    "sources": 821,
+    "checks": [
+      "ready-pdf",
+      "ocr-quality-notice",
+      "lexical-search",
+      "original-page-reader",
+      "chat-document-scope",
+      "390px-no-overflow"
+    ],
+    "browserErrors": []
+  },
+  "configuredServices": {
+    "text": "mimo-v2.6-flash",
+    "asr": "mimo-v2.5-asr",
+    "embedding": false,
+    "rerank": false,
+    "persistentExternalOcr": false,
+    "credentialCommitted": false
+  },
+  "pullRequest": "https://github.com/www22-zz/xueya-copilot/pull/18",
+  "gcDryRunPreservesOcrCompanions": true,
+  "implementationCommit": "85630d2"
 }
