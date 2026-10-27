@@ -28,8 +28,8 @@ async def validate_claims(claims, pack, review=None, signal=None):
             source = sources.get(ref.get('sourceId'))
             require(source and isinstance(ref.get('quote'), str) and ref['quote'].strip() and ref['quote'] in source['quote'], 'INVALID_CITATION')
             refs.append({'sourceId': source['id'], 'documentId': source.get('documentId'), 'version': source.get('version'), 'quote': ref['quote'], 'location': source.get('location')})
-        exact = [ref for ref in refs if ref['quote'] == claim['text']]
-        candidates.append({'text': claim['text'], 'evidence': exact or refs,
+        exact = [ref for ref in refs if ref['quote'].strip() == claim['text'].strip()]
+        candidates.append({'text': exact[0]['quote'] if exact else claim['text'], 'evidence': exact or refs,
                            'kind': 'excerpt' if exact else 'inference' if claim.get('kind') == 'inference' else 'paraphrase'})
     # Validate every citation before any external review; one batch per answer.
     prepare = getattr(review, 'prepare', None)

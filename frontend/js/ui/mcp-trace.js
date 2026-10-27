@@ -2,7 +2,7 @@
 (function(root,factory){const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;else root.XueyaMCPTrace=api;})(typeof globalThis!=='undefined'?globalThis:this,function(){
   'use strict';
   const escape=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const names={search_materials:'查找课程资料',read_source:'读取引用原文',analyze_progress:'分析学习记录',build_review_plan:'生成复习预览',list_wrong_questions:'读取错题',get_review_queue:'查看到期复习卡',get_course_graph:'读取知识图谱'};
+  const names={search_materials:'查找课程资料',read_source:'读取引用原文',search_web:'全网搜索',analyze_progress:'分析学习记录',build_review_plan:'生成复习预览',list_wrong_questions:'读取错题',get_review_queue:'查看到期复习卡',get_course_graph:'读取知识图谱'};
   const statuses={running:'调用中',completed:'成功',failed:'失败',duplicate:'已跳过重复调用',interrupted:'未完成',cancelled:'已停止',unknown:'结果未知'};
   const runStatuses={running:'正在执行',queued:'等待执行',completed:'本轮已完成',partial:'本轮未完成',awaiting_user:'等待补充信息',awaiting_confirmation:'等待确认',failed:'执行失败',unknown:'结果待确认',paused:'已暂停',cancelled:'已停止'};
 
@@ -37,6 +37,7 @@
     if(c.data?.error)return '错误：'+c.data.error;
     const d=c.data||{};
     if(c.tool==='search_materials')return `找到 ${d.sources?.length||0} 条原文线索`;
+    if(c.tool==='search_web')return `检索到 ${d.sources?.length||0} 条全网网页线索`;
     if(c.tool==='read_source')return [d.source?.title,d.source?.location].filter(Boolean).join(' · ')||'原文已读取';
     if(c.tool==='analyze_progress')return `读取 ${d.total??0} 次作答，答对 ${d.correct??0} 次`;
     if(c.tool==='build_review_plan')return `生成 ${d.days?.length||0} 天复习预览，尚未保存`;

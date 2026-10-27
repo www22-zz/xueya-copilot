@@ -12,6 +12,7 @@ class Config:
     data_dir: Path = ROOT / ".xueya-data"
     port: int = 4173
     api_key: str = ""
+    tavily_api_key: str = ""
     base_url: str = "https://api.xiaomimimo.com/v1"
     model: str = "mimo-v2.6-flash"
     api_slots: int = 2
@@ -67,6 +68,7 @@ def load_config() -> Config:
         key = ""
     return Config(data_dir=Path(env.get("XUEYA_DATA_DIR", ROOT / ".xueya-data")).resolve(),
                   port=int(env.get("PORT", 4173)), api_key=key,
+                  tavily_api_key=env.get("TAVILY_API_KEY", "").strip("\"'"),
                   base_url=env.get("MIMO_BASE_URL", Config.base_url), model=env.get("MIMO_MODEL", Config.model),
                   api_slots=max(1, min(8, int(env.get("API_MAX_CONCURRENT", 2)))),
                   platform_enabled=env.get("XUEYA_PLATFORM_ENABLED", "1") != "0",

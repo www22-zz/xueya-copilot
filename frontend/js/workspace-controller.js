@@ -52,7 +52,12 @@ function createWorkspace(ctx){
     }}finally{uploading=false;persist();refresh();toast(queue.some(item=>item.failed)?'部分资料未完成，可在处理列表重试。':'这批资料已处理，请查看每份资料的状态。');}
   }
   async function openSource(source){
-    if(!source)return;state.activeSource=source;const doc=state.documents.find(d=>d.id===source.documentId||d.id===source.id);
+    if(!source)return;
+    const url=source.url||(typeof source.location==='string'&&source.location.startsWith('http')?source.location:'');
+    if(source.isWeb||url){
+      if(url){window.open(url,'_blank','noopener,noreferrer');return;}
+    }
+    state.activeSource=source;const doc=state.documents.find(d=>d.id===source.documentId||d.id===source.id);
     if(readerURL){URL.revokeObjectURL(readerURL);readerURL=null;}
     const chunks=doc?.chunks?.length?doc.chunks:[source];
     $('#sourceContent').innerHTML=`<div class="source-content-body"><h2>${e(doc?.name||source.title)}</h2><p class="source-location">${e(source.location||doc?.status||'原文片段')} · ${doc?.superseded?'历史版本':doc?'v'+(Number(doc.version)||1):'保存的引用快照'}</p><div class="reader-tools">${doc?newButton('下载原件',`data-original="${e(doc.id)}" ${doc.originalAvailable||service.capabilities.original?'':'disabled'}`):''}${doc?.chunks?.length?newButton('导出正文',`data-export-document="${e(doc.id)}"`):''}${doc&&!source.sample?newButton('纠错草稿',`data-correct-source="${e(doc.id)}"`):''}</div><label class="form-field">搜索原文<input type="search" id="readerSearch" placeholder="查找片段中的文字"></label>${chunks.length>1?`<label class="form-field">切换片段<select id="readerSection">${chunks.map((s,i)=>`<option value="${i}" ${s.id===source.id?'selected':''}>${e(s.location||'文本片段 '+(i+1))}</option>`).join('')}</select></label>`:''}<div id="readerPassage"><blockquote class="source-quote">${e(source.quote||'尚未解析出正文。可下载原件核对，或重选文件重试。')}</blockquote></div><div id="readerMedia"></div><p class="source-footnote">${source.sample?'内置课程示例。':doc?'正文位置由当前解析器提供；没有真实页码时只显示片段，不推断页码。':'原资料可能已移除；这里保留当时引用的文本快照。'}</p>${doc?.corrections?.length?`<p class="capability-note">已有${doc.corrections.length}份纠错草稿${doc.corrections.some(c=>!c.applied)?'，未接通重建的修改不会替换检索原文':''}。</p>`:''}</div>`;
@@ -159,6 +164,7 @@ function createWorkspace(ctx){
     planPreview(L.buildPlan(date,minutes,state.records,L.today(),pool),date,minutes);return true;
   }
   const actions={
+    toggleWebSearch:()=>{state.webSearch=!state.webSearch;persist();render();toast(state.webSearch?'全网搜索已开启：提问将同时检索互联网最新信息':'全网搜索已关闭：仅依据课程资料回答');},
     newSession:()=>{store.newSession();render();},clearChat:()=>{store.newSession();render();},session:d=>{store.selectSession(d.session);render();},
     followup:d=>{const index=Number(d.followup);if(state.messages[index]?.role!=='ai')return;state.followupIndex=index;state.draft='请进一步解释这个问题，并给出资料中的依据。';render();$('#chatInput').focus();},cancelFollowup:()=>{state.followupIndex=null;render();},
     messageImage:d=>messageImages?.open(d.messageImage),addAudio:()=>voice?.toggle(),cancelVoice:()=>voice?.cancel(),retryVoice:()=>voice?.retry(),addImages:()=>$('#imageInput').click(),removeImage:d=>{const [item]=attachments.splice(Number(d.removeImage),1);if(item)URL.revokeObjectURL(item.url);render();},

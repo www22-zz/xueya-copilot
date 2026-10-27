@@ -151,6 +151,11 @@ def course_registry(context=None):
         require(found is not None, "SOURCE_NOT_FOUND")
         return {"source": found}
     registry.add("read_source", obj({"sourceId": ID, **({} if context else {"sources": source_list})}, ["sourceId"] if context else ["sourceId", "sources"]), read)
+
+    async def web_search(a):
+        from .web_search import search_tavily
+        return await search_tavily(a["query"], limit=a.get("limit", 5))
+    registry.add("search_web", obj({"query": string(4000), "limit": {"type": "integer", "minimum": 1, "maximum": 8}}, ["query"]), web_search)
     common = {"questions": questions, "records": records, "baseDate": date}
 
     def analyze(a):
@@ -206,6 +211,10 @@ def platform_registry(platform, scope, *, context=None, reference=False, rag=Non
 
     registry.add("search_materials", obj({"query": string(4000), "limit": {"type": "integer", "minimum": 1, "maximum": 6}}, ["query"]), search)
     registry.add("read_source", obj({"sourceId": ID}, ["sourceId"]), read)
+    async def platform_web_search(a):
+        from .web_search import search_tavily
+        return await search_tavily(a["query"], limit=a.get("limit", 5))
+    registry.add("search_web", obj({"query": string(4000), "limit": {"type": "integer", "minimum": 1, "maximum": 8}}, ["query"]), platform_web_search)
     def business_page(a, kind):
         if not learning:
             return repo.list(scope, kind, a.get('cursor'), a.get('limit', 20))
@@ -333,7 +342,7 @@ class Session:
         if self.context:
             if name in ("search_materials", "read_source"):
                 args["sources"] = self.context["library"]
-            else:
+            elif name in ("analyze_progress", "build_review_plan"):
                 args.update({k: self.context[k] for k in ("questions", "records", "baseDate")})
                 if name == "build_review_plan":
                     args.update({k: self.context[k] for k in ("examDate", "minutes")})

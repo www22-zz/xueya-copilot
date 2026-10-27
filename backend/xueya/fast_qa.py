@@ -16,8 +16,9 @@ def ordinary_question(request, intent):
 def fast_messages(messages):
     messages[0] = {**messages[0], 'content': messages[0]['content'] +
         '这是普通资料问答，请直接简短回答，不要规划任务。请先输出 claims 数组，再输出 answer、sources、knowledgePoints。'
-        '每个claim.text用自己的话讲清楚一个要点，kind使用paraphrase或inference，evidence.quote必须逐字引用资料。先给直观结论再解释原因，最多6项，不要把原文重复粘贴成答案。'
-        '不得为了提前输出而省略证据。'}
+        'claims 的第一项优先给出直接摘自资料的核心结论句（text 与 evidence.quote 完全一致，kind 设为 excerpt，以便系统即时验证并向用户秒级呈现）；'
+        '随后的段落再用自己的话展开通俗解释或推导（kind 设为 paraphrase 或 inference，evidence.quote 必须逐字引用资料）。先直观结论再解释原因，最多6项。'
+        '不得为了提前输出而编造证据。'}
     return messages
 
 
@@ -42,10 +43,20 @@ class ClaimStream:
                 self.pos += 1
             if self.pos >= len(self.buffer):
                 break
+            if self.state == 'root':
+                if self.buffer[self.pos:].startswith('```'):
+                    nl = self.buffer.find('\n', self.pos)
+                    if nl == -1:
+                        break
+                    self.pos = nl + 1
+                    while self.pos < len(self.buffer) and self.buffer[self.pos].isspace():
+                        self.pos += 1
+                if self.pos >= len(self.buffer):
+                    break
             char = self.buffer[self.pos]
             if self.state == 'root':
                 if char != '{':
-                    break  # Markdown-wrapped responses retain final validation only.
+                    break
                 self.pos += 1
                 self.state = 'key'
             elif self.state == 'key':

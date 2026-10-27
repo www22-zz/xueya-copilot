@@ -7,6 +7,7 @@
       const request=C.normalizeChatRequest(input);
       if(typeof input.courseId==='string')request.courseId=input.courseId.slice(0,150);
       if(Array.isArray(input.documentIds))request.documentIds=input.documentIds.filter(id=>typeof id==='string').slice(0,100);
+      if(input.webSearch)request.webSearch=true;
       request.sources=request.sources.map(source=>typeof source==='string'?L.sources.find(item=>item.id===source):source).filter(source=>source&&typeof source.id==='string'&&typeof source.quote==='string');
       let hits=L.retrieve(Tasks.retrievalQuery(request,request.sources),request.sources);
       if(!hits.length&&Tasks.refersToPrevious(request.question)&&input.previousSources?.length){
@@ -17,7 +18,9 @@
     function success(payload,hits){
       if(payload?.ok!==true||typeof payload.answer!=='string'||!payload.answer.trim()||!Array.isArray(payload.sources))throw new Error('AI_UNAVAILABLE');
       const local=payload.engine==='local-workflow',unavailable=payload.engine==='general-chat-unavailable',dynamic=payload.agent?.planRevision>0;
-      return{answer:payload.answer,sources:[...new Set(payload.sources)].map(id=>hits.find(source=>source.id===id)).filter(Boolean),engine:dynamic?'AI 学习规划':unavailable?'通用问答暂不可用':local?'本地学习流程':payload.engine==='general-chat'?'MiMo 通用问答':'MiMo 资料问答',online:dynamic||!local&&!unavailable,knowledgePoints:payload.knowledgePoints||[],model:payload.model,...(payload.timings?{timings:payload.timings}:{}),...(payload.agent?{agent:payload.agent}:{}),...(payload.workflow?{workflow:payload.workflow}:{}),...(payload.artifacts?{artifacts:payload.artifacts}:{})};
+      const allKnown=[...(payload.sourceObjects||[]),...hits];
+      const resolvedSources=[...new Set(payload.sources)].map(id=>allKnown.find(source=>source.id===id)||(typeof id==='object'?id:typeof id==='string'&&id.startsWith('web-')?{id,title:'全网搜索网页',location:'互联网搜索',isWeb:true}:null)).filter(Boolean);
+      return{answer:payload.answer,sources:resolvedSources,engine:dynamic?'AI 学习规划':unavailable?'通用问答暂不可用':local?'本地学习流程':payload.engine==='general-chat'?'MiMo 通用问答':'MiMo 资料问答',online:dynamic||!local&&!unavailable,knowledgePoints:payload.knowledgePoints||[],model:payload.model,...(payload.timings?{timings:payload.timings}:{}),...(payload.agent?{agent:payload.agent}:{}),...(payload.workflow?{workflow:payload.workflow}:{}),...(payload.artifacts?{artifacts:payload.artifacts}:{})};
     }
     function fallback(request,hits,context){
       const greeting=Tasks.conversationReply(request.question,request.mode);
