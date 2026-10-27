@@ -26,8 +26,9 @@ def decode_cursor(value):
 
 
 class Repository:
-    def __init__(self, db):
+    def __init__(self, db, *, preserve_legacy_data=False):
         self.db = db
+        self.preserve_legacy_data = preserve_legacy_data
 
     def require_course(self, scope: Scope, *, archived=False):
         row = self.db.one("SELECT * FROM courses WHERE user_id=? AND id=?", (scope.user_id, scope.course_id))
@@ -101,11 +102,19 @@ class Repository:
     def save_workspace(self, user_id, value, expected_version=0):
         validate_workspace(value)
         from .practice_cleanup import strip_retired_payload
-        value = strip_retired_payload(value)
+        value = copy.deepcopy(value) if self.preserve_legacy_data else strip_retired_payload(value)
         require(type(expected_version) is int and expected_version >= 0, "INVALID_VERSION")
         with self.db.transaction():
             old = self.get_workspace(user_id)
             require((old["version"] if old else 0) == expected_version, "VERSION_CONFLICT")
+            if old and self.preserve_legacy_data:
+                # Current UI omits retired modules. Its save cannot erase private
+                # historical fields, even when the browser no longer displays them.
+                previous = {c['id']: c for c in old['data']['courses']}
+                for course in value['courses']:
+                    data = previous.get(course['id'], {}).get('data', {})
+                    active = strip_retired_payload(data)
+                    course['data'].update({k: copy.deepcopy(v) for k, v in data.items() if k not in active})
             self.project(user_id, value)
             self.db.execute("INSERT INTO workspaces VALUES(?,?,?,?) ON CONFLICT(user_id) DO UPDATE SET version=excluded.version,data=excluded.data,updated_at=excluded.updated_at", (user_id, expected_version+1, dumps(value), utc_now()))
             return {"version": expected_version+1, "data": copy.deepcopy(value)}

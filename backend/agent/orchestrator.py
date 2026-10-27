@@ -94,6 +94,8 @@ class ReadOnlyWorkflow:
             await self.tools.current()
             value = await evaluator.render(answer)
             await self.tools.current()
+            if status == 'completed' and value.get('answerStatus') == 'unavailable':
+                status, reason = 'partial', value.get('reason', 'ANSWER_NOT_GENERATED')
             if question:
                 value['answer'] += '\n\n需要你补充信息才能继续：' + question
             elif status != 'completed':

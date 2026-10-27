@@ -17,10 +17,10 @@ from .resources import Resources
 class Platform:
     user_id = "local-user"
 
-    def __init__(self, data_dir, api_slots=2, recover=True):
+    def __init__(self, data_dir, api_slots=2, recover=True, *, preserve_legacy_data=False):
         self.data_dir = data_dir
         self.db = Database(data_dir / "workspace.sqlite")
-        self.repo = Repository(self.db)
+        self.repo = Repository(self.db, preserve_legacy_data=preserve_legacy_data)
         self.files = FileStore(data_dir / "files")
         self.resources = Resources(api_slots=api_slots)
         if not self.repo.courses(self.user_id):
@@ -38,7 +38,8 @@ class Platform:
         self.authority = ActionAuthority(self.repo, recover=recover)
         self.migration = BrowserMigration(self.repo)
         self.jobs.register("parse-document", self.parse_job)
-        self._one_time_practice_cleanup()
+        if not preserve_legacy_data:
+            self._one_time_practice_cleanup()
 
     def _one_time_practice_cleanup(self):
         """PRD 14: drop the pre-refactor 笔记/题库/计划/图谱 data exactly once, never the new data."""

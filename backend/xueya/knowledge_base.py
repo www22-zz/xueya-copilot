@@ -10,6 +10,7 @@ from fastapi import APIRouter, Request
 
 from .common import digest, identifier, require
 from .jobs import TERMINAL
+from .document_limits import document_limit
 
 
 def infer_chapter(name):
@@ -26,6 +27,8 @@ class KnowledgeBase:
         self.p, self.rag, self.library = app.state.platform, app.state.rag, app.state.library
         from .visual_review import VisualReview
         self.visual = VisualReview(self.p, self.rag)
+        from .knowledge_replacement import KnowledgeReplacement
+        self.replacement = KnowledgeReplacement(self.p, self.rag)
         self.demo = None
 
     def create(self, value):
@@ -77,7 +80,7 @@ class KnowledgeBase:
     def catalog(self, scope):
         # Latest task per document, including retries/reparses and external index jobs.
         latest = {}
-        for row in self.p.db.all("SELECT id,input FROM jobs WHERE user_id=? AND course_id=? AND type IN ('rag-parse','rag-index','rag-ocr','rag-visual-apply') ORDER BY created_at DESC, rowid DESC", (scope.user_id, scope.course_id)):
+        for row in self.p.db.all("SELECT id,input FROM jobs WHERE user_id=? AND course_id=? AND type IN ('rag-parse','rag-index','rag-ocr','rag-visual-apply','rag-prepared-pdf') ORDER BY created_at DESC, rowid DESC", (scope.user_id, scope.course_id)):
             document_id = json.loads(row['input']).get('documentId')
             if not document_id:
                 preview = self.p.repo.read(scope, 'artifact', json.loads(row['input']).get('previewId', ''))
@@ -100,7 +103,7 @@ class KnowledgeBase:
                           partialImages=sum(bool(r.get('partial')) for r in image_reviews),
                           unreadableImages=sum(r['kind'] == 'unreadable' for r in image_reviews))
             documents.append({**{k: doc.get(k) for k in ('id', 'name', 'chapter', 'version', 'contentRevision', 'kind', 'size', 'status', 'indexStatus', 'archived', 'quality')},
-                              'review': review,
+                              'review': review, 'ocrPreparation': doc.get('ocrPreparation'),
                               'sourceCount': len(doc.get('chunks', [])), 'task': latest.get(doc['id']),
                               'vectorReady': bool(self.rag.embedding and doc.get('embeddingIdentity') == self.rag.embedding.identity and doc.get('indexStatus') == 'ready')})
         active = [d for d in documents if not d['archived']]
@@ -154,13 +157,17 @@ def install_knowledge_base(app):
         kb, q, post = app.state.knowledge, request.query_params, request.method == 'POST'
         if operation == 'upload' and post:
             scope = kb.p.scope(q.get('courseId', 'course-default'))
-            return success(**kb.upload(scope, await body(request, 10_485_760), q.get('name'), q.get('chapter', ''), request.headers.get('idempotency-key')))
+            return success(**kb.upload(scope, await body(request, document_limit(q.get('name'))), q.get('name'), q.get('chapter', ''), request.headers.get('idempotency-key')))
         value = await json_body(request) if post else {}
         if operation == 'bases' and not post:
             return success(bases=[c for c in kb.p.repo.courses(kb.p.user_id) if not c['archived']])
         if operation == 'create' and post:
             return success(base=kb.create(value))
         scope = kb.p.scope(value.get('courseId') or q.get('courseId') or 'course-default')
+        if operation == 'replacement-preview' and post:
+            return success(preview=kb.replacement.preview(scope, value))
+        if operation == 'replacement-apply' and post:
+            return success(replacement=kb.replacement.apply(scope, value))
         if operation == 'demo-retry' and post:
             require(scope.course_id == 'course-default' and value.get('confirmed') is True, 'CONFIRMATION_REQUIRED')
             require(kb.demo and kb.demo.config.auto_import_demo, 'DEMO_IMPORT_DISABLED')
@@ -195,8 +202,9 @@ def install_knowledge_base(app):
                 doc = kb.rag.document(scope, value.get('documentId'), active=True)
                 require(doc['kind'] == 'pdf', 'OCR_PDF_REQUIRED')
                 pages = kb.rag.artifact(scope, doc)['pages']
-                require(0 < sum(bool(p.get('needsOcr')) for p in pages) <= 64, 'OCR_PAGE_LIMIT')
-            return success(job=kb.rag.submit(scope, 'rag-'+action, value.get('documentId'), value.get('idempotencyKey'), expected_version=value['version']))
+                chosen = value.get('pages')
+                require(chosen is not None or 0 < sum(bool(p.get('needsOcr')) for p in pages) <= 64, 'OCR_PAGE_LIMIT')
+            return success(job=kb.rag.submit(scope, 'rag-'+action, value.get('documentId'), value.get('idempotencyKey'), expected_version=value['version'], pages=value.get('pages')))
         if operation == 'task' and post:
             return success(job=kb.task(scope, value))
         require(False, 'NOT_FOUND')

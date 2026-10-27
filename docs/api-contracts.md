@@ -354,3 +354,12 @@ P3–P5 增量：创建可带 `sourceIds`（1–48 个当前服务器来源 id�
 重复提交同一幂等键及同一请求返回原任务，即使之后有新练习记录也不重复调用；同一键参数变化返回 `IDEMPOTENCY_CONFLICT`。已有进行中任务返回 `ANALYSIS_BUSY`。未知调用结果保留 `unknown`，用户核对后才可用新的幂等键发起新的任务。
 
 时间范围按 Asia/Shanghai 自然日计算，截止于快照生成时刻。单选/填空的作答数和正确数与掌握自评分别统计，填空纠正修改原作答的结果与原作答日期，不新增作答次数。当前错题、自评掌握数单独标明为截止时状态。报告保存当时快照，后续练习不改写历史报告。随手记最多每题240字，过大时明确标记省略。快照有大小上限，避免长历史造成无界模型请求。
+
+
+## 2026-10-27 问答结果兼容补充
+
+兼容现有全网搜索响应的`sourceObjects`来源元数据；客户端同时接受`sourceDetails`与`sourceObjects`，优先使用`sourceDetails`，并仅显示`sources`声明的ID。网页来源的`url/isWeb`字段保留，PDF资料范围与`webSearch`开关可以同时提交。
+
+原`ok/answer/sources/knowledgePoints/model`及SSE事件形状保留。`sources`继续为ID数组；可选`sourceDetails`包含这些ID对应的真实来源对象（含title/quote/location及已有资料版本字段），用于显示服务端新检索到、浏览器初始预览中没有的引用。客户端只使用`sources`声明的条目。
+
+新增可选`answerStatus=unavailable`与`reason`用于明确生成/审核未完成，`verification=not-generated`不表示内容已验证；此时正文不粘贴原文、不作为可学习的已完成回答，多步Agent以partial结束。`ok=true`仅表示请求已处理，不能忽略`answerStatus`。模型身份响应可为`engine=assistant-info / verification=server-config`，来自当前应用配置，无模型调用或课程证据。

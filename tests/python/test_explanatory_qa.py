@@ -89,7 +89,7 @@ def test_valid_reference_alone_does_not_authorize_a_paraphrase(tmp_path, verdict
     app, calls = host(tmp_path, [claim('队列永远是后进入的元素先离开。')], verdict)
     result, events = ask(app)
     assert '永远是后进入' not in dumps(events)
-    assert result['engine'] == 'local-workflow' and result['verification'] == 'verbatim-only'
+    assert result['engine'] == 'local-workflow' and result['verification'] == 'not-generated' and result['answerStatus'] == 'unavailable'
     assert len(calls) == 2  # No review or generation retries.
 
 
@@ -97,7 +97,7 @@ def test_valid_reference_alone_does_not_authorize_a_paraphrase(tmp_path, verdict
 def test_forged_citation_is_rejected_before_review(tmp_path, bad):
     app, calls = host(tmp_path, [bad])
     result, events = ask(app)
-    assert result['verification'] == 'verbatim-only'
+    assert result['verification'] == 'not-generated' and result['answerStatus'] == 'unavailable'
     assert len(calls) == 1
     assert TEXT not in dumps(events)
 
@@ -144,7 +144,7 @@ def test_incomplete_or_duplicated_review_does_not_partially_authorize_content(tm
     app, calls = host(tmp_path, [claim(), claim(INFERENCE, 'inference')], verdicts)
     result, events = ask(app)
     assert TEXT not in dumps(events) and INFERENCE not in dumps(events)
-    assert result['verification'] == 'verbatim-only' and len(calls) == 2
+    assert result['verification'] == 'not-generated' and result['answerStatus'] == 'unavailable' and len(calls) == 2
 
 
 def test_excerpt_prefix_and_reviewed_explanation_form_one_valid_stream(tmp_path):

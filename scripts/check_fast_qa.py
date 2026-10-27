@@ -78,7 +78,7 @@ def main():
                 page.locator('#chatInput').fill('队列是什么？')
                 page.get_by_role('button', name='发送问题', exact=True).click()
                 try:
-                    page.locator('.ai-message.loading-message .stream-text').filter(has_text='队列遵循先进先出').wait_for(timeout=8000)
+                    page.locator('.ai-message.loading-message .rich-content').filter(has_text='队列遵循先进先出').wait_for(timeout=8000)
                 except Exception:
                     page.screenshot(path='test-results/fast-qa-failure.png', full_page=True)
                     print('QA browser errors:', errors)

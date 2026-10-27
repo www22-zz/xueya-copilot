@@ -1,6 +1,13 @@
 from ..core import require, clone, fingerprint, resolve, check_cancel
 
 
+def quote_spans(source):
+    """Server-owned exact quotes. IDs avoid asking a model to retype OCR glyphs."""
+    quote = source['quote']
+    lines = list(dict.fromkeys(line.strip() for line in quote.splitlines() if line.strip()))[:128]
+    return {'q0': quote, **{'q'+str(i): line for i, line in enumerate(lines, 1)}}
+
+
 def evidence_package(value):
     course, sources = value.get('courseId'), value.get('sources')
     require(isinstance(course, str) and course.strip() and isinstance(sources, list) and sources, 'NO_SOURCES')
@@ -26,8 +33,15 @@ async def validate_claims(claims, pack, review=None, signal=None):
         for ref in claim['evidence']:
             require(isinstance(ref, dict), 'INVALID_CITATION')
             source = sources.get(ref.get('sourceId'))
-            require(source and isinstance(ref.get('quote'), str) and ref['quote'].strip() and ref['quote'] in source['quote'], 'INVALID_CITATION')
-            refs.append({'sourceId': source['id'], 'documentId': source.get('documentId'), 'version': source.get('version'), 'quote': ref['quote'], 'location': source.get('location')})
+            require(source, 'INVALID_CITATION')
+            quote = ref.get('quote')
+            if 'quoteId' in ref:
+                require(isinstance(ref['quoteId'], str), 'INVALID_CITATION')
+                canonical = quote_spans(source).get(ref['quoteId'])
+                require(canonical and ('quote' not in ref or quote == canonical), 'INVALID_CITATION')
+                quote = canonical
+            require(isinstance(quote, str) and quote.strip() and quote in source['quote'], 'INVALID_CITATION')
+            refs.append({'sourceId': source['id'], 'documentId': source.get('documentId'), 'version': source.get('version'), 'quote': quote, 'location': source.get('location')})
         exact = [ref for ref in refs if ref['quote'].strip() == claim['text'].strip()]
         candidates.append({'text': exact[0]['quote'] if exact else claim['text'], 'evidence': exact or refs,
                            'kind': 'excerpt' if exact else 'inference' if claim.get('kind') == 'inference' else 'paraphrase'})

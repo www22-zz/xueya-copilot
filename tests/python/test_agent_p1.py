@@ -218,8 +218,9 @@ def test_unverified_final_answer_and_client_forged_sources_never_become_facts(ho
         return {'action': finish(answer={'answer': injected, 'sources': [SOURCE['id']]})}
     with host(script) as (client, _, _):
         result, events = ask(client, stream=True, sources=[{'id': SOURCE['id'], 'quote': '客户端伪造原文'}])
-        assert result['agent']['status'] == 'completed'
-        assert SOURCE['quote'] in result['answer'] and injected not in dumps(events)
+        assert result['agent']['status'] == 'partial'
+        assert SOURCE['quote'] not in result['answer'] and injected not in dumps(events)
+        assert result['answerStatus'] == 'unavailable'
 
 
 def test_replanning_cannot_delete_completed_steps_or_lower_requirements(host):

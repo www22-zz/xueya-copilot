@@ -18,7 +18,7 @@ def fast_messages(messages):
         '这是普通资料问答，请直接简短回答，不要规划任务。请先输出 claims 数组，再输出 answer、sources、knowledgePoints。'
         'claims 的第一项优先给出直接摘自资料的核心结论句（text 与 evidence.quote 完全一致，kind 设为 excerpt，以便系统即时验证并向用户秒级呈现）；'
         '随后的段落再用自己的话展开通俗解释或推导（kind 设为 paraphrase 或 inference，evidence.quote 必须逐字引用资料）。先直观结论再解释原因，最多6项。'
-        '不得为了提前输出而编造证据。'}
+        'evidence可以只填写sourceId与quoteId，由服务端恢复所选原文，避免重抄OCR字形；直接摘录的text仍需与原文完全一致。不得为了提前输出而编造证据。'}
     return messages
 
 
@@ -125,4 +125,4 @@ class ClaimStream:
         for ref in item['evidence']:
             if ref['sourceId'] not in self.source_ids:
                 self.source_ids.append(ref['sourceId'])
-        return item['text'] + ''.join(f" [{self.source_ids.index(r['sourceId'])+1}]" for r in item['evidence'])
+        return item['text'] + ''.join(f" [{self.source_ids.index(source_id)+1}]" for source_id in dict.fromkeys(r['sourceId'] for r in item['evidence']))

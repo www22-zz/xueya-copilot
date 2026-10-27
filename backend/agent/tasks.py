@@ -83,6 +83,14 @@ def local_answer(question, mode, hits):
     return f'根据当前资料，可以从以下原文理解这个问题：\n\n{quotes}\n\n以上是本地检索摘录。点击引用可核对原文。'
 
 
+def answer_unavailable(reason, *, configured=True):
+    if not configured:
+        return '已找到相关资料，但尚未配置 AI 问答服务，暂时无法整理解释。你可以先查看下方参考资料。'
+    if reason in ('CLAIMS_NEED_REVIEW', 'INVALID_CLAIM_EVIDENCE'):
+        return '已找到相关资料，但这次解释未通过来源核对，暂未生成可用回答。你可以先查看下方参考资料。'
+    return '这次 AI 回答未能完成，未将检索原文作为答案返回。相关资料保留在下方，供你核对。'
+
+
 def local_study(context, intent):
     records, questions = context['records'], context['questions']
     last = {r['questionId']: r for r in records}

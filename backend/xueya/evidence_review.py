@@ -39,8 +39,8 @@ class EvidenceReviewer:
         try:
             response = await self.provider.generate([{'role': 'system', 'content': SYSTEM},
                 {'role': 'user', 'content': payload}], scope=self.scope, temperature=0,
-                timeout=20, max_output_tokens=min(1536, self.provider.config.max_output_tokens),
-                response_format={'type': 'json_object'})
+                timeout=60, max_output_tokens=min(1536, self.provider.config.max_output_tokens),
+                response_format={'type': 'json_object'}, thinking={'type': 'disabled'})
             check_cancel(signal)
             data = json.loads(response['content'])
             verdicts = data.get('verdicts') if isinstance(data, dict) else None

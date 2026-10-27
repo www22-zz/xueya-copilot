@@ -13,6 +13,7 @@ from urllib.parse import quote
 
 from .app import body, connected_work, create_app, json_body, success
 from .common import require
+from .document_limits import document_limit
 from .rag_api import ApiSettings, EmbeddingProvider, OcrProvider, RerankProvider
 from .rag_service import RagService
 
@@ -66,7 +67,7 @@ def install_rag(app, *, service_factory=None):
     async def route(operation: str, request: Request):
         rag = service(request)
         binary = operation == "upload"
-        value = ({"buffer": await body(request, 10_485_760)} if binary else await json_body(request, 524288)) if request.method == "POST" else {}
+        value = ({"buffer": await body(request, document_limit(request.query_params.get('name')))} if binary else await json_body(request, 524288)) if request.method == "POST" else {}
         q = request.query_params
         scope = rag.p.scope((q.get("courseId") or "course-default") if binary or request.method == "GET" else value.get("courseId", "course-default"))
         post = request.method == "POST"
@@ -76,7 +77,7 @@ def install_rag(app, *, service_factory=None):
             return success(job=rag.upload(scope, value["buffer"], q.get("name"), request.headers.get("idempotency-key"), previous_document_id=q.get("previousDocumentId")))
         if operation in ("parse", "ocr", "index") and post:
             require(type(value.get("version")) is int and value["version"] > 0, "INVALID_VERSION")
-            return success(job=rag.submit(scope, "rag-"+operation, value.get("documentId"), value.get("idempotencyKey"), expected_version=value["version"]))
+            return success(job=rag.submit(scope, "rag-"+operation, value.get("documentId"), value.get("idempotencyKey"), expected_version=value["version"], pages=value.get('pages')))
         if operation == "search" and post:
             allowed = {"courseId", "query", "history", "newTopic", "documentIds", "section", "mode", "budget", "limit"}
             require(not set(value)-allowed and isinstance(value.get("history", []), list) and len(value.get("history", [])) <= 12 and type(value.get("newTopic", False)) is bool, "INVALID_SEARCH")

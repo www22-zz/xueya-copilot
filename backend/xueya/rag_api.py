@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import asyncio
 import base64
+import io
 from contextlib import contextmanager
 from contextvars import ContextVar
 from dataclasses import dataclass, field
@@ -19,6 +20,24 @@ import httpx
 from .common import AppError, digest, dumps, require, utc_now
 from .rag_search import normalize
 from .execution_budget import current_budget
+from .document_limits import PDF_MAX_BYTES, OFFICE_MAX_BYTES
+
+
+def ocr_document(buffer, pages):
+    """Keep the original stored file; send only an explicitly selected large-PDF batch."""
+    if len(buffer) <= OFFICE_MAX_BYTES:
+        return buffer, {page-1: page for page in pages}
+    from pypdf import PdfReader, PdfWriter
+    reader = PdfReader(io.BytesIO(buffer), strict=False)
+    require(not reader.is_encrypted and all(page <= len(reader.pages) for page in pages), 'INVALID_OCR_INPUT')
+    writer = PdfWriter()
+    for page in pages:
+        writer.add_page(reader.pages[page-1])
+    out = io.BytesIO()
+    writer.write(out)
+    raw = out.getvalue()
+    require(len(raw) <= OFFICE_MAX_BYTES, 'OCR_BATCH_TOO_LARGE')
+    return raw, dict(enumerate(pages))
 
 _leased_platform = ContextVar("rag_leased_api_platform", default=None)
 
@@ -140,14 +159,17 @@ class RerankProvider(ApiClient):
 
 class OcrProvider(ApiClient):
     async def recognize(self, scope, buffer, pages):
-        require(isinstance(buffer, bytes) and 0 < len(buffer) <= 10_485_760 and isinstance(pages, list) and 0 < len(pages) <= 64 and all(type(p) is int and p >= 1 for p in pages), "INVALID_OCR_INPUT")
-        data = await self.post(scope, "/ocr", {"document": {"type": "document_url", "document_url": "data:application/pdf;base64,"+base64.b64encode(buffer).decode()},
-                                             "pages": [p-1 for p in pages], "include_image_base64": False, "table_format": "markdown"})
+        require(isinstance(buffer, bytes) and 0 < len(buffer) <= PDF_MAX_BYTES and isinstance(pages, list) and 0 < len(pages) <= 64
+                and all(type(p) is int and p >= 1 for p in pages) and len(pages) == len(set(pages)), "INVALID_OCR_INPUT")
+        raw, page_map = await asyncio.to_thread(ocr_document, buffer, pages)
+        data = await self.post(scope, "/ocr", {"document": {"type": "document_url", "document_url": "data:application/pdf;base64,"+base64.b64encode(raw).decode()},
+                                             "pages": list(page_map), "include_image_base64": False, "table_format": "markdown"})
         rows = data.get("pages")
         require(isinstance(rows, list) and len(rows) <= len(pages), "INVALID_OCR_RESPONSE")
         result = {}
         for row in rows:
-            require(isinstance(row, dict) and type(row.get("index")) is int and row["index"]+1 in pages and row["index"]+1 not in result and isinstance(row.get("markdown"), str) and len(row["markdown"]) <= 1_200_000, "INVALID_OCR_RESPONSE")
+            require(isinstance(row, dict) and type(row.get("index")) is int and row['index'] in page_map
+                    and page_map[row['index']] not in result and isinstance(row.get("markdown"), str) and len(row["markdown"]) <= 1_200_000, "INVALID_OCR_RESPONSE")
             # Full-page text has no asserted bbox/confidence unless supplied by a validated adapter.
             dimensions = row.get("dimensions", {})
             images = row.get("images", [])
@@ -159,7 +181,7 @@ class OcrProvider(ApiClient):
                 require(all(type(v) in (int, float) and math.isfinite(v) and v >= 0 for v in box) and box[0] < box[2] and box[1] < box[3], "INVALID_OCR_RESPONSE")
                 require(type(dimensions.get("width")) in (int, float) and type(dimensions.get("height")) in (int, float) and box[2] <= dimensions["width"] and box[3] <= dimensions["height"], "INVALID_OCR_RESPONSE")
                 located.append({"id": image["id"], "bbox": box, "coordinateSystem": "ocr-page-pixels"})
-            result[row["index"]+1] = {"text": row["markdown"], "method": "ocr-api:"+self.settings.model,
+            result[page_map[row['index']]] = {"text": row["markdown"], "method": "ocr-api:"+self.settings.model,
                                       "confidence": None, "bbox": None, "images": located,
                                       "dimensions": {k: dimensions[k] for k in ("width", "height", "dpi") if k in dimensions}}
         require(set(result) == set(pages), "OCR_PAGES_MISSING")

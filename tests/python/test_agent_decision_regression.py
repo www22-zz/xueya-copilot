@@ -18,7 +18,7 @@ def live_finish():
 
 
 @pytest.mark.parametrize('durable', [False, True])
-def test_live_flat_finish_completes_after_real_read_and_keeps_answer_verification(host, durable):
+def test_live_flat_finish_keeps_unverified_answer_partial(host, durable):
     def script(value, platform):
         if value['state']['plan'] is None:
             return {'plan': plan(['read', 'answer']),
@@ -30,16 +30,16 @@ def test_live_flat_finish_completes_after_real_read_and_keeps_answer_verificatio
             create(client)
             assert step(client, p)['status'] == 'queued'
             run = step(client, p)
-            assert run['status'] == 'completed'
+            assert run['status'] == 'partial'
             result = run['result']
         else:
             result, _ = ask(client, stream=True)
-        assert result['agent']['status'] == 'completed'
-        assert result['agent']['stopReason'] == 'FINISHED'
+        assert result['agent']['status'] == 'partial'
+        assert result['agent']['stopReason'] == 'AI_ANSWER_MISSING'
         assert len(requests) == 2  # No extra model call to repair the JSON.
-        assert SOURCE['quote'] in result['answer']
+        assert SOURCE['quote'] not in result['answer']
         assert result['sources'] == [SOURCE['id']]
-        assert result['verification'] == 'verbatim-only'
+        assert result['verification'] == 'not-generated' and result['answerStatus'] == 'unavailable'
         assert result['engine'] == 'local-workflow'
         assert '伪造' not in result['answer'] and '已掌握' not in result['answer']
         assert p.repo.all(p.scope(), 'plan') == []
