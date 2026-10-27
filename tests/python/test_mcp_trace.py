@@ -63,7 +63,7 @@ def test_ten_tool_results_survive_final_trace_while_model_observations_stay_boun
             if n == 1:
                 decision['plan'] = plan(['read', 'answer'])
             return decision
-        return {'action': finish()}
+        return {'action': finish(answer={'answer': '队列原文片段 1', 'sources': ['trace-1']})}
 
     with host(script, agent_max_rounds=12, run_model_calls=12) as (client, requests, p):
         for n in range(1, 11):

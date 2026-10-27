@@ -59,6 +59,26 @@ def lexical(query, sources, *, limit=24):
             score += idf*freq*2.2/(freq+1.2*(.25+.75*length/average))
         if score > 0:
             rows.append((score, source))
+    # Definition questions need the defining prose ahead of dense code/index
+    # fragments that repeat the same term. The original quotes stay unchanged.
+    compact = re.sub(r'\s+', '', str(query)).strip('？?。.!！')
+    compact = re.sub(r'^(?:请问|请解释一下|请解释|解释一下|介绍一下)', '', compact)
+    match = re.search(r'什么是([^，,？?。；;]{1,40})', compact) or re.fullmatch(r'(.{1,40}?)(?:的定义是什么|的含义是什么|是什么|的定义)', compact)
+    if match and rows:
+        subject = match[1].strip()
+        names = [subject]
+        for term, aliases in TERMS.items():
+            if subject == term or subject.casefold() in aliases:
+                names += [term, *aliases]
+        def defining(source):
+            text = source['quote']
+            for name in names:
+                word = r'(?<![\u3400-\u9fffA-Za-z0-9_])'+re.escape(name)
+                if re.search(word+r'(?:\s*[（(][^）)\n]{0,60}[）)])?\s*(?:是|指|的定义|的基本概念)', text, re.I) or re.search(r'称为\s*'+word, text, re.I):
+                    return True
+            return False
+        priority = max(score for score, _ in rows)+1
+        rows = [(score+priority if defining(source) else score, source) for score, source in rows]
     return sorted(rows, key=lambda row: (-row[0], source_order(row[1])))[:limit]
 
 

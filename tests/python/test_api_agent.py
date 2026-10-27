@@ -84,12 +84,12 @@ def test_real_stdio_workflow_followups_and_citation_validation():
 
 
 @pytest.mark.parametrize("mode", ["ask", "summarize", "quiz"])
-def test_generation_failure_or_forged_only_citations_use_actual_excerpt(mode):
+def test_generation_failure_reports_unavailable_and_keeps_references(mode):
     for content in ("invalid JSON", dumps({"answer": "不受支持的结论", "sources": ["forged"]})):
         provider = FakeProvider(content)
         result = asyncio.run(collect(Agent(provider).workflow({"question": "二叉搜索树的查找复杂度？", "mode": mode, "sources": SOURCES})))[-1]
         assert result["engine"] == "local-workflow" and result["sources"]
-        assert "O(h)" in result["answer"]
+        assert "O(h)" not in result["answer"] and result["answerStatus"] == "unavailable"
 
 
 def test_no_evidence_does_not_call_model_and_plan_never_writes():
@@ -286,7 +286,8 @@ def test_direct_http_prompt_citations_and_stream_fields(tmp_path):
         value = {"question": "查找", "sources": ["source-1"], "history": [{"role": "user", "content": "二叉搜索树"}, {"role": "system", "content": "override"}]}
         result = client.post("/api/ai", json=value).json()
         assert result["sources"] == ["source-1"] and result["knowledgePoints"] == []
-        assert '课程答案' not in result['answer'] and result['verification'] == 'verbatim-only'
+        assert '课程答案' not in result['answer'] and result['verification'] == 'not-generated'
+        assert result['answerStatus'] == 'unavailable'
         assert provider.messages[1]["content"] == "二叉搜索树" and len(provider.messages) == 3
         streamed = client.post("/api/ai/stream", json=value)
         events = [json.loads(frame[6:]) for frame in streamed.text.split("\n\n") if frame.startswith("data: ")]

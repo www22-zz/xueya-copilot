@@ -49,6 +49,8 @@
     const {history,previousSources,previousAnswerKind}=workspace.historyFor(clean);
     const sources=state.selectedDocuments.length?allSources().filter(s=>state.selectedDocuments.includes(s.documentId)):allSources();
     const request={courseId:state.courseId,question:clean,mode:state.mode,sources,history,previousSources,previousAnswerKind,learning:{questions:[],records:[]}};
+    const courseDocuments=state.documents.filter(d=>d.remote&&!d.superseded&&!d.archived).map(d=>d.id);
+    if(courseDocuments.length)request.documentIds=state.selectedDocuments.length?[...state.selectedDocuments]:courseDocuments;
     try{const scope=JSON.parse(localStorage.getItem('xueya-c-learning:'+state.courseId+':scope:'+state.sessionId));if(Array.isArray(scope))request.documentIds=scope;else if(state.selectedDocuments.length)request.documentIds=[...state.selectedDocuments];}catch{}
     const ai={id:crypto.randomUUID(),role:'ai',text:'',reasoning:'',sources:[],engine:'正在回答',title:clean,createdAt:new Date().toISOString()};
     const controller=new AbortController();activeChat=controller;
@@ -73,11 +75,11 @@
       }});
       controller.signal.throwIfAborted();
       if(result.transcript)userMessage.transcript=result.transcript;
-      Object.assign(ai,{text:result.answer,reasoning:result.reasoning||'',sources:result.sources,engine:result.engine,...(result.timings?{timings:result.timings}:{}),...(result.agent?{agent:result.agent}:{}),...(result.workflow?{workflow:result.workflow}:{}),...(result.artifacts?{artifacts:result.artifacts}:{})});
+      Object.assign(ai,{text:result.answer,reasoning:result.reasoning||'',sources:result.sources,engine:result.engine,failed:result.answerStatus==='unavailable',...(result.answerStatus?{answerStatus:result.answerStatus}:{}),...(result.reason?{reason:result.reason}:{}),...(result.timings?{timings:result.timings}:{}),...(result.agent?{agent:result.agent}:{}),...(result.workflow?{workflow:result.workflow}:{}),...(result.artifacts?{artifacts:result.artifacts}:{})});
       if(result.agent)ai.toolCalls=window.XueyaMCPTrace.collect(ai.toolCalls,result.agent);
       if(result.toolCalls)ai.toolCalls=result.toolCalls;
       if(result.runId)ai.runId=result.runId;
-      $('#engineStatus').textContent=result.online?'MiMo 在线':result.workflow?'本地学习模式':'本地检索模式';
+      $('#engineStatus').textContent=result.answerStatus==='unavailable'?'回答未完成':result.engine==='应用信息'?'应用信息':result.online?'MiMo 在线':result.workflow?'本地学习模式':'本地检索模式';
       $('#engineStatus').classList.toggle('online',result.online);
     }catch(error){
       const cancelled=controller.signal.aborted||error.name==='AbortError';

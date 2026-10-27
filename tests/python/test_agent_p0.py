@@ -70,7 +70,8 @@ def test_valid_source_id_cannot_publish_unsupported_text(tmp_path, stream, claim
         else:
             result = response.json()
         assert FORGED not in result['answer']
-        assert SOURCE['quote'] in result['answer'] and result['verification'] == 'verbatim-only'
+        assert SOURCE['quote'] not in result['answer'] and result['verification'] == 'not-generated'
+        assert result['answerStatus'] == 'unavailable' and result['sourceDetails'][0]['quote'] == SOURCE['quote']
         assert result['knowledgePoints'] == []
         expected_calls = 2 if claims and isinstance(claims[0], dict) and claims[0].get('evidence') == [{'sourceId': SOURCE['id'], 'quote': SOURCE['quote']}] else 1
         assert len(requests) == expected_calls and requests[0]['max_completion_tokens'] == 4096

@@ -42,7 +42,9 @@ test('browser chat retains follow-up context and falls back on failure or malfor
     const chat=createChatService({fetchImpl});
     const result=await chat.ask({question:'它呢？',sources:[],previousSources:[L.sources[0]]});
     assert.equal(result.online,false);
-    assert.match(result.answer,/O\(h\)/);
+    assert.equal(result.answerStatus,'unavailable');
+    assert.equal(result.answer.includes('O(h)'),false);
+    assert.match(result.sources[0].quote,/O\(h\)/);
     assert.equal(result.sources[0].id,'source-1');
   }
 });

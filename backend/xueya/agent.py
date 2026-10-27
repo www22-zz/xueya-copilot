@@ -11,6 +11,7 @@ from . import learning as L
 from .common import AppError, require, utc_now, dumps, digest
 from .mcp_core import open_session, platform_registry
 from .rag import retrieve, sanitize_sources
+from .rag_search import lexical, rewrite_query
 from backend.agent.tasks import conversation_reply, requires_course_evidence
 from backend.agent.general_chat import general_chat
 from backend.agent.answer_policy import finalize_answer
@@ -19,6 +20,7 @@ from .execution_budget import budget_scope
 from .qa_latency import ResponseTiming, current_timing
 from .fast_qa import ordinary_question, fast_messages, ClaimStream
 from .evidence_review import EvidenceReviewer
+from .chat_policy import assistant_identity_question, assistant_identity_reply, answer_unavailable
 
 LEARNING_READ_TOOLS = frozenset(('search_materials', 'read_source', 'analyze_progress', 'build_review_plan'))
 
@@ -148,6 +150,22 @@ class Agent:
         return [s for s in self.platform.repo.all(scope, 'source')
                 if not any(documents.get(s.get('documentId'), {}).get(flag) for flag in ('archived', 'deleted', 'superseded'))]
 
+    def source_details(self, scope, source_ids):
+        """Resolve final citations from the host, including hits absent in the browser."""
+        details = []
+        for source_id in dict.fromkeys(source_ids):
+            row = self.platform.repo.read(scope, 'source', source_id)
+            if not row:
+                continue
+            source = {**row['value'], 'id': source_id, 'version': row['version'], 'courseId': scope.course_id}
+            if self.rag and source.get('documentRevision') is not None:
+                source = {**self.rag.read(scope, source_id), 'courseId': scope.course_id}
+            source.setdefault('title', '课程资料')
+            source.setdefault('location', '原文片段')
+            details.append({k: source[k] for k in ('id', 'title', 'quote', 'location', 'documentId', 'documentRevision',
+                           'fileHash', 'textHash', 'start', 'end', 'page', 'blockId', 'version', 'courseId') if k in source})
+        return details
+
     def evidence_snapshot(self, scope, sources):
         if not self.platform or scope is None:
             return None
@@ -177,7 +195,7 @@ class Agent:
         class Model:
             async def stream(self, value):
                 messages = [dict(message) for message in value['messages']]
-                messages[0]['content'] += '简单问题直接简短回答；用户要求详细说明时再展开。'
+                messages[0]['content'] += '简单问题直接简短回答；用户要求详细说明时再展开。' + assistant_identity_reply(provider.config)
                 async with aclosing(provider.stream(messages, scope=scope, response_format=value.get('responseFormat'),
                                                     thinking={'type': 'disabled'})) as events:
                     async for event in events:
@@ -221,12 +239,13 @@ class Agent:
     @bounded_stream
     async def workflow(self, value):
         request = normalize_request(value)
+        identity = assistant_identity_question(request['question'], request['mode'])
         context = normalize_context(value.get("context"), request["sources"])
         scope, run_id, version, done = None, None, None, False
         if self.platform:
             ws = self.platform.repo.get_workspace(self.platform.user_id)
             scope = self.platform.scope(value.get('courseId') or (ws['data']['activeId'] if ws else 'course-default'))
-            library = self.current_library(scope)
+            library = [] if identity else self.current_library(scope)
             if ws or library or self.platform.repo.all(scope, 'document') or scope.course_id != 'course-default':
                 course = next((c for c in ws['data']['courses'] if c['id'] == scope.course_id), None) if ws else None
                 course_data = course['data'] if course else {}
@@ -239,8 +258,13 @@ class Agent:
                 else:
                     library = [s for s in library if s["id"] in selected_ids] if selected_ids else library
                 # Keep current question hits ahead of the bounded browser context.
-                if not selected_ids:
-                    hits = retrieve(request['question'], library)
+                if not identity:
+                    query = rewrite_query(request['question'], request['history']) if L.refers_previous(request['question']) else request['question']
+                    hits = ([source for _, source in lexical(query, library, limit=24)] if self.rag
+                            else retrieve(query, library))
+                    previous = (value.get('context') or {}).get('previousSourceIds', []) if L.refers_previous(request['question']) else []
+                    previous = [key for key in previous if isinstance(key, str)][:3] if isinstance(previous, list) else []
+                    hits += [s for s in library if s['id'] in previous and s['id'] not in {h['id'] for h in hits}]
                     library = hits+[s for s in library if s['id'] not in {h['id'] for h in hits}]
                 context = normalize_context({"library": library, "questions": self.platform.repo.all(scope, "question"), "records": self.platform.repo.all(scope, "attempt"), "examDate": course_data.get("examDate"), "minutes": course_data.get("minutes"), "previousSourceIds": (value.get("context") or {}).get("previousSourceIds")})
                 run_id = "run-"+str(uuid4())
@@ -252,6 +276,7 @@ class Agent:
                         if event["type"] == "workflow":
                             self.platform.repo.put(scope, "checkpoint", run_id, {"stage": event["stage"], "status": event["status"], "at": utc_now(), **({'agent': event['agent']} if 'agent' in event else {})})
                         if event["type"] == "done":
+                            event = {**event, 'sourceDetails': self.source_details(scope, event.get('sources', []))}
                             event = {**event, 'timings': current_timing.get().snapshot()}
                             outcome = event.get('agent', {}).get('status')
                             status = outcome if outcome in ('awaiting_user', 'partial') else 'succeeded'
@@ -264,6 +289,14 @@ class Agent:
                 self.platform.repo.put(scope, "run", run_id, {"status": "cancelled" if asyncio.current_task().cancelling() else "interrupted", "question": request["question"], "finishedAt": utc_now(), "timings": current_timing.get().snapshot()}, version)
 
     async def _learning_stream(self, request, context, scope, stored):
+        if assistant_identity_question(request['question'], request['mode']):
+            if current_timing.get():
+                current_timing.get().route = 'assistant-info'
+            yield {'type': 'done', 'ok': True, 'answer': assistant_identity_reply(self.model.config),
+                   'sources': [], 'sourceDetails': [], 'knowledgePoints': [],
+                   'model': getattr(self.model.config, 'model', 'unconfigured'), 'engine': 'assistant-info',
+                   'verification': 'server-config', 'answerStatus': 'answered'}
+            return
         intent, trace = L.route_task(request["question"], request["mode"]), []
         tool_calls = []
         study = intent in ("plan", "review")
@@ -320,7 +353,7 @@ class Agent:
                 else:
                     message = '通用问答服务暂时不可用，请稍后重试。'
                 yield mark('generate', message, 'degraded')
-                yield finish(message, engine='general-chat-unavailable')
+                yield finish(message, engine='general-chat-unavailable', answerStatus='unavailable', reason=code or 'AI_UNAVAILABLE')
         if greeting:
             yield finish(greeting)
             return
@@ -457,20 +490,22 @@ class Agent:
             if stored and not self.evidence_current(scope, evidence, snapshot):
                 yield finish('资料已更新或移除，请重新选择有效资料后再提问。')
                 return
-            yield mark("validate", "回答与来源检查完成" if result['engine'] != 'local-workflow' else "部分解释未通过证据核对，已退回可核实原文", "completed" if result['engine'] != 'local-workflow' else 'degraded')
-            prefix_answer = '\n\n'.join(c['text']+''.join(f" [{preview.source_ids.index(r['sourceId'])+1}]" for r in c['evidence']) for c in preview.accepted) if published else ''
+            yield mark("validate", "回答与来源检查完成" if result['engine'] != 'local-workflow' else "解释未通过证据核对，已保留参考资料", "completed" if result['engine'] != 'local-workflow' else 'degraded')
+            prefix_answer = '\n\n'.join(c['text']+''.join(f" [{preview.source_ids.index(source_id)+1}]" for source_id in dict.fromkeys(r['sourceId'] for r in c['evidence'])) for c in preview.accepted) if published else ''
             if published and not result['answer'].startswith(prefix_answer):
                 yield {'type': 'content', 'text': '","sources":'+dumps(preview.source_ids)+'}', 'model': result['model']}
             else:
                 for part in verified_answer_chunks(result, prefix=prefix_answer):
                     yield part
             yield {"type": "done", **result, "workflow": {"intent": intent, "steps": trace}, 'toolCalls': deepcopy(tool_calls)}
-        except Exception:
+        except Exception as error:
             if stored and not self.evidence_current(scope, evidence, snapshot):
                 yield finish('资料已更新或移除，请重新选择有效资料后再提问。')
                 return
-            yield mark("generate", "生成服务暂不可用，已使用实际原文或学习规则", "degraded")
-            yield finish(L.local_answer(request["question"], intent, evidence), evidence)
+            reason = getattr(error, 'code', 'AI_GENERATION_FAILED')
+            yield mark("generate", "AI解释未能完成，已保留参考资料", "degraded")
+            yield finish(answer_unavailable(reason, configured=bool(getattr(self.model.config, 'api_key', None))), evidence,
+                         answerStatus='unavailable', verification='not-generated', reason=reason)
 
     async def practice(self, task, value):
         sources, scope = self.authoritative_sources(value)

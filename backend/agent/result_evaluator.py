@@ -2,7 +2,7 @@
 from ..core import dumps
 import re
 from .answer_policy import finalize_answer
-from .tasks import local_answer, study_text
+from .tasks import answer_unavailable, study_text
 
 
 class ResultEvaluator:
@@ -32,6 +32,7 @@ class ResultEvaluator:
         results, sources, parts, artifacts = self.tools.results, list(self.tools.evidence.values()), [], {}
         used_ids = [s['id'] for s in sources]
         verification, model, engine = 'tool-results-only', 'local-learning-tools', 'local-workflow'
+        unavailable = {}
         if 'analyze_progress' in results:
             stats, plan = results['analyze_progress'], results.get('build_review_plan')
             artifacts['progress'] = stats
@@ -45,12 +46,16 @@ class ResultEvaluator:
                     parts.append(value['answer'])
                     used_ids = value['sources']
                     verification, model, engine = value['verification'], value['model'], value['engine']
+                    if value.get('answerStatus'):
+                        unavailable = {k: value[k] for k in ('answerStatus', 'reason') if k in value}
                 except (ValueError, TypeError, KeyError, AttributeError):
-                    parts.append(local_answer(self.request['question'], self.request['mode'], sources))
-                    verification = 'verbatim-only'
-            else:
-                parts.append(local_answer(self.request['question'], self.request['mode'], sources))
-                verification = 'verbatim-only'
+                    parts.append(answer_unavailable('AI_INVALID_RESPONSE'))
+                    verification = 'not-generated'
+                    unavailable = {'answerStatus': 'unavailable', 'reason': 'AI_INVALID_RESPONSE'}
+            elif self.intent not in ('plan', 'review'):
+                parts.append(answer_unavailable('AI_ANSWER_MISSING'))
+                verification = 'not-generated'
+                unavailable = {'answerStatus': 'unavailable', 'reason': 'AI_ANSWER_MISSING'}
         if 'list_wrong_questions' in results:
             parts.append(f"本次读取到 {len(results['list_wrong_questions']['items'])} 道历史错题；真实错因仍需结合解题过程核对。")
         if 'get_review_queue' in results:
@@ -60,4 +65,4 @@ class ResultEvaluator:
             parts.append(f"已读取课程图谱：{len(graph['concepts'])} 个概念、{len(graph['edges'])} 条关系。")
         return {'ok': True, 'answer': '\n\n'.join(parts) or '当前还没有足够的已核验工具结果，请补充学习目标或相关课程资料。',
                 'sources': used_ids, 'knowledgePoints': [], 'model': model, 'engine': engine,
-                'verification': verification, 'artifacts': artifacts}
+                'verification': verification, 'artifacts': artifacts, **unavailable}

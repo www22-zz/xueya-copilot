@@ -37,13 +37,15 @@ test('streamed chat renders answer text and accepts only a validated completion 
   assert.equal(sent.sources[0].id,'source-1');
 });
 
-test('stream EOF without done, malformed events and server error all fall back to actual local passages',async()=>{
+test('stream EOF, malformed events and server errors show failure while retaining reference passages',async()=>{
   const cases=[event({type:'content',text:'{"answer":"半段回答'}),'data: broken JSON\n\n',event({type:'error',error:'AI_UNAVAILABLE'})];
   for(const stream of cases){
     const service=createChatService({fetchImpl:async()=>new Response(body(stream),{headers:{'Content-Type':'text/event-stream'}})});
     const result=await service.stream({question:'二叉搜索树的查找复杂度？',sources:L.sources});
     assert.equal(result.online,false);
-    assert.match(result.answer,/本地检索摘录/);
+    assert.equal(result.answerStatus,'unavailable');
+    assert.equal(result.engine,'回答未完成');
+    assert.equal(result.answer.includes(result.sources[0]?.quote),false);
     assert.equal(result.answer.includes('半段回答'),false);
     assert.ok(result.sources.length);
   }

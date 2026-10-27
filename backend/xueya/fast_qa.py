@@ -114,4 +114,4 @@ class ClaimStream:
         for ref in item['evidence']:
             if ref['sourceId'] not in self.source_ids:
                 self.source_ids.append(ref['sourceId'])
-        return item['text'] + ''.join(f" [{self.source_ids.index(r['sourceId'])+1}]" for r in item['evidence'])
+        return item['text'] + ''.join(f" [{self.source_ids.index(source_id)+1}]" for source_id in dict.fromkeys(r['sourceId'] for r in item['evidence']))
