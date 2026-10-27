@@ -11,6 +11,7 @@
     "oldPptPreserved": true,
     "emptyReplacementBlocked": true,
     "desktopAnd390px": true,
+    "usableTextPdfConfirmationFlow": true,
     "applicationProviderRequests": 0,
     "privateDatabaseOpened": false
   },
@@ -67,5 +68,6 @@
   "realVectorEvaluation": false,
   "applicationPaidApiRequests": 0,
   "originalPdfCommitted": false,
-  "pendingPrivateSource": ".xueya-pending/pdf-knowledge/source.pdf"
+  "pendingPrivateSource": ".xueya-pending/pdf-knowledge/source.pdf",
+  "draftPullRequest": "https://github.com/www22-zz/xueya-copilot/pull/18"
 }

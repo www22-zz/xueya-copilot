@@ -43,4 +43,4 @@ PDF仍按文件实际页码从1开始引用；封面、目录和正文均计入�
 - 同一46问固定离线题集优化前后：固定词法均43/46，结构词法均40/46，全部证据召回分别保持1.000/0.925；位置错误和超预算均0。不同遍历术语及英文别名在独立专项验证；当前证据只支持稳定性/同义词能力变更，不能宣称总体召回提高。
 - MCP检查、依赖完整性、Python编译、前端语法和diff检查通过。实际库实体/工作区指纹与备份一致；新main没有打开私人库。真实模型、向量、OCR质量和预算执行尚未验证。
 
-准备代码提交 `459e891`；汇总证据为 `evals/rag/pdf-knowledge-2026-10-27.json`。原始预检、实际教材测试、截图和离线比较均在本机忽略目录 `test-results/pdf-knowledge/`，原件及待续状态在 `.xueya-pending/pdf-knowledge/`。草稿分支为 `codex/pdf-knowledge-rag`，后续直接在此继续，不重新创建历史任务卡。
+准备代码提交 `459e891`；汇总证据为 `evals/rag/pdf-knowledge-2026-10-27.json`。原始预检、实际教材测试、截图和离线比较均在本机忽略目录 `test-results/pdf-knowledge/`，原件及待续状态在 `.xueya-pending/pdf-knowledge/`。草稿分支为 `codex/pdf-knowledge-rag`，已推送并创建 [草稿PR #18](https://github.com/www22-zz/xueya-copilot/pull/18)，尚未合并。后续直接在此继续，不重新创建历史任务卡。
