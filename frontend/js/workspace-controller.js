@@ -36,7 +36,7 @@ function createWorkspace(ctx){
       if(!existing&&state.documents.some(d=>!d.superseded&&d.name===item.file.name&&d.bytes===item.file.size)){item.status='已存在，未重复添加';item.progress=100;refresh();continue;}
       item.status='正在读取与解析';item.progress=20;refresh();
       try{
-        const doc=service.capabilities.uploadDocument?globalThis.XueyaWorkspaceService.normalizeDocument(await service.call('uploadDocument',{courseId,file:item.file,previousDocumentId:existing?.id},{onProgress:progress=>{if(typeof progress==='string')item.status=progress;else if(progress&&typeof progress.label==='string'){item.status=progress.label;if(Number.isFinite(progress.percent))item.progress=Math.max(0,Math.min(100,progress.percent));}refresh();}})):await libraryService.prepareDocument(item.file);if(state.courseId!==courseId)break;
+        const doc=service.capabilities.uploadDocument?globalThis.XueyaWorkspaceService.normalizeDocument(await service.call('uploadDocument',{courseId,file:item.file,previousDocumentId:existing?.id,generatePractice:true},{onProgress:progress=>{if(typeof progress==='string')item.status=progress;else if(progress&&typeof progress.label==='string'){item.status=progress.label;if(Number.isFinite(progress.percent))item.progress=Math.max(0,Math.min(100,progress.percent));}refresh();}})):await libraryService.prepareDocument(item.file);if(state.courseId!==courseId)break;
         if(service.capabilities.uploadDocument)doc.remote=true;
         if(state.documents.some(existingDoc=>existingDoc.id===doc.id))throw new Error('资料服务必须为新版本提供独立记录ID，本次未覆盖已有原件。');
         doc.tags=doc.tags||existing?.tags||[];doc.chapter=doc.chapter||existing?.chapter||'';doc.version=Number.isInteger(doc.version)&&doc.version>0?doc.version:existing?(Number(existing.version)||1)+1:1;doc.familyId=doc.familyId||existing?.familyId||existing?.id||doc.id;doc.createdAt=doc.createdAt||new Date().toISOString();
@@ -163,7 +163,24 @@ function createWorkspace(ctx){
     const pool=[...L.questions,...state.bank];if(!pool.length){toast('先添加自测题或接通学习计划服务，再生成有依据的安排。');return true;}
     planPreview(L.buildPlan(date,minutes,state.records,L.today(),pool),date,minutes);return true;
   }
+  function sessionAction(data){
+    if(state.pending)return;
+    const session=state.sessions.find(s=>s.id===data.sessionId);if(!session)return;
+    const action=data.sessionAction;
+    if(action==='pin'){store.updateSession(session.id,{pinned:!session.pinned});render();}
+    if(action==='archive'){store.updateSession(session.id,{archived:!session.archived});if(session.archived&&session.id===state.sessionId)store.newSession();render();}
+    if(action==='fork'){store.copySession(session.id,{activate:true});render();}
+    if(action==='copy')return navigator.clipboard.writeText(session.messages.map(m=>(m.role==='user'?'我':'学涯 Copilot')+'：'+m.text).join('\n\n')).then(()=>toast('已复制对话文本'));
+    if(action==='rename')openEditor('重命名对话',field('对话名称','title',session.title,{required:true}),form=>{store.updateSession(session.id,{title:form.get('title')});render();});
+    if(action==='move'){
+      const courses=store.courses.filter(c=>!c.archived&&c.id!==state.courseId);
+      if(!courses.length){toast('请先在课程管理中添加另一门课程。');return;}
+      openEditor('移动对话到课程',`<label class="form-field">目标课程<select name="course">${courses.map(c=>`<option value="${e(c.id)}">${e(c.name)}</option>`).join('')}</select></label><p>保留全部消息，清除原课程的资料范围；历史引用仍属于原课程。</p>`,form=>{store.moveSession(session.id,form.get('course'));render();});
+    }
+    if(action==='delete')openEditor('删除对话',`<p>确定删除“${e(session.title)}”及其全部消息？此操作不能撤销，不会删除课程资料。</p>`,()=>{store.removeSession(session.id);render();},{submit:'确认删除'});
+  }
   const actions={
+    sessionAction, toggleArchived:()=>{state.showArchivedSessions=!state.showArchivedSessions;render();},
     toggleWebSearch:()=>{state.webSearch=!state.webSearch;persist();render();toast(state.webSearch?'全网搜索已开启：提问将同时检索互联网最新信息':'全网搜索已关闭：仅依据课程资料回答');},
     newSession:()=>{store.newSession();render();},clearChat:()=>{store.newSession();render();},session:d=>{store.selectSession(d.session);render();},
     followup:d=>{const index=Number(d.followup);if(state.messages[index]?.role!=='ai')return;state.followupIndex=index;state.draft='请进一步解释这个问题，并给出资料中的依据。';render();$('#chatInput').focus();},cancelFollowup:()=>{state.followupIndex=null;render();},
@@ -186,6 +203,25 @@ function createWorkspace(ctx){
     return false;
   }
   function mount(){
+    const closeMenus=()=>document.querySelectorAll('.session-menu[open]').forEach(menu=>menu.open=false);
+    document.addEventListener('toggle',event=>{
+      const menu=event.target;if(!menu.matches?.('.session-menu')||!menu.open)return;
+      document.querySelectorAll('.session-menu[open]').forEach(other=>{if(other!==menu)other.open=false;});
+      const panel=menu.querySelector('.session-menu-panel'),rect=menu.querySelector('summary').getBoundingClientRect();
+      panel.style.left=Math.max(8,Math.min(innerWidth-226,rect.right-210))+'px';
+      panel.style.top=Math.max(8,Math.min(innerHeight-panel.offsetHeight-8,rect.bottom+6))+'px';
+    },true);
+    document.addEventListener('click',event=>{if(!event.target.closest('.session-menu'))closeMenus();});
+    document.addEventListener('scroll',event=>{if(!event.target.closest?.('.session-menu-panel'))closeMenus();},true);
+    window.addEventListener('resize',closeMenus);
+    document.addEventListener('keydown',event=>{
+      const menu=event.target.closest('.session-menu');if(!menu)return;
+      if(event.key==='Escape'){event.preventDefault();menu.open=false;menu.querySelector('summary').focus();}
+      if(['ArrowDown','ArrowUp','Home','End'].includes(event.key)){
+        event.preventDefault();menu.open=true;const buttons=[...menu.querySelectorAll('button:not([disabled])')];
+        let index=buttons.indexOf(document.activeElement);index=event.key==='Home'?0:event.key==='End'?buttons.length-1:(index+(event.key==='ArrowUp'?-1:1)+buttons.length)%buttons.length;buttons[index]?.focus();
+      }
+    });
     $('#spaceContent').addEventListener('paste',pasteImages);
     const dialog=document.createElement('dialog');dialog.id='workspaceDialog';dialog.className='source-dialog workspace-dialog';dialog.setAttribute('aria-labelledby','workspaceDialogTitle');dialog.innerHTML=`<div class="dialog-head"><h2 id="workspaceDialogTitle"></h2><button type="button" class="icon-button" data-close-dialog aria-label="关闭编辑面板">×</button></div><div id="workspaceDialogBody"></div>`;document.body.append(dialog);
     dialog.addEventListener('submit',async event=>{if(event.target.id!=='workspaceForm')return;event.preventDefault();if(!editorSubmit)return;const submit=event.submitter;if(submit)submit.disabled=true;try{const result=await editorSubmit(new FormData(event.target));if(result!==false)dialog.close();}catch(error){$('#editorError').textContent=error.message||'保存失败，请重试。';}finally{if(submit)submit.disabled=false;}});

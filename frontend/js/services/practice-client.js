@@ -2,17 +2,20 @@
 (function(root,factory){const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;else root.XueyaPracticeClient=api;})(typeof globalThis!=='undefined'?globalThis:this,function(){
 'use strict';
 const BANK='xueya-practice-bank';
-function createPracticeClient({request,storage=globalThis.localStorage,accountId='local',now=()=>new Date().toISOString()}={}){
+function createPracticeClient({request,storage=globalThis.localStorage,accountId='local',getCourseId=null,now=()=>new Date().toISOString()}={}){
   let token='',loaded=false,bank=null,bankVersion='',serverState={serverSeq:0,statuses:{},notes:{}},online=globalThis.navigator?globalThis.navigator.onLine!==false:true;
   const listeners=new Set();
+  let catalogInfo={generations:[]},loadedCourse=null;
+  const course=()=>getCourseId?.()||'';
+  const cacheKey=()=>getCourseId?BANK+':'+accountId+':'+course():BANK;
   function emit(){for(const fn of listeners)try{fn({online,offline:!online})}catch{}}
   function loadCache(){
-    try{const raw=JSON.parse(storage.getItem(BANK)||'null');if(raw&&Array.isArray(raw.questions)&&raw.version){bank=raw.questions;bankVersion=raw.version;return true;}}catch{}
+    try{const raw=JSON.parse(storage.getItem(cacheKey())||'null');if(raw&&Array.isArray(raw.questions)&&raw.version){bank=raw.questions;bankVersion=raw.version;loadedCourse=course();catalogInfo={generations:raw.generations||[]};return true;}}catch{}
     return false;
   }
-  function saveCache(version,questions){
-    bank=questions;bankVersion=version;
-    try{storage.setItem(BANK,JSON.stringify({version,questions}));}catch{/* quota: keep the bank memory-only */}
+  function saveCache(version,questions,info={}){
+    bank=questions;bankVersion=version;loadedCourse=course();catalogInfo=info;
+    try{storage.setItem(cacheKey(),JSON.stringify({version,questions,generations:info.generations||[]}));}catch{/* quota: keep the bank memory-only */}
   }
   /* Transport: prefer an injected request, otherwise use fetch against the same origin. */
   async function send(path,options={}){
@@ -32,11 +35,16 @@ function createPracticeClient({request,storage=globalThis.localStorage,accountId
     const boot=await send('/api/platform/bootstrap',{timeout:3000});token=boot.token||'';
   }
   async function refreshState(){await authenticate();const result=await call('/state');serverState=result;loaded=true;online=true;return result;}
+  async function refreshBank(){
+    const requestedCourse=course();
+    const catalog=await call('/bank'+(getCourseId?'?courseId='+encodeURIComponent(requestedCourse):''));
+    if(requestedCourse===course()&&catalog?.ok)saveCache(catalog.version,catalog.questions,catalog);
+    return catalog;
+  }
   async function initialize(){
     try{await authenticate();}catch{offline();}
     try{
-      const catalog=await call('/bank');
-      if(catalog&&catalog.ok)saveCache(catalog.version,catalog.questions);
+      await refreshBank();
     }catch(error){
       if(!loadCache())throw Object.assign(new Error('BANK_UNAVAILABLE'),{code:'BANK_UNAVAILABLE'});
       offline();
@@ -50,10 +58,13 @@ function createPracticeClient({request,storage=globalThis.localStorage,accountId
   }
   function offline(){online=false;emit();}
   return {
-    initialize,refreshState,
+    initialize,refreshState,refreshBank,
     get loaded(){return loaded;},
-    bank(){return bank||[];},
-    get version(){return bankVersion;},
+    bank(){return loadedCourse===course()?bank||[]:[];},
+    catalog(){return loadedCourse===course()?catalogInfo:{generations:[]};},
+    async resumeGeneration(id){await authenticate();return call('/generation/'+encodeURIComponent(id)+'/resume',{method:'POST',body:{}});},
+    async cancelGeneration(id){await authenticate();return call('/generation/'+encodeURIComponent(id)+'/cancel',{method:'POST',body:{}});},
+    get version(){return (getCourseId?loadedCourse+':':'')+bankVersion;},
     get online(){return online;},
     state(){return serverState;},
     subscribe(fn){listeners.add(fn);return()=>listeners.delete(fn);},

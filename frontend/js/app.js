@@ -25,7 +25,7 @@
   let activeChat;
   const historyLayout=window.XueyaHistoryLayout?.create();
   const searchUI=window.XueyaPlatform?.available?window.XueyaSearchWorkspace?.create({state,store,toast}):null;
-  const practiceClient=window.XueyaPracticeClient?.createPracticeClient({accountId:window.XueyaAccountId||'local'});
+  const practiceClient=window.XueyaPracticeClient?.createPracticeClient({accountId:window.XueyaAccountId||'local',getCourseId:()=>state.courseId});
   const practiceStore=window.XueyaPracticeStore?.createStore({storage,accountId:window.XueyaAccountId||'local'});
   const practiceUI=window.XueyaPracticeView?.createPracticeView({store:practiceStore,client:practiceClient,toast,navigate:hash=>{location.hash=hash;}});
   const analysisUI=window.XueyaAnalysis?.create({client:practiceClient,store:practiceStore,navigate:hash=>{location.hash=hash;},accountId:window.XueyaAccountId||'local'});
@@ -42,7 +42,7 @@
     practiceUI?.beforeRender();
     const prior=$('#chatThread'),sameSession=prior?.dataset.sessionId===state.sessionId,scrollTop=prior?.scrollTop||0,nearBottom=!prior||prior.scrollHeight-prior.scrollTop-prior.clientHeight<90;
     const pool=currentQuestions();if(state.quizIndex>=pool.length)state.quizIndex=0;
-    workspace.beforeRender();$('#spaceContent').innerHTML=renders[state.view]();$('#documentCount').textContent=state.documents.filter(d=>!d.superseded).length;icons();workspace.afterRender();workbench?.prepare();libraryUI?.mount();workbench?.mount();experience?.mount();mediaUI?.mount();historyLayout?.mount();knowledgeUI?.mount();const practiceModule=$('#practiceModule');if(practiceModule){if(state.view==='review')practiceUI?.mountReview(practiceModule);else practiceUI?.mountPractice(practiceModule,{category:({foundation:'basic',interview:'interview',hot100:'hot100'})[location.hash.split('/')[2]]});}
+    workspace.beforeRender();$('#spaceContent').innerHTML=renders[state.view]();$('#documentCount').textContent=Number.isInteger(state.documentCount)?state.documentCount:window.XueyaPlatform?.available?'…':state.documents.filter(d=>!d.superseded&&!d.archived).length;icons();workspace.afterRender();workbench?.prepare();libraryUI?.mount();workbench?.mount();experience?.mount();mediaUI?.mount();historyLayout?.mount();knowledgeUI?.mount();knowledgeUI?.refreshCount();const practiceModule=$('#practiceModule');if(practiceModule){if(state.view==='review')practiceUI?.mountReview(practiceModule);else practiceUI?.mountPractice(practiceModule,{category:({foundation:'basic',interview:'interview',hot100:'hot100'})[location.hash.split('/')[2]]});}
     const thread=$('#chatThread');if(thread)thread.scrollTop=!sameSession||nearBottom?thread.scrollHeight:scrollTop;
     agentRuns?.refresh();
     if(state.view==='analysis')analysisUI?.mount($('#analysisModule'));

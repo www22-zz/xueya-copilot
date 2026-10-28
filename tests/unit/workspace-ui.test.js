@@ -8,6 +8,28 @@ const {createService,normalizeDocument}=require('../../frontend/js/services/work
 function storage(initial={}){const data=new Map(Object.entries(initial));return{getItem:key=>data.get(key)||null,setItem:(key,value)=>data.set(key,value),data};}
 function setup(initial={}){let counter=0;const disk=storage(initial),store=createStore({storage:disk,learning:L,id:()=>String(++counter)});return{disk,store};}
 
+test('conversation actions preserve messages, custom titles and course boundaries after reload',()=>{
+  const {store,disk}=setup();
+  store.state.messages.push({role:'user',text:'原始问题'},{role:'ai',text:'完整回答',sources:[]});store.persist();
+  const source=store.state.sessionId;
+  store.updateSession(source,{title:'手动命名',pinned:true});store.persist();
+  assert.equal(store.state.sessions.find(s=>s.id===source).title,'手动命名');
+  const copy=store.copySession(source,{activate:true});
+  assert.deepEqual(store.state.messages,store.state.sessions.find(s=>s.id===source).messages);
+  store.updateSession(copy.id,{archived:true});
+  const target=store.addCourse('另一课程');store.switchCourse('course-default');
+  assert.equal(store.moveSession(source,target.id),true);
+  assert.equal(store.state.sessions.some(s=>s.id===source),false);
+  store.switchCourse(target.id);
+  const moved=store.state.sessions.find(s=>s.title==='手动命名');
+  assert.equal(moved.messages.length,2);assert.deepEqual(moved.scopeDocumentIds,[]);
+  const reopened=createStore({storage:disk,learning:L});
+  assert.equal(reopened.state.sessions.find(s=>s.id===moved.id).messages[1].text,'完整回答');
+  reopened.removeSession(reopened.state.sessionId);assert.ok(reopened.state.sessionId);
+  reopened.switchCourse('course-default');
+  assert.equal(reopened.state.sessions.find(s=>s.id===copy.id).archived,true);
+});
+
 test('ordinary conversation follow-up carries its kind through the browser request',async t=>{
   const savedService=globalThis.XueyaWorkspaceService,savedCache=globalThis.XueyaFileCache;
   t.after(()=>{globalThis.XueyaWorkspaceService=savedService;globalThis.XueyaFileCache=savedCache;});
