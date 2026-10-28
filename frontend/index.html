@@ -34,6 +34,7 @@
   <script src="js/services/agent-run-ui.js" defer></script>
   <script src="js/ui/mcp-trace.js" defer></script>
   <script src="js/ui/workspace-views.js" defer></script>
+  <script src="js/ui/selection-menu.js" defer></script>
   <script src="js/services/message-images.js" defer></script>
   <script src="js/services/composer-input.js" defer></script>
   <script src="js/workspace-controller.js" defer></script>
@@ -57,7 +58,7 @@
 <body>
   <a class="skip-link" href="#main">跳到主要内容</a>
   <header class="site-header">
-    <a href="#home" class="brand" aria-label="学涯 Copilot 首页"><img src="assets/mark.svg" alt="" width="32" height="32"><strong>学涯<span>Copilot</span></strong></a>
+    <a href="#home" class="brand" aria-label="学涯 Copilot 首页" title="回到首页"><img src="assets/mark.svg" alt="" width="32" height="32"><strong>学涯<span>Copilot</span></strong></a>
     <nav class="site-nav" aria-label="网站导航"><a href="#possibilities">读懂你的资料</a><a href="#evidence">回到答案的出处</a><a href="#rhythm">把理解练扎实</a></nav>
     <a class="button button-dark header-cta" href="#space/overview">进入学习空间 <span data-icon="arrow"></span></a>
   </header>
@@ -115,7 +116,7 @@
       <div id="activityBanner" class="activity-banner section-width" role="status" hidden><span id="activityLabel"></span><button type="button" class="button button-outline button-small" data-stop-practice>停止等待</button></div>
       <div id="storageNotice" class="storage-notice section-width" role="alert" hidden><span>本次修改尚未保存。请先导出记录，避免关闭页面后丢失。</span><button type="button" class="button button-outline button-small" data-export-workspace>导出记录</button></div>
       <div class="space-content section-width" id="spaceContent" tabindex="-1"></div>
-      <footer class="space-footer section-width"><span><span class="mini-dot"></span> 浏览器保留副本 · 可启用本机持久化</span><div class="workspace-footer-actions"><div id="workspaceServicesSlot"></div><a href="#home">回到首页 <span data-icon="external"></span></a></div></footer>
+      <footer class="space-footer section-width" style="display:none!important;"><span><span class="mini-dot"></span> 浏览器保留副本</span><div class="workspace-footer-actions"><div id="workspaceServicesSlot"></div></div></footer>
       </div>
     </div>
   </main>

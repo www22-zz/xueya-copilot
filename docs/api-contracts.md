@@ -1,5 +1,11 @@
 # 模块接口约定
 
+## 2026-10-28 朗读与联网搜索补充
+
+`POST /api/tts` 使用本机 Host、同源校验及 `X-Xueya-Token`（从 `/api/platform/bootstrap` 获取）。请求为 `{text:string, voice?:string, courseId?:string}`；默认声音 `mimo_default`、课程 `course-default`，清理 Markdown 后最多朗读1000字。成功返回 `{ok:true,audio:"data:audio/wav;base64,...",model:string}`；未配置或合成失败返回 `{ok:false,error:string,fallback:true}`，客户端可使用浏览器朗读。非法输入及鉴权错误沿用公共错误响应。
+
+合成复用学习服务 Speech、主平台并发许可、预算与模型账本；未知结果不自动重试。停止朗读会取消等待并阻止迟到响应播放。预算不允许未定价音频调用时在上游调用前拒绝。联网搜索经 MCP `search_web` 调用，MCP 失败记录工具失败，不再直接重放一次搜索；既有问答 HTTP/SSE 字段不变。
+
 后端统一Python/FastAPI，前端保持原代码；本文件、`backend/xueya/common.py`与浏览器`shared/contracts/index.js`一起维护。下面JS对象是HTTP字段示意，不要求后端使用JavaScript。公共格式变更应由相关负责人共同检查，不能只改发送端或接收端。
 
 2026-10-17 兼容补充：`GET /api/learning/workspace` 与 `artifacts` 支持可选 `kinds`（逗号分隔，最多 10 类），先过滤再分页；workspace 的 `documentIds` 为 JSON 数组字符串，仅过滤原文预览。旧请求不带这些字段时保持原行为。workspace 新增 `documents` 与 `ragCapabilities`，sources 为最多 256 段、每段最多 1500 字符的页面预览；生成/证据校验继续读取完整服务端原文。原 HTTP/SSE 字段、确认与取消语义保留。默认 `/api/platform/documents/upload` 已委派 B 的 `rag-parse`，响应仍是持久化 job。

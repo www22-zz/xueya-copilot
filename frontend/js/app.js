@@ -17,6 +17,7 @@
   const allSources=()=>[...viewLearning.sources,...state.documents.filter(d=>!d.superseded&&!d.archived).flatMap(d=>Array.isArray(d.chunks)?d.chunks:[])];
   function persist(){const saved=store.persist();$('#storageNotice')?.toggleAttribute('hidden',saved);if(!saved)toast(store.error);return saved;}
   let toastTimer;function toast(text){$('#toast').textContent=text;$('#toast').classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('#toast').classList.remove('show'),3500);}
+  window.toast=toast;
   const workspace=window.XueyaWorkspace.createWorkspace({state,L:viewLearning,store,e,icon,persist,toast,render,sourceById,allSources,libraryService:window.XueyaLibrary});
   const {titles,renders,documentRows,currentQuestions}=workspace.enhance(window.XueyaViews.createViews({state,L:viewLearning,e,icon,sourceById}));
   titles.knowledge='课程资料';renders.knowledge=()=>'';
@@ -58,6 +59,7 @@
     return workspace.openSource(source);
   }
   async function ask(question){
+    window.XueyaAsk=ask;
     const clean=question.trim()||(workspace.attachments.length?'请根据附件内容帮我解答。':'');if(!clean||state.pending||!workspace.canAsk())return;
     const {history,previousSources,previousAnswerKind}=workspace.historyFor(clean);
     const sources=state.selectedDocuments.length?allSources().filter(s=>state.selectedDocuments.includes(s.documentId)):allSources();
@@ -219,7 +221,7 @@
     $('#spaceContent').addEventListener('dragover',event=>{if(event.target.closest('#uploadZone')){event.preventDefault();$('#uploadZone').classList.add('drag-over');}});
     $('#spaceContent').addEventListener('dragleave',event=>{if(event.target.closest('#uploadZone'))$('#uploadZone').classList.remove('drag-over');});
     $('#spaceContent').addEventListener('drop',event=>{if(event.target.closest('#uploadZone')){event.preventDefault();$('#uploadZone').classList.remove('drag-over');upload([...event.dataTransfer.files]);}});
-    document.addEventListener('click',event=>{const b=event.target.closest('button');if(!b)return;if(workspace.handleClick(b))return;const d=b.dataset;
+    document.addEventListener('click',event=>{const b=event.target.closest('button, summary[data-toggle-archived]');if(!b)return;if(b.matches('summary'))event.preventDefault();if(workspace.handleClick(b))return;const d=b.dataset;
       if('closeDialog'in d)b.closest('dialog').close();if(d.citation)openSource(sourceById(d.citation));if(d.document)showDocument(d.document);if('upload'in d)$('#fileInput').click();if(d.prompt)ask(d.prompt);
       if('stopChat'in d)activeChat?.abort();
       if(d.mode){state.mode=d.mode;render();$('#chatInput').focus();}

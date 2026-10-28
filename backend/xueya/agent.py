@@ -299,22 +299,27 @@ class Agent:
             if run_id and not done:
                 self.platform.repo.put(scope, "run", run_id, {"status": "cancelled" if asyncio.current_task().cancelling() else "interrupted", "question": request["question"], "finishedAt": utc_now(), "timings": current_timing.get().snapshot()}, version)
 
-    async def _web_search_stream(self, request, query, scope, trace, tool_calls, mark, begin_tool, tool_result, finish):
+    async def _web_search_stream(self, request, query, scope, trace, tool_calls, mark, begin_tool, tool_result, finish, *, stored=False, context=None):
         timing = current_timing.get()
         if timing:
             timing.route = 'web-search'
         yield mark("route", "已启用全网搜索模式，正在搜集最新信息与线索", "completed")
+        yield mark("connect", "正在连接 MCP 客户端与搜索工具")
         yield mark("web_search", f"正在检索互联网最新内容：{query[:30]}")
         yield begin_tool('search_web', {'query': query, 'limit': 5})
-        from .web_search import search_tavily
+        timeout = getattr(self.model.config, "tool_timeout", 8)
+        web_sources = []
         try:
-            web_res = await search_tavily(query, limit=5)
-            tool_result(web_res)
-            web_sources = web_res.get("sources", [])
-        except Exception as e:
-            web_sources = []
+            registry = platform_registry(self.platform, scope, context=context, rag=self.rag, learning=self.learning) if stored else None
+            async with open_session(registry, context=None if stored else context, timeout=max(8.0, timeout), allowed_tools=LEARNING_READ_TOOLS) as session:
+                web_res = await session.call("search_web", {"query": query, "limit": 5})
+                tool_result(web_res)
+                web_sources = web_res.get("sources", [])
+        except Exception as error:
+            # A timed-out MCP tool may already have sent a billable request.
+            # Preserve the failed call; never replay it through a second transport.
             if tool_calls and tool_calls[-1]['status'] == 'running':
-                tool_calls[-1].update(status='failed', data={'error': str(e)})
+                tool_calls[-1].update(status='failed', data={'error': getattr(error, 'code', 'WEB_SEARCH_FAILED')})
 
         has_clues = bool(web_sources)
         yield mark("web_search", f"全网搜索完成，获取到 {len(web_sources)} 条参考线索" if has_clues else "未检索到相关的外部网页线索，将结合知识库回答", "completed")
@@ -483,7 +488,7 @@ class Agent:
         config = self.model.config
         web_search_enabled = bool(request.get("webSearch"))
         if web_search_enabled:
-            async with aclosing(self._web_search_stream(request, query, scope, trace, tool_calls, mark, begin_tool, tool_result, finish)) as events:
+            async with aclosing(self._web_search_stream(request, query, scope, trace, tool_calls, mark, begin_tool, tool_result, finish, stored=stored, context=context)) as events:
                 async for event in events:
                     yield event
             return

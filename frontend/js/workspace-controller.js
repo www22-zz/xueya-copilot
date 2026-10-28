@@ -137,7 +137,7 @@ function createWorkspace(ctx){
     finally{mediaController=null;if(state.view==='media')render();}
   }
   let views;
-  function enhance(base){views=globalThis.XueyaWorkspaceViews.createViews({...ctx,rich,service,getAttachments:()=>attachments,getMessageImage:ref=>messageImages?.source(ref)||'',getVoiceState:()=>voice?.status,getQueue:()=>queue},base);return views;}
+  function enhance(base){views=globalThis.XueyaWorkspaceViews.createViews({...ctx,rich,service,isSpeaking:text=>globalThis.XueyaTTS?.isPlaying(text),getAttachments:()=>attachments,getMessageImage:ref=>messageImages?.source(ref)||'',getVoiceState:()=>voice?.status,getQueue:()=>queue},base);return views;}
   function beforeRender(){
     voice?.mount();
     const course=store.courses.find(c=>c.id===state.courseId),select=$('#courseSelect');if(select){select.innerHTML=store.courses.filter(c=>!c.archived).map(c=>`<option value="${e(c.id)}" ${c.id===state.courseId?'selected':''}>${e(c.name)}</option>`).join('');select.disabled=state.pending||state.working||uploading||!!voice?.busy||!!state.mediaJob?.running;}if($('#courseLabel'))$('#courseLabel').textContent=course?.name||'我的课程';
@@ -166,13 +166,63 @@ function createWorkspace(ctx){
   const actions={
     toggleWebSearch:()=>{state.webSearch=!state.webSearch;persist();render();toast(state.webSearch?'全网搜索已开启：提问将同时检索互联网最新信息':'全网搜索已关闭：仅依据课程资料回答');},
     newSession:()=>{store.newSession();render();},clearChat:()=>{store.newSession();render();},session:d=>{store.selectSession(d.session);render();},
+    toggleSidebar:()=>{if(typeof window.XueyaToggleSidebar==='function')window.XueyaToggleSidebar();else document.body.classList.toggle('sidebar-collapsed');},
+    toggleArchived:()=>{state.archivedOpen=!state.archivedOpen;render();},
+    archiveSession:d=>{const isArchived=store.toggleArchiveSession(d.archiveSession);state.activeSessionMenuId=null;render();toast(isArchived?'已归档对话':'已取消归档');},
+    toggleSessionSearch:()=>{state.sessionSearchOpen=!state.sessionSearchOpen;render();if(state.sessionSearchOpen){setTimeout(()=>$('#sessionSearch')?.focus(),50);}},
+    clearSessionSearch:()=>{state.sessionQuery='';render();setTimeout(()=>$('#sessionSearch')?.focus(),50);},
+    sessionMenu:d=>{state.activeSessionMenuId=state.activeSessionMenuId===d.sessionMenu?null:d.sessionMenu;render();},
+    pinSession:d=>{const isPinned=store.togglePinSession(d.pinSession);state.activeSessionMenuId=null;render();toast(isPinned?'已置顶对话':'已取消置顶');},
+    renameSession:d=>{
+      const session=state.sessions.find(s=>s.id===d.renameSession);if(!session)return;
+      state.activeSessionMenuId=null;render();
+      openEditor('重命名对话',field('对话标题','title',session.title,{required:true}),data=>{
+        const title=String(data.get('title')||'').trim();if(!title)return false;
+        store.renameSession(session.id,title);render();toast('对话已重命名');return true;
+      },{submit:'保存'});
+    },
+    branchSession:d=>{
+      const session=state.sessions.find(s=>s.id===d.branchSession);if(!session)return;
+      state.activeSessionMenuId=null;
+      const lastMsgIdx=Math.max(0,(session.messages?.length||1)-1);
+      store.selectSession(session.id);
+      store.branchSession(lastMsgIdx);
+      render();toast('已在新对话中继续');
+    },
+    deleteSession:d=>{
+      const session=state.sessions.find(s=>s.id===d.deleteSession);if(!session)return;
+      state.activeSessionMenuId=null;render();
+      openEditor('删除对话',`<p>确定要删除对话“<strong>${e(session.title)}</strong>”吗？删除后将无法恢复。</p>`,()=>{
+        store.deleteSession(session.id);render();toast('对话已删除');return true;
+      },{submit:'确认删除'});
+    },
+    dailyCheckin: e => {
+      const res = globalThis.XueyaDailyCheckin?.checkin?.();
+      if (!res) return;
+      if (res.already) {
+        toast(`今天已经打过卡啦，已坚持学习 ${res.streak} 天，明天继续加油！`);
+      } else {
+        toast(`🎉 打卡成功！已连续坚持学习 ${res.streak} 天，继续保持！`);
+        render();
+        const btn = document.querySelector('[data-daily-checkin]');
+        globalThis.XueyaDailyCheckin?.celebrate?.(btn);
+      }
+    },
+    openSettings:()=>{
+      const btn=$('#appSettingsButton');if(btn)btn.click();
+      else{$('#appSettingsDialog')?.showModal?.();}
+    },
     followup:d=>{const index=Number(d.followup);if(state.messages[index]?.role!=='ai')return;state.followupIndex=index;state.draft='请进一步解释这个问题，并给出资料中的依据。';render();$('#chatInput').focus();},cancelFollowup:()=>{state.followupIndex=null;render();},
+    ttsRead:d=>{const index=Number(d.ttsRead);const m=state.messages[index];if(!m||!m.text)return;if(globalThis.XueyaTTS?.isPlaying(m.text))globalThis.XueyaTTS.stop();else globalThis.XueyaTTS?.speak(m.text);},
+    copyMessage:d=>{const m=state.messages[Number(d.copyMessage)];if(!m||!m.text)return;const text=m.text;if(navigator.clipboard?.writeText){navigator.clipboard.writeText(text).then(()=>toast('已复制回答')).catch(()=>{const ta=document.createElement('textarea');ta.value=text;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();try{document.execCommand('copy');toast('已复制回答');}catch{toast('复制失败，请手动选取文字');}document.body.removeChild(ta);});}else{const ta=document.createElement('textarea');ta.value=text;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();try{document.execCommand('copy');toast('已复制回答');}catch{toast('复制失败，请手动选取文字');}document.body.removeChild(ta);}},
+    branch:d=>{const index=Number(d.branch);if(state.pending){toast('正在生成中，请稍候再创建分支');return;}const session=store.branchSession?store.branchSession(index):null;if(session){render();toast('已新建分支对话：'+session.title);const input=$('#chatInput');if(input){input.focus();try{input.scrollIntoView({behavior:'smooth',block:'center'});}catch{}}}else{toast('创建分支失败，请重试');}},
+    regenerate:d=>{const index=Number(d.regenerate);if(state.pending){toast('正在生成中，请稍候');return;}const m=state.messages[index];if(!m)return;let question='',userIndex=-1;for(let i=index-1;i>=0;i--){if(state.messages[i].role==='user'){question=state.messages[i].text;userIndex=i;break;}}if(!question&&m.title)question=m.title;if(!question){toast('未找到对应问题，无法重新生成');return;}if(userIndex>=0){state.messages.splice(userIndex,index-userIndex+1);}else{state.messages.splice(index,1);}persist();render();if(typeof window.XueyaAsk==='function'){window.XueyaAsk(question);}else{const input=$('#chatInput');if(input){input.value=question;input.form?.requestSubmit();}}},
     messageImage:d=>messageImages?.open(d.messageImage),addAudio:()=>voice?.toggle(),cancelVoice:()=>voice?.cancel(),retryVoice:()=>voice?.retry(),addImages:()=>$('#imageInput').click(),removeImage:d=>{const [item]=attachments.splice(Number(d.removeImage),1);if(item)URL.revokeObjectURL(item.url);render();},
     editDocument:d=>editDocument(d.editDocument),refreshDocuments:async()=>{const courseId=state.courseId;const result=await service.call('listDocuments',{courseId});const list=Array.isArray(result)?result:result.documents;if(!Array.isArray(list))throw new Error('资料服务没有返回有效列表。');const remote=list.map(globalThis.XueyaWorkspaceService.normalizeDocument).map(doc=>{const old=state.documents.find(item=>item.id===doc.id);return{...doc,...old?.uiMetadata,uiMetadata:old?.uiMetadata,originalAvailable:doc.originalAvailable||old?.originalAvailable,remote:true};});if(state.courseId!==courseId)return;const ids=new Set(remote.map(doc=>doc.id));if(ids.size!==remote.length)throw new Error('资料服务返回了重复版本ID，本次未替换原件记录。');state.documents=[...remote,...state.documents.filter(doc=>!doc.remote&&!ids.has(doc.id))];persist();render();toast('资料状态已同步。');},versionDocument:d=>{nextUpload=state.documents.find(doc=>doc.id===d.versionDocument);$('#fileInput').click();},retryDocument:d=>{nextUpload=state.documents.find(doc=>doc.id===d.retryDocument);$('#fileInput').click();},retryUpload:d=>{const item=queue.find(item=>item.id===d.retryUpload);if(item)upload([item.file]).catch(notifyError);},
     original:d=>original(d.original),exportDocument:d=>{const doc=state.documents.find(doc=>doc.id===d.exportDocument);if(doc)download(doc.name+'.txt',new Blob([doc.chunks.map(c=>c.quote).join('\n\n')],{type:'text/plain;charset=utf-8'}));},correctSource:d=>correctSource(d.correctSource),
     manageCourses:()=>courses(),selectCourse:d=>selectCourse(d.selectCourse),restoreCourse:d=>{store.restoreCourse(d.restoreCourse);courses();render();},archiveCourse:d=>{if(busy())return;if(store.archive(d.archiveCourse)){resetTransient();courses();render();}else toast('至少保留一门使用中的课程。');},
     exportWorkspace:()=>download('学涯学习记录-'+L.today()+'.json',new Blob([store.exportData()],{type:'application/json'})),
-    feedback:d=>{const m=state.messages[Number(d.feedback)];if(!m)return;const save=text=>{state.feedback.push({id:id(),messageId:m.id||String(d.feedback),rating:d.rating,text,sourceIds:(m.sources||[]).map(s=>s.id),createdAt:new Date().toISOString()});persist();render();toast('反馈已保存在当前课程。');};if(d.rating==='incorrect')openEditor('说明需要核对的地方',field('问题说明','text','',{textarea:true,required:true}),data=>save(String(data.get('text'))));else save('');},
+    feedback:d=>{const m=state.messages[Number(d.feedback)];if(!m)return;const rating=d.rating;if(rating==='incorrect'){openEditor('说明需要核对的地方',field('问题说明','text','',{textarea:true,required:true}),data=>{state.feedback.push({id:id(),messageId:m.id||String(d.feedback),rating:'incorrect',text:String(data.get('text')),sourceIds:(m.sources||[]).map(s=>s.id),createdAt:new Date().toISOString()});persist();render();toast('已提交报错反馈。');});return;}const existingIndex=state.feedback.findIndex(f=>f.messageId===(m.id||String(d.feedback)));if(existingIndex>=0&&state.feedback[existingIndex].rating===rating){state.feedback.splice(existingIndex,1);persist();render();toast('已取消评价');return;}if(existingIndex>=0){state.feedback[existingIndex].rating=rating;state.feedback[existingIndex].createdAt=new Date().toISOString();}else{state.feedback.push({id:id(),messageId:m.id||String(d.feedback),rating,text:'',sourceIds:(m.sources||[]).map(s=>s.id),createdAt:new Date().toISOString()});}persist();render();toast(rating==='helpful'?'已点赞（回答有帮助）':'已点踩（回答待改进）');},
     mediaRun:d=>mediaRun(d.mediaRun),stopMedia:()=>mediaController?.abort(),seekMedia:d=>{const result=state.mediaResults[Number(d.seekMedia)],element=result&&$('#mediaPreview-'+result.kind);if(!element||state.mediaTokens?.[result.kind]!==result.inputToken)return;const seconds=Math.max(0,Number(d.seconds)||0);element.currentTime=Number.isFinite(element.duration)?Math.min(seconds,element.duration):seconds;element.focus();},mediaNote:d=>{const result=state.mediaResults[Number(d.mediaNote)];if(result)editCard(null,{title:result.title,text:result.text+'\n'+(result.segments||[]).map(s=>`[${Number.isFinite(Number(s.start))?Number(s.start).toFixed(1)+'s':'时间未提供'}] ${s.text}`).join('\n'),category:'多模态笔记'});}
   };
   function handleClick(button){const data=button.dataset;
@@ -187,9 +237,30 @@ function createWorkspace(ctx){
   }
   function mount(){
     $('#spaceContent').addEventListener('paste',pasteImages);
+    document.addEventListener('click',event=>{
+      if(!event.target.closest('[data-session-menu]')&&!event.target.closest('.session-dropdown-menu')){
+        if(state.activeSessionMenuId){state.activeSessionMenuId=null;render();}
+      }
+    });
     const dialog=document.createElement('dialog');dialog.id='workspaceDialog';dialog.className='source-dialog workspace-dialog';dialog.setAttribute('aria-labelledby','workspaceDialogTitle');dialog.innerHTML=`<div class="dialog-head"><h2 id="workspaceDialogTitle"></h2><button type="button" class="icon-button" data-close-dialog aria-label="关闭编辑面板">×</button></div><div id="workspaceDialogBody"></div>`;document.body.append(dialog);
     dialog.addEventListener('submit',async event=>{if(event.target.id!=='workspaceForm')return;event.preventDefault();if(!editorSubmit)return;const submit=event.submitter;if(submit)submit.disabled=true;try{const result=await editorSubmit(new FormData(event.target));if(result!==false)dialog.close();}catch(error){$('#editorError').textContent=error.message||'保存失败，请重试。';}finally{if(submit)submit.disabled=false;}});
     $('#courseSelect').addEventListener('change',event=>selectCourse(event.target.value));
+    globalThis.addEventListener('xueya:followup-selection',event=>{
+      const {text,messageIndex}=event.detail||{};
+      if(!text)return;
+      if(Number.isInteger(messageIndex)&&state.messages[messageIndex]?.role==='ai')state.followupIndex=messageIndex;
+      const snippet=text.length>80?text.slice(0,80)+'…':text;
+      state.draft='关于「'+snippet+'」：';
+      render();
+      const input=$('#chatInput');
+      if(input){
+        input.focus();
+        try{input.setSelectionRange(input.value.length,input.value.length);}catch{}
+        input.scrollIntoView({behavior:'smooth',block:'center'});
+      }
+      toast('已带入追问内容');
+    });
+    globalThis.XueyaTTS?.subscribe(()=>{if(state.view==='ask')render();});
     globalThis.addEventListener('beforeunload',()=>{if(!globalThis.XueyaPlatform?.isRestoring)persist();});
   }
   function takeAttachments(message){const batch=attachments;attachments=[];message.images=messageImages?.remember(batch,message.id)||[];message.attachmentNames=batch.filter(a=>!a.file.type.startsWith('image/')).map(a=>a.file.name);for(const a of batch)if(!a.file.type.startsWith('image/'))URL.revokeObjectURL(a.url);return batch;}

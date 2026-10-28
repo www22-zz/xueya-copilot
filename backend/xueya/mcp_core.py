@@ -12,7 +12,11 @@ from urllib.parse import quote
 
 import httpx
 from jsonschema import Draft202012Validator
-from mcp import Client, types
+from mcp import types
+try:
+    from mcp import Client
+except ImportError:
+    from mcp import ClientSession as Client
 from mcp.client.stdio import StdioServerParameters
 from mcp.server.lowlevel import Server
 
