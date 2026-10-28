@@ -2,7 +2,7 @@
 (function(root){
   'use strict';
   const escape=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const categoryNames={all:'全部题库',hot100:'Hot 100',basic:'基础题',interview:'面试题'};
+  const categoryNames={all:'全部题库',hot100:'Hot 100',basic:'基础 100'};
   const kindNames={weakness:'优先巩固',progress:'正在进步',pattern:'练习观察',coverage:'尚待探索'};
   const active=job=>job&&['queued','running','cancelling'].includes(job.status);
   const date=value=>new Date(value).toLocaleString('zh-CN',{timeZone:'Asia/Shanghai',hour12:false});

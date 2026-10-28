@@ -290,7 +290,12 @@ def create_app(config: Config | None = None, *, provider=None, start_jobs=True):
         if path == "/documents/upload" and method == "POST":
             rag = getattr(app.state, "rag", None)
             if rag:
-                return success(job=rag.upload(scope(), value["buffer"], query.get("name", ""), request.headers.get("idempotency-key"), previous_document_id=query.get("previousDocumentId")))
+                job = rag.upload(scope(), value["buffer"], query.get("name", ""), request.headers.get("idempotency-key"), previous_document_id=query.get("previousDocumentId"))
+                if query.get('generatePractice') == '1':
+                    document_id = json.loads(p.db.one('SELECT input FROM jobs WHERE id=?', (job['id'],))['input'])['documentId']
+                    account = (app.state.account.current(request) or {}).get('username') or 'local'
+                    app.state.practice_generation.watch(account, scope(), document_id)
+                return success(job=job)
             return success(job=p.upload(scope(), value["buffer"], query.get("name", ""), request.headers.get("idempotency-key"), query.get("previousDocumentId")))
         if path == "/documents/import-original" and method == "POST":
             doc = p.document(scope(), query.get("documentId"))

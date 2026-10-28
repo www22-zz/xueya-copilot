@@ -92,7 +92,8 @@
           catalog = data;
           state.documents = [...state.documents.filter(d => !d.remote), ...data.documents];
           store.persist();
-          if ($('#documentCount')) $('#documentCount').textContent = state.documents.filter(d => !d.superseded).length;
+          state.documentCount = catalog.documents.filter(d => !d.archived && !d.superseded).length;
+          if ($('#documentCount')) $('#documentCount').textContent = state.documentCount;
           draw();
         } catch (error) {
           if (generation === epoch && $('#libraryWorkspace')) $('#libraryWorkspace').textContent = '资料库未能加载：' + error.message;
@@ -241,7 +242,8 @@
               try {
                 const doc = await window.XueyaWorkspaceBackend.uploadDocument({
                   courseId: sourceCourse,
-                  file
+                  file,
+                  generatePractice: true
                 }, {
                   signal
                 });

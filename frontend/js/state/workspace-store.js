@@ -2,7 +2,7 @@
 (function(root,factory){const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;else root.XueyaWorkspaceStore=api;})(typeof globalThis!=='undefined'?globalThis:this,function(){
 'use strict';
 const KEY='xueya-copilot-workspace-v3',LEGACY='xueya-copilot-state-v2';
-const fields=['documents','messages','sessions','sessionId','courseId','libraryTags','mediaResults','feedback'];
+const fields=['documents','documentCount','messages','sessions','sessionId','courseId','libraryTags','mediaResults','feedback'];
 const clone=value=>JSON.parse(JSON.stringify(value));
 function createStore({storage,learning:L,id=()=>globalThis.crypto.randomUUID(),now=()=>new Date().toISOString()}={}){
   let error='';
@@ -28,7 +28,7 @@ function createStore({storage,learning:L,id=()=>globalThis.crypto.randomUUID(),n
     retainedArchive.keys[k]=v;
     try{storage.setItem(archiveKey,JSON.stringify(retainedArchive));}catch{throw Error('无法保留旧学习记录，请先导出浏览器备份并释放存储空间');}
   }try{storage.setItem(k,JSON.stringify(clean));}catch{error='旧版数据清理失败，请释放浏览器存储空间后刷新';}}}
-  const defaults=()=>({documents:[],messages:[],sessions:[],sessionId:'',libraryTags:[],mediaResults:[],feedback:[]});
+  const defaults=()=>({documents:[],documentCount:null,messages:[],sessions:[],sessionId:'',libraryTags:[],mediaResults:[],feedback:[]});
   function normalize(value={}){
     const result={...defaults(),...value};
     for(const key of ['cards','bank','records','notes','plan','plans','planHistory','graph','chapters','reviewLog','quizDraft','corrections','examRun','quizFilter','quizPool','quizIndex'])delete result[key];
@@ -88,7 +88,33 @@ function createStore({storage,learning:L,id=()=>globalThis.crypto.randomUUID(),n
   function togglePinSession(sessionId){const session=state.sessions.find(s=>s.id===sessionId);if(!session)return false;session.pinned=!session.pinned;persist();return session.pinned;}
   function toggleArchiveSession(sessionId){if(state.pending)return false;const session=state.sessions.find(s=>s.id===sessionId);if(!session)return false;session.archived=!session.archived;if(session.archived&&state.sessionId===sessionId){const nextActive=state.sessions.find(s=>s.id!==sessionId&&!s.archived);if(nextActive){state.sessionId=nextActive.id;state.messages=clone(nextActive.messages||[]);state.selectedDocuments=[...(nextActive.scopeDocumentIds||[])];}else{const fresh={id:id(),title:'新的对话',messages:[],scopeDocumentIds:[],createdAt:now()};state.sessions.unshift(fresh);state.sessionId=fresh.id;state.messages=[];state.selectedDocuments=[];}state.draft='';state.followupIndex=null;}persist();return session.archived;}
   function archive(courseId){const course=courses.find(c=>c.id===courseId);if(!course||state.pending||courses.filter(c=>!c.archived).length<2)return false;if(activeId===courseId)switchCourse(courses.find(c=>!c.archived&&c.id!==courseId).id);course.archived=true;persist();return true;}
-  return{state,persist,newSession,selectSession,branchSession,deleteSession,renameSession,togglePinSession,toggleArchiveSession,switchCourse,addCourse,adoptCourse,archive,get courses(){return courses;},get error(){return error;},exportData(){sync();return JSON.stringify({version:3,exportedAt:now(),activeId,courses},null,2);},restoreCourse(courseId){const course=courses.find(c=>c.id===courseId);if(!course)return false;course.archived=false;return persist();}};
+  function updateSession(sessionId,changes){
+    if(state.pending)return false;
+    sync();const session=state.sessions.find(s=>s.id===sessionId);if(!session)return false;
+    if('title'in changes){const title=String(changes.title).trim().slice(0,80);if(!title)return false;session.title=title;session.customTitle=true;}
+    if('pinned'in changes)session.pinned=!!changes.pinned;
+    if('archived'in changes)session.archived=!!changes.archived;
+    persist();return true;
+  }
+  function removeSession(sessionId){
+    if(state.pending)return false;sync();if(!state.sessions.some(s=>s.id===sessionId))return false;
+    state.sessions=state.sessions.filter(s=>s.id!==sessionId);
+    if(state.sessionId===sessionId){const next=state.sessions.find(s=>!s.archived);if(next)selectSession(next.id);else newSession();}
+    persist();return true;
+  }
+  function copySession(sessionId,{courseId=activeId,activate=false}={}){
+    if(state.pending)return false;sync();const source=state.sessions.find(s=>s.id===sessionId),target=courses.find(c=>c.id===courseId&&!c.archived);if(!source||!target)return false;
+    const copy={...clone(source),id:id(),title:source.title+'（副本）',customTitle:true,pinned:false,archived:false,createdAt:now(),updatedAt:now()};
+    if(courseId!==activeId)copy.scopeDocumentIds=[];
+    if(courseId===activeId){state.sessions.unshift(copy);if(activate)selectSession(copy.id);}else target.data.sessions.unshift(copy);
+    persist();return copy;
+  }
+  function moveSession(sessionId,courseId){
+    if(courseId===activeId)return false;const copied=copySession(sessionId,{courseId});if(!copied)return false;
+    const target=courses.find(c=>c.id===courseId);const session=target.data.sessions.find(s=>s.id===copied.id);session.title=state.sessions.find(s=>s.id===sessionId).title;
+    return removeSession(sessionId);
+  }
+  return{state,persist,newSession,selectSession,branchSession,deleteSession,renameSession,togglePinSession,toggleArchiveSession,switchCourse,addCourse,adoptCourse,archive,updateSession,removeSession,copySession,moveSession,get courses(){return courses;},get error(){return error;},exportData(){sync();return JSON.stringify({version:3,exportedAt:now(),activeId,courses},null,2);},restoreCourse(courseId){const course=courses.find(c=>c.id===courseId);if(!course)return false;course.archived=false;return persist();}};
 }
 return{createStore,KEY,LEGACY};
 });

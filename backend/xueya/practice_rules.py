@@ -11,7 +11,7 @@ STATUS_WRONG = 'wrong'
 CONFIDENCE_UNKNOWN = 'unknown'
 CONFIDENCE_FUZZY = 'fuzzy'
 CONFIDENCE_MASTERED = 'mastered'
-OBJECTIVE = ('single', 'fill')
+OBJECTIVE = ('single', 'multiple', 'boolean', 'fill')
 
 ACTIONS = ('answer', 'correct', 'master', 'conquer', 'fuzzy', 'mark-wrong', 'reset')
 

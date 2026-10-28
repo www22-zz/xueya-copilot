@@ -320,6 +320,8 @@ P3–P5 增量：创建可带 `sourceIds`（1–48 个当前服务器来源 id�
 
 ### 练习模块 /api/practice/*（2026-10-25）
 
+> 本节无课程参数的固定题库仅保留旧调用方兼容；当前页面已切换到下文2026-10-28的资料生成题库，只显示Hot 100和基础100，不再提供面试题入口。
+
 固定内置题库的练习与复习接口。题库不依赖 AI 生成，作答判定在本地完成；以下题库、状态、作答及笔记接口不发起任何付费模型调用。新增的 AI 学习分析接口见下一节。
 调用需同源、本机 Host，并带 `/api/platform/bootstrap` 返回的 `X-Xueya-Token`。已配置账号时还需有效的会话 cookie。
 
@@ -369,3 +371,23 @@ P3–P5 增量：创建可带 `sourceIds`（1–48 个当前服务器来源 id�
 原`ok/answer/sources/knowledgePoints/model`及SSE事件形状保留。`sources`继续为ID数组；可选`sourceDetails`包含这些ID对应的真实来源对象（含title/quote/location及已有资料版本字段），用于显示服务端新检索到、浏览器初始预览中没有的引用。客户端只使用`sources`声明的条目。
 
 新增可选`answerStatus=unavailable`与`reason`用于明确生成/审核未完成，`verification=not-generated`不表示内容已验证；此时正文不粘贴原文、不作为可学习的已完成回答，多步Agent以partial结束。`ok=true`仅表示请求已处理，不能忽略`answerStatus`。模型身份响应可为`engine=assistant-info / verification=server-config`，来自当前应用配置，无模型调用或课程证据。
+
+## 2026-10-28 资料自动生成练习
+
+同日精选题库补充：当前数据结构课程可通过 `practice-curated-selection` artifact选择固定的200题课程快照。`GET /api/practice/bank?courseId=...` 形状保持不变，选中时只返回该套Hot100与基础100。generation摘要增加 `curated:true,units,contentHash`；units为 `{id,name,hot100:10,basic:10}` 数组，页面用其展示知识单元导航并复用原tag筛选。题目增加 `curated:true,subtopic,origin,references`，origin区分authored新编与selected已有经典题选编，并保留原题ID与链接；generated为false。教材摘录只表示知识点背景，不宣称原题出处。安装将原文证据绑定本地实际sourceId、documentId、sourceVersion，资料修订失效时停止作为当前题库。历史快照继续参与旧作答/笔记ID检查和学习分析；个人练习记录仍按账号隔离。不新增HTTP根路由、数据库或模型调用，其他课程不自动启用本套题。
+
+当前页面默认读取 `GET /api/practice/bank?courseId=...`，鉴权沿用练习接口。响应为 `{ok,version,questions,generations,available}`，仅含当前账号、指定课程中已完成且资料修订仍有效的生成题库。未生成时返回空数组，不冒用内置算法题作为当前课程的题目。无courseId的旧调用继续返回原固定题库以保留兼容；其面试题数据不删除，当前页面不显示。
+
+每份资料目标为 `hot100:100` 和 `basic:100`，无 `interview`。Hot100表示该资料的经典重点与综合应用，不声称具有外网热度统计；基础100侧重概念和直接应用。题型为 `single/multiple/fill/boolean`，仅有编程证据时允许 `code`。非编程资料两类题库均包含四种客观题，编程资料可混入代码题。单选answer为下标，多选answer为去重下标数组（至少两个答案），判断answer为布尔值，填空保留answer及acceptedAnswers；代码有solutions语言映射和samples，不执行代码或自动判分。
+
+生成题增加 `generated:true,number,documentId,documentName,sourceId,sourceVersion,evidenceQuote,quality`，保留原练习公共字段。number为该资料在相应类别内的1～100题号；持久化仍使用稳定id。sourceVersion绑定内容修订，逐字依据必须属于服务端提供的原文。生成复用C的QuestionService及题目校验；quality.answerSupport为pending，页面明确提示AI生成、答案需核对，不冒充人审。
+
+`POST /api/platform/knowledge/upload` 保留原job/documentId响应，增加 `practiceGeneration`。首次用户上传登记出题，在RAG发布可读正文后自动启动；同文件导入幂等，不重复生成。旧资料管理上传可用 `/api/platform/documents/upload?...&generatePractice=1` 显式接入相同流程。附件解析、演示导入和CLI导入不因此自动发起出题。知识库catalog增加 `practiceGenerations`，供上传页面展示进度。
+
+generation摘要含 `{id,courseId,documentId,name,status,revision,jobId,completed,target:200,error}`。状态包括waiting_parse、generating、model_unavailable、insufficient_material、succeeded，以及队列的failed/cancelled/unknown和资料失效stale。模型未配置、可读正文不足800字符或原文已变更时明确阻止；800字符仅为最低检查，不保证足以出200道高质量题。只有两类各100道全部完成后才发布到练习；中间成果保存在主平台artifact中，失败不冒充完成。
+
+后台使用主平台JobQueue、API并发许可与模型账本，每批最多5道，代码每批最多2道，受已有单次执行预算限制。每个API作业maxAttempts=1，成功提交一批后原子登记下一批；进程重启保留已提交批次，未知付费调用不自动重放。`POST /api/practice/generation/{id}/resume` 在用户明确操作后继续未完成批次；`POST /api/practice/generation/{id}/cancel` 停止当前作业。两者沿用账号鉴权；其他账号不可访问。整个200题过程可能需要多次外部API调用并产生费用，页面上传前已说明。
+
+原ops/state/notes契约保留，增加生成题ID可用性检查。多选及判断与单选/填空相同，答错自动进错题本；多选答案必须集合完全相等，判断严格按布尔值判定。学习分析快照纳入当前账号生成题及这两类客观题记录。浏览器题库缓存按账号和课程隔离；资料归档、替换或正文修订后，当前题库停止使用失效资料，历史题目依据和学习记录仍保留。
+
+2026-10-28 选择性整合补充：学习分析快照超过原大小限制时，可省略从未有个人作答、操作、自评或笔记的题目明细；`stats.bankQuestions`及作答/错题等整体统计保持完整，增加可选`omittedUnpracticedQuestions`并在`limitations`说明省略范围。已记录题目仍保留；若实际个人记录本身过大，继续返回`ANALYSIS_TOO_LARGE`，不放宽原请求大小上限。客观正确率包含单选、多选、判断和填空，算法仍为自评。

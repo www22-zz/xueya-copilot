@@ -76,7 +76,8 @@ class PracticeAnalysis:
                 args = {'request': request, 'snapshot': report['snapshot'], 'report': report['analysis'],
                         'conversation': report.get('conversation', [])[-6:]}
             else:
-                snapshot = build_snapshot(bank()['questions'], self.practice.events(scope), self.practice.state(account), request)
+                generated = getattr(self, 'generated_catalog', lambda account: [])(account)
+                snapshot = build_snapshot(bank()['questions'] + generated, self.practice.events(scope), self.practice.state(account), request)
                 require(snapshot['stats']['practicedQuestions'] > 0, 'ANALYSIS_NO_RECORDS')
                 args = {'request': request, 'snapshot': snapshot, 'reportId': 'analysis-' + str(uuid4())}
             return self.p.jobs.submit(scope.user_id, {'type': job_type, 'courseId': scope.course_id, 'input': args,

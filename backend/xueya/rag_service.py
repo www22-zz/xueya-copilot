@@ -25,6 +25,7 @@ class RagService:
     def __init__(self, platform, *, embedding=None, ocr=None, rerank=None):
         self.p, self.repo = platform, platform.repo
         self.embedding, self.ocr, self.rerank = embedding, ocr, rerank
+        self.on_publish = None
         for name, handler in (("rag-parse", self.parse_job), ("rag-ocr", self.ocr_job), ("rag-index", self.index_job)):
             platform.jobs.register(name, handler)
         from .prepared_pdf import PreparedPdf
@@ -151,7 +152,10 @@ class RagService:
             updated['ocrPreparation'] = parsed['preparation']
         saved = self.repo.put(scope, "document", doc["id"], updated, doc["version"])
         self._prune_vectors(scope)
-        return {"documentId": doc["id"], "version": saved["version"], "contentRevision": revision, "sourceCount": len(sources), "warnings": parsed["warnings"]}
+        result = {"documentId": doc["id"], "version": saved["version"], "contentRevision": revision, "sourceCount": len(sources), "warnings": parsed["warnings"]}
+        if self.on_publish:
+            self.on_publish(scope, result)
+        return result
 
     async def parse_job(self, scope, args, *, progress, checkpoint, commit):
         doc = self._job_doc(scope, args, "rag-parse")

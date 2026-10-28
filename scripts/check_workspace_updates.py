@@ -3,6 +3,7 @@ import asyncio
 import base64
 import io
 import json
+import os
 from pathlib import Path
 import socket
 import tempfile
@@ -53,7 +54,8 @@ def main():
             assert time.monotonic() < deadline
             time.sleep(.05)
         with sync_playwright() as playwright:
-            browser = playwright.chromium.launch(executable_path='C:/Program Files/Google/Chrome/Application/chrome.exe',
+            chrome=next((str(p) for p in (Path(os.environ.get('CHROME_PATH','C:/Program Files/Google/Chrome/Application/chrome.exe')),Path(os.environ.get('LOCALAPPDATA',''))/'Google/Chrome/Application/chrome.exe') if p.is_file()),None)
+            browser = playwright.chromium.launch(executable_path=chrome,
                                                   headless=True, args=['--autoplay-policy=no-user-gesture-required'])
             context = browser.new_context(viewport={'width': 1440, 'height': 1000})
             messages = [{'id': 'user-one', 'role': 'user', 'text': '解释队列'},

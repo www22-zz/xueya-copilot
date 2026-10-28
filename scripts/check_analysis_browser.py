@@ -9,6 +9,7 @@ import socket
 import tempfile
 import threading
 import time
+from types import SimpleNamespace
 
 import uvicorn
 from playwright.sync_api import sync_playwright, expect
@@ -16,8 +17,9 @@ from playwright.sync_api import sync_playwright, expect
 from backend.xueya.app import create_app
 from backend.xueya.common import require
 from backend.xueya.config import Config, load_config
-from backend.xueya.practice_bank import bank
 from backend.xueya.provider import MimoProvider
+from backend.agent.data_structure_bank import PACKAGE_FILE, TEXTBOOK_HASH
+from backend.xueya.curated_practice import CuratedPractice
 
 CHROME = 'C:/Program Files/Google/Chrome/Application/chrome.exe'
 PRICING_SOURCE = 'https://mimo.mi.com/docs/en-US/price/pay-as-you-go'
@@ -100,6 +102,17 @@ def main():
         while not server.started:
             require(time.monotonic() < deadline, 'TEST_SERVER_TIMEOUT')
             time.sleep(.05)
+        # Use the actual course catalog now shown by the practice page, with isolated evidence bindings.
+        package = json.loads(PACKAGE_FILE.read_text(encoding='utf-8'))
+        platform = app.state.platform
+        scope = platform.scope('course-default')
+        platform.repo.put(scope, 'document', 'analysis-textbook-fixture', {
+            'id': 'analysis-textbook-fixture', 'name': '数据结构教材.pdf', 'kind': 'pdf',
+            'fileHash': TEXTBOOK_HASH, 'contentRevision': 2, 'archived': False, 'status': '已解析', 'chunks': []})
+        sources = [{'id': 'analysis-source-' + str(i), 'quote': q['evidenceQuote'],
+                    'page': q['references'][0]['page'], 'location': '第 ' + str(q['references'][0]['page']) + ' 页'}
+                   for i, q in enumerate(package['questions'])]
+        CuratedPractice(platform, SimpleNamespace(sources=lambda *args, **kwargs: sources)).install(scope, package)
         with sync_playwright() as playwright:
             browser = playwright.chromium.launch(executable_path=CHROME, headless=True)
             context = browser.new_context(viewport={'width': 1440, 'height': 1050})
@@ -112,7 +125,9 @@ def main():
                 assert response.ok, response.text()
                 boot = page.request.get(base + '/api/platform/bootstrap').json()
                 headers = {'X-Xueya-Token': boot['token']}
-                questions = [q for q in bank()['questions'] if q['type'] == 'single'][:6]
+                course_bank = app.state.practice_generation.catalog('analysisuser', 'course-default')['questions']
+                questions = [q for q in course_bank if q['type'] == 'single' and q['category'] == 'basic'][:6]
+                assert len(questions) == 6
                 ops = [{'opId': 'sample-' + str(i), 'kind': 'answer', 'questionId': q['id'],
                         'payload': {'questionType': 'single', 'result': 'wrong' if i < 3 else 'correct', 'selected': 0}}
                        for i, q in enumerate(questions)]
@@ -122,8 +137,11 @@ def main():
                 page.goto(base + '/#space/analysis')
                 expect(page.locator('#analysisModule')).to_be_visible()
                 expect(page.locator('[data-analysis-action=generate]')).to_be_enabled()
-                page.select_option('[data-analysis-filter=category]', 'basic')
-                page.select_option('[data-analysis-filter=days]', '30')
+                for name, value in (('category', 'basic'), ('days', '30')):
+                    field = page.locator(f'[data-analysis-filter={name}]')
+                    label = field.locator(f'option[value="{value}"]').inner_text()
+                    field.locator('..').get_by_role('combobox').click()
+                    page.locator('.practice-select-menu').get_by_role('option', name=label, exact=True).click()
                 page.click('[data-analysis-action=generate]')
                 expect(page.locator('.analysis-status')).to_contain_text('AI', timeout=20000)
                 page.reload()
@@ -141,7 +159,9 @@ def main():
                 link = page.locator('.analysis-next [data-analysis-action=practice]').first
                 target = link.get_attribute('data-id')
                 link.click()
-                expect(page.locator('.practice-detail-meta')).to_contain_text(target)
+                expect(page.locator(f'.practice-row[data-id="{target}"]')).to_have_class('practice-row is-active')
+                expected_title = next(q['title'] for q in course_bank if q['id'] == target)
+                expect(page.locator('.practice-detail h2')).to_have_text(expected_title)
                 checks.append('recommendation-opens-exact-question')
                 page.goto(base + '/#space/analysis')
                 expect(page.locator('.analysis-report')).to_be_visible()
@@ -161,8 +181,9 @@ def main():
                 assert listing['reports'] == [] and listing['jobs'] == []
                 original = page.request.get(base + '/api/practice/analysis', headers=headers).json()['reports'][0]
                 assert other.request.get(base + '/api/practice/analysis/reports/' + original['id'], headers=other_headers).status == 404
-                assert other.request.post(base + '/api/practice/analysis', headers=other_headers,
-                    data={'idempotencyKey': 'empty-other'}).json()['error'] == 'ANALYSIS_NO_RECORDS'
+                empty = other.request.post(base + '/api/practice/analysis', headers=other_headers,
+                    data={'idempotencyKey': 'empty-other'}).json()
+                assert empty.get('error') == 'ANALYSIS_NO_RECORDS', empty
                 other.close()
                 checks.append('account-isolation-and-empty-range-without-ai-call')
                 assert provider.calls == 2

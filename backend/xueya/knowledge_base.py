@@ -139,6 +139,9 @@ def install_knowledge_base(app):
     async def lifespan(host):
         async with previous(host):
             host.state.knowledge = KnowledgeBase(host)
+            from .practice_generation import PracticeGeneration
+            host.state.practice_generation = PracticeGeneration(host)
+            host.state.practice_analysis.generated_catalog = lambda account: host.state.practice_generation.catalog(account, history=True)['questions']
             from .demo_import import DemoImport
             demo = DemoImport(host.state.knowledge, host.state.config)
             host.state.knowledge.demo = demo
@@ -157,7 +160,10 @@ def install_knowledge_base(app):
         kb, q, post = app.state.knowledge, request.query_params, request.method == 'POST'
         if operation == 'upload' and post:
             scope = kb.p.scope(q.get('courseId', 'course-default'))
-            return success(**kb.upload(scope, await body(request, document_limit(q.get('name'))), q.get('name'), q.get('chapter', ''), request.headers.get('idempotency-key')))
+            uploaded = kb.upload(scope, await body(request, document_limit(q.get('name'))), q.get('name'), q.get('chapter', ''), request.headers.get('idempotency-key'))
+            account = (app.state.account.current(request) or {}).get('username') or 'local'
+            generated = app.state.practice_generation.watch(account, scope, uploaded['documentId'])
+            return success(**uploaded, practiceGeneration=generated)
         value = await json_body(request) if post else {}
         if operation == 'bases' and not post:
             return success(bases=[c for c in kb.p.repo.courses(kb.p.user_id) if not c['archived']])
@@ -179,7 +185,8 @@ def install_knowledge_base(app):
         if operation == 'visual-apply' and post:
             return success(job=kb.visual.submit(scope, value))
         if operation == 'catalog' and not post:
-            return success(**kb.catalog(scope))
+            account = (app.state.account.current(request) or {}).get('username') or 'local'
+            return success(**kb.catalog(scope), practiceGenerations=app.state.practice_generation.catalog(account, scope.course_id)['generations'])
         if operation == 'search' and post:
             mode = value.get('mode', 'lexical')
             require(mode in ('lexical', 'vector', 'hybrid', 'rerank'), 'INVALID_SEARCH_MODE')

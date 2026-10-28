@@ -1,6 +1,7 @@
+import re
 from ..core import require, clone, normalized, fingerprint, finite, instant
 
-TYPES = {'single', 'multiple', 'boolean', 'fill', 'short'}
+TYPES = {'single', 'multiple', 'boolean', 'fill', 'short', 'code'}
 
 
 def validate_question(q, sources):
@@ -60,10 +61,19 @@ def validate_question(q, sources):
             and len({x['id'] for x in rubric}) == len(rubric),
             'INVALID_RUBRIC',
         )
+    if q['type'] == 'code':
+        require(isinstance(q.get('solutions'), dict) and q['solutions']
+                and all(isinstance(k, str) and re.fullmatch(r'[a-zA-Z0-9_+#-]{1,24}', k) and isinstance(v, str) and v.strip()
+                        for k, v in q['solutions'].items()), 'INVALID_CODE_SOLUTION')
+        require(isinstance(q.get('samples'), list) and q['samples']
+                and all(isinstance(s, dict) and isinstance(s.get('input'), str)
+                        and isinstance(s.get('output'), str) for s in q['samples']), 'INVALID_CODE_SAMPLES')
     return {**clone(q), 'status': 'approved' if q.get('status') == 'approved' else 'candidate'}
 
 
 def grade(q, answer):
+    if q['type'] == 'code':
+        return {'status': 'awaiting_review', 'score': None, 'maxScore': 1, 'method': 'code-self-review'}
     maximum = sum(x['points'] for x in q['rubric']) if q['type'] == 'short' else 1
     if answer is None or isinstance(answer, str) and not answer.strip() or isinstance(answer, list) and not answer:
         return {'status': 'unanswered', 'score': None, 'maxScore': maximum}

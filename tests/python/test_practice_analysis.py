@@ -246,3 +246,24 @@ def test_active_job_guard_and_changed_idempotency_request(tmp_path):
         assert client.post('/api/practice/analysis', json={**body, 'days': 30}).json()['error'] == 'IDEMPOTENCY_CONFLICT'
         assert client.post('/api/practice/analysis', json={'idempotencyKey': 'second-key'}).json()['error'] == 'ANALYSIS_BUSY'
         assert not provider.calls
+
+
+@pytest.mark.parametrize('recorded', [False, True])
+def test_expanded_course_catalog_keeps_recorded_evidence_and_bounds_untouched_coverage(recorded):
+    questions = [{**catalog()[0], 'id': f'course-{i}', 'title': '课程知识点' * 12,
+                  'type': 'multiple' if i == 0 else 'boolean', 'tags': ['课程范围' * 8]}
+                 for i in range(700)]
+    events = [event('multiple', 'answer', '2026-10-26T17:00:00Z', q='course-0', result='wrong'),
+              event('boolean', 'answer', '2026-10-26T17:01:00Z', q='course-1', result='correct')] if recorded else []
+    state = {'notes': {'course-2': {'text': '保留这条独立笔记'}},
+             'statuses': {'course-3': {'status': 'mastered'}}} if recorded else {}
+    snapshot = build_snapshot(questions, events, state, {}, NOW)
+    assert snapshot['stats']['bankQuestions'] == 700
+    assert snapshot['stats']['attempts'] == (2 if recorded else 0)
+    assert snapshot['stats']['correct'] == (1 if recorded else 0)
+    assert snapshot['stats']['practicedQuestions'] == (2 if recorded else 0)
+    assert snapshot['stats']['selfReportedMastered'] == (1 if recorded else 0)
+    assert {q['id'] for q in snapshot['questions']} == ({'course-0', 'course-1', 'course-2', 'course-3'} if recorded else set())
+    assert snapshot['omittedUnpracticedQuestions'] == (696 if recorded else 700)
+    assert len(json.dumps(snapshot, ensure_ascii=False).encode()) < 115000
+    assert any('未发送逐题信息' in text for text in snapshot['limitations'])

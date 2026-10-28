@@ -2,8 +2,8 @@
 (function(root,factory){const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;else root.XueyaPracticeStore=api;})(typeof globalThis!=='undefined'?globalThis:this,function(){
 'use strict';
 const KEY='xueya-practice-v1',OPS='xueya-practice-ops';
-const CATEGORIES=['hot100','basic','interview'],STATUSES=['pending','mastered','wrong'],ACTIONS=['answer','correct','master','conquer','fuzzy','mark-wrong','reset','note-save'];
-const OBJECTIVE=['single','fill'];
+const CATEGORIES=['hot100','basic'],STATUSES=['pending','mastered','wrong'],ACTIONS=['answer','correct','master','conquer','fuzzy','mark-wrong','reset','note-save'];
+const OBJECTIVE=['single','multiple','boolean','fill'];
 const blank=()=>({status:'pending',confidence:'unknown',wrongCount:0,correctCount:0,wrongEnteredAt:null,lastWrongAt:null,lastResult:null,masteredAt:null,lastOperationAt:null,revision:0});
 function entry(progress,questionId){let row=progress[questionId];if(!row){row=blank();progress[questionId]=row;}return row;}
 function apply(progress,question,action,payload={}){
@@ -68,6 +68,8 @@ function mergeNote(existing,text,baseRevision,at='',device=''){
 function judgeAnswer(question,value){
   if(!question)return false;
   if(question.type==='single')return Number(value)===Number(question.answer);
+  if(question.type==='boolean')return typeof value==='boolean'&&value===question.answer;
+  if(question.type==='multiple')return Array.isArray(value)&&new Set(value).size===value.length&&value.length===question.answer.length&&value.every(v=>question.answer.includes(v));
   if(question.type==='fill'){
     const norm=s=>String(s==null?'':s).trim().toLowerCase();
     const accepted=(question.acceptedAnswers&&question.acceptedAnswers.length?question.acceptedAnswers:[question.answer]).map(norm);
@@ -83,7 +85,7 @@ function createStore({storage=globalThis.localStorage,accountId='local',now=()=>
   const read=k=>{try{const saved=recovery?.getItem('xueya-recovery:'+k);return JSON.parse(saved||storage.getItem(k)||'null');}catch{return null;}};
   const defaults={version:2,accountId,serverSeq:0,statuses:{},notes:{},drafts:{},filters:{},ui:{category:'hot100',selectedQuestionId:null,listScroll:0,mode:'order',language:'python',wrongSort:'recent',positions:{},reviewFilters:{}}};
   const state=Object.assign({},defaults,read(key)||{});state.accountId=accountId;
-  state.ui=Object.assign({},defaults.ui,state.ui||{});state.ui.positions=state.ui.positions||{};
+  state.ui=Object.assign({},defaults.ui,state.ui||{});state.ui.positions=state.ui.positions||{};if(!CATEGORIES.includes(state.ui.category))state.ui.category='hot100';
   state.ui.reviewFilters=state.ui.reviewFilters||{};state.ui.detailFullscreen=false;delete state.ui.shortDraft;
   for(const category of CATEGORIES)state.filters[category]=Object.assign({keyword:'',subject:'',tag:'',difficulty:'',type:'',status:'pending'},state.filters[category]||{});
   for(const category of CATEGORIES)if(!state.filters[category].status)state.filters[category].status='pending';
@@ -105,7 +107,7 @@ function createStore({storage=globalThis.localStorage,accountId='local',now=()=>
       request.onerror=request.onblocked=()=>{hydrated=true;resolve();};
       request.onsuccess=()=>{journal=request.result;journal.onversionchange=()=>journal.close();
         const tx=journal.transaction('records','readonly'),records=tx.objectStore('records'),saved=records.get(key),savedQueue=records.get(opsKey);
-        tx.oncomplete=()=>{try{if(saved.result){const restored=JSON.parse(saved.result),ui=state.ui;Object.assign(ui,restored.ui||{});Object.assign(state,restored,{accountId,ui});ui.detailFullscreen=false;}if(savedQueue.result)queue=JSON.parse(savedQueue.result);}catch{lastError='恢复副本无法读取，请检查浏览器存储';}
+        tx.oncomplete=()=>{try{if(saved.result){const restored=JSON.parse(saved.result),ui=state.ui;Object.assign(ui,restored.ui||{});Object.assign(state,restored,{accountId,ui});if(!CATEGORIES.includes(ui.category))ui.category='hot100';ui.detailFullscreen=false;}if(savedQueue.result)queue=JSON.parse(savedQueue.result);}catch{lastError='恢复副本无法读取，请检查浏览器存储';}
           hydrated=true;persist();persistQueue();resolve();};
         tx.onerror=tx.onabort=()=>{hydrated=true;resolve();};};
     }catch{hydrated=true;resolve();}

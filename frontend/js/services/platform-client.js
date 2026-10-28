@@ -16,8 +16,8 @@ function changed(){if(restoring||!enabled||conflict||!context)return;try{localSt
 function flush(){clearTimeout(timer);chain=chain.catch(()=>{}).then(async()=>{if(!enabled||conflict)return;const pending=localStorage.getItem(PENDING);if(!pending)return;try{const saved=await request('/workspace',{method:'PUT',body:{workspace:JSON.parse(pending),expectedVersion:etag}});etag=saved.workspace.version;mark();if(localStorage.getItem(PENDING)===pending)localStorage.removeItem(PENDING);status('已保存到本地服务');}catch(error){conflict=error.code==='VERSION_CONFLICT';status(conflict?'发现数据版本冲突，请先备份并选择恢复版本':'尚未同步，浏览器副本仍保留');throw error;}});return chain;}
 async function ensureCourse(courseId){const course=context?.store.courses.find(c=>c.id===courseId);if(course)await request('/courses',{method:'POST',body:{id:course.id,name:course.name,archived:!!course.archived}});}
 const adapter={
-  async uploadDocument({courseId,file,previousDocumentId},{signal,onProgress=()=>{}}={}){
-    await ensureCourse(courseId);const query=new URLSearchParams({courseId,name:file.name,...(previousDocumentId?{previousDocumentId}:{})});
+  async uploadDocument({courseId,file,previousDocumentId,generatePractice=false},{signal,onProgress=()=>{}}={}){
+    await ensureCourse(courseId);const query=new URLSearchParams({courseId,name:file.name,...(previousDocumentId?{previousDocumentId}:{}),...(generatePractice?{generatePractice:'1'}:{})});
     const result=await request('/documents/upload?'+query,{method:'POST',body:file,signal,headers:{'Idempotency-Key':crypto.randomUUID()}});
     let job=result.job;
     while(!['succeeded','failed','cancelled','unknown'].includes(job.status)){signal?.throwIfAborted();onProgress(job.progress?.label?job.progress:{label:'等待后台解析',percent:5});await new Promise((resolve,reject)=>{const timeout=setTimeout(done,200);function done(){signal?.removeEventListener('abort',abort);resolve();}function abort(){clearTimeout(timeout);reject(signal.reason);}signal?.addEventListener('abort',abort,{once:true});});job=(await request('/jobs/status?id='+job.id,{signal})).job;}

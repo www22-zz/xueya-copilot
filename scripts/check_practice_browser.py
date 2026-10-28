@@ -1,5 +1,6 @@
 """Real Chrome acceptance against an isolated local server. Never reads .env or production data."""
 import json
+import os
 import socket
 import tempfile
 import threading
@@ -9,8 +10,9 @@ import uvicorn
 from playwright.sync_api import sync_playwright, expect
 from backend.xueya.app import create_app
 from backend.xueya.config import Config
+from backend.xueya.practice_bank import bank as fixed_bank
 
-CHROME = 'C:/Program Files/Google/Chrome/Application/chrome.exe'
+CHROME = os.environ.get('CHROME_PATH', 'C:/Program Files/Google/Chrome/Application/chrome.exe')
 
 
 def main():
@@ -27,6 +29,10 @@ def main():
         thread.start()
         while not server.started:
             time.sleep(.05)
+        # Keep fixed IDs for the existing progress/offline regression scenarios.
+        # Automatic document generation has its own end-to-end acceptance script.
+        app.state.practice_generation.catalog = lambda account, course_id=None, history=False: {
+            **fixed_bank(), 'questions': [] if history else fixed_bank()['questions'], 'generations': [], 'available': False}
         with sync_playwright() as p:
             browser = p.chromium.launch(executable_path=CHROME, headless=True)
             context = browser.new_context(viewport={'width': 1440, 'height': 1000})
@@ -36,6 +42,11 @@ def main():
             page.on('pageerror', lambda error: errors.append(str(error)))
             def action(name):
                 return page.locator('#practiceModule [data-action="' + name + '"]')
+            def select_filter(name, value):
+                field = page.locator(f'select[data-filter="{name}"]')
+                label = field.locator(f'option[value="{value}"]').inner_text()
+                field.locator('..').get_by_role('combobox').click()
+                page.locator('.practice-select-menu').get_by_role('option', name=label, exact=True).click()
             def go(route):
                 page.goto(base + '/#space/' + route)
                 expect(page.locator('#spacePage')).to_be_visible()
@@ -74,21 +85,17 @@ def main():
                 assert 'class Solution' in page.locator('.practice-code').inner_text()
                 assert page.locator('a', has_text='在力扣打开').get_attribute('target') == '_blank'
                 record('hot100-visible-folded-three-languages-original-link')
-                action('category').filter(has_text='基础题').click()
+                action('category').filter(has_text='基础 100').click()
                 expect(page.locator('.practice-row')).to_have_count(100)
                 assert 'foundation' in page.url
-                action('category').filter(has_text='面试题').click()
-                expect(page.locator('.practice-row')).to_have_count(50)
+                assert action('category').filter(has_text='面试题').count() == 0
                 assert page.locator('.practice-answer').count() == 0
-                page.locator('[data-short]').fill('temporary scratch')
-                action('reveal').click()
-                expect(page.locator('.practice-answer')).to_contain_text('关键得分点')
                 first = current_id()
                 action('mark-wrong').click()
                 assert current_id() == first
                 synced()
                 assert state()['statuses'][first]['wrongCount'] == 0
-                record('categories-interview-fold-self-grade-no-error-count')
+                record('two-categories-no-interview-manual-wrong-entry-no-error-count')
                 action('category').filter(has_text='Hot 100').click()
                 search = page.locator('[data-filter=keyword]')
                 search.fill('两数之和')
@@ -128,8 +135,8 @@ def main():
                 assert state()['notes'][note_id]['text'] == ''
                 record('note-switch-before-debounce-markdown-preview-clear-save')
                 # Correct and wrong objective attempts are exercised through the submit button.
-                action('category').filter(has_text='基础题').click()
-                page.locator('[data-filter=type]').select_option('single')
+                action('category').filter(has_text='基础 100').click()
+                select_filter('type', 'single')
                 expect(page.locator('.practice-row')).to_have_count(50)
                 qid = current_id()
                 bank = json.loads(Path('backend/xueya/data/practice_bank.json').read_text(encoding='utf-8'))['questions']
@@ -161,7 +168,7 @@ def main():
                 assert state()['statuses'][qid]['status'] == 'mastered'
                 record('review-folded-conquer-advances')
                 go('practice/foundation')
-                page.locator('[data-filter=type]').select_option('fill')
+                select_filter('type', 'fill')
                 qid = current_id()
                 page.locator('[data-fill]').fill('a deliberately wrong answer')
                 action('submit-fill').click()
@@ -192,16 +199,17 @@ def main():
                 assert state()['statuses'][qid]['wrongCount'] == 0
                 record('offline-state-note-refresh-reconnect-deduplicate')
                 # Actual mobile navigation and list-position restoration.
-                go('practice/interview')
+                go('practice/foundation')
+                select_filter('type', 'fill')
                 page.set_viewport_size({'width': 390, 'height': 844})
                 page.locator('.practice-row').nth(2).click()
                 expect(page.locator('.practice-module')).to_have_class(__import__('re').compile('is-fullscreen'))
-                page.locator('[data-short]').fill('not persistent')
+                page.locator('[data-fill]').fill('not persistent')
                 page.screenshot(path=str(output / 'mobile.png'), full_page=True)
                 action('back').click()
                 expect(page.locator('.practice-list-pane')).to_be_visible()
                 page.reload()
-                assert page.locator('[data-short]').input_value() == ''
+                assert page.locator('[data-fill]').input_value() == ''
                 assert page.locator('.practice-answer').count() == 0
                 record('mobile-fullscreen-back-refresh-clears-transient')
                 page.set_viewport_size({'width': 1440, 'height': 1000})
@@ -266,6 +274,13 @@ def main():
                 expect(page.locator('#workspaceDialog')).to_be_hidden()
                 assert state()['statuses'] == before_course['statuses']
                 assert state()['notes'] == before_course['notes']
+                # This state-regression fixture deliberately shares its catalog with
+                # the second course; production courses begin empty until upload.
+                course_id = page.evaluate("JSON.parse(localStorage.getItem('xueya-copilot-workspace-v3')).activeId")
+                bootstrap = context.request.get(base + '/api/platform/bootstrap').json()
+                prepared = context.request.post(base + '/api/platform/courses',
+                    headers={'X-Xueya-Token': bootstrap['token']}, data={'id':course_id,'name':'跨课程验证'})
+                assert prepared.ok
                 go('practice/hot100')
                 action('clear-filters').first.click()
                 page.locator('.practice-row').first.click()

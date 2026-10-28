@@ -6,12 +6,15 @@ import uvicorn
 from playwright.sync_api import sync_playwright,expect
 from backend.xueya.app import create_app
 from backend.xueya.config import Config
+from backend.xueya.practice_bank import bank
 out=Path('test-results/practice-requirements');out.mkdir(parents=True,exist_ok=True);results={}
 with tempfile.TemporaryDirectory(prefix='requirements-audit-',ignore_cleanup_errors=True) as d:
  sock=socket.socket();sock.bind(('127.0.0.1',0));base='http://127.0.0.1:'+str(sock.getsockname()[1])
  app=create_app(Config(data_dir=Path(d),api_key=''))
  server=uvicorn.Server(uvicorn.Config(app,log_level='error'));thread=threading.Thread(target=lambda:server.run(sockets=[sock]),daemon=True);thread.start()
  while not server.started:time.sleep(.02)
+ # Fixed-ID state-regression fixture; generated banks are covered separately.
+ app.state.practice_generation.catalog=lambda account,course_id=None,history=False:{**bank(),'questions':[] if history else bank()['questions'],'generations':[],'available':False}
  with sync_playwright() as pw:
   browser=pw.chromium.launch(executable_path='C:/Program Files/Google/Chrome/Application/chrome.exe',headless=True)
   ctx=browser.new_context(viewport={'width':390,'height':844},service_workers='block');page=ctx.new_page();page.set_default_timeout(12000);errors=[];page.on('pageerror',lambda e:errors.append(str(e)))
@@ -22,6 +25,10 @@ with tempfile.TemporaryDirectory(prefix='requirements-audit-',ignore_cleanup_err
   def op(oid,kind,qid,payload=None,at=None):return {'opId':oid,'kind':kind,'questionId':qid,'payload':payload or {},**({'clientTs':at} if at else {})}
   def go(route):
    page.goto(base+'/#space/'+route);page.wait_for_function("document.querySelectorAll('.practice-row').length>0")
+  def select_filter(name,value):
+   field=page.locator(f'select[data-filter="{name}"]');label=field.locator(f'option[value="{value}"]').inner_text()
+   field.locator('..').get_by_role('combobox').click()
+   page.locator('.practice-select-menu').get_by_role('option',name=label,exact=True).click()
   try:
    go('practice/hot100');page.locator('[data-action=random]').click()
    results['mobile_random']={'fullscreen':page.locator('.practice-module').evaluate("e=>e.classList.contains('is-fullscreen')"),'detail_visible':page.locator('.practice-detail-pane').is_visible()}
@@ -58,7 +65,7 @@ with tempfile.TemporaryDirectory(prefix='requirements-audit-',ignore_cleanup_err
    print('CORRECTION_QUEUE',results['correction_queue'],flush=True)
    # Re-entering an older wrong question should sort by its new entry time.
    post([op('oldwrong','answer','b-dsa-f02',{'questionType':'fill','result':'wrong'},'2026-02-01T00:00:00.000Z'),op('resetold','reset','b-dsa-f02',{},'2026-02-02T00:00:00.000Z'),op('otherwrong','mark-wrong','b-dsa-f03',{},'2026-02-03T00:00:00.000Z'),op('readdold','mark-wrong','b-dsa-f02',{},'2026-02-04T00:00:00.000Z')])
-   go('review');page.locator('[data-filter=type]').select_option('fill')
+   go('review');select_filter('type','fill')
    visible=page.locator('.practice-row').evaluate_all('es=>es.map(e=>e.dataset.id)')
    results['wrong_sort']={'actual':visible,'expected_first':'b-dsa-f02'}
    print('WRONG_SORT',results['wrong_sort'],flush=True)
@@ -66,6 +73,8 @@ with tempfile.TemporaryDirectory(prefix='requirements-audit-',ignore_cleanup_err
    go('practice/hot100');page.locator('[data-filter=keyword]').fill('h100-01')
    post([op('remote-master','master','h100-01')])
    page.wait_for_function("JSON.parse(localStorage.getItem('xueya-practice-v1:auditor')).statuses['h100-01']?.status==='mastered'",timeout=15000)
+   # State is persisted before the async catalog refresh finishes and the view renders.
+   expect(page.locator('.practice-row')).to_have_count(0)
    results['stale_visible_list']={'rows':page.locator('.practice-row').count(),'detail_status':page.locator('.practice-detail-head .chip').all_text_contents(),'stored_status':page.evaluate("JSON.parse(localStorage.getItem('xueya-practice-v1:auditor')).statuses['h100-01'].status"),'focused_field':page.evaluate('document.activeElement.dataset.filter')}
    page.screenshot(path=str(out/'stale-search.png'),full_page=True)
    print('STALE_LIST',results['stale_visible_list'],flush=True)
@@ -84,12 +93,16 @@ with tempfile.TemporaryDirectory(prefix='requirements-audit-',ignore_cleanup_err
     expect(current_page.locator('[data-fill]')).to_be_visible()
    for current_page in (page,page2):
     current_page.locator('[data-fill]').fill('not-canonical-'+str(current_page==page2))
-    current_page.locator('[data-action=submit-fill]').click()
+    with current_page.expect_response(lambda response: response.url.endswith('/api/practice/ops') and any(operation.get('kind')=='answer' and operation.get('questionId')=='b-dsa-f04' for operation in (response.request.post_data_json or {}).get('ops',[]))) as saved:
+     current_page.locator('[data-action=submit-fill]').click()
+    assert saved.value.json()['accepted'],saved.value.json()
     expect(current_page.locator('.practice-result')).to_contain_text('回答错误')
     current_page.wait_for_function("JSON.parse(localStorage.getItem('xueya-practice-ops:auditor')||'[]').length===0")
     print('UI_ANSWER',current_page==page2,current_page.evaluate('window.XueyaAccountId'),ctx.request.get(base+'/api/practice/state',headers=headers).json()['statuses'].get('b-dsa-f04'),flush=True)
    for current_page in (page,page2):
-    current_page.locator('[data-action=also-correct]').click()
+    with current_page.expect_response(lambda response: response.url.endswith('/api/practice/ops') and any(operation.get('kind')=='correct' and operation.get('questionId')=='b-dsa-f04' for operation in (response.request.post_data_json or {}).get('ops',[]))) as saved:
+     current_page.locator('[data-action=also-correct]').click()
+    assert saved.value.json()['accepted'],saved.value.json()
     current_page.wait_for_function("JSON.parse(localStorage.getItem('xueya-practice-ops:auditor')||'[]').length===0")
     expect(current_page.locator('.practice-result')).to_contain_text('回答正确')
     print('UI_CORRECTION',current_page==page2,ctx.request.get(base+'/api/practice/state',headers=headers).json()['statuses'].get('b-dsa-f04'),flush=True)
