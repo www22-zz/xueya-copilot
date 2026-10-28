@@ -40,7 +40,21 @@ def install_practice(app):
     @router.get('/bank')
     async def get_bank(request: Request):
         authorize(request)
+        if request.query_params.get('courseId'):
+            course = request.query_params['courseId']
+            app.state.platform.repo.require_course(app.state.platform.scope(course), archived=True)
+            return success(**app.state.practice_generation.catalog(account_id(request), course))
         return success(**bank())
+
+    @router.post('/generation/{set_id}/resume')
+    async def resume_generation(request: Request, set_id: str):
+        authorize(request)
+        return success(generation=app.state.practice_generation.resume(account_id(request), set_id))
+
+    @router.post('/generation/{set_id}/cancel')
+    async def cancel_generation(request: Request, set_id: str):
+        authorize(request)
+        return success(generation=app.state.practice_generation.cancel(account_id(request), set_id))
 
     @router.get('/state')
     async def get_state(request: Request):
@@ -53,13 +67,14 @@ def install_practice(app):
         value = await json_body(request, 1_000_000)
         ops = value.get('ops')
         require(isinstance(ops, list) and 1 <= len(ops) <= 200, 'INVALID_OPS')
+        account = account_id(request)
+        generated = {q['id']: q for q in app.state.practice_generation.catalog(account, history=True)['questions']}
         valid, rejected = [], []
         for op in ops:
-            if not isinstance(op, dict) or question(op.get('questionId')) is None:
+            if not isinstance(op, dict) or (question(op.get('questionId')) is None and op.get('questionId') not in generated):
                 rejected.append({'opId': op.get('opId') if isinstance(op, dict) else None, 'error': 'UNKNOWN_QUESTION'})
             else:
                 valid.append(op)
-        account = account_id(request)
         result = store().accept(account, valid, device=str(value.get('deviceTag') or '')[:64]) if valid else {
             'accepted': [], 'duplicates': [], 'rejected': [], **store().state(account)}
         result['rejected'].extend(rejected)
@@ -68,7 +83,7 @@ def install_practice(app):
     @router.get('/notes/{question_id}')
     async def get_note(request: Request, question_id: str):
         authorize(request)
-        require(question(question_id) is not None, 'UNKNOWN_QUESTION')
+        require(question(question_id) is not None or any(q['id'] == question_id for q in app.state.practice_generation.catalog(account_id(request), history=True)['questions']), 'UNKNOWN_QUESTION')
         return success(note=store().note(account_id(request), question_id))
 
     @router.get('/analysis')

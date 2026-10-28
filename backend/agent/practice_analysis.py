@@ -41,7 +41,7 @@ def build_snapshot(catalog, events, state, options, now=None):
         if not q or not at or at > now or event.get('action') == 'note-save':
             continue
         payload, action = event.get('payload') or {}, event.get('action')
-        if action == 'answer' and q['type'] in ('single', 'fill') and payload.get('result') in ('correct', 'wrong'):
+        if action == 'answer' and q['type'] in ('single', 'multiple', 'boolean', 'fill') and payload.get('result') in ('correct', 'wrong'):
             attempts[event['id']] = {'id': event['id'], 'questionId': q['id'], 'at': at,
                                       'result': payload['result'], 'selected': payload.get('selected')}
         elif action == 'correct' and q['type'] == 'fill':
