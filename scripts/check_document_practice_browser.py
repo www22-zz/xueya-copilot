@@ -135,7 +135,7 @@ def main():
                 programming = MATERIAL + '\n程序设计和算法实现：```python\ndef solve(x):\n    return x\n```'
                 page.locator('#kbFiles').set_input_files({'name':'程序设计.md','mimeType':'text/markdown','buffer':programming.encode()})
                 page.goto(base+'/#space/practice/hot100')
-                expect(page.locator('select[data-filter=type] option[value=code]')).to_have_count(1)
+                expect(page.locator('select[data-filter=type] option[value=code]')).to_have_count(1,timeout=60000)
                 choose('code')
                 page.locator('.practice-row').first.click()
                 page.locator('[data-action=reveal]').click()

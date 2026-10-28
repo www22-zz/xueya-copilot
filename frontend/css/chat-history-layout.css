@@ -1,35 +1,40 @@
+/* Conversation-only sidebar layout */
 .history-mobile-toggle,.history-mobile-close,.history-backdrop,[data-history-resize]{display:none}
 @media(min-width:761px){
- body.history-layout .site-header{margin-left:var(--history-width,20vw);width:calc(100% - var(--history-width,20vw));padding-inline:32px}
- body.history-layout #spacePage:not([hidden]){width:calc(100% - var(--history-width,20vw) - 64px);max-width:none;margin-left:calc(var(--history-width,20vw) + 32px);margin-right:32px}
+ body.history-layout .site-header{margin-left:var(--history-width,20vw);width:calc(100% - var(--history-width,20vw));padding-inline:32px;box-sizing:border-box}
+ body.history-layout #spacePage:not([hidden]){width:calc(100% - var(--history-width,20vw) - 64px);max-width:none;margin-left:calc(var(--history-width,20vw) + 32px);margin-right:32px;box-sizing:border-box}
  body.history-layout .workspace-chat{display:block}
  body.history-layout .workspace-main>.space-nav{flex-wrap:wrap;row-gap:10px}
- body.history-layout .session-panel{position:fixed;inset:0 auto 0 0;width:var(--history-width,20vw);height:100dvh;max-height:100dvh;z-index:125;display:flex;flex-direction:column;padding:26px 20px 88px!important;border:0;border-right:1px solid var(--line);border-radius:0;background:var(--white);box-shadow:none}
+ body.history-layout .session-panel{position:fixed;inset:0 auto 0 0;width:var(--history-width,20vw);height:100dvh;max-height:100dvh;z-index:125;display:flex;flex-direction:column;padding:16px 12px 14px!important;border:0;border-right:1px solid var(--line);border-radius:0;background:var(--white);box-shadow:none;box-sizing:border-box;overflow:hidden!important}
  body.history-layout .session-panel .panel-toolbar{flex:none;gap:10px;min-width:0}
  body.history-layout .session-panel .filter-input{flex:none}
- body.history-layout .session-list{display:flex;flex-direction:column;gap:5px;flex:1;min-height:0;max-height:none;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;padding-right:4px}
- body.history-layout .session-item{flex:none;width:100%;min-width:0;max-width:none;text-align:left}
- body.history-layout .session-item strong{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
- body.history-layout [data-history-resize]{display:block;position:absolute;top:0;right:0;width:10px;height:100%;cursor:col-resize;touch-action:none;outline:none}
+ body.history-layout .session-list{display:flex;flex-direction:column;gap:2px;flex:1;min-height:0;max-height:none;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;padding-right:2px}
+ body.history-layout [data-history-resize]{display:block;position:absolute;top:0;right:0;width:10px;height:100%;cursor:col-resize;touch-action:none;outline:none;z-index:130}
  body.history-layout [data-history-resize]::after{content:"";position:absolute;top:45%;right:3px;height:60px;width:3px;border-radius:4px;background:var(--line);transition:background .15s}
  body.history-layout [data-history-resize]:hover::after,body.history-layout [data-history-resize]:focus-visible::after{background:var(--blue)}
- body.history-resizing,body.history-resizing *{cursor:col-resize!important;user-select:none!important}
+ body.history-resizing,body.history-resizing *{cursor:col-resize!important;user-select:none!important;transition:none!important}
  body.history-resizing :is(.cursor-dot,.cursor-ring){display:none!important}
+
+ /* Animation transitions ONLY when not manually resizing */
+ body.history-layout:not(.history-resizing) .session-panel{transition:transform .22s cubic-bezier(.16,1,.3,1)!important}
+ body.history-layout:not(.history-resizing) .site-header{transition:margin-left .22s cubic-bezier(.16,1,.3,1),width .22s cubic-bezier(.16,1,.3,1)!important}
+ body.history-layout:not(.history-resizing) #spacePage:not([hidden]){transition:margin-left .22s cubic-bezier(.16,1,.3,1),width .22s cubic-bezier(.16,1,.3,1)!important}
+
+ /* Collapsed sidebar rules */
+ body.history-layout.sidebar-collapsed .session-panel{display:none!important;visibility:hidden!important;opacity:0!important;pointer-events:none!important;width:0!important;min-width:0!important;max-width:0!important;padding:0!important;border:none!important}
+ body.history-layout.sidebar-collapsed .site-header{margin-left:0!important;width:100%!important}
+ body.history-layout.sidebar-collapsed #spacePage:not([hidden]){margin-left:32px!important;width:calc(100% - 64px)!important}
+ body.history-layout.sidebar-collapsed [data-history-resize]{display:none!important}
 }
 @media(max-width:760px){
  body.history-layout .workspace-chat{display:block}
  body.history-layout .history-mobile-toggle{display:inline-flex;white-space:nowrap}
  body.history-layout .history-mobile-close{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;padding:0;border:0;background:transparent;color:var(--ink);font-size:24px}
- body.history-layout .session-panel{position:fixed;inset:0 auto 0 0;z-index:170;width:min(340px,86vw);height:100dvh;max-height:100dvh;display:none;flex-direction:column;border:0;border-right:1px solid var(--line);border-radius:0;padding:22px 18px 24px!important;background:var(--white);box-shadow:18px 0 60px #10172925}
+ body.history-layout .session-panel{position:fixed;inset:0 auto 0 0;z-index:170;width:min(340px,86vw);height:100dvh;max-height:100dvh;display:none;flex-direction:column;border:0;border-right:1px solid var(--line);border-radius:0;padding:16px 12px 14px!important;background:var(--white);box-shadow:18px 0 60px #10172925}
  body.history-layout.history-drawer-open{overflow:hidden}
  body.history-layout.history-drawer-open #spacePage{z-index:150}
  body.history-layout.history-drawer-open .session-panel{display:flex}
  body.history-layout.history-drawer-open .history-backdrop{display:block;position:fixed;inset:0;z-index:160;border:0;background:#0b102666;backdrop-filter:blur(3px)}
- body.history-layout .session-panel .filter-input{flex:none}
- body.history-layout .session-list{display:flex;flex-direction:column;flex:1;min-height:0;max-height:none;overflow-y:auto;overscroll-behavior:contain;gap:5px;scrollbar-width:thin}
- body.history-layout .session-item{flex:none;width:100%;max-width:none;min-width:0}
- body.history-layout .session-item strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
- body.history-layout .view-heading{flex-wrap:wrap;gap:14px}
 }
 @media(prefers-reduced-motion:reduce){[data-history-resize]::after{transition:none!important}}
 
@@ -40,8 +45,8 @@ body.history-layout>main{flex:1;min-height:0}
 body.history-layout #spacePage{height:100%;min-height:0}
 body.history-layout .workspace-main{height:100%;min-height:0;display:flex;flex-direction:column}
 body.history-layout .workspace-main>:is(.space-top,.space-nav,.activity-banner,.storage-notice,.space-footer){flex-shrink:0}
-body.history-layout .workspace-main>.space-content{flex:1;min-height:0;display:flex;flex-direction:column;padding-block:20px 16px}
-body.history-layout .view-heading{flex-shrink:0;margin-bottom:18px}
+body.history-layout .workspace-main>.space-content{flex:1;min-height:0;display:flex;flex-direction:column;padding-block:16px 12px}
+body.history-layout .view-heading{flex-shrink:0;margin-bottom:12px}
 body.history-layout .workspace-chat{flex:1;min-height:0}
 body.history-layout .workspace-chat .chat-main{height:100%;min-height:0;display:flex;flex-direction:column}
 body.history-layout .chat-main>:is(.chat-mode-tabs,.scope-picker){flex-shrink:0}
@@ -102,9 +107,14 @@ body.in-space .site-header>.space-nav>.workspace-more>summary{padding-block:20px
 .chat-history-toolbar{display:none}
 @media(max-width:760px){body.history-layout .chat-history-toolbar{display:flex;flex-shrink:0;margin-bottom:8px}}
 
-/* Give the conversation priority over secondary controls and composer whitespace. */
 body.history-layout .chat-mode-tabs>[data-mode],body.history-layout .scope-picker{display:none}
 body.history-layout .chat-mode-tabs{margin-bottom:0}
 body.history-layout .workspace-chat .composer{padding:10px 16px}
 body.history-layout .composer textarea{height:36px;min-height:36px}
 body.history-layout .composer-bottom{margin-top:4px}
+
+/* Hide space footer in history chat layout to move composer down and expand content */
+body.history-layout .space-footer{display:none!important}
+body.history-layout .chat-mode-tabs{display:none!important}
+body.history-layout .workspace-main>.space-content{padding-block:6px 4px!important}
+body.history-layout .workspace-chat .composer{margin-top:6px!important;margin-bottom:2px!important}

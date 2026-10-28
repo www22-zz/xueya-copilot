@@ -24,6 +24,10 @@ class QuietHandler(SimpleHTTPRequestHandler):
         pass
 
 
+def settings_button(page):
+    return page.locator('button[data-open-settings]:visible,#appSettingsButton:visible').first
+
+
 def custom_cursor(page, item, *, prove_painted=False):
     item.hover()
     expect(item).to_have_css('cursor','none')
@@ -109,32 +113,36 @@ def main():
                 expect(page.locator('#documentCount')).to_have_text('2')
             checks.append('material count stays consistent across routes')
             expect(page.locator('.user-message .message-body')).to_have_css('border-top-left-radius','22px')
-            page.locator('.session-menu summary').first.click()
-            expect(page.locator('.session-menu[open] .session-menu-panel')).to_be_visible()
-            panel=page.locator('.session-menu[open] .session-menu-panel').bounding_box()
+            page.locator('.session-item-row').first.hover()
+            page.locator('[data-session-menu]').first.click()
+            expect(page.locator('.session-dropdown-menu')).to_be_visible()
+            panel=page.locator('.session-dropdown-menu').bounding_box()
             assert panel['x']>=0 and panel['y']+panel['height']<=1000
-            assert page.locator('.session-row .session-item').first.bounding_box()['width']>140
+            assert page.locator('.session-item-btn').first.bounding_box()['width']>140
             page.screenshot(path=str(OUTPUT/'chat-menu-dark.png'),full_page=True)
-            page.locator('[data-session-action=rename]').first.click()
+            page.locator('[data-rename-session]').first.click()
             page.locator('#workspaceForm [name=title]').fill('重命名后的对话')
             page.locator('#workspaceForm button[type=submit]').click()
-            expect(page.locator('[data-session=chat-1] strong')).to_have_text('重命名后的对话')
+            expect(page.locator('[data-session=chat-1] .session-title')).to_have_text('重命名后的对话')
             page.reload()
-            expect(page.locator('[data-session=chat-1] strong')).to_have_text('重命名后的对话')
-            page.locator('.session-row').filter(has=page.locator('[data-session=chat-1]')).locator('summary').click()
-            page.locator('[data-session-action=pin]').first.click()
-            assert '重命名' in page.locator('.session-row').first.inner_text()
+            expect(page.locator('[data-session=chat-1] .session-title')).to_have_text('重命名后的对话')
+            page.locator('.session-item-row').filter(has=page.locator('[data-session=chat-1]')).hover()
+            page.locator('[data-session-menu=chat-1]').click()
+            page.locator('[data-pin-session]').first.click()
+            assert '重命名' in page.locator('.session-item-row').first.inner_text()
             checks.append('conversation rename/pin survives rerender/reload')
-            page.locator('.session-row').first.locator('summary').click()
-            page.locator('[data-session-action=fork]').first.click()
-            assert page.locator('.session-row').count()==3
-            page.locator('.session-row.active summary').click()
-            page.locator('.session-row.active [data-session-action=delete]').click()
+            page.locator('.session-item-row').first.hover()
+            page.locator('[data-session-menu]').first.click()
+            page.locator('[data-branch-session]').first.click()
+            assert page.locator('.session-item-row').count()==3
+            page.locator('.session-item-row.active').hover()
+            page.locator('.session-item-row.active [data-session-menu]').click()
+            page.locator('.session-item-row.active [data-delete-session]').click()
             expect(page.locator('#workspaceDialog')).to_be_visible()
             page.locator('#workspaceForm button[type=submit]').click()
-            assert page.locator('.session-row').count()==2
+            assert page.locator('.session-item-row').count()==2
             checks.append('conversation fork preserves transcript; delete requires confirmation')
-            target=page.locator('[data-new-session]')
+            target=page.locator('[data-new-session]:visible').first
             target.hover()
             page.wait_for_timeout(250)
             size=page.locator('.cursor-ring').evaluate("el=>{const c=getComputedStyle(el,'::before');return parseFloat(c.width)*new DOMMatrix(c.transform).a}")
@@ -156,7 +164,7 @@ def main():
             checks.append('custom cursor survives click down/up; native cursor during drag and text selection')
             for theme in ('light','dark'):
                 page.evaluate('(theme)=>window.XueyaPreferences.applyTheme(theme)',theme)
-                page.locator('#appSettingsButton').click()
+                settings_button(page).click()
                 settings=page.locator('#appSettingsDialog')
                 expect(settings).to_be_visible()
                 settings.locator('[data-settings-tab=general]').click()
@@ -169,7 +177,7 @@ def main():
                 field.hover()
                 assert field.evaluate('el=>getComputedStyle(el).cursor')=='text'
                 settings.locator('[data-settings-close]').click()
-                page.locator('#appSettingsButton').hover()
+                settings_button(page).hover()
                 assert page.locator('body').evaluate("el=>el.classList.contains('custom-cursor')")
                 page.evaluate('void window.XueyaAccount.login()')
                 login=page.locator('#accountLoginDialog')
@@ -191,7 +199,7 @@ def main():
                 page.screenshot(path=str(OUTPUT/f'login-cursor-{theme}.png'))
                 page.keyboard.press('Escape')
                 expect(login).not_to_be_visible()
-                page.locator('#appSettingsButton').hover()
+                settings_button(page).hover()
                 assert page.locator('body').evaluate("el=>el.classList.contains('custom-cursor')")
                 page.goto(base+'/frontend/index.html#space/analysis')
                 expect(page.locator('.analysis-status')).to_be_empty()
@@ -209,7 +217,7 @@ def main():
                     expect(trigger).to_have_text(text)
                     expect(page.locator('.practice-select-menu')).to_have_count(0)
                 # Native controls keep their form data and required validation.
-                page.locator('#appSettingsButton').click()
+                settings_button(page).click()
                 settings.locator('[data-settings-tab=services]').click()
                 settings.evaluate('''el=>{const form=document.createElement('form');form.id='cursor-select-fixture';form.innerHTML='<label>测试范围<select name="scope" required><option value="">请选择</option><option value="chosen">已选择</option></select></label>';el.querySelector('.settings-content').append(form)}''')
                 modal_select=settings.locator('#cursor-select-fixture select')
@@ -231,7 +239,7 @@ def main():
                 settings.locator('#cursor-select-fixture').evaluate('el=>el.remove()')
             checks.append('custom cursor paints above login/settings modals on hover and press in both themes; inputs keep caret and close recovers')
             checks.append('analysis category/time selections and modal selects keep custom cursor, update values, restore focus and preserve form validation')
-            custom_cursor(page,page.locator('#appSettingsButton'))
+            custom_cursor(page,settings_button(page))
             performance=page.evaluate('''async()=>{
                 const target=document.querySelector('#appSettingsButton'),r=target.getBoundingClientRect();
                 const writes=[];const observer=new MutationObserver(rows=>writes.push(...rows));
@@ -244,7 +252,7 @@ def main():
             assert performance['bodyWrites']==0,performance
             assert performance['error']<0.1 and performance['gap']<0.1,performance
             page.emulate_media(reduced_motion='reduce')
-            page.locator('#appSettingsButton').hover()
+            settings_button(page).hover()
             assert not page.locator('body').evaluate("el=>el.classList.contains('custom-cursor')")
             page.emulate_media(reduced_motion='no-preference')
             checks.append('1000 movement events produce no body class rewrites; ring/dot follow the latest point within one frame; reduced motion uses native cursor')
@@ -369,8 +377,9 @@ def main():
             assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
             page.locator('[data-history-open]').click()
             expect(page.locator('#chatHistoryPanel')).to_be_visible()
-            page.locator('.session-menu summary').first.click()
-            expect(page.locator('.session-menu[open] .session-menu-panel')).to_be_visible()
+            page.locator('.session-item-row').first.hover()
+            page.locator('[data-session-menu]').first.click()
+            expect(page.locator('.session-dropdown-menu')).to_be_visible()
             page.screenshot(path=str(OUTPUT/'chat-mobile.png'),full_page=True)
             checks.append('mobile layout and conversation actions remain usable')
             assert not errors, errors

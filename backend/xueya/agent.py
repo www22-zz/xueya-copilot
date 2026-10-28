@@ -299,6 +299,112 @@ class Agent:
             if run_id and not done:
                 self.platform.repo.put(scope, "run", run_id, {"status": "cancelled" if asyncio.current_task().cancelling() else "interrupted", "question": request["question"], "finishedAt": utc_now(), "timings": current_timing.get().snapshot()}, version)
 
+    async def _web_search_stream(self, request, query, scope, trace, tool_calls, mark, begin_tool, tool_result, finish, *, stored=False, context=None):
+        timing = current_timing.get()
+        if timing:
+            timing.route = 'web-search'
+        yield mark("route", "已启用全网搜索模式，正在搜集最新信息与线索", "completed")
+        yield mark("connect", "正在连接 MCP 客户端与搜索工具")
+        yield mark("web_search", f"正在检索互联网最新内容：{query[:30]}")
+        yield begin_tool('search_web', {'query': query, 'limit': 5})
+        timeout = getattr(self.model.config, "tool_timeout", 8)
+        web_sources = []
+        try:
+            registry = platform_registry(self.platform, scope, context=context, rag=self.rag, learning=self.learning) if stored else None
+            async with open_session(registry, context=None if stored else context, timeout=max(8.0, timeout), allowed_tools=LEARNING_READ_TOOLS) as session:
+                web_res = await session.call("search_web", {"query": query, "limit": 5})
+                tool_result(web_res)
+                web_sources = web_res.get("sources", [])
+        except Exception as error:
+            # A timed-out MCP tool may already have sent a billable request.
+            # Preserve the failed call; never replay it through a second transport.
+            if tool_calls and tool_calls[-1]['status'] == 'running':
+                tool_calls[-1].update(status='failed', data={'error': getattr(error, 'code', 'WEB_SEARCH_FAILED')})
+
+        has_clues = bool(web_sources)
+        yield mark("web_search", f"全网搜索完成，获取到 {len(web_sources)} 条参考线索" if has_clues else "未检索到相关的外部网页线索，将结合知识库回答", "completed")
+        yield mark("generate", "正在深入思考并组织语言回答…")
+
+        system_content = (
+            "你是学涯 Copilot，一个聪明、知识渊博且表达流畅的中文 AI 学习与知识助手。\n"
+            "用户当前启用了【全网搜索】功能。请充分理解问题并深入思考后，用通顺、专业、有条理的中文直接回答用户，严禁生硬堆砌无意义的表格符号、分类标签或未加工的网页原文碎片。\n"
+        )
+        if has_clues:
+            system_content += (
+                "\n【实时互联网搜索结果】\n"
+                + "\n\n".join(f"[{i+1}] 标题：{s['title']}\n来源网址：{s.get('url', s['location'])}\n网页内容摘要：\n{s['quote']}" for i, s in enumerate(web_sources))
+                + "\n\n【回答要求】\n"
+                "1. 【组织语言，深度解答】：请仔细研读上述搜索到的参考资料，结合你的知识进行综合归纳与逻辑梳理。用你自己的自然语言进行清晰、有条理的解答，禁止生硬堆砌无意义的表格符号、分类标签或未加工的网页原文碎片。\n"
+                "2. 【精准标注来源】：当回答中具体采纳了某条搜索资料的事实时，请在对应句子末尾标注引用序号，例如 [1] 或 [2]，引用序号与上述参考资料编号保持一致。\n"
+                "3. 【知识补充与纠偏】：若搜索结果与问题关联较弱或未完全涵盖问题关键点，请主动使用你自身掌握的通用知识进行全面补充；若搜索结果存在明显网页杂乱噪声，请自行甄别过滤。\n"
+                "4. 直接输出回答正文内容（支持 Markdown 格式与分段排版），无需额外包装成 JSON。"
+            )
+        else:
+            system_content += (
+                "\n【提示】本次全网搜索未检索到直接相关的外部网页线索。\n"
+                "请直接运用你自身掌握的丰富知识库和深度思考，清晰、详尽、准确地回答用户的问题。\n"
+                "直接输出回答正文内容（支持 Markdown 格式与分段排版），无需额外包装成 JSON。"
+            )
+
+        if request.get("mode") == "summarize":
+            system_content += "\n请将回答整理为结构清晰的知识卡片（包含核心概念、要点解析与记忆提示）。"
+        elif request.get("mode") == "quiz":
+            system_content += "\n请根据检索到的内容出一道开放练习题，并附带参考解答。"
+
+        messages = [
+            {"role": "system", "content": system_content},
+            *request["history"],
+            {"role": "user", "content": request["question"]}
+        ]
+
+        content, announced = "", False
+        model_name = getattr(self.model.config, 'model', 'ai-model')
+        try:
+            async with aclosing(self.model.stream(messages, scope=scope)) as events:
+                async for event in events:
+                    model_name = event.get('model', model_name)
+                    if event.get('type') == 'reasoning':
+                        yield event
+                        continue
+                    if event.get('type') == 'content':
+                        text_chunk = event.get('text', '')
+                        if text_chunk:
+                            content += text_chunk
+                            require(len(content) <= 200000, "AI_INVALID_RESPONSE")
+                            fragment = ('{"answer":"' if not announced else '') + json.dumps(text_chunk, ensure_ascii=False)[1:-1]
+                            announced = True
+                            yield {'type': 'content', 'text': fragment, 'model': model_name}
+        except Exception as error:
+            logging.getLogger("uvicorn.error").warning("Web search stream error: %s", error)
+            if not content:
+                content = "抱歉，回答生成服务暂时不可用，请稍后重试。"
+                yield {'type': 'content', 'text': '{"answer":"' + json.dumps(content, ensure_ascii=False)[1:-1], 'model': model_name}
+                announced = True
+
+        used_sources = []
+        for i, ws in enumerate(web_sources):
+            if f"[{i+1}]" in content:
+                used_sources.append(ws)
+        if not used_sources and has_clues:
+            used_sources = web_sources[:3]
+
+        if announced:
+            yield {'type': 'content', 'text': '","sources":' + dumps([s["id"] for s in used_sources]) + '}', 'model': model_name}
+
+        yield mark("validate", "已提炼全网线索并组织回答" if has_clues else "已结合自身知识库完成回答", "completed")
+        yield {
+            "type": "done",
+            "ok": True,
+            "answer": content.strip() if content.strip() else "未能生成有效回答，请重试。",
+            "sources": [s["id"] for s in used_sources],
+            "sourceObjects": prepare_sources(used_sources or web_sources),
+            "knowledgePoints": [],
+            "model": model_name,
+            "engine": "web-search-synthesized" if has_clues else "general-chat",
+            "workflow": {"intent": request.get("mode", "ask"), "steps": trace},
+            "toolCalls": deepcopy(tool_calls)
+        }
+
     async def _learning_stream(self, request, context, scope, stored):
         if assistant_identity_question(request['question'], request['mode']):
             if current_timing.get():
@@ -381,7 +487,12 @@ class Agent:
             return
         config = self.model.config
         web_search_enabled = bool(request.get("webSearch"))
-        fast = False if web_search_enabled else ordinary_question(request, intent)
+        if web_search_enabled:
+            async with aclosing(self._web_search_stream(request, query, scope, trace, tool_calls, mark, begin_tool, tool_result, finish, stored=stored, context=context)) as events:
+                async for event in events:
+                    yield event
+            return
+        fast = ordinary_question(request, intent)
         timing = current_timing.get()
         if timing:
             timing.route = 'fast-qa' if fast else 'agent'
@@ -393,7 +504,7 @@ class Agent:
                     yield event
             return
         yield mark("route", "正在整理你的学习情况" if study else "正在直接查找问题依据" if fast else "正在确定这次学习任务", "completed")
-        if not study and not actual and not web_search_enabled:
+        if not study and not actual:
             yield mark("evidence", "当前没有可检索的课程原文", "completed")
             async with aclosing(no_evidence()) as events:
                 async for event in events:
@@ -401,25 +512,15 @@ class Agent:
             return
         evidence, stats, plan = [], None, None
         try:
-            yield mark("connect", "正在连接全网搜索与学习工具" if web_search_enabled else "正在连接课程学习工具")
+            yield mark("connect", "正在连接课程学习工具")
             registry = platform_registry(self.platform, scope, context=context, rag=self.rag, learning=self.learning) if stored else None
             if registry:
                 registry.allowed_tools = LEARNING_READ_TOOLS
             # Browser-only context uses the same scoped MCP tools in-process;
             # starting a Python stdio server on every message adds cold-start latency.
-            async with open_session(registry, context=None if stored else context, timeout=getattr(self.model.config, "tool_timeout", 15 if web_search_enabled else 5), allowed_tools=LEARNING_READ_TOOLS) as session:
+            async with open_session(registry, context=None if stored else context, timeout=getattr(self.model.config, "tool_timeout", 5), allowed_tools=LEARNING_READ_TOOLS) as session:
                 require(bool(session.definitions), "MCP_TOOL_MISSING")
-                yield mark("connect", "全网搜索与学习工具已就绪" if web_search_enabled else "课程学习工具已就绪", "completed")
-                if web_search_enabled:
-                    yield mark("web_search", f"正在检索互联网最新内容：{query[:30]}")
-                    yield begin_tool('search_web', {'query': query, 'limit': 5})
-                    web_res = await session.call("search_web", {"query": query, "limit": 5})
-                    tool_result(web_res)
-                    web_sources = web_res.get("sources", [])
-                    for ws in web_sources:
-                        actual[ws["id"]] = ws
-                        evidence.append(ws)
-                    yield mark("web_search", f"全网搜索完成，获取到 {len(web_sources)} 条参考线索" if web_sources else "全网搜索未找到有效结果", "completed")
+                yield mark("connect", "课程学习工具已就绪", "completed")
                 if study:
                     yield mark("analyze", "正在分析近期作答和薄弱知识点")
                     yield begin_tool('analyze_progress')
@@ -436,30 +537,30 @@ class Agent:
                             tool_result(plan)
                         yield mark("plan", "复习计划预览已生成" if plan["days"] else "考试日期已过或暂无任务，请检查学习设置", "completed")
                 else:
-                    has_course_materials = bool(actual) and any(not s.get('isWeb') for s in actual.values())
-                    if has_course_materials:
-                        yield mark("retrieve", "正在检索课程资料")
-                        yield begin_tool('search_materials', {'query': query, 'limit': 4})
-                        found = await session.call("search_materials", {"query": query, "limit": 4})
-                        tool_result(found)
-                        ids = list(dict.fromkeys(s["id"] for s in found.get("sources", [])))[:3]
-                        require(all(i in actual for i in ids), "MCP_INVALID_RESULT")
-                        ids = ids or previous
-                        if query != request["question"] or previous:
-                            yield mark("context", "已结合上一轮问题与有效原文理解追问", "completed")
-                        yield mark("retrieve", f"找到 {len(ids)} 个相关原文片段" if ids else "当前资料中没有找到足够依据", "completed")
-                        if ids:
-                            yield mark("read", "正在核对引用原文")
-                            for source_id in ids:
-                                yield begin_tool('read_source', {'sourceId': source_id})
-                                value = await session.call("read_source", {"sourceId": source_id})
-                                source = value['source']
-                                require(source["id"] == source_id and source["quote"] == actual[source_id]["quote"], "MCP_INVALID_RESULT")
-                                tool_result(value)
-                                evidence.append(actual[source_id])
-                            yield mark("read", "原文和引用位置已核对", "completed")
-                    elif not web_search_enabled:
-                        yield mark("retrieve", "当前资料中没有找到足够依据", "completed")
+                    yield mark("retrieve", "正在检索课程资料")
+                    yield begin_tool('search_materials', {'query': query, 'limit': 4})
+                    found = await session.call("search_materials", {"query": query, "limit": 4})
+                    tool_result(found)
+                    ids = list(dict.fromkeys(s["id"] for s in found.get("sources", [])))[:3]
+                    require(all(i in actual for i in ids), "MCP_INVALID_RESULT")
+                    ids = ids or previous
+                    if query != request["question"] or previous:
+                        yield mark("context", "已结合上一轮问题与有效原文理解追问", "completed")
+                    yield mark("retrieve", f"找到 {len(ids)} 个相关原文片段" if ids else "当前资料中没有找到足够依据", "completed")
+                    if not ids:
+                        async with aclosing(no_evidence()) as events:
+                            async for event in events:
+                                yield event
+                        return
+                    yield mark("read", "正在核对引用原文")
+                    for source_id in ids:
+                        yield begin_tool('read_source', {'sourceId': source_id})
+                        value = await session.call("read_source", {"sourceId": source_id})
+                        source = value['source']
+                        require(source["id"] == source_id and source["quote"] == actual[source_id]["quote"], "MCP_INVALID_RESULT")
+                        tool_result(value)
+                        evidence.append(actual[source_id])
+                    yield mark("read", "原文和引用位置已核对", "completed")
         except Exception as error:
             if tool_calls and tool_calls[-1]['status'] == 'running':
                 tool_calls[-1].update(status='failed', data={'error': getattr(error, 'code', 'TOOL_FAILED')})

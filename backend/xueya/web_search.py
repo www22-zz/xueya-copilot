@@ -33,7 +33,7 @@ async def search_tavily(query: str, limit: int = 5, api_key: str | None = None) 
             "query": clean_query,
             "search_depth": "basic",
             "include_answer": False,
-            "max_results": max(1, min(int(limit), 8))
+            "max_results": max(1, min(int(limit), 5))
         }).encode("utf-8")
         req = urllib.request.Request(
             "https://api.tavily.com/search",
@@ -43,7 +43,7 @@ async def search_tavily(query: str, limit: int = 5, api_key: str | None = None) 
                 "User-Agent": "xueya-app/1.0"
             }
         )
-        with urllib.request.urlopen(req, timeout=10.0) as resp:
+        with urllib.request.urlopen(req, timeout=6.0) as resp:
             return json.loads(resp.read().decode("utf-8"))
 
     try:

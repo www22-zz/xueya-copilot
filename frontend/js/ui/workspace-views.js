@@ -9,34 +9,343 @@ function createViews(ctx,base){
     return `<button type="button" class="citation-chip ${isWeb?'citation-web':''}" data-citation="${e(s.id)}" title="${isWeb?'点击在新窗口打开网页：'+e(s.url||s.location):'点击查看课程资料原文'}">${isWeb?'🌐 ':icon('file')} ${e(s.title)} · ${e(s.location||'原文片段')}</button>`;
   }).join('')}</div>`;
   const unavailable=label=>`<p class="capability-note">${e(label)}的这个入口尚未接通。可使用本页“进阶学习功能”中的对应操作；原有浏览器内容仍可使用。</p>`;
+  const cartoonAvatarSvg = `<svg class="doubao-user-avatar" viewBox="0 0 100 100" width="36" height="36" aria-hidden="true"><defs><linearGradient id="dbAvatarBg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#6366f1"/><stop offset="100%" stop-color="#a855f7"/></linearGradient><linearGradient id="dbHoodie" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#3b82f6"/><stop offset="100%" stop-color="#2563eb"/></linearGradient><linearGradient id="dbHair" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#334155"/><stop offset="100%" stop-color="#1e293b"/></linearGradient></defs><circle cx="50" cy="50" r="50" fill="url(#dbAvatarBg)"/><path d="M22 92 C22 75 35 68 50 68 C65 68 78 75 78 92 Z" fill="url(#dbHoodie)"/><path d="M42 68 L50 82 L58 68 Z" fill="#ffffff" opacity="0.9"/><rect x="44" y="60" width="12" height="12" rx="3" fill="#fed7aa"/><ellipse cx="50" cy="46" rx="22" ry="24" fill="#ffedd5"/><ellipse cx="36" cy="51" rx="4.5" ry="2.5" fill="#f43f5e" opacity="0.4"/><ellipse cx="64" cy="51" rx="4.5" ry="2.5" fill="#f43f5e" opacity="0.4"/><path d="M45 54 Q50 60 55 54" stroke="#e11d48" stroke-width="2.5" stroke-linecap="round" fill="none"/><ellipse cx="38" cy="44" rx="3" ry="4" fill="#0f172a"/><circle cx="37" cy="42" r="1.2" fill="#ffffff"/><ellipse cx="62" cy="44" rx="3" ry="4" fill="#0f172a"/><circle cx="61" cy="42" r="1.2" fill="#ffffff"/><rect x="31" y="38" width="15" height="12" rx="4" fill="none" stroke="#0284c7" stroke-width="2"/><rect x="54" y="38" width="15" height="12" rx="4" fill="none" stroke="#0284c7" stroke-width="2"/><line x1="46" y1="44" x2="54" y2="44" stroke="#0284c7" stroke-width="2"/><path d="M28 42 C26 28 35 18 50 18 C65 18 74 28 72 42 C68 30 60 26 50 26 C40 26 32 30 28 42 Z" fill="url(#dbHair)"/><path d="M32 34 C38 28 46 32 48 38 C42 36 36 38 32 34 Z" fill="url(#dbHair)"/><path d="M50 18 Q53 10 60 12" stroke="#334155" stroke-width="2.5" stroke-linecap="round" fill="none"/></svg>`;
+  const chatBubbleSvg = '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>';
+  const leafBranchSvg = '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>';
+  const pinIconSvg = '<svg viewBox="0 0 24 24" width="11" height="11" fill="currentColor" aria-hidden="true"><path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z"/></svg>';
+  const dotsIconSvg = '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><circle cx="12" cy="12" r="2"/><circle cx="5" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>';
+  const archiveIconSvg = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="4" rx="1"/><path d="M5 8v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8"/><line x1="10" y1="12" x2="14" y2="12"/></svg>';
+
+  function renderSessionItem(s){
+    const isSelected = s.id === state.sessionId;
+    const isMenuOpen = state.activeSessionMenuId === s.id;
+    const userCount = (s.messages || []).filter(m => m.role === "user").length;
+    const isBranch = Boolean(s.parentSessionId);
+    return `<div class="session-item-row ${isSelected?'active':''} ${isMenuOpen?'is-menu-open':''}">`+
+      `<button type="button" data-session="${e(s.id)}" class="session-item-btn ${isSelected?'active':''}" aria-pressed="${isSelected}" ${state.pending?'disabled':''} title="${e(s.title)}">`+
+        `<span class="session-bubble-badge ${isBranch?'badge-branch':'badge-chat'}">${isBranch?leafBranchSvg:chatBubbleSvg}</span>`+
+        `<span class="session-title">${e(s.title)}</span>`+
+        `<span class="session-count-tag">${userCount} 问</span>`+
+        (s.pinned?`<span class="session-pinned-tag" title="已置顶">${pinIconSvg}</span>`:'')+
+      `</button>`+
+      `<div class="session-hover-actions">`+
+        `<button type="button" class="session-hover-btn" data-archive-session="${e(s.id)}" title="${s.archived?'取消归档':'归档对话'}" aria-label="${s.archived?'取消归档':'归档对话'}">${archiveIconSvg}</button>`+
+        `<button type="button" class="session-hover-btn session-menu-trigger" data-session-menu="${e(s.id)}" aria-label="更多操作" title="更多操作">${dotsIconSvg}</button>`+
+      `</div>`+
+      (isMenuOpen?`<div class="session-dropdown-menu" role="menu" data-session-dropdown="${e(s.id)}">`+
+        `<button type="button" class="menu-item" data-pin-session="${e(s.id)}" role="menuitem"><span class="menu-icon">${s.pinned?'📌':'📍'}</span><span>${s.pinned?'取消置顶':'置顶'}</span></button>`+
+        `<button type="button" class="menu-item" data-rename-session="${e(s.id)}" role="menuitem"><span class="menu-icon">✏️</span><span>重命名</span></button>`+
+        `<button type="button" class="menu-item" data-branch-session="${e(s.id)}" role="menuitem"><span class="menu-icon">🔀</span><span>在新对话中继续</span></button>`+
+        `<button type="button" class="menu-item" data-session-action="move" data-session-id="${e(s.id)}" role="menuitem"><span>移动到课程</span></button>`+
+        `<button type="button" class="menu-item" data-session-action="copy" data-session-id="${e(s.id)}" role="menuitem"><span>复制对话文本</span></button>`+
+        `<button type="button" class="menu-item" data-archive-session="${e(s.id)}" role="menuitem"><span class="menu-icon">🗃️</span><span>${s.archived?'取消归档':'归档对话'}</span></button>`+
+        `<div class="menu-divider"></div>`+
+        `<button type="button" class="menu-item menu-item-danger" data-delete-session="${e(s.id)}" role="menuitem"><span class="menu-icon">🗑️</span><span>删除</span></button>`+
+      `</div>`:'')+
+    `</div>`;
+  }
+
   function sessions(){
-    const list=state.sessions.filter(s=>Boolean(s.archived)===Boolean(state.showArchivedSessions)&&(s.title+' '+(s.messages||[]).map(m=>m.text).join(' ')).toLowerCase().includes((state.sessionQuery||'').toLowerCase())).sort((a,b)=>Number(!!b.pinned)-Number(!!a.pinned));
-    const option=(label,action,session)=>`<button type="button" role="menuitem" data-session-action="${action}" data-session-id="${e(session.id)}" ${state.pending?'disabled':''}>${label}</button>`;
-    return `<aside id="chatHistoryPanel" class="session-panel panel" aria-label="历史对话"><div class="panel-toolbar"><strong>我的对话</strong>${button('新建','data-new-session')}<button type="button" class="history-mobile-close" data-history-close aria-label="关闭对话历史">×</button></div><input class="filter-input" id="sessionSearch" aria-label="搜索历史对话" placeholder="搜索标题与内容" value="${e(state.sessionQuery||'')}"><button type="button" class="session-archive-toggle" data-toggle-archived>${state.showArchivedSessions?'返回全部对话':'查看已归档'}</button><div class="session-list">${list.map(s=>`<div class="session-row ${s.id===state.sessionId?'active':''}"><button type="button" data-session="${e(s.id)}" class="session-item" aria-pressed="${s.id===state.sessionId}" ${state.pending?'disabled':''}><strong>${s.pinned?'⌖ ':''}${e(s.title)}</strong><small>${s.messages.length} 条消息</small></button><details class="session-menu"><summary aria-label="对话操作：${e(s.title)}" aria-haspopup="menu">···</summary><div class="session-menu-panel" role="menu" aria-label="对话操作">${option(s.pinned?'取消置顶':'置顶','pin',s)}${option('重命名','rename',s)}${option('在新对话中继续','fork',s)}${option('移动到课程','move',s)}${option('复制对话文本','copy',s)}${option(s.archived?'取消归档':'归档对话','archive',s)}${option('删除对话','delete',s)}</div></details></div>`).join('')||'<p class="panel-description">没有匹配的对话。</p>'}</div><div role="separator" aria-orientation="vertical" aria-label="调整对话历史宽度" aria-controls="chatHistoryPanel" tabindex="0" title="拖动调整宽度，双击恢复默认" data-history-resize></div></aside><button type="button" class="history-backdrop" data-history-close aria-label="关闭对话历史"></button>`;
+    const q = (state.sessionQuery || '').trim().toLowerCase();
+    const filtered = state.sessions.filter(s => {
+      if (!q) return true;
+      const fullText = (s.title + ' ' + (s.messages || []).map(m => m.text).join(' ')).toLowerCase();
+      return fullText.includes(q);
+    });
+    const activeSessions = filtered.filter(s => !s.archived);
+    const pinnedList = activeSessions.filter(s => s.pinned);
+    const recentList = activeSessions.filter(s => !s.pinned);
+    const archivedList = filtered.filter(s => s.archived);
+
+    const listHtml = (activeSessions.length || archivedList.length) ? (
+      (pinnedList.length ? `<div class="session-group-title">已置顶</div>${pinnedList.map(renderSessionItem).join('')}` : '') +
+      (recentList.length ? `<div class="session-group-title">最近</div>${recentList.map(renderSessionItem).join('')}` : '') +
+      `<details class="session-group-archived" ${state.archivedOpen || archivedList.some(s=>s.id===state.sessionId)?'open':''}>`+
+        `<summary class="session-group-title session-archived-summary" data-toggle-archived>`+
+          `<span class="archived-summary-left">${archiveIconSvg}<span>已归档对话 (${archivedList.length})</span></span>`+
+          `<span class="archived-arrow">▾</span>`+
+        `</summary>`+
+        `<div class="archived-session-list">`+
+          (archivedList.length ? archivedList.map(renderSessionItem).join('') : '<p class="panel-description panel-description-sm">暂无已归档对话</p>')+
+        `</div>`+
+      `</details>`
+    ) : '<p class="panel-description">没有匹配的对话。</p>';
+
+    const userFooterHtml = `<div class="doubao-user-profile" data-open-settings role="button" tabindex="0" title="点击打开系统设置">`+
+      `<div class="user-avatar-wrap">${cartoonAvatarSvg}</div>`+
+      `<div class="user-info">`+
+        `<div class="user-name-row"><span class="user-nickname">学涯学习者</span><span class="user-arrow">›</span></div>`+
+        `<span class="user-badge">AI 伴学中</span>`+
+      `</div>`+
+      `<button type="button" class="user-settings-btn" data-open-settings aria-label="系统设置" title="系统设置">`+
+        `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>`+
+      `</button>`+
+    `</div>`;
+
+    return `<aside id="chatHistoryPanel" class="session-panel panel doubao-sidebar" aria-label="历史对话">`+
+      `<div class="doubao-sidebar-header">`+
+        `<div class="doubao-brand"><span class="doubao-brand-title">学涯 Copilot</span></div>`+
+        `<div class="doubao-header-actions">`+
+          `<button type="button" class="doubao-icon-btn ${state.sessionSearchOpen?'is-active':''}" data-toggle-session-search title="搜索历史对话" aria-label="搜索历史对话"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>`+
+          `<button type="button" class="doubao-icon-btn history-mobile-close" data-history-close aria-label="关闭对话历史">×</button>`+
+        `</div>`+
+      `</div>`+
+      `<button type="button" class="doubao-new-chat-btn" data-new-session aria-label="开启新对话" ${state.pending?'disabled':''}>`+
+        `<span class="doubao-new-chat-icon"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>`+
+        `<span class="doubao-new-chat-text">新对话</span>`+
+        `<span class="doubao-new-chat-shortcut"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span>`+
+      `</button>`+
+      `<div class="doubao-search-box ${state.sessionSearchOpen||state.sessionQuery?'is-open':''}">`+
+        `<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" class="doubao-search-icon" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>`+
+        `<input class="filter-input doubao-search-input" id="sessionSearch" aria-label="搜索历史对话" placeholder="搜索标题与内容" value="${e(state.sessionQuery||'')}">`+
+        (state.sessionQuery?`<button type="button" class="doubao-search-clear" data-clear-session-search aria-label="清空搜索">×</button>`:'')+
+      `</div>`+
+      `<div class="session-list">${listHtml}</div>`+
+      userFooterHtml+
+      `<div role="separator" aria-orientation="vertical" aria-label="调整对话历史宽度" aria-controls="chatHistoryPanel" tabindex="0" title="拖动调整宽度，双击恢复默认" data-history-resize></div>`+
+    `</aside>`+
+    `<button type="button" class="history-backdrop" data-history-close aria-label="关闭对话历史"></button>`;
   }
   function composer(){
     const voice=ctx.getVoiceState?.()||{phase:'idle'},recording=voice.phase==='recording',voiceBusy=['requesting','recording','transcribing'].includes(voice.phase),locked=state.pending||voiceBusy;
     const mic='<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="9" y="2" width="6" height="13" rx="3"/><path d="M5 10v2a7 7 0 0 0 14 0v-2M12 19v3"/></svg>';
     return `<form id="chatForm" class="composer"><label class="sr-only" for="chatInput">输入课程问题</label><textarea id="chatInput" aria-label="输入课程问题" placeholder="问一个问题，或选择一条旧回答继续追问…" rows="3" maxlength="4000">${e(state.draft)}</textarea>${state.followupIndex!==null&&state.followupIndex!==undefined?`<div class="reply-context">正在追问：${e(state.messages[state.followupIndex]?.title||'指定回答')}${button('取消','data-cancel-followup')}</div>`:''}<div class="attachment-list">${getAttachments().map((a,i)=>`<div class="image-attachment">${a.file.type.startsWith('audio/')||/\.(wav|mp3)$/i.test(a.file.name)?`<audio controls preload="metadata" src="${e(a.url)}" aria-label="待提问语音：${e(a.file.name)}"></audio>`:a.file.type.startsWith('image/')?`<img src="${e(a.url)}" alt="待提问图片：${e(a.file.name)}">`:'<span class="composer-file-icon" aria-hidden="true">'+icon('file')+'</span>'}<span>${e(a.file.name)}</span><button type="button" data-remove-image="${i}" aria-label="移除附件 ${e(a.file.name)}" ${locked?'disabled':''}>×</button></div>`).join('')}</div><input id="imageInput" type="file" accept="image/png,image/jpeg,image/webp,.pdf,.docx,.txt,.md,.markdown" multiple hidden><input id="audioInput" type="file" accept="audio/wav,audio/mpeg,.wav,.mp3" hidden><div class="composer-bottom"><div class="composer-tools"><span class="composer-upload-tool"><span role="tooltip" id="composerUploadHint">添加文件或图片<br>最多 4 个附件<br>图片 6MB · 文档 10MB 以内</span><button type="button" aria-describedby="composerUploadHint" class="composer-icon-button composer-add" data-add-images aria-label="添加文件或图片" title="添加文件或图片（PDF、Word、TXT、Markdown）" ${locked?'disabled':''}><span aria-hidden="true">＋</span></button></span><button type="button" class="composer-icon-button composer-mic ${recording?'is-recording':''}" data-add-audio aria-label="${recording?'停止录音并识别':voice.phase==='transcribing'?'正在识别语音':'开始录音'}" title="录音停止后识别为文字，核对后发送" aria-pressed="${recording}" ${state.pending||['requesting','transcribing'].includes(voice.phase)?'disabled':''}>${recording?'<span class="record-stop" aria-hidden="true"></span>':mic}</button><button type="button" class="composer-web ${state.webSearch?'is-active':''}" data-toggle-web-search aria-label="全网搜索" title="${state.webSearch?'全网搜索已开启（联网获取最新信息）':'开启全网搜索（联网获取最新信息）'}" aria-pressed="${Boolean(state.webSearch)}" ${locked?'disabled':''}>🌐 <span class="web-search-text">全网搜索</span></button><span class="composer-note">${state.pending?'正在处理，可随时停止':getAttachments().length&&!window.XueyaPlatform?.available?'启动本地服务后可发送附件':'Enter 发送 · Shift + Enter 换行'}</span></div>${state.pending?'<button class="stop-button" type="button" data-stop-chat>停止生成</button>':`<button class="send-button" type="submit" aria-label="发送问题" ${voiceBusy?'disabled':''}>${icon('arrow')}</button>`}</div>${voice.phase!=='idle'?`<div class="composer-voice-status" role="status"><span data-voice-status>${e(voice.phase==='requesting'?'请允许浏览器使用麦克风…':recording?'正在录音 · 停止后识别，核对后发送':voice.phase==='transcribing'?'正在识别语音，识别后可编辑文字…':voice.error)}</span>${voice.phase==='error'&&voice.canRetry?button('重试识别','data-retry-voice'):''}${button('取消','data-cancel-voice')}</div>`:''}</form>`;
   }
-  function overview(){return base.renders.overview().replace(/<form id="chatForm"[\s\S]*?<\/form>/,composer());}
+
+  const XueyaDailyCheckin = {
+    getToday: function() {
+      const d = new Date();
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    },
+    getYesterday: function() {
+      const d = new Date();
+      d.setDate(d.getDate() - 1);
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    },
+    load: function() {
+      try {
+        const raw = localStorage.getItem('xueya_daily_checkin');
+        if (raw) return JSON.parse(raw);
+      } catch(e) {}
+      return { streak: 0, total: 0, lastDate: '', history: [] };
+    },
+    save: function(data) {
+      try {
+        localStorage.setItem('xueya_daily_checkin', JSON.stringify(data));
+      } catch(e) {}
+    },
+    getStatus: function() {
+      const data = this.load();
+      const today = this.getToday();
+      const yesterday = this.getYesterday();
+      const isCheckedToday = data.lastDate === today;
+      let streak = Number(data.streak) || 0;
+      if (!isCheckedToday && data.lastDate && data.lastDate !== yesterday) {
+        streak = 0;
+      }
+      const history = Array.isArray(data.history) ? data.history : [];
+      return {
+        isCheckedToday,
+        streak,
+        total: data.total || history.length || 0,
+        lastDate: data.lastDate,
+        history
+      };
+    },
+    checkin: function() {
+      const status = this.getStatus();
+      if (status.isCheckedToday) {
+        return { already: true, streak: status.streak, total: status.total };
+      }
+      const today = this.getToday();
+      const yesterday = this.getYesterday();
+      const data = this.load();
+      const wasYesterday = data.lastDate === yesterday;
+      const newStreak = wasYesterday ? (Number(data.streak) || 0) + 1 : 1;
+      const history = Array.isArray(data.history) ? [...data.history] : [];
+      if (!history.includes(today)) history.push(today);
+      const updated = {
+        streak: newStreak,
+        total: history.length,
+        lastDate: today,
+        history
+      };
+      this.save(updated);
+      return { success: true, streak: newStreak, total: history.length, already: false };
+    },
+    getWeekDays: function(history) {
+      const d = new Date();
+      const currentDay = d.getDay();
+      const mondayOffset = currentDay === 0 ? -6 : 1 - currentDay;
+      const dayNames = ['一', '二', '三', '四', '五', '六', '日'];
+      const todayStr = this.getToday();
+      const week = [];
+      for (let i = 0; i < 7; i++) {
+        const target = new Date();
+        target.setDate(d.getDate() + mondayOffset + i);
+        const yr = target.getFullYear();
+        const mo = String(target.getMonth() + 1).padStart(2, '0');
+        const da = String(target.getDate()).padStart(2, '0');
+        const dateStr = `${yr}-${mo}-${da}`;
+        week.push({
+          label: dayNames[i],
+          dayNum: target.getDate(),
+          dateStr,
+          isToday: dateStr === todayStr,
+          isPast: dateStr < todayStr,
+          isChecked: history.includes(dateStr)
+        });
+      }
+      return week;
+    },
+    celebrate: function(targetEl) {
+      try {
+        const card = document.querySelector('#dailyCheckinCard');
+        if (card) {
+          card.classList.remove('checkin-celebrating');
+          void card.offsetWidth;
+          card.classList.add('checkin-celebrating');
+        }
+        const rect = targetEl ? targetEl.getBoundingClientRect() : (card ? card.getBoundingClientRect() : null);
+        const x = rect ? rect.left + rect.width / 2 : window.innerWidth / 3;
+        const y = rect ? rect.top + rect.height / 2 : window.innerHeight / 3;
+        const colors = ['#6366f1', '#ec4899', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6'];
+        for (let i = 0; i < 18; i++) {
+          const p = document.createElement('div');
+          p.className = 'checkin-confetti-particle';
+          const angle = (Math.PI * 2 * i) / 18 + (Math.random() - 0.5) * 0.4;
+          const dist = 35 + Math.random() * 55;
+          const tx = Math.cos(angle) * dist;
+          const ty = Math.sin(angle) * dist - 25;
+          p.style.setProperty('--tx', `${tx}px`);
+          p.style.setProperty('--ty', `${ty}px`);
+          p.style.setProperty('--bg', colors[i % colors.length]);
+          p.style.left = `${x}px`;
+          p.style.top = `${y}px`;
+          document.body.appendChild(p);
+          setTimeout(() => p.remove(), 850);
+        }
+      } catch(e) {}
+    }
+  };
+  globalThis.XueyaDailyCheckin = XueyaDailyCheckin;
+
+  function renderCheckinWidget() {
+    const status = XueyaDailyCheckin.getStatus();
+    const week = XueyaDailyCheckin.getWeekDays(status.history);
+    const weekHtml = week.map(day => {
+      let statusClass = '';
+      let iconMarkup = '';
+      if (day.isChecked) {
+        statusClass = 'is-checked';
+        iconMarkup = '<svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>';
+      } else if (day.isToday) {
+        statusClass = 'is-today';
+        iconMarkup = '<span class="today-dot"></span>';
+      } else if (day.isPast) {
+        statusClass = 'is-missed';
+        iconMarkup = '';
+      } else {
+        statusClass = 'is-future';
+        iconMarkup = '';
+      }
+      return `<div class="checkin-week-item ${statusClass}" title="${day.dateStr} (周${day.label})${day.isChecked ? ' · 已打卡' : (day.isToday ? ' · 今日待打卡' : '')}">`+
+        `<span class="week-day-label">周${day.label}</span>`+
+        `<div class="week-day-dot">${iconMarkup}</div>`+
+      `</div>`;
+    }).join('');
+
+    return `<div class="overview-top-bar">`+
+      `<div class="daily-checkin-card" id="dailyCheckinCard">`+
+        `<div class="checkin-main-row">`+
+          `<div class="checkin-icon-badge" aria-hidden="true">`+
+            `<svg class="checkin-flame-icon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">`+
+              `<path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>`+
+            `</svg>`+
+          `</div>`+
+          `<div class="checkin-content">`+
+            `<div class="checkin-title-line">`+
+              `<span class="checkin-heading">每日打卡</span>`+
+              `<span class="checkin-streak-tag">已坚持学习 <strong class="streak-num">${status.streak}</strong> 天</span>`+
+            `</div>`+
+            `<p class="checkin-subtitle">${status.isCheckedToday ? '今日已打卡 · 每天进步一点点' : '今日未打卡 · 坚持是最好的习惯'}</p>`+
+          `</div>`+
+          `<button type="button" class="checkin-action-btn ${status.isCheckedToday ? 'is-checked' : ''}" data-daily-checkin aria-label="${status.isCheckedToday ? '今日已打卡' : '立即打卡'}" title="${status.isCheckedToday ? '今日已打卡，明天继续保持！' : '点击完成今日学习打卡'}">`+
+            (status.isCheckedToday ?
+              `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg> <span>已打卡</span>` :
+              `<span class="checkin-spark-icon" aria-hidden="true">✨</span> <span>立即打卡</span>`
+            )+
+          `</button>`+
+        `</div>`+
+        `<div class="checkin-week-bar" role="group" aria-label="本周打卡记录">`+
+          weekHtml+
+        `</div>`+
+      `</div>`+
+    `</div>`;
+  }
+
+  function overview(){
+    const bottomBarHtml = `<div class="overview-bottom-bar">`+
+      `<div class="overview-account-card" data-open-settings role="button" tabindex="0" title="点击打开系统设置">`+
+        `<div class="user-avatar-wrap">${cartoonAvatarSvg}</div>`+
+        `<div class="user-info">`+
+          `<div class="user-name-row"><span class="user-nickname">学涯学习者</span><span class="user-arrow">›</span></div>`+
+          `<span class="user-badge">AI 伴学中</span>`+
+        `</div>`+
+        `<button type="button" class="overview-settings-btn" data-open-settings aria-label="系统设置" title="系统设置">`+
+          `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>`+
+          `<span>设置</span>`+
+        `</button>`+
+      `</div>`+
+      `<a href="#home" class="overview-home-btn" title="回到首页">`+
+        `<span>回到首页</span>`+
+        `<span class="home-arrow" aria-hidden="true">↗</span>`+
+      `</a>`+
+    `</div>`;
+    return renderCheckinWidget() + base.renders.overview().replace(/<form id="chatForm"[\s\S]*?<\/form>/,composer()) + bottomBarHtml;
+  }
   function message(m,index){
     if(m.role==='user')return `<article class="message user-message"><div class="message-body">${m.images?.length?`<div class="sent-image-gallery">${m.images.map(ref=>`<button type="button" class="sent-image-thumb" data-message-image="${e(ref.key)}" title="${e(ref.name)}" aria-label="放大图片 ${e(ref.name)}"><img data-sent-image="${e(ref.key)}" ${ctx.getMessageImage?.(ref)?`src="${e(ctx.getMessageImage(ref))}"`:'hidden'} alt="${e(ref.name)}" title="${e(ref.name)}"><span data-image-missing ${ctx.getMessageImage?.(ref)?'hidden':''}>${e(ref.name)} · 读取图片</span></button>`).join('')}</div>`:''}<p>${e(m.text)}</p>${(m.attachmentNames||m.imageNames)?.length?`<small>附件：${(m.attachmentNames||m.imageNames).map(e).join('、')}</small>`:''}${m.transcript?`<details><summary>已核对的语音文字</summary><p>${e(m.transcript)}</p></details>`:''}</div></article>`;
     const interactive=Boolean(state.agentFeatures?.interactive&&state.agentFeatures?.configured);
-    const durable=Boolean(state.agentFeatures?.durable&&state.agentFeatures?.configured);
-    const canStart=durable&&!m.agentRun&&m.engine!=='正在回答'&&!m.failed&&!m.cancelled;
-    const actions=canStart?`${m.sources?.length?button('开启章节深度学习',`data-agent-index="${index}" data-agent-action="start-chapter"`):''}${button('制定冲刺计划',`data-agent-index="${index}" data-agent-action="start-exam"`)}${button('错题针对测验',`data-agent-index="${index}" data-agent-action="start-wrong"`)}`:'';
     const isThinking=m.engine==='正在回答';
-    const durationSec=Number.isFinite(m.thinkingSeconds)?m.thinkingSeconds:Number.isFinite(m.timings?.phasesMs?.evidenceReview||m.timings?.totalMs)?Math.max(1,Math.round((m.timings.phasesMs?.evidenceReview||m.timings.totalMs)/1000)):null;
+    const durationSec=Number.isFinite(m.thinkingSeconds)?m.thinkingSeconds:Number.isFinite(m.timings?.phasesMs?.evidenceReview||m.timings?.totalMs)?Math.max(1,Math.round((m.timings.phasesMs?.evidenceReview||m.timings?.totalMs)/1000)):null;
     const hasReasoning=Boolean(m.reasoning||(isThinking&&(m.progress||!m.text)));
     const thinkingLabel=isThinking?(m.reasoning?'思考中…':(m.progress||'思考中…')):('已深度思考'+(durationSec?` (用时 ${durationSec} 秒)`:''));
     const thinkingText=m.reasoning||m.progress||'正在思考并核查课程依据…';
     const thinkingBlock=hasReasoning?`<details class="thinking-box" ${isThinking?'open':''}><summary class="thinking-summary"><span class="thinking-spark">✳</span><span class="thinking-label">${e(thinkingLabel)}</span><span class="thinking-arrow">▾</span></summary><div class="thinking-content">${e(thinkingText)}</div></details>`:'';
     const renderedBody=m.text?rich.render(m.text):(isThinking&&!hasReasoning?'<p class="streaming-placeholder">正在组织回答…</p>':'');
-    return `<article class="message ai-message ${isThinking?'loading-message':''}" data-message-index="${index}"><div class="message-avatar">${icon('spark')}</div><div class="message-body"><div class="message-meta"><strong>学涯 Copilot</strong><span ${isThinking?'hidden':''}>${e(m.engine||'本地检索摘录')} · ${m.sources?.length||0} 个来源${Number.isFinite(m.timings?.totalMs)?' · '+(m.timings.totalMs/1000).toFixed(1)+' 秒':''}</span></div>${thinkingBlock}<div class="rich-content">${renderedBody}${isThinking&&m.text?'<span class="stream-cursor" aria-hidden="true"></span>':''}</div>${citations(m.sources)}${globalThis.XueyaAgentRuns?.markup(m,index,interactive)||''}${!isThinking&&!m.failed&&!m.cancelled?`<div class="message-actions">${button('继续追问',`data-followup="${index}"`)}${actions}${button('有帮助',`data-feedback="${index}" data-rating="helpful"`)}${button('引用或内容有误',`data-feedback="${index}" data-rating="incorrect"`)}</div>`:''}${state.feedback.some(f=>f.messageId===m.id)?'<small class="feedback-saved">已保存反馈</small>':''}</div></article>`;
+    const isReadingThis=Boolean(ctx.isSpeaking?.(m.text)||globalThis.XueyaTTS?.isPlaying?.(m.text));
+    const myFeedback=state.feedback?.find(f=>f.messageId===(m.id||String(index)));
+    const copySvg='<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+    const ttsSvg=isReadingThis?'<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><rect x="15" y="9" width="6" height="6" rx="1" fill="currentColor"/></svg>':'<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>';
+    const thumbUpSvg=`<svg viewBox="0 0 24 24" width="16" height="16" fill="${myFeedback?.rating==='helpful'?'currentColor':'none'}" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>`;
+    const thumbDownSvg=`<svg viewBox="0 0 24 24" width="16" height="16" fill="${myFeedback?.rating==='unhelpful'?'currentColor':'none'}" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h3a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-3"/></svg>`;
+    const alertSvg=`<svg viewBox="0 0 24 24" width="16" height="16" fill="${myFeedback?.rating==='incorrect'?'currentColor':'none'}" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`;
+    const branchSvg='<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>';
+    const regenSvg='<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>';
+    const actionButtons=!isThinking&&!m.failed&&!m.cancelled?`<div class="message-actions doubao-action-bar" role="toolbar" aria-label="回答操作"><button type="button" class="action-icon-btn" data-copy-message="${index}" title="复制回答" aria-label="复制回答">${copySvg}</button><button type="button" class="action-icon-btn ${isReadingThis?'is-playing':''}" data-tts-read="${index}" title="${isReadingThis?'停止朗读':'语音朗读'}" aria-label="${isReadingThis?'停止朗读':'语音朗读'}">${ttsSvg}</button><button type="button" class="action-icon-btn ${myFeedback?.rating==='helpful'?'is-active is-helpful':''}" data-feedback="${index}" data-rating="helpful" title="赞" aria-label="赞">${thumbUpSvg}</button><button type="button" class="action-icon-btn ${myFeedback?.rating==='unhelpful'?'is-active is-unhelpful':''}" data-feedback="${index}" data-rating="unhelpful" title="踩" aria-label="踩">${thumbDownSvg}</button><button type="button" class="action-icon-btn" data-branch="${index}" title="新建分支（从此处开启新对话）" aria-label="新建分支（从此处开启新对话）">${branchSvg}</button><button type="button" class="action-icon-btn action-icon-warn ${myFeedback?.rating==='incorrect'?'is-active':''}" data-feedback="${index}" data-rating="incorrect" title="引用或内容有误（报错）" aria-label="引用或内容有误（报错）">${alertSvg}</button><button type="button" class="action-icon-btn" data-regenerate="${index}" title="重新生成" aria-label="重新生成">${regenSvg}</button></div>`:'';
+    return `<article class="message ai-message ${isThinking?'loading-message':''}" data-message-index="${index}"><div class="message-avatar">${icon('spark')}</div><div class="message-body"><div class="message-meta"><strong>学涯 Copilot</strong><span ${isThinking?'hidden':''}>${e(m.engine||'本地检索摘录')} · ${m.sources?.length||0} 个来源${Number.isFinite(m.timings?.totalMs)?' · '+(m.timings.totalMs/1000).toFixed(1)+' 秒':''}</span></div>${thinkingBlock}<div class="rich-content">${renderedBody}${isThinking&&m.text?'<span class="stream-cursor" aria-hidden="true"></span>':''}</div>${citations(m.sources)}${globalThis.XueyaAgentRuns?.markup(m,index,interactive)||''}${actionButtons}</div></article>`;
   }
   function explicitScope(){try{const v=JSON.parse(localStorage.getItem('xueya-c-learning:'+state.courseId+':scope:'+state.sessionId));return Array.isArray(v)?v:null;}catch{return null;}}
-  function chat(){return `<div class="chat-history-toolbar"><button type="button" class="button button-outline button-small history-mobile-toggle" data-history-open aria-controls="chatHistoryPanel" aria-expanded="false">对话历史</button></div><div class="workspace-chat">${sessions()}<div class="chat-main"><div class="chat-mode-tabs" role="group" aria-label="问答模式">${[['ask','资料问答'],['summarize','知识整理'],['quiz','开放练习']].map(([mode,label])=>`<button type="button" class="${mode===state.mode?'active':''}" aria-pressed="${mode===state.mode}" data-mode="${mode}">${label}</button>`).join('')}${button('新对话','data-clear-chat '+(state.pending?'disabled':''))}</div><details class="scope-picker"><summary>资料范围：${explicitScope()!==null?explicitScope().length+' 份资料':state.selectedDocuments.length?state.selectedDocuments.length+' 份资料':'当前课程全部有效资料'}</summary><div>${state.documents.filter(d=>!d.superseded&&!d.archived).map(d=>`<label><input type="checkbox" data-scope="${e(d.id)}" ${(explicitScope()===null&&!state.selectedDocuments.length||state.selectedDocuments.includes(d.id))?'checked':''} ${state.pending?'disabled':''}>${e(d.name)}</label>`).join('')||'<p>请先添加资料。</p>'}</div></details><div class="chat-thread" id="chatThread" data-session-id="${e(state.sessionId)}" tabindex="0" aria-label="对话记录" aria-live="polite" aria-busy="${state.pending}">${state.messages.length?state.messages.map(message).join(''):`<div class="chat-empty"><span class="chat-empty-symbol">${icon('spark')}</span><h2>从一个问题开始。</h2><p>先上传课程资料，让回答能回到原文。</p><a class="text-link" href="#space/knowledge">整理课程资料 →</a></div>`}</div>${composer()}</div></div>`;}
+  function chat(){
+    return `<div class="chat-history-toolbar"><button type="button" class="button button-outline button-small history-mobile-toggle" data-history-open aria-controls="chatHistoryPanel" aria-expanded="false">对话历史</button></div>`+
+      `<div class="workspace-chat">${sessions()}<div class="chat-main">`+
+        `<div class="chat-top-external-bar" role="toolbar" aria-label="快捷操作">`+
+          `<button type="button" class="sidebar-ext-btn sidebar-toggle-btn" data-toggle-sidebar title="收起/展开侧边栏" aria-label="收起/展开侧边栏"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="4" ry="4"/><line x1="9" y1="3" x2="9" y2="21"/></svg></button>`+
+          `<button type="button" class="sidebar-ext-btn sidebar-new-btn" data-new-session title="新对话" aria-label="开启新对话" ${state.pending?'disabled':''}><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>`+
+        `</div>`+
+        `<div class="chat-mode-tabs" role="group" aria-label="问答模式">${[['ask','资料问答'],['summarize','知识整理'],['quiz','开放练习']].map(([mode,label])=>`<button type="button" class="${mode===state.mode?'active':''}" aria-pressed="${mode===state.mode}" data-mode="${mode}">${label}</button>`).join('')}${button('新对话','data-clear-chat '+(state.pending?'disabled':''))}</div>`+
+        `<details class="scope-picker"><summary>资料范围：${explicitScope()!==null?explicitScope().length+' 份资料':state.selectedDocuments.length?state.selectedDocuments.length+' 份资料':'当前课程全部有效资料'}</summary><div>${state.documents.filter(d=>!d.superseded&&!d.archived).map(d=>`<label><input type="checkbox" data-scope="${e(d.id)}" ${(explicitScope()===null&&!state.selectedDocuments.length||state.selectedDocuments.includes(d.id))?'checked':''} ${state.pending?'disabled':''}>${e(d.name)}</label>`).join('')||'<p>请先添加资料。</p>'}</div></details>`+
+        `<div class="chat-thread" id="chatThread" data-session-id="${e(state.sessionId)}" tabindex="0" aria-label="对话记录" aria-live="polite" aria-busy="${state.pending}">${state.messages.length?state.messages.map(message).join(''):`<div class="chat-empty"><span class="chat-empty-symbol">${icon('spark')}</span><h2>从一个问题开始。</h2><p>先上传课程资料，让回答能回到原文。</p><a class="text-link" href="#space/knowledge">整理课程资料 →</a></div>`}</div>`+
+        composer()+
+      `</div></div>`;
+  }
   function documentRows(query=''){
     const list=state.documents.filter(d=>(!globalThis.XueyaPlatform?.available||!d.remote)&&((d.name+' '+(d.tags||[]).join(' ')+' '+(d.chapter||'')).toLowerCase().includes(query.toLowerCase())));
     return list.length?list.map(d=>`<article class="document-row ${d.superseded?'document-history':''}"><span class="document-icon">${icon('file')}</span><div class="document-copy"><strong>${e(d.name)}</strong><small>${e(d.meta||'')} · v${Number(d.version)||1}${d.superseded?' · 历史版本':''}</small><div class="document-tags">${(d.tags||[]).map(t=>`<span>${e(t)}</span>`).join('')}${d.chapter?`<span>${e(d.chapter)}</span>`:''}</div></div><span class="status-pill ${!d.chunks?.length&&!L.sources.some(s=>s.documentId===d.id)?'pending':''}">${e(d.status)}</span><div class="row-actions">${d.chunks?.length&&!d.superseded?button('生成题库',`data-generate-questions="${e(d.id)}"`):''}${button('原文',`data-document="${e(d.id)}" aria-label="查看 ${e(d.name)}"`)}${button('整理',`data-edit-document="${e(d.id)}"`)}${!L.documents.some(s=>s.id===d.id)?`${button('新版本',`data-version-document="${e(d.id)}"`)}${!d.chunks?.length?button('重选原件',`data-retry-document="${e(d.id)}"`):''}${button('移除',`data-remove-document="${e(d.id)}" aria-label="移除 ${e(d.name)}"`)}`:''}</div></article>`).join(''):'<div class="empty-state"><h2>这里还没有资料</h2><p>添加讲义或笔记，也可换个关键词搜索。</p></div>';

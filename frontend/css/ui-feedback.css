@@ -4,6 +4,7 @@ html[data-theme=dark] ::selection{background:#abc2ff;color:#101c35}
 .study-title{padding-block:8px}
 .study-title .title-lens{display:none}
 .study-title .title-letter:hover{transform:none}
+body:not(:has([data-open-settings])) .app-settings-trigger{display:flex!important}
 .cursor-layer,.cursor-layer:popover-open{position:fixed;inset:0;width:100%;height:100%;max-width:none;max-height:none;margin:0;padding:0;border:0;background:transparent;overflow:visible;pointer-events:none;z-index:2147483647;contain:strict}
 .cursor-layer::backdrop{background:transparent;pointer-events:none}
 .cursor-ring::before{width:24px;height:24px;left:-12px;top:-12px}

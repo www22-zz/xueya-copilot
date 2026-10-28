@@ -178,6 +178,49 @@ def create_app(config: Config | None = None, *, provider=None, start_jobs=True):
             if release:
                 release()
 
+    @app.post("/api/tts")
+    async def tts_endpoint(request: Request):
+        require(bool(re.fullmatch(r'(?:127\.0\.0\.1|localhost|\[::1\])(?::\d+)?', request.headers.get('host', ''))), 'ORIGIN_FORBIDDEN')
+        require(secrets.compare_digest(request.headers.get('x-xueya-token', ''), app.state.token), 'AUTH_REQUIRED')
+        value = await json_body(request, 32768)
+        require(isinstance(value.get('text'), str), 'INVALID_SPEECH_REQUEST')
+        text = value['text'].strip()
+        voice = value.get('voice', 'mimo_default')
+        require(voice in ('mimo_default', '冰糖', '茉莉', '苏打', '白桦', 'Mia', 'Chloe', 'Milo', 'Dean'), 'INVALID_SPEECH_REQUEST')
+        course = value.get('courseId', 'course-default')
+        require(isinstance(course, str), 'INVALID_COURSE')
+        if not text:
+            return JSONResponse({"ok": False, "error": "EMPTY_TEXT"}, status_code=400)
+
+        plain = re.sub(r'```[\s\S]*?```', '（代码片段已省略）', text)
+        plain = re.sub(r'`([^`]+)`', r'\1', plain)
+        plain = re.sub(r'\[\d+\]', '', plain)
+        plain = re.sub(r'[*#_~>|]', '', plain)
+        plain = re.sub(r'https?://\S+', '网页链接', plain)
+        plain = re.sub(r'\s+', ' ', plain).strip()
+        if not plain:
+            return JSONResponse({"ok": False, "error": "EMPTY_TEXT"}, status_code=400)
+
+        if len(plain) > 1000:
+            plain = plain[:990] + '…'
+
+        host = getattr(app.state, 'learning', None)
+        if not host or not app.state.config.api_key:
+            return JSONResponse({"ok": False, "error": "TTS_NOT_CONFIGURED", "fallback": True})
+
+        try:
+            from .learning_ui_api import Speech
+            speech = Speech(host, course)
+            result = await connected_work(request, speech.synthesize({'text': plain, 'voice': voice}))
+            return {
+                "ok": True,
+                "audio": f"data:{result['mime']};base64,{result['data']}",
+                "model": result.get('model', 'mimo-v2.5-tts'),
+            }
+        except Exception as error:
+            code = ai_error_code(error, ('TTS_NOT_CONFIGURED', 'INVALID_SPEECH_RESPONSE', 'COURSE_NOT_FOUND', 'API_BUSY'))
+            return JSONResponse({"ok": False, "error": code, "fallback": True})
+
     @app.post("/api/{task:path}")
     async def api(request: Request, task: str):
         if task.startswith("platform/"):
