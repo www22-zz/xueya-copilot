@@ -6,7 +6,7 @@ import json
 from backend.xueya.common import dumps, require
 
 CST = timezone(timedelta(hours=8))
-CATEGORIES = ('all', 'hot100', 'basic', 'interview')
+CATEGORIES = ('all', 'hot100', 'basic', 'interview', 'exam408', 'legacy')
 
 
 def filters(value):
@@ -32,15 +32,26 @@ def build_snapshot(catalog, events, state, options, now=None):
     midnight = now.astimezone(CST).replace(hour=0, minute=0, second=0, microsecond=0)
     start = midnight - timedelta(days=options['days'] - 1) if options['days'] else None
     previous = start - timedelta(days=options['days']) if start else None
-    bank = {q['id']: q for q in catalog if options['category'] in ('all', q['category'])}
+    def source(q):
+        return q.get('bankSource') or ('legacy' if q.get('generated') or q.get('curated') or q['category'] != 'hot100' else 'algorithm')
+    category = options['category']
+    bank = {q['id']: q for q in catalog if category == 'all'
+            or category == 'hot100' and source(q) == 'algorithm'
+            or category == 'legacy' and source(q) == 'legacy'
+            or category not in ('hot100','legacy') and category == q['category']}
     ordered = sorted(events, key=lambda e: (e.get('effectiveAt') or e.get('at') or '', e.get('serverSeq', 0), e['id']))
-    attempts, corrections, activity = {}, set(), []
+    attempts, corrections, activity, written_scores = {}, set(), [], {}
     for event in ordered:
         q = bank.get(event.get('questionId'))
         at = instant(event.get('effectiveAt') or event.get('at'))
         if not q or not at or at > now or event.get('action') == 'note-save':
             continue
         payload, action = event.get('payload') or {}, event.get('action')
+        if action == 'written-save':
+            scores=payload.get('scores') or {}
+            if not scores or scores == written_scores.get(q['id']):
+                continue
+            written_scores[q['id']] = scores
         if action == 'answer' and q['type'] in ('single', 'multiple', 'boolean', 'fill') and payload.get('result') in ('correct', 'wrong'):
             attempts[event['id']] = {'id': event['id'], 'questionId': q['id'], 'at': at,
                                       'result': payload['result'], 'selected': payload.get('selected')}
@@ -66,7 +77,7 @@ def build_snapshot(catalog, events, state, options, now=None):
             day = daily[row['at'].astimezone(CST).date().isoformat()]
             day['attempts'] += 1
             day['correct'] += row['result'] == 'correct'
-        self_events = [(e, at) for e, at in acts if e['action'] in ('master', 'conquer', 'fuzzy', 'mark-wrong', 'reset')]
+        self_events = [(e, at) for e, at in acts if e['action'] in ('master', 'conquer', 'fuzzy', 'mark-wrong', 'reset', 'written-save')]
         for _, at in self_events:
             daily[at.astimezone(CST).date().isoformat()]['selfAssessments'] += 1
         active = {e['questionId'] for e, _ in acts if e['action'] != 'correct'}

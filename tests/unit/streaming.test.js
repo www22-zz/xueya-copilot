@@ -78,6 +78,22 @@ test('fixed practice client loads the built-in bank and uses its cached copy off
   await offline.initialize();assert.equal(offline.bank()[0].id,'h100-01');assert.equal(offline.online,false);
 });
 
+test('workspace practice rejects an old backend and incomplete cached bank instead of an empty 408 list',async()=>{
+  const cache=new Map(),storage={getItem:k=>cache.get(k),setItem:(k,v)=>cache.set(k,v)};
+  const request=async path=>path==='/api/account/status'?{ok:true,configured:false}:path==='/api/platform/bootstrap'?{ok:true,token:'controlled'}:path.includes('/bank')?{ok:true,version:'old',questions:[{id:'h100-01',category:'hot100'}]}:{ok:true,statuses:{},notes:{},serverSeq:0};
+  cache.set('xueya-practice-bank:local:workspace-v1',JSON.stringify({version:'bad-cache',questions:[{id:'h100-01'}]}));
+  const outdated=createPracticeClient({storage,request,workspaceMode:true});
+  await assert.rejects(outdated.initialize(),{code:'WORKSPACE_BANK_OUTDATED'});
+  assert.equal(outdated.bank().length,0);
+  const questions=[...Array.from({length:100},(_,i)=>({id:'h'+i,bankSource:'algorithm'})),...Array.from({length:300},(_,i)=>({id:'e'+i,bankSource:'exam408'}))];
+  const current=createPracticeClient({storage,workspaceMode:true,request:async path=>path.includes('/bank')?{ok:true,version:'current',questions}:request(path)});
+  await current.initialize();
+  const offline=createPracticeClient({storage,workspaceMode:true,request:async()=>{throw Error('offline');}});
+  await offline.initialize();
+  assert.equal(offline.bank().filter(q=>q.bankSource==='exam408').length,300);
+  assert.equal(offline.online,false);
+});
+
 test('offline workflow keeps real learning analysis and plan preview instead of course excerpts',async()=>{
   for(const protocol of ['file:','http:']){
     const service=createChatService({protocol,fetchImpl:async()=>{throw new Error('offline');}});

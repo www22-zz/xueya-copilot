@@ -1,0 +1,3591 @@
+{
+  "note": "Historical topic references only. Prompts, options and solutions are independently written in exam408_adapted.py; this file contains no source question text.",
+  "selected": [
+    {
+      "id": "e408-2009-26",
+      "subject": "操作系统",
+      "topic": "内存管理方式",
+      "tags": [
+        "内存管理方式"
+      ],
+      "year": 2009,
+      "originalNumber": 26,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/66ce0023-8b4c-4398-8ff0-eb8dcd06f1d3.pdf",
+          "question": 26
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/618b4fe5-ead0-448e-acbf-062f10b213e5.pdf",
+          "question": 26
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2009/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2009-22",
+      "subject": "计算机组成原理",
+      "topic": "异常和中断",
+      "tags": [
+        "异常和中断"
+      ],
+      "year": 2009,
+      "originalNumber": 22,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/66ce0023-8b4c-4398-8ff0-eb8dcd06f1d3.pdf",
+          "question": 22
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/618b4fe5-ead0-448e-acbf-062f10b213e5.pdf",
+          "question": 22
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2009/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2009-23",
+      "subject": "操作系统",
+      "topic": "操作系统概念",
+      "tags": [
+        "操作系统概念"
+      ],
+      "year": 2009,
+      "originalNumber": 23,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/66ce0023-8b4c-4398-8ff0-eb8dcd06f1d3.pdf",
+          "question": 23
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/618b4fe5-ead0-448e-acbf-062f10b213e5.pdf",
+          "question": 23
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2009/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2009-30",
+      "subject": "操作系统",
+      "topic": "inode",
+      "tags": [
+        "inode"
+      ],
+      "year": 2009,
+      "originalNumber": 30,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/66ce0023-8b4c-4398-8ff0-eb8dcd06f1d3.pdf",
+          "question": 30
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/618b4fe5-ead0-448e-acbf-062f10b213e5.pdf",
+          "question": 30
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2009/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2009-33",
+      "subject": "计算机网络",
+      "topic": "OSI模型",
+      "tags": [
+        "OSI模型"
+      ],
+      "year": 2009,
+      "originalNumber": 33,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/66ce0023-8b4c-4398-8ff0-eb8dcd06f1d3.pdf",
+          "question": 33
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/618b4fe5-ead0-448e-acbf-062f10b213e5.pdf",
+          "question": 33
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2009/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2009-36",
+      "subject": "计算机网络",
+      "topic": "交换机",
+      "tags": [
+        "交换机",
+        "协议数据单元"
+      ],
+      "year": 2009,
+      "originalNumber": 36,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/66ce0023-8b4c-4398-8ff0-eb8dcd06f1d3.pdf",
+          "question": 36
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/618b4fe5-ead0-448e-acbf-062f10b213e5.pdf",
+          "question": 36
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2009/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2009-32",
+      "subject": "操作系统",
+      "topic": "设备分配和回收",
+      "tags": [
+        "设备分配和回收"
+      ],
+      "year": 2009,
+      "originalNumber": 32,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/66ce0023-8b4c-4398-8ff0-eb8dcd06f1d3.pdf",
+          "question": 32
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/618b4fe5-ead0-448e-acbf-062f10b213e5.pdf",
+          "question": 32
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2009/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2009-05",
+      "subject": "数据结构",
+      "topic": "完全二叉树",
+      "tags": [
+        "完全二叉树"
+      ],
+      "year": 2009,
+      "originalNumber": 5,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/66ce0023-8b4c-4398-8ff0-eb8dcd06f1d3.pdf",
+          "question": 5
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/618b4fe5-ead0-448e-acbf-062f10b213e5.pdf",
+          "question": 5
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2009/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2010-23",
+      "subject": "操作系统",
+      "topic": "操作系统概念",
+      "tags": [
+        "操作系统概念"
+      ],
+      "year": 2010,
+      "originalNumber": 23,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/da779a9f-b064-4f39-aea8-3e4b847cde4a.pdf",
+          "question": 23
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/21dc65b0-0cec-42fe-a792-1a214eb38e0d.pdf",
+          "question": 23
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2010/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2010-19",
+      "subject": "计算机组成原理",
+      "topic": "流水线冒险",
+      "tags": [
+        "流水线冒险"
+      ],
+      "year": 2010,
+      "originalNumber": 19,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/da779a9f-b064-4f39-aea8-3e4b847cde4a.pdf",
+          "question": 19
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/21dc65b0-0cec-42fe-a792-1a214eb38e0d.pdf",
+          "question": 19
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2010/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2010-15",
+      "subject": "计算机组成原理",
+      "topic": "主存容量的扩展",
+      "tags": [
+        "主存容量的扩展"
+      ],
+      "year": 2010,
+      "originalNumber": 15,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/da779a9f-b064-4f39-aea8-3e4b847cde4a.pdf",
+          "question": 15
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/21dc65b0-0cec-42fe-a792-1a214eb38e0d.pdf",
+          "question": 15
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2010/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2010-20",
+      "subject": "计算机组成原理",
+      "topic": "总线类型",
+      "tags": [
+        "总线类型"
+      ],
+      "year": 2010,
+      "originalNumber": 20,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/da779a9f-b064-4f39-aea8-3e4b847cde4a.pdf",
+          "question": 20
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/21dc65b0-0cec-42fe-a792-1a214eb38e0d.pdf",
+          "question": 20
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2010/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2010-31",
+      "subject": "操作系统",
+      "topic": "目录",
+      "tags": [
+        "目录"
+      ],
+      "year": 2010,
+      "originalNumber": 31,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/da779a9f-b064-4f39-aea8-3e4b847cde4a.pdf",
+          "question": 31
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/21dc65b0-0cec-42fe-a792-1a214eb38e0d.pdf",
+          "question": 31
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2010/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2010-07",
+      "subject": "数据结构",
+      "topic": "图的概念",
+      "tags": [
+        "图的概念"
+      ],
+      "year": 2010,
+      "originalNumber": 7,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/da779a9f-b064-4f39-aea8-3e4b847cde4a.pdf",
+          "question": 7
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/21dc65b0-0cec-42fe-a792-1a214eb38e0d.pdf",
+          "question": 7
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2010/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2010-18",
+      "subject": "计算机组成原理",
+      "topic": "寄存器类型",
+      "tags": [
+        "寄存器类型"
+      ],
+      "year": 2010,
+      "originalNumber": 18,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/da779a9f-b064-4f39-aea8-3e4b847cde4a.pdf",
+          "question": 18
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/21dc65b0-0cec-42fe-a792-1a214eb38e0d.pdf",
+          "question": 18
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2010/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2010-32",
+      "subject": "操作系统",
+      "topic": "中断IO",
+      "tags": [
+        "中断IO"
+      ],
+      "year": 2010,
+      "originalNumber": 32,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/da779a9f-b064-4f39-aea8-3e4b847cde4a.pdf",
+          "question": 32
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/21dc65b0-0cec-42fe-a792-1a214eb38e0d.pdf",
+          "question": 32
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2010/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2011-12",
+      "subject": "计算机组成原理",
+      "topic": "指令执行指标",
+      "tags": [
+        "指令执行指标"
+      ],
+      "year": 2011,
+      "originalNumber": 12,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/e6f8fe8e-5bc9-42a6-b59c-70f1665b2496.pdf",
+          "question": 12
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/176ed299-5a6d-435a-bdc1-5c0e53ff7b26.pdf",
+          "question": 12
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2011/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2011-14",
+      "subject": "计算机组成原理",
+      "topic": "存储器概念",
+      "tags": [
+        "存储器概念"
+      ],
+      "year": 2011,
+      "originalNumber": 14,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/e6f8fe8e-5bc9-42a6-b59c-70f1665b2496.pdf",
+          "question": 14
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/176ed299-5a6d-435a-bdc1-5c0e53ff7b26.pdf",
+          "question": 14
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2011/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2011-04",
+      "subject": "数据结构",
+      "topic": "完全二叉树",
+      "tags": [
+        "完全二叉树"
+      ],
+      "year": 2011,
+      "originalNumber": 4,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/e6f8fe8e-5bc9-42a6-b59c-70f1665b2496.pdf",
+          "question": 4
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/176ed299-5a6d-435a-bdc1-5c0e53ff7b26.pdf",
+          "question": 4
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2011/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2011-36",
+      "subject": "计算机网络",
+      "topic": "介质访问控制",
+      "tags": [
+        "介质访问控制"
+      ],
+      "year": 2011,
+      "originalNumber": 36,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/e6f8fe8e-5bc9-42a6-b59c-70f1665b2496.pdf",
+          "question": 36
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/176ed299-5a6d-435a-bdc1-5c0e53ff7b26.pdf",
+          "question": 36
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2011/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2011-20",
+      "subject": "计算机组成原理",
+      "topic": "总线概念",
+      "tags": [
+        "总线概念"
+      ],
+      "year": 2011,
+      "originalNumber": 20,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/e6f8fe8e-5bc9-42a6-b59c-70f1665b2496.pdf",
+          "question": 20
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/176ed299-5a6d-435a-bdc1-5c0e53ff7b26.pdf",
+          "question": 20
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2011/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2011-10",
+      "subject": "数据结构",
+      "topic": "排序算法",
+      "tags": [
+        "排序算法"
+      ],
+      "year": 2011,
+      "originalNumber": 10,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/e6f8fe8e-5bc9-42a6-b59c-70f1665b2496.pdf",
+          "question": 10
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/176ed299-5a6d-435a-bdc1-5c0e53ff7b26.pdf",
+          "question": 10
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2011/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2011-24",
+      "subject": "操作系统",
+      "topic": "用户态和内核态",
+      "tags": [
+        "用户态和内核态"
+      ],
+      "year": 2011,
+      "originalNumber": 24,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/e6f8fe8e-5bc9-42a6-b59c-70f1665b2496.pdf",
+          "question": 24
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/176ed299-5a6d-435a-bdc1-5c0e53ff7b26.pdf",
+          "question": 24
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2011/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2011-06",
+      "subject": "数据结构",
+      "topic": "树的概念",
+      "tags": [
+        "树的概念"
+      ],
+      "year": 2011,
+      "originalNumber": 6,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/e6f8fe8e-5bc9-42a6-b59c-70f1665b2496.pdf",
+          "question": 6
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/176ed299-5a6d-435a-bdc1-5c0e53ff7b26.pdf",
+          "question": 6
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2011/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2011-30",
+      "subject": "操作系统",
+      "topic": "程序的链接",
+      "tags": [
+        "程序的链接",
+        "程序的装入"
+      ],
+      "year": 2011,
+      "originalNumber": 30,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/e6f8fe8e-5bc9-42a6-b59c-70f1665b2496.pdf",
+          "question": 30
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/176ed299-5a6d-435a-bdc1-5c0e53ff7b26.pdf",
+          "question": 30
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2011/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2011-38",
+      "subject": "计算机网络",
+      "topic": "子网划分",
+      "tags": [
+        "子网划分"
+      ],
+      "year": 2011,
+      "originalNumber": 38,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/e6f8fe8e-5bc9-42a6-b59c-70f1665b2496.pdf",
+          "question": 38
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/176ed299-5a6d-435a-bdc1-5c0e53ff7b26.pdf",
+          "question": 38
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2011/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2012-33",
+      "subject": "计算机网络",
+      "topic": "TCP/IP模型",
+      "tags": [
+        "TCP/IP模型",
+        "ICMP"
+      ],
+      "year": 2012,
+      "originalNumber": 33,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/aa16fad1-1b4a-443d-8371-f1ca40cfaf76.pdf",
+          "question": 33
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/0b4d0eaa-ca05-4dd2-a918-436597a366d2.pdf",
+          "question": 33
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2012/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2012-23",
+      "subject": "操作系统",
+      "topic": "用户态和内核态",
+      "tags": [
+        "用户态和内核态"
+      ],
+      "year": 2012,
+      "originalNumber": 23,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/aa16fad1-1b4a-443d-8371-f1ca40cfaf76.pdf",
+          "question": 23
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/0b4d0eaa-ca05-4dd2-a918-436597a366d2.pdf",
+          "question": 23
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2012/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2012-35",
+      "subject": "计算机网络",
+      "topic": "以太网",
+      "tags": [
+        "以太网"
+      ],
+      "year": 2012,
+      "originalNumber": 35,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/aa16fad1-1b4a-443d-8371-f1ca40cfaf76.pdf",
+          "question": 35
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/0b4d0eaa-ca05-4dd2-a918-436597a366d2.pdf",
+          "question": 35
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2012/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2012-34",
+      "subject": "计算机网络",
+      "topic": "物理层接口特性",
+      "tags": [
+        "物理层接口特性"
+      ],
+      "year": 2012,
+      "originalNumber": 34,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/aa16fad1-1b4a-443d-8371-f1ca40cfaf76.pdf",
+          "question": 34
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/0b4d0eaa-ca05-4dd2-a918-436597a366d2.pdf",
+          "question": 34
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2012/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2012-14",
+      "subject": "计算机组成原理",
+      "topic": "IEEE浮点数表示",
+      "tags": [
+        "IEEE浮点数表示"
+      ],
+      "year": 2012,
+      "originalNumber": 14,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/aa16fad1-1b4a-443d-8371-f1ca40cfaf76.pdf",
+          "question": 14
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/0b4d0eaa-ca05-4dd2-a918-436597a366d2.pdf",
+          "question": 14
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2012/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2012-38",
+      "subject": "计算机网络",
+      "topic": "ARP",
+      "tags": [
+        "ARP"
+      ],
+      "year": 2012,
+      "originalNumber": 38,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/aa16fad1-1b4a-443d-8371-f1ca40cfaf76.pdf",
+          "question": 38
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/0b4d0eaa-ca05-4dd2-a918-436597a366d2.pdf",
+          "question": 38
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2012/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2012-32",
+      "subject": "操作系统",
+      "topic": "磁盘概念",
+      "tags": [
+        "磁盘概念"
+      ],
+      "year": 2012,
+      "originalNumber": 32,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/aa16fad1-1b4a-443d-8371-f1ca40cfaf76.pdf",
+          "question": 32
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/0b4d0eaa-ca05-4dd2-a918-436597a366d2.pdf",
+          "question": 32
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2012/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2012-05",
+      "subject": "数据结构",
+      "topic": "图的遍历",
+      "tags": [
+        "图的遍历"
+      ],
+      "year": 2012,
+      "originalNumber": 5,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/aa16fad1-1b4a-443d-8371-f1ca40cfaf76.pdf",
+          "question": 5
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/0b4d0eaa-ca05-4dd2-a918-436597a366d2.pdf",
+          "question": 5
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2012/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2013-29",
+      "subject": "操作系统",
+      "topic": "系统引导流程",
+      "tags": [
+        "系统引导流程"
+      ],
+      "year": 2013,
+      "originalNumber": 29,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/1952f795-2b5d-4d17-8f4c-77cc5a6d6ebb.pdf",
+          "question": 29
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/0356daa4-0d15-45cb-8e95-fe8054f2e8f5.pdf",
+          "question": 29
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2013/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2013-36",
+      "subject": "计算机网络",
+      "topic": "介质访问控制",
+      "tags": [
+        "介质访问控制"
+      ],
+      "year": 2013,
+      "originalNumber": 36,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/1952f795-2b5d-4d17-8f4c-77cc5a6d6ebb.pdf",
+          "question": 36
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/0356daa4-0d15-45cb-8e95-fe8054f2e8f5.pdf",
+          "question": 36
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2013/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2013-10",
+      "subject": "数据结构",
+      "topic": "B树",
+      "tags": [
+        "B树"
+      ],
+      "year": 2013,
+      "originalNumber": 10,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/1952f795-2b5d-4d17-8f4c-77cc5a6d6ebb.pdf",
+          "question": 10
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/0356daa4-0d15-45cb-8e95-fe8054f2e8f5.pdf",
+          "question": 10
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2013/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2013-19",
+      "subject": "计算机组成原理",
+      "topic": "总线类型",
+      "tags": [
+        "总线类型"
+      ],
+      "year": 2013,
+      "originalNumber": 19,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/1952f795-2b5d-4d17-8f4c-77cc5a6d6ebb.pdf",
+          "question": 19
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/0356daa4-0d15-45cb-8e95-fe8054f2e8f5.pdf",
+          "question": 19
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2013/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2013-37",
+      "subject": "计算机网络",
+      "topic": "HDLC",
+      "tags": [
+        "HDLC"
+      ],
+      "year": 2013,
+      "originalNumber": 37,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/1952f795-2b5d-4d17-8f4c-77cc5a6d6ebb.pdf",
+          "question": 37
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/0356daa4-0d15-45cb-8e95-fe8054f2e8f5.pdf",
+          "question": 37
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2013/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2013-15",
+      "subject": "计算机组成原理",
+      "topic": "差错控制",
+      "tags": [
+        "差错控制",
+        "海明码"
+      ],
+      "year": 2013,
+      "originalNumber": 15,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/1952f795-2b5d-4d17-8f4c-77cc5a6d6ebb.pdf",
+          "question": 15
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/0356daa4-0d15-45cb-8e95-fe8054f2e8f5.pdf",
+          "question": 15
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2013/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2013-33",
+      "subject": "计算机网络",
+      "topic": "OSI模型",
+      "tags": [
+        "OSI模型"
+      ],
+      "year": 2013,
+      "originalNumber": 33,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/1952f795-2b5d-4d17-8f4c-77cc5a6d6ebb.pdf",
+          "question": 33
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/0356daa4-0d15-45cb-8e95-fe8054f2e8f5.pdf",
+          "question": 33
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2013/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2013-13",
+      "subject": "计算机组成原理",
+      "topic": "IEEE浮点数表示",
+      "tags": [
+        "IEEE浮点数表示"
+      ],
+      "year": 2013,
+      "originalNumber": 13,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/1952f795-2b5d-4d17-8f4c-77cc5a6d6ebb.pdf",
+          "question": 13
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/0356daa4-0d15-45cb-8e95-fe8054f2e8f5.pdf",
+          "question": 13
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2013/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2013-20",
+      "subject": "计算机组成原理",
+      "topic": "RAID",
+      "tags": [
+        "RAID"
+      ],
+      "year": 2013,
+      "originalNumber": 20,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/1952f795-2b5d-4d17-8f4c-77cc5a6d6ebb.pdf",
+          "question": 20
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/0356daa4-0d15-45cb-8e95-fe8054f2e8f5.pdf",
+          "question": 20
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2013/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2014-40",
+      "subject": "计算机网络",
+      "topic": "HTTP",
+      "tags": [
+        "HTTP"
+      ],
+      "year": 2014,
+      "originalNumber": 40,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/becf4a64-f52d-4e03-bf57-edd1e6d9bb11.pdf",
+          "question": 40
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/ff7be588-bd3a-49aa-a543-2597a1696a93.pdf",
+          "question": 40
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2014/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2014-25",
+      "subject": "操作系统",
+      "topic": "用户态和内核态",
+      "tags": [
+        "用户态和内核态",
+        "陷阱指令"
+      ],
+      "year": 2014,
+      "originalNumber": 25,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/becf4a64-f52d-4e03-bf57-edd1e6d9bb11.pdf",
+          "question": 25
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/ff7be588-bd3a-49aa-a543-2597a1696a93.pdf",
+          "question": 25
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2014/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2014-33",
+      "subject": "计算机网络",
+      "topic": "OSI模型",
+      "tags": [
+        "OSI模型"
+      ],
+      "year": 2014,
+      "originalNumber": 33,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/becf4a64-f52d-4e03-bf57-edd1e6d9bb11.pdf",
+          "question": 33
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/ff7be588-bd3a-49aa-a543-2597a1696a93.pdf",
+          "question": 33
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2014/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2014-09",
+      "subject": "数据结构",
+      "topic": "B树",
+      "tags": [
+        "B树"
+      ],
+      "year": 2014,
+      "originalNumber": 9,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/becf4a64-f52d-4e03-bf57-edd1e6d9bb11.pdf",
+          "question": 9
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/ff7be588-bd3a-49aa-a543-2597a1696a93.pdf",
+          "question": 9
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2014/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2014-35",
+      "subject": "计算机网络",
+      "topic": "香农定理",
+      "tags": [
+        "香农定理",
+        "通信指标"
+      ],
+      "year": 2014,
+      "originalNumber": 35,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/becf4a64-f52d-4e03-bf57-edd1e6d9bb11.pdf",
+          "question": 35
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/ff7be588-bd3a-49aa-a543-2597a1696a93.pdf",
+          "question": 35
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2014/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2014-15",
+      "subject": "计算机组成原理",
+      "topic": "主存容量的扩展",
+      "tags": [
+        "主存容量的扩展"
+      ],
+      "year": 2014,
+      "originalNumber": 15,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/becf4a64-f52d-4e03-bf57-edd1e6d9bb11.pdf",
+          "question": 15
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/ff7be588-bd3a-49aa-a543-2597a1696a93.pdf",
+          "question": 15
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2014/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2014-23",
+      "subject": "操作系统",
+      "topic": "处理机调度算法",
+      "tags": [
+        "处理机调度算法"
+      ],
+      "year": 2014,
+      "originalNumber": 23,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/becf4a64-f52d-4e03-bf57-edd1e6d9bb11.pdf",
+          "question": 23
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/ff7be588-bd3a-49aa-a543-2597a1696a93.pdf",
+          "question": 23
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2014/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2014-13",
+      "subject": "计算机组成原理",
+      "topic": "补码",
+      "tags": [
+        "补码"
+      ],
+      "year": 2014,
+      "originalNumber": 13,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/becf4a64-f52d-4e03-bf57-edd1e6d9bb11.pdf",
+          "question": 13
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/ff7be588-bd3a-49aa-a543-2597a1696a93.pdf",
+          "question": 13
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2014/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2014-32",
+      "subject": "操作系统",
+      "topic": "页表",
+      "tags": [
+        "页表"
+      ],
+      "year": 2014,
+      "originalNumber": 32,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/becf4a64-f52d-4e03-bf57-edd1e6d9bb11.pdf",
+          "question": 32
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/ff7be588-bd3a-49aa-a543-2597a1696a93.pdf",
+          "question": 32
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2014/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2015-17",
+      "subject": "计算机组成原理",
+      "topic": "存储器概念",
+      "tags": [
+        "存储器概念"
+      ],
+      "year": 2015,
+      "originalNumber": 17,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/1da8d963-0e88-469e-89b9-62a34b7219c3.pdf",
+          "question": 17
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/456188ea-8304-4f97-a3e2-8020d6d0c2d8.pdf",
+          "question": 17
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2015/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2015-02",
+      "subject": "数据结构",
+      "topic": "入栈出栈序列",
+      "tags": [
+        "入栈出栈序列",
+        "卡特兰数"
+      ],
+      "year": 2015,
+      "originalNumber": 2,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/1da8d963-0e88-469e-89b9-62a34b7219c3.pdf",
+          "question": 2
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/456188ea-8304-4f97-a3e2-8020d6d0c2d8.pdf",
+          "question": 2
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2015/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2015-11",
+      "subject": "数据结构",
+      "topic": "排序算法",
+      "tags": [
+        "排序算法",
+        "希尔排序"
+      ],
+      "year": 2015,
+      "originalNumber": 11,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/1da8d963-0e88-469e-89b9-62a34b7219c3.pdf",
+          "question": 11
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/456188ea-8304-4f97-a3e2-8020d6d0c2d8.pdf",
+          "question": 11
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2015/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2015-13",
+      "subject": "计算机组成原理",
+      "topic": "组成原理",
+      "tags": [
+        "组成原理"
+      ],
+      "year": 2015,
+      "originalNumber": 13,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/1da8d963-0e88-469e-89b9-62a34b7219c3.pdf",
+          "question": 13
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/456188ea-8304-4f97-a3e2-8020d6d0c2d8.pdf",
+          "question": 13
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2015/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2015-09",
+      "subject": "数据结构",
+      "topic": "排序算法",
+      "tags": [
+        "排序算法",
+        "基数排序"
+      ],
+      "year": 2015,
+      "originalNumber": 9,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/1da8d963-0e88-469e-89b9-62a34b7219c3.pdf",
+          "question": 9
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/456188ea-8304-4f97-a3e2-8020d6d0c2d8.pdf",
+          "question": 9
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2015/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2015-23",
+      "subject": "操作系统",
+      "topic": "寄存器类型",
+      "tags": [
+        "寄存器类型",
+        "中断IO"
+      ],
+      "year": 2015,
+      "originalNumber": 23,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/1da8d963-0e88-469e-89b9-62a34b7219c3.pdf",
+          "question": 23
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/456188ea-8304-4f97-a3e2-8020d6d0c2d8.pdf",
+          "question": 23
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2015/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2015-28",
+      "subject": "操作系统",
+      "topic": "缓冲区",
+      "tags": [
+        "缓冲区"
+      ],
+      "year": 2015,
+      "originalNumber": 28,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/1da8d963-0e88-469e-89b9-62a34b7219c3.pdf",
+          "question": 28
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/456188ea-8304-4f97-a3e2-8020d6d0c2d8.pdf",
+          "question": 28
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2015/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2015-25",
+      "subject": "操作系统",
+      "topic": "进程状态",
+      "tags": [
+        "进程状态"
+      ],
+      "year": 2015,
+      "originalNumber": 25,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/1da8d963-0e88-469e-89b9-62a34b7219c3.pdf",
+          "question": 25
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/456188ea-8304-4f97-a3e2-8020d6d0c2d8.pdf",
+          "question": 25
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2015/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2016-05",
+      "subject": "数据结构",
+      "topic": "森林的概念",
+      "tags": [
+        "森林的概念"
+      ],
+      "year": 2016,
+      "originalNumber": 5,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/a62b9584-568c-4139-aaa8-3cba0bfc8f80.pdf",
+          "question": 5
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/48f7876e-c40f-4a30-8d39-779582d064ad.pdf",
+          "question": 5
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2016/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2016-11",
+      "subject": "数据结构",
+      "topic": "外部排序",
+      "tags": [
+        "外部排序"
+      ],
+      "year": 2016,
+      "originalNumber": 11,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/a62b9584-568c-4139-aaa8-3cba0bfc8f80.pdf",
+          "question": 11
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/48f7876e-c40f-4a30-8d39-779582d064ad.pdf",
+          "question": 11
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2016/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2016-12",
+      "subject": "计算机组成原理",
+      "topic": "计算机体系结构",
+      "tags": [
+        "计算机体系结构"
+      ],
+      "year": 2016,
+      "originalNumber": 12,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/a62b9584-568c-4139-aaa8-3cba0bfc8f80.pdf",
+          "question": 12
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/48f7876e-c40f-4a30-8d39-779582d064ad.pdf",
+          "question": 12
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2016/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2016-13",
+      "subject": "计算机组成原理",
+      "topic": "类型转换",
+      "tags": [
+        "类型转换"
+      ],
+      "year": 2016,
+      "originalNumber": 13,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/a62b9584-568c-4139-aaa8-3cba0bfc8f80.pdf",
+          "question": 13
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/48f7876e-c40f-4a30-8d39-779582d064ad.pdf",
+          "question": 13
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2016/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2016-33",
+      "subject": "计算机网络",
+      "topic": "OSI模型",
+      "tags": [
+        "OSI模型",
+        "网络设备"
+      ],
+      "year": 2016,
+      "originalNumber": 33,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/a62b9584-568c-4139-aaa8-3cba0bfc8f80.pdf",
+          "question": 33
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/48f7876e-c40f-4a30-8d39-779582d064ad.pdf",
+          "question": 33
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2016/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2016-10",
+      "subject": "数据结构",
+      "topic": "B树",
+      "tags": [
+        "B树",
+        "B+树"
+      ],
+      "year": 2016,
+      "originalNumber": 10,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/a62b9584-568c-4139-aaa8-3cba0bfc8f80.pdf",
+          "question": 10
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/48f7876e-c40f-4a30-8d39-779582d064ad.pdf",
+          "question": 10
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2016/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2016-07",
+      "subject": "数据结构",
+      "topic": "复杂度分析",
+      "tags": [
+        "复杂度分析",
+        "邻接表",
+        "拓扑排序"
+      ],
+      "year": 2016,
+      "originalNumber": 7,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/a62b9584-568c-4139-aaa8-3cba0bfc8f80.pdf",
+          "question": 7
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/48f7876e-c40f-4a30-8d39-779582d064ad.pdf",
+          "question": 7
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2016/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2016-16",
+      "subject": "计算机组成原理",
+      "topic": "组成原理",
+      "tags": [
+        "组成原理"
+      ],
+      "year": 2016,
+      "originalNumber": 16,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/a62b9584-568c-4139-aaa8-3cba0bfc8f80.pdf",
+          "question": 16
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/48f7876e-c40f-4a30-8d39-779582d064ad.pdf",
+          "question": 16
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2016/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2017-37",
+      "subject": "计算机网络",
+      "topic": "路由协议",
+      "tags": [
+        "路由协议"
+      ],
+      "year": 2017,
+      "originalNumber": 37,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/66dcf908-f2cb-4c7b-a74d-8275fa9dd227.pdf",
+          "question": 37
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/a71b5884-650c-455f-ad52-213b14ee08d2.pdf",
+          "question": 37
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2017/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2017-15",
+      "subject": "计算机组成原理",
+      "topic": "指令寻址方式",
+      "tags": [
+        "指令寻址方式"
+      ],
+      "year": 2017,
+      "originalNumber": 15,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/66dcf908-f2cb-4c7b-a74d-8275fa9dd227.pdf",
+          "question": 15
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/a71b5884-650c-455f-ad52-213b14ee08d2.pdf",
+          "question": 15
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2017/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2017-38",
+      "subject": "计算机网络",
+      "topic": "网络号和主机号",
+      "tags": [
+        "网络号和主机号"
+      ],
+      "year": 2017,
+      "originalNumber": 38,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/66dcf908-f2cb-4c7b-a74d-8275fa9dd227.pdf",
+          "question": 38
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/a71b5884-650c-455f-ad52-213b14ee08d2.pdf",
+          "question": 38
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2017/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2017-34",
+      "subject": "计算机网络",
+      "topic": "奈奎斯特定理",
+      "tags": [
+        "奈奎斯特定理"
+      ],
+      "year": 2017,
+      "originalNumber": 34,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/66dcf908-f2cb-4c7b-a74d-8275fa9dd227.pdf",
+          "question": 34
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/a71b5884-650c-455f-ad52-213b14ee08d2.pdf",
+          "question": 34
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2017/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2017-03",
+      "subject": "数据结构",
+      "topic": "特殊矩阵",
+      "tags": [
+        "特殊矩阵"
+      ],
+      "year": 2017,
+      "originalNumber": 3,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/66dcf908-f2cb-4c7b-a74d-8275fa9dd227.pdf",
+          "question": 3
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/a71b5884-650c-455f-ad52-213b14ee08d2.pdf",
+          "question": 3
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2017/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2017-26",
+      "subject": "操作系统",
+      "topic": "外存空间管理",
+      "tags": [
+        "外存空间管理"
+      ],
+      "year": 2017,
+      "originalNumber": 26,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/66dcf908-f2cb-4c7b-a74d-8275fa9dd227.pdf",
+          "question": 26
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/a71b5884-650c-455f-ad52-213b14ee08d2.pdf",
+          "question": 26
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2017/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2017-28",
+      "subject": "操作系统",
+      "topic": "操作系统概念",
+      "tags": [
+        "操作系统概念"
+      ],
+      "year": 2017,
+      "originalNumber": 28,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/66dcf908-f2cb-4c7b-a74d-8275fa9dd227.pdf",
+          "question": 28
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/a71b5884-650c-455f-ad52-213b14ee08d2.pdf",
+          "question": 28
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2017/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2018-08",
+      "subject": "数据结构",
+      "topic": "B树",
+      "tags": [
+        "B树"
+      ],
+      "year": 2018,
+      "originalNumber": 8,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/6e797e11-6c0f-4ddd-9327-acc22436beaa.pdf",
+          "question": 8
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/d715b8d5-2a32-4336-93f2-9b1c989e1f12.pdf",
+          "question": 8
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2018/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2018-33",
+      "subject": "计算机网络",
+      "topic": "网络协议",
+      "tags": [
+        "网络协议"
+      ],
+      "year": 2018,
+      "originalNumber": 33,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/6e797e11-6c0f-4ddd-9327-acc22436beaa.pdf",
+          "question": 33
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/d715b8d5-2a32-4336-93f2-9b1c989e1f12.pdf",
+          "question": 33
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2018/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2018-39",
+      "subject": "计算机网络",
+      "topic": "UDP",
+      "tags": [
+        "UDP"
+      ],
+      "year": 2018,
+      "originalNumber": 39,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/6e797e11-6c0f-4ddd-9327-acc22436beaa.pdf",
+          "question": 39
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/d715b8d5-2a32-4336-93f2-9b1c989e1f12.pdf",
+          "question": 39
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2018/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2018-32",
+      "subject": "操作系统",
+      "topic": "硬件互斥指令",
+      "tags": [
+        "硬件互斥指令",
+        "信号量"
+      ],
+      "year": 2018,
+      "originalNumber": 32,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/6e797e11-6c0f-4ddd-9327-acc22436beaa.pdf",
+          "question": 32
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/d715b8d5-2a32-4336-93f2-9b1c989e1f12.pdf",
+          "question": 32
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2018/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2018-40",
+      "subject": "计算机网络",
+      "topic": "电子邮件",
+      "tags": [
+        "电子邮件"
+      ],
+      "year": 2018,
+      "originalNumber": 40,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/6e797e11-6c0f-4ddd-9327-acc22436beaa.pdf",
+          "question": 40
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/d715b8d5-2a32-4336-93f2-9b1c989e1f12.pdf",
+          "question": 40
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2018/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2018-34",
+      "subject": "计算机网络",
+      "topic": "物理层接口特性",
+      "tags": [
+        "物理层接口特性"
+      ],
+      "year": 2018,
+      "originalNumber": 34,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/6e797e11-6c0f-4ddd-9327-acc22436beaa.pdf",
+          "question": 34
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/d715b8d5-2a32-4336-93f2-9b1c989e1f12.pdf",
+          "question": 34
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2018/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2018-14",
+      "subject": "计算机组成原理",
+      "topic": "IEEE浮点数表示",
+      "tags": [
+        "IEEE浮点数表示"
+      ],
+      "year": 2018,
+      "originalNumber": 14,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/6e797e11-6c0f-4ddd-9327-acc22436beaa.pdf",
+          "question": 14
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/d715b8d5-2a32-4336-93f2-9b1c989e1f12.pdf",
+          "question": 14
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2018/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2018-31",
+      "subject": "操作系统",
+      "topic": "缓冲区",
+      "tags": [
+        "缓冲区"
+      ],
+      "year": 2018,
+      "originalNumber": 31,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/6e797e11-6c0f-4ddd-9327-acc22436beaa.pdf",
+          "question": 31
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/d715b8d5-2a32-4336-93f2-9b1c989e1f12.pdf",
+          "question": 31
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2018/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2018-21",
+      "subject": "计算机组成原理",
+      "topic": "总线指标",
+      "tags": [
+        "总线指标"
+      ],
+      "year": 2018,
+      "originalNumber": 21,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/6e797e11-6c0f-4ddd-9327-acc22436beaa.pdf",
+          "question": 21
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/d715b8d5-2a32-4336-93f2-9b1c989e1f12.pdf",
+          "question": 21
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2018/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2019-34",
+      "subject": "计算机网络",
+      "topic": "传输介质",
+      "tags": [
+        "传输介质"
+      ],
+      "year": 2019,
+      "originalNumber": 34,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/2613a8c5-0439-4e51-9f13-e664fdcac6c7.pdf",
+          "question": 34
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/fb8fe66c-510f-4777-ad42-09e83fb453ee.pdf",
+          "question": 34
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2019/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2019-11",
+      "subject": "数据结构",
+      "topic": "外部排序",
+      "tags": [
+        "外部排序"
+      ],
+      "year": 2019,
+      "originalNumber": 11,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/2613a8c5-0439-4e51-9f13-e664fdcac6c7.pdf",
+          "question": 11
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/fb8fe66c-510f-4777-ad42-09e83fb453ee.pdf",
+          "question": 11
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2019/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2019-33",
+      "subject": "计算机网络",
+      "topic": "OSI模型",
+      "tags": [
+        "OSI模型"
+      ],
+      "year": 2019,
+      "originalNumber": 33,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/2613a8c5-0439-4e51-9f13-e664fdcac6c7.pdf",
+          "question": 33
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/fb8fe66c-510f-4777-ad42-09e83fb453ee.pdf",
+          "question": 33
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2019/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2019-35",
+      "subject": "计算机网络",
+      "topic": "ARQ协议",
+      "tags": [
+        "ARQ协议",
+        "窗口大小限制"
+      ],
+      "year": 2019,
+      "originalNumber": 35,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/2613a8c5-0439-4e51-9f13-e664fdcac6c7.pdf",
+          "question": 35
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/fb8fe66c-510f-4777-ad42-09e83fb453ee.pdf",
+          "question": 35
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2019/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2019-37",
+      "subject": "计算机网络",
+      "topic": "子网划分",
+      "tags": [
+        "子网划分"
+      ],
+      "year": 2019,
+      "originalNumber": 37,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/2613a8c5-0439-4e51-9f13-e664fdcac6c7.pdf",
+          "question": 37
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/fb8fe66c-510f-4777-ad42-09e83fb453ee.pdf",
+          "question": 37
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2019/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2019-03",
+      "subject": "数据结构",
+      "topic": "哈夫曼树",
+      "tags": [
+        "哈夫曼树"
+      ],
+      "year": 2019,
+      "originalNumber": 3,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/2613a8c5-0439-4e51-9f13-e664fdcac6c7.pdf",
+          "question": 3
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/fb8fe66c-510f-4777-ad42-09e83fb453ee.pdf",
+          "question": 3
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2019/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2019-13",
+      "subject": "计算机组成原理",
+      "topic": "补码",
+      "tags": [
+        "补码",
+        "类型转换"
+      ],
+      "year": 2019,
+      "originalNumber": 13,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/2613a8c5-0439-4e51-9f13-e664fdcac6c7.pdf",
+          "question": 13
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/fb8fe66c-510f-4777-ad42-09e83fb453ee.pdf",
+          "question": 13
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2019/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2019-24",
+      "subject": "操作系统",
+      "topic": "进程状态",
+      "tags": [
+        "进程状态"
+      ],
+      "year": 2019,
+      "originalNumber": 24,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/2613a8c5-0439-4e51-9f13-e664fdcac6c7.pdf",
+          "question": 24
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/fb8fe66c-510f-4777-ad42-09e83fb453ee.pdf",
+          "question": 24
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2019/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2020-24",
+      "subject": "操作系统",
+      "topic": "文件物理结构",
+      "tags": [
+        "文件物理结构"
+      ],
+      "year": 2020,
+      "originalNumber": 24,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/300f0704-d7ac-4e84-8970-4b26f5114faa.pdf",
+          "question": 24
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/b52850dc-4e36-4de0-aabf-4090099011b3.pdf",
+          "question": 24
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2020/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2020-12",
+      "subject": "计算机组成原理",
+      "topic": "寄存器类型",
+      "tags": [
+        "寄存器类型",
+        "计算机性能指标"
+      ],
+      "year": 2020,
+      "originalNumber": 12,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/300f0704-d7ac-4e84-8970-4b26f5114faa.pdf",
+          "question": 12
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/b52850dc-4e36-4de0-aabf-4090099011b3.pdf",
+          "question": 12
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2020/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2020-28",
+      "subject": "操作系统",
+      "topic": "访存过程",
+      "tags": [
+        "访存过程"
+      ],
+      "year": 2020,
+      "originalNumber": 28,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/300f0704-d7ac-4e84-8970-4b26f5114faa.pdf",
+          "question": 28
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/b52850dc-4e36-4de0-aabf-4090099011b3.pdf",
+          "question": 28
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2020/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2020-15",
+      "subject": "计算机组成原理",
+      "topic": "cache概念",
+      "tags": [
+        "cache概念",
+        "TLB"
+      ],
+      "year": 2020,
+      "originalNumber": 15,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/300f0704-d7ac-4e84-8970-4b26f5114faa.pdf",
+          "question": 15
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/b52850dc-4e36-4de0-aabf-4090099011b3.pdf",
+          "question": 15
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2020/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2020-20",
+      "subject": "计算机组成原理",
+      "topic": "异常和中断",
+      "tags": [
+        "异常和中断",
+        "中断IO"
+      ],
+      "year": 2020,
+      "originalNumber": 20,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/300f0704-d7ac-4e84-8970-4b26f5114faa.pdf",
+          "question": 20
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/b52850dc-4e36-4de0-aabf-4090099011b3.pdf",
+          "question": 20
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2020/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2020-25",
+      "subject": "操作系统",
+      "topic": "中断IO",
+      "tags": [
+        "中断IO"
+      ],
+      "year": 2020,
+      "originalNumber": 25,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/300f0704-d7ac-4e84-8970-4b26f5114faa.pdf",
+          "question": 25
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/b52850dc-4e36-4de0-aabf-4090099011b3.pdf",
+          "question": 25
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2020/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2021-14",
+      "subject": "计算机组成原理",
+      "topic": "IEEE浮点数表示",
+      "tags": [
+        "IEEE浮点数表示"
+      ],
+      "year": 2021,
+      "originalNumber": 14,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/0e9fd86a-0d3e-48b9-91a1-485e61cc9cc3.pdf",
+          "question": 14
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/c91803b1-1234-4d8e-a5cb-a00267356e6a.pdf",
+          "question": 14
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2021/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2021-32",
+      "subject": "操作系统",
+      "topic": "系统调用",
+      "tags": [
+        "系统调用"
+      ],
+      "year": 2021,
+      "originalNumber": 32,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/0e9fd86a-0d3e-48b9-91a1-485e61cc9cc3.pdf",
+          "question": 32
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/c91803b1-1234-4d8e-a5cb-a00267356e6a.pdf",
+          "question": 32
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2021/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2021-23",
+      "subject": "操作系统",
+      "topic": "用户态和内核态",
+      "tags": [
+        "用户态和内核态"
+      ],
+      "year": 2021,
+      "originalNumber": 23,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/0e9fd86a-0d3e-48b9-91a1-485e61cc9cc3.pdf",
+          "question": 23
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/c91803b1-1234-4d8e-a5cb-a00267356e6a.pdf",
+          "question": 23
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2021/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2021-20",
+      "subject": "计算机组成原理",
+      "topic": "IO接口",
+      "tags": [
+        "IO接口"
+      ],
+      "year": 2021,
+      "originalNumber": 20,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/0e9fd86a-0d3e-48b9-91a1-485e61cc9cc3.pdf",
+          "question": 20
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/c91803b1-1234-4d8e-a5cb-a00267356e6a.pdf",
+          "question": 20
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2021/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2021-05",
+      "subject": "数据结构",
+      "topic": "哈夫曼树",
+      "tags": [
+        "哈夫曼树"
+      ],
+      "year": 2021,
+      "originalNumber": 5,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/0e9fd86a-0d3e-48b9-91a1-485e61cc9cc3.pdf",
+          "question": 5
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/c91803b1-1234-4d8e-a5cb-a00267356e6a.pdf",
+          "question": 5
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2021/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2021-09",
+      "subject": "数据结构",
+      "topic": "树的概念",
+      "tags": [
+        "树的概念"
+      ],
+      "year": 2021,
+      "originalNumber": 9,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/0e9fd86a-0d3e-48b9-91a1-485e61cc9cc3.pdf",
+          "question": 9
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/c91803b1-1234-4d8e-a5cb-a00267356e6a.pdf",
+          "question": 9
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2021/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2021-17",
+      "subject": "计算机组成原理",
+      "topic": "寄存器类型",
+      "tags": [
+        "寄存器类型"
+      ],
+      "year": 2021,
+      "originalNumber": 17,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/0e9fd86a-0d3e-48b9-91a1-485e61cc9cc3.pdf",
+          "question": 17
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/c91803b1-1234-4d8e-a5cb-a00267356e6a.pdf",
+          "question": 17
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2021/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2021-33",
+      "subject": "计算机网络",
+      "topic": "OSI模型",
+      "tags": [
+        "OSI模型"
+      ],
+      "year": 2021,
+      "originalNumber": 33,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/0e9fd86a-0d3e-48b9-91a1-485e61cc9cc3.pdf",
+          "question": 33
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/c91803b1-1234-4d8e-a5cb-a00267356e6a.pdf",
+          "question": 33
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2021/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2022-14",
+      "subject": "计算机组成原理",
+      "topic": "IEEE浮点数表示",
+      "tags": [
+        "IEEE浮点数表示"
+      ],
+      "year": 2022,
+      "originalNumber": 14,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/aea64e47-90e0-4cb1-8e12-10eed1a3c5f7.pdf",
+          "question": 14
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/418c776b-257c-4f7e-a7f7-258c0e7b84b6.pdf",
+          "question": 14
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2022/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2022-04",
+      "subject": "数据结构",
+      "topic": "树的概念",
+      "tags": [
+        "树的概念"
+      ],
+      "year": 2022,
+      "originalNumber": 4,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/aea64e47-90e0-4cb1-8e12-10eed1a3c5f7.pdf",
+          "question": 4
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/418c776b-257c-4f7e-a7f7-258c0e7b84b6.pdf",
+          "question": 4
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2022/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2022-30",
+      "subject": "操作系统",
+      "topic": "页面置换算法",
+      "tags": [
+        "页面置换算法",
+        "缓冲区"
+      ],
+      "year": 2022,
+      "originalNumber": 30,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/aea64e47-90e0-4cb1-8e12-10eed1a3c5f7.pdf",
+          "question": 30
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/418c776b-257c-4f7e-a7f7-258c0e7b84b6.pdf",
+          "question": 30
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2022/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2022-33",
+      "subject": "计算机网络",
+      "topic": "OSI模型",
+      "tags": [
+        "OSI模型"
+      ],
+      "year": 2022,
+      "originalNumber": 33,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/aea64e47-90e0-4cb1-8e12-10eed1a3c5f7.pdf",
+          "question": 33
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/418c776b-257c-4f7e-a7f7-258c0e7b84b6.pdf",
+          "question": 33
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2022/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2022-24",
+      "subject": "操作系统",
+      "topic": "中断IO",
+      "tags": [
+        "中断IO"
+      ],
+      "year": 2022,
+      "originalNumber": 24,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/aea64e47-90e0-4cb1-8e12-10eed1a3c5f7.pdf",
+          "question": 24
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/418c776b-257c-4f7e-a7f7-258c0e7b84b6.pdf",
+          "question": 24
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2022/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2022-34",
+      "subject": "计算机网络",
+      "topic": "奈奎斯特定理",
+      "tags": [
+        "奈奎斯特定理"
+      ],
+      "year": 2022,
+      "originalNumber": 34,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/aea64e47-90e0-4cb1-8e12-10eed1a3c5f7.pdf",
+          "question": 34
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/418c776b-257c-4f7e-a7f7-258c0e7b84b6.pdf",
+          "question": 34
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2022/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2022-13",
+      "subject": "计算机组成原理",
+      "topic": "补码",
+      "tags": [
+        "补码"
+      ],
+      "year": 2022,
+      "originalNumber": 13,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/aea64e47-90e0-4cb1-8e12-10eed1a3c5f7.pdf",
+          "question": 13
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/418c776b-257c-4f7e-a7f7-258c0e7b84b6.pdf",
+          "question": 13
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2022/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2022-37",
+      "subject": "计算机网络",
+      "topic": "软件定义网络",
+      "tags": [
+        "软件定义网络"
+      ],
+      "year": 2022,
+      "originalNumber": 37,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/aea64e47-90e0-4cb1-8e12-10eed1a3c5f7.pdf",
+          "question": 37
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/418c776b-257c-4f7e-a7f7-258c0e7b84b6.pdf",
+          "question": 37
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2022/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2023-13",
+      "subject": "计算机组成原理",
+      "topic": "补码",
+      "tags": [
+        "补码"
+      ],
+      "year": 2023,
+      "originalNumber": 13,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/ac8ae739-b5ab-4d8e-b5cf-441525833872.pdf",
+          "question": 13
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/0c9174d9-ad00-44e1-b19b-eb497d24c89b.pdf",
+          "question": 13
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2023/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2023-24",
+      "subject": "操作系统",
+      "topic": "中断IO",
+      "tags": [
+        "中断IO"
+      ],
+      "year": 2023,
+      "originalNumber": 24,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/ac8ae739-b5ab-4d8e-b5cf-441525833872.pdf",
+          "question": 24
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/0c9174d9-ad00-44e1-b19b-eb497d24c89b.pdf",
+          "question": 24
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2023/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2023-08",
+      "subject": "数据结构",
+      "topic": "数组查找",
+      "tags": [
+        "数组查找"
+      ],
+      "year": 2023,
+      "originalNumber": 8,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/ac8ae739-b5ab-4d8e-b5cf-441525833872.pdf",
+          "question": 8
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/0c9174d9-ad00-44e1-b19b-eb497d24c89b.pdf",
+          "question": 8
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2023/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2023-26",
+      "subject": "操作系统",
+      "topic": "用户态和内核态",
+      "tags": [
+        "用户态和内核态"
+      ],
+      "year": 2023,
+      "originalNumber": 26,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/ac8ae739-b5ab-4d8e-b5cf-441525833872.pdf",
+          "question": 26
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/0c9174d9-ad00-44e1-b19b-eb497d24c89b.pdf",
+          "question": 26
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2023/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2023-23",
+      "subject": "操作系统",
+      "topic": "操作系统概念",
+      "tags": [
+        "操作系统概念"
+      ],
+      "year": 2023,
+      "originalNumber": 23,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/ac8ae739-b5ab-4d8e-b5cf-441525833872.pdf",
+          "question": 23
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/0c9174d9-ad00-44e1-b19b-eb497d24c89b.pdf",
+          "question": 23
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2023/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2023-32",
+      "subject": "操作系统",
+      "topic": "设备分配和回收",
+      "tags": [
+        "设备分配和回收"
+      ],
+      "year": 2023,
+      "originalNumber": 32,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/ac8ae739-b5ab-4d8e-b5cf-441525833872.pdf",
+          "question": 32
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/0c9174d9-ad00-44e1-b19b-eb497d24c89b.pdf",
+          "question": 32
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2023/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2023-27",
+      "subject": "操作系统",
+      "topic": "进程状态",
+      "tags": [
+        "进程状态"
+      ],
+      "year": 2023,
+      "originalNumber": 27,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/ac8ae739-b5ab-4d8e-b5cf-441525833872.pdf",
+          "question": 27
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/0c9174d9-ad00-44e1-b19b-eb497d24c89b.pdf",
+          "question": 27
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2023/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2023-34",
+      "subject": "计算机网络",
+      "topic": "奈奎斯特定理",
+      "tags": [
+        "奈奎斯特定理"
+      ],
+      "year": 2023,
+      "originalNumber": 34,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/ac8ae739-b5ab-4d8e-b5cf-441525833872.pdf",
+          "question": 34
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/0c9174d9-ad00-44e1-b19b-eb497d24c89b.pdf",
+          "question": 34
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2023/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2024-34",
+      "subject": "计算机网络",
+      "topic": "调制方法",
+      "tags": [
+        "调制方法"
+      ],
+      "year": 2024,
+      "originalNumber": 34,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/6b611f5c-55d9-4612-8ff9-30b028731314.pdf",
+          "question": 34
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/a8cb9e6f-c4a0-4c42-a4b1-b1d78afc8e77.pdf",
+          "question": 34
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2024/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2024-29",
+      "subject": "操作系统",
+      "topic": "系统调用",
+      "tags": [
+        "系统调用",
+        "进程文件管理"
+      ],
+      "year": 2024,
+      "originalNumber": 29,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/6b611f5c-55d9-4612-8ff9-30b028731314.pdf",
+          "question": 29
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/a8cb9e6f-c4a0-4c42-a4b1-b1d78afc8e77.pdf",
+          "question": 29
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2024/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2024-18",
+      "subject": "计算机组成原理",
+      "topic": "虚拟页式管理",
+      "tags": [
+        "虚拟页式管理"
+      ],
+      "year": 2024,
+      "originalNumber": 18,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/6b611f5c-55d9-4612-8ff9-30b028731314.pdf",
+          "question": 18
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/a8cb9e6f-c4a0-4c42-a4b1-b1d78afc8e77.pdf",
+          "question": 18
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2024/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2024-02",
+      "subject": "数据结构",
+      "topic": "中缀转后缀",
+      "tags": [
+        "中缀转后缀"
+      ],
+      "year": 2024,
+      "originalNumber": 2,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/6b611f5c-55d9-4612-8ff9-30b028731314.pdf",
+          "question": 2
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/a8cb9e6f-c4a0-4c42-a4b1-b1d78afc8e77.pdf",
+          "question": 2
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2024/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2024-12",
+      "subject": "计算机组成原理",
+      "topic": "补码",
+      "tags": [
+        "补码",
+        "类型转换"
+      ],
+      "year": 2024,
+      "originalNumber": 12,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/6b611f5c-55d9-4612-8ff9-30b028731314.pdf",
+          "question": 12
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/a8cb9e6f-c4a0-4c42-a4b1-b1d78afc8e77.pdf",
+          "question": 12
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2024/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2024-27",
+      "subject": "操作系统",
+      "topic": "动态分区分配",
+      "tags": [
+        "动态分区分配"
+      ],
+      "year": 2024,
+      "originalNumber": 27,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/6b611f5c-55d9-4612-8ff9-30b028731314.pdf",
+          "question": 27
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/a8cb9e6f-c4a0-4c42-a4b1-b1d78afc8e77.pdf",
+          "question": 27
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2024/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2024-24",
+      "subject": "操作系统",
+      "topic": "进程概念",
+      "tags": [
+        "进程概念"
+      ],
+      "year": 2024,
+      "originalNumber": 24,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/6b611f5c-55d9-4612-8ff9-30b028731314.pdf",
+          "question": 24
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/a8cb9e6f-c4a0-4c42-a4b1-b1d78afc8e77.pdf",
+          "question": 24
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2024/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2024-26",
+      "subject": "操作系统",
+      "topic": "外存空间管理",
+      "tags": [
+        "外存空间管理"
+      ],
+      "year": 2024,
+      "originalNumber": 26,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/6b611f5c-55d9-4612-8ff9-30b028731314.pdf",
+          "question": 26
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/a8cb9e6f-c4a0-4c42-a4b1-b1d78afc8e77.pdf",
+          "question": 26
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2024/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2025-08",
+      "subject": "数据结构",
+      "topic": "B树",
+      "tags": [
+        "B树"
+      ],
+      "year": 2025,
+      "originalNumber": 8,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/d9fce855-72bd-4e00-9a48-5d4ec5ef6f72.pdf",
+          "question": 8
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/c6287c77-4dc8-499a-a6d1-71cebf9e822a.pdf",
+          "question": 8
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2025/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2025-10",
+      "subject": "数据结构",
+      "topic": "排序算法",
+      "tags": [
+        "排序算法"
+      ],
+      "year": 2025,
+      "originalNumber": 10,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/d9fce855-72bd-4e00-9a48-5d4ec5ef6f72.pdf",
+          "question": 10
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/c6287c77-4dc8-499a-a6d1-71cebf9e822a.pdf",
+          "question": 10
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2025/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2025-22",
+      "subject": "计算机组成原理",
+      "topic": "异常和中断",
+      "tags": [
+        "异常和中断"
+      ],
+      "year": 2025,
+      "originalNumber": 22,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/d9fce855-72bd-4e00-9a48-5d4ec5ef6f72.pdf",
+          "question": 22
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/c6287c77-4dc8-499a-a6d1-71cebf9e822a.pdf",
+          "question": 22
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2025/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2025-31",
+      "subject": "操作系统",
+      "topic": "外存空间管理",
+      "tags": [
+        "外存空间管理"
+      ],
+      "year": 2025,
+      "originalNumber": 31,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/d9fce855-72bd-4e00-9a48-5d4ec5ef6f72.pdf",
+          "question": 31
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/c6287c77-4dc8-499a-a6d1-71cebf9e822a.pdf",
+          "question": 31
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2025/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2025-21",
+      "subject": "计算机组成原理",
+      "topic": "DMA",
+      "tags": [
+        "DMA"
+      ],
+      "year": 2025,
+      "originalNumber": 21,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/d9fce855-72bd-4e00-9a48-5d4ec5ef6f72.pdf",
+          "question": 21
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/c6287c77-4dc8-499a-a6d1-71cebf9e822a.pdf",
+          "question": 21
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2025/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2025-32",
+      "subject": "操作系统",
+      "topic": "磁盘概念",
+      "tags": [
+        "磁盘概念"
+      ],
+      "year": 2025,
+      "originalNumber": 32,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/d9fce855-72bd-4e00-9a48-5d4ec5ef6f72.pdf",
+          "question": 32
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/c6287c77-4dc8-499a-a6d1-71cebf9e822a.pdf",
+          "question": 32
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2025/"
+        }
+      ]
+    },
+    {
+      "id": "e408-2025-35",
+      "subject": "计算机网络",
+      "topic": "传输介质",
+      "tags": [
+        "传输介质",
+        "CSMA/CD"
+      ],
+      "year": 2025,
+      "originalNumber": 35,
+      "references": [
+        {
+          "label": "高校公开题卷",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/d9fce855-72bd-4e00-9a48-5d4ec5ef6f72.pdf",
+          "question": 35
+        },
+        {
+          "label": "高校整理解析",
+          "url": "https://www.xit.edu.cn/_upload/article/files/c1/ce/26986f79493495bbaacba9738587/c6287c77-4dc8-499a-a6d1-71cebf9e822a.pdf",
+          "question": 35
+        },
+        {
+          "label": "索引交叉核对",
+          "url": "https://www.csgraduates.com/study_methods/408quiz/2025/"
+        }
+      ]
+    }
+  ]
+}

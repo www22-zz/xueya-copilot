@@ -243,7 +243,7 @@
                 const doc = await window.XueyaWorkspaceBackend.uploadDocument({
                   courseId: sourceCourse,
                   file,
-                  generatePractice: true
+                  generatePractice: false
                 }, {
                   signal
                 });

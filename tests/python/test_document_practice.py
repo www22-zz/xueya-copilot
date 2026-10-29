@@ -10,6 +10,15 @@ from backend.xueya.app import create_app
 from backend.xueya.config import Config
 
 
+@pytest.fixture(autouse=True)
+def controlled_legacy_compatibility(monkeypatch):
+    """Exercise the retained legacy engine explicitly; production defaults off."""
+    import functools
+    from backend.xueya import practice_generation
+    original = practice_generation.PracticeGeneration
+    monkeypatch.setattr(practice_generation,'PracticeGeneration',functools.partial(original,legacy_enabled=True))
+
+
 MATERIAL = '\n'.join(f'第{i}节：植物通过光合作用将光能转化为化学能，叶绿体是主要场所；细胞呼吸分解有机物释放能量。' for i in range(80))
 
 

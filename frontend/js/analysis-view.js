@@ -2,7 +2,7 @@
 (function(root){
   'use strict';
   const escape=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const categoryNames={all:'全部题库',hot100:'Hot 100',basic:'基础 100'};
+  const categoryNames={all:'全部题库',hot100:'力扣算法 Hot100',exam408:'408 考研题库',legacy:'历史练习',basic:'旧基础题',interview:'旧面试题'};
   const kindNames={weakness:'优先巩固',progress:'正在进步',pattern:'练习观察',coverage:'尚待探索'};
   const active=job=>job&&['queued','running','cancelling'].includes(job.status);
   const date=value=>new Date(value).toLocaleString('zh-CN',{timeZone:'Asia/Shanghai',hour12:false});
@@ -112,11 +112,12 @@
     }
     function goPractice(id){
       const q=report?.snapshot.questions.find(item=>item.id===id);if(!q)return;
-      const f=store.state.filters[q.category];for(const key of Object.keys(f))f[key]='';
+      const category=q.category==='exam408'?'exam408':q.category==='hot100'&&!/^(g-|ds-)/.test(q.id)?'hot100':'legacy';
+      const f=store.state.filters[category];for(const key of Object.keys(f))f[key]='';
       f.status=store.state.statuses[id]?.status||'pending';
-      store.state.ui.category=q.category;
-      store.state.ui.positions[q.category]={selected:id,scroll:0,completed:false};store.persist();
-      navigate('#space/practice/'+({hot100:'hot100',basic:'foundation',interview:'interview'})[q.category]);
+      store.state.ui.category=category;
+      store.state.ui.positions[category]={selected:id,scroll:0,completed:false};store.persist();
+      navigate('#space/practice/'+category);
     }
     return {
       unmount(){generation++;clearTimeout(timer);node=null;loading=false;submitting=false;},

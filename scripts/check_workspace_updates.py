@@ -29,7 +29,7 @@ def main():
         audio.setnchannels(1)
         audio.setsampwidth(2)
         audio.setframerate(8000)
-        audio.writeframes(b'\0\0' * 800)
+        audio.writeframes(b'\0\0' * 16000)
     encoded = base64.b64encode(wav.getvalue()).decode()
 
     async def upstream(request):
@@ -118,6 +118,8 @@ def main():
                 page.locator('.ai-message').hover()
                 page.locator('[data-tts-read="1"]').click()
                 page.wait_for_function('window.XueyaTTS.getStatus()==="playing" || document.querySelector("#toast").textContent.includes("不支持")')
+                # Verify the actual stop control instead of depending on headless audio-device timing.
+                page.locator('[data-tts-read="1"]').click()
                 page.wait_for_function('window.XueyaTTS.getStatus()==="idle"')
                 assert len(speech_requests) == 1
                 page.evaluate("window.__latePlayback=0;window.XueyaTTS.subscribe(s=>{if(s==='playing')window.__latePlayback++});void window.XueyaTTS.speak('待取消的朗读')")
@@ -125,7 +127,7 @@ def main():
                 page.evaluate('window.XueyaTTS.stop()')
                 page.wait_for_timeout(600)
                 assert page.evaluate('window.__latePlayback===0 && window.XueyaTTS.getStatus()==="idle"')
-                checks.append('tracked-tts-and-stopped-request-cannot-play-later')
+                checks.append('tracked-tts-button-stop-and-stopped-request-cannot-play-later')
 
                 page.locator('[data-toggle-sidebar]').click()
                 page.wait_for_function('document.body.classList.contains("sidebar-collapsed")')

@@ -45,7 +45,7 @@
     function classify(target){
       if(target===lastTarget)return;
       lastTarget=target;
-      editing=Boolean(target?.closest('input:not([type=checkbox]):not([type=radio]):not([type=button]):not([type=submit]),textarea,[contenteditable="true"],.source-quote,.message-body p,.knowledge-card p,.document-copy,.quiz-feedback'));
+      editing=Boolean(target?.closest('iframe,object,embed,input:not([type=checkbox]):not([type=radio]):not([type=button]):not([type=submit]),textarea,[contenteditable="true"],.source-quote,.message-body p,.knowledge-card p,.document-copy,.quiz-feedback'));
       interactive=Boolean(target?.closest('a,button,select,summary,[role="button"],[role="option"],label[for],.plan-task,input[type=checkbox],input[type=radio]'));
       onDark=Boolean(target?.closest('.evidence-section,.button-dark,.button-blue,.send-button'));
       scrollArea=null;
