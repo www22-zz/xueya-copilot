@@ -6,7 +6,7 @@ from __future__ import annotations
 import re
 import secrets
 from fastapi import APIRouter, Request
-from .common import require
+from .common import AppError, require
 from .practice_bank import bank, question
 from .practice_state import PracticeState
 
@@ -40,6 +40,9 @@ def install_practice(app):
     @router.get('/bank')
     async def get_bank(request: Request):
         authorize(request)
+        if request.query_params.get('source') == 'workspace':
+            from .practice_catalog import workspace_catalog
+            return success(**workspace_catalog(app.state.practice_generation, account_id(request)))
         if request.query_params.get('courseId'):
             course = request.query_params['courseId']
             app.state.platform.repo.require_course(app.state.platform.scope(course), archived=True)
@@ -69,21 +72,44 @@ def install_practice(app):
         require(isinstance(ops, list) and 1 <= len(ops) <= 200, 'INVALID_OPS')
         account = account_id(request)
         generated = {q['id']: q for q in app.state.practice_generation.catalog(account, history=True)['questions']}
+        from .practice_catalog import exam_bank
+        generated.update({q['id']:q for q in exam_bank()['questions']})
         valid, rejected = [], []
         for op in ops:
             if not isinstance(op, dict) or (question(op.get('questionId')) is None and op.get('questionId') not in generated):
                 rejected.append({'opId': op.get('opId') if isinstance(op, dict) else None, 'error': 'UNKNOWN_QUESTION'})
             else:
+                try:
+                    validate_written_op(op, generated)
+                except AppError as error:
+                    rejected.append({'opId':op.get('opId'),'error':error.code})
+                    continue
                 valid.append(op)
         result = store().accept(account, valid, device=str(value.get('deviceTag') or '')[:64]) if valid else {
             'accepted': [], 'duplicates': [], 'rejected': [], **store().state(account)}
         result['rejected'].extend(rejected)
         return success(**result)
 
+    def validate_written_op(op, generated):
+        if op.get('kind') == 'written-save':
+            import math
+            q = generated.get(op.get('questionId'))
+            payload = op.get('payload')
+            require(isinstance(payload,dict), 'INVALID_WRITTEN_ANSWERS')
+            parts = {p['id']:p for p in (q or {}).get('parts', [])}
+            answers, scores = payload.get('answers'), payload.get('scores')
+            require(q and q.get('bankSource') == 'exam408' and q['type'] == 'short', 'WRITTEN_QUESTION_REQUIRED')
+            require(payload.get('questionType') == 'short', 'WRITTEN_QUESTION_REQUIRED')
+            require(isinstance(answers, dict) and set(answers) <= set(parts)
+                    and all(isinstance(v,str) and len(v) <= 12000 for v in answers.values()), 'INVALID_WRITTEN_ANSWERS')
+            require(isinstance(scores, dict) and set(scores) <= set(parts)
+                    and all(type(v) in (int,float) and math.isfinite(v) and 0 <= v <= parts[k]['points'] for k,v in scores.items()), 'INVALID_SELF_SCORE')
+
     @router.get('/notes/{question_id}')
     async def get_note(request: Request, question_id: str):
         authorize(request)
-        require(question(question_id) is not None or any(q['id'] == question_id for q in app.state.practice_generation.catalog(account_id(request), history=True)['questions']), 'UNKNOWN_QUESTION')
+        from .practice_catalog import exam_question
+        require(question(question_id) is not None or exam_question(question_id) is not None or any(q['id'] == question_id for q in app.state.practice_generation.catalog(account_id(request), history=True)['questions']), 'UNKNOWN_QUESTION')
         return success(note=store().note(account_id(request), question_id))
 
     @router.get('/analysis')

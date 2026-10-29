@@ -13,7 +13,7 @@ CONFIDENCE_FUZZY = 'fuzzy'
 CONFIDENCE_MASTERED = 'mastered'
 OBJECTIVE = ('single', 'multiple', 'boolean', 'fill')
 
-ACTIONS = ('answer', 'correct', 'master', 'conquer', 'fuzzy', 'mark-wrong', 'reset')
+ACTIONS = ('answer', 'correct', 'master', 'conquer', 'fuzzy', 'mark-wrong', 'reset', 'written-save')
 
 
 def blank():
@@ -43,6 +43,14 @@ def apply(progress, question, action, payload):
     kind = question.get('type')
     row = entry(progress, question['id'])
     at = _now(payload)
+    if action == 'written-save':
+        if kind != 'short':
+            raise ValueError('WRITTEN_QUESTION_REQUIRED')
+        row['writtenAnswers'] = dict(payload.get('answers') or {})
+        row['selfScores'] = dict(payload.get('scores') or {})
+        row['lastOperationAt'] = at
+        row['revision'] += 1
+        return row
     if action == 'answer':
         # PRD 5.3: only 单选/填空 actually-wrong answers raise wrongCount; every re-answer wrong counts.
         if not is_objective(question):

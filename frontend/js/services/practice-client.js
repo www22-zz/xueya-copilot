@@ -2,15 +2,16 @@
 (function(root,factory){const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;else root.XueyaPracticeClient=api;})(typeof globalThis!=='undefined'?globalThis:this,function(){
 'use strict';
 const BANK='xueya-practice-bank';
-function createPracticeClient({request,storage=globalThis.localStorage,accountId='local',getCourseId=null,now=()=>new Date().toISOString()}={}){
+function createPracticeClient({request,storage=globalThis.localStorage,accountId='local',getCourseId=null,workspaceMode=false,now=()=>new Date().toISOString()}={}){
   let token='',loaded=false,bank=null,bankVersion='',serverState={serverSeq:0,statuses:{},notes:{}},online=globalThis.navigator?globalThis.navigator.onLine!==false:true;
   const listeners=new Set();
   let catalogInfo={generations:[]},loadedCourse=null;
-  const course=()=>getCourseId?.()||'';
-  const cacheKey=()=>getCourseId?BANK+':'+accountId+':'+course():BANK;
+  const course=()=>workspaceMode?'workspace-v1':getCourseId?.()||'';
+  const cacheKey=()=>workspaceMode||getCourseId?BANK+':'+accountId+':'+course():BANK;
+  const validBank=value=>Array.isArray(value?.questions)&&value.version&&(!workspaceMode||value.questions.filter(q=>q.bankSource==='algorithm').length===100&&value.questions.filter(q=>q.bankSource==='exam408').length===300);
   function emit(){for(const fn of listeners)try{fn({online,offline:!online})}catch{}}
   function loadCache(){
-    try{const raw=JSON.parse(storage.getItem(cacheKey())||'null');if(raw&&Array.isArray(raw.questions)&&raw.version){bank=raw.questions;bankVersion=raw.version;loadedCourse=course();catalogInfo={generations:raw.generations||[]};return true;}}catch{}
+    try{const raw=JSON.parse(storage.getItem(cacheKey())||'null');if(validBank(raw)){bank=raw.questions;bankVersion=raw.version;loadedCourse=course();catalogInfo={generations:raw.generations||[]};return true;}}catch{}
     return false;
   }
   function saveCache(version,questions,info={}){
@@ -37,7 +38,8 @@ function createPracticeClient({request,storage=globalThis.localStorage,accountId
   async function refreshState(){await authenticate();const result=await call('/state');serverState=result;loaded=true;online=true;return result;}
   async function refreshBank(){
     const requestedCourse=course();
-    const catalog=await call('/bank'+(getCourseId?'?courseId='+encodeURIComponent(requestedCourse):''));
+    const catalog=await call('/bank'+(workspaceMode?'?source=workspace':getCourseId?'?courseId='+encodeURIComponent(requestedCourse):''));
+    if(workspaceMode&&!validBank(catalog))throw Object.assign(new Error('WORKSPACE_BANK_OUTDATED'),{code:'WORKSPACE_BANK_OUTDATED'});
     if(requestedCourse===course()&&catalog?.ok)saveCache(catalog.version,catalog.questions,catalog);
     return catalog;
   }
@@ -46,7 +48,7 @@ function createPracticeClient({request,storage=globalThis.localStorage,accountId
     try{
       await refreshBank();
     }catch(error){
-      if(!loadCache())throw Object.assign(new Error('BANK_UNAVAILABLE'),{code:'BANK_UNAVAILABLE'});
+      if(!loadCache())throw error.code==='WORKSPACE_BANK_OUTDATED'?error:Object.assign(new Error('BANK_UNAVAILABLE'),{code:'BANK_UNAVAILABLE'});
       offline();
     }
     try{

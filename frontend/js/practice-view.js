@@ -1,20 +1,22 @@
 /* 练习 / 复习 views: fixed bank list, status flow, objective answering, per-question notes. */
 (function(root,factory){const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;else root.XueyaPracticeView=api;})(typeof globalThis!=='undefined'?globalThis:this,function(){
 'use strict';
-const CATEGORIES=[['hot100','Hot 100'],['basic','基础 100']];
+const CATEGORIES=[['hot100','力扣算法 Hot100'],['exam408','408 考研题库']];
 const SUBJECTS=['数据结构与算法','计算机网络','操作系统','数据库','面向对象基础'];
 const STATUS_LABEL={pending:'待刷',mastered:'已掌握',wrong:'错题本'};
-const TYPE_LABEL={single:'单选',multiple:'多选',fill:'填空',boolean:'判断',code:'代码'};
-const DIFFICULTY={hot100:['简单','中等','困难'],basic:['基础','进阶','挑战'],interview:['基础','进阶','挑战']};
+const TYPE_LABEL={single:'单选',multiple:'多选',fill:'填空',boolean:'判断',code:'代码',short:'综合应用'};
+const DIFFICULTY={hot100:['简单','中等','困难'],exam408:['简单','中等','困难'],legacy:['基础','进阶','挑战','简单','中等','困难'],basic:['基础','进阶','挑战'],interview:['基础','进阶','挑战']};
 const e=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const esc=s=>e(s);
 function createPracticeView({store,client,toast=()=>{},navigate=()=>{}}={}){
   let root=null,view='practice',revealed=false,attempt=null,choice=null,shortDraft='',fillDraft='',noteTimer=null,noteTarget=null;
   let loading=true,loadError='',saving=new Set(),noteErrors=new Set(),syncing=false,initialized=false,pendingRender=false;
+  let entry='hub',writtenTimer=null,writtenTarget=null;
   const ui=store.state.ui;
   const button=(label,action,attrs='',style='button-outline')=>`<button type="button" class="button button-small ${style}" data-action="${action}" ${attrs}>${label}</button>`;
-  const bank=()=>(client.bank()||[]).filter(q=>q.category!=='interview');
-  const subjects=()=>[...new Set(bank().map(q=>q.subject))];
+  const bank=()=>client.bank()||[];
+  const pool=()=>view==='review'?bank():bank().filter(q=>ui.category==='hot100'?(q.bankSource==='algorithm'||!q.bankSource&&q.category==='hot100'):ui.category==='exam408'?q.bankSource==='exam408':ui.category==='legacy'?q.bankSource==='legacy':q.category===ui.category);
+  const subjects=()=>[...new Set(pool().map(q=>q.subject))];
   const answerText=(q,value)=>q.type==='boolean'?(value?'正确':'错误'):q.type==='multiple'?(value||[]).map(i=>q.options[i]).join('；'):q.type==='single'?q.options[value]:value;
   function generationStatus(){
     const rows=client.catalog?.().generations||[];
@@ -32,7 +34,7 @@ function createPracticeView({store,client,toast=()=>{},navigate=()=>{}}={}){
     return !text||[q.id,q.leetcodeNumber||'',q.title,q.prompt,...(q.tags||[])].join(' ').toLowerCase().includes(text);
   }
   function listed(){
-    const f=filters();let list=bank().filter(q=>matches(q,f)&&(view==='review'?statusOf(q.id)==='wrong':q.category===ui.category&&statusOf(q.id)===(f.status||'pending')));
+    const f=filters();let list=pool().filter(q=>matches(q,f)&&(view==='review'?statusOf(q.id)==='wrong':statusOf(q.id)===(f.status||'pending')));
     if(view==='review')list.sort((a,b)=>{
       const pa=progress(a.id),pb=progress(b.id),stamp=p=>[p.lastWrongAt||'',p.wrongEnteredAt||''].sort().pop();
       return (ui.wrongSort==='count'?(pb.wrongCount||0)-(pa.wrongCount||0):0)||stamp(pb).localeCompare(stamp(pa))||a.id.localeCompare(b.id);
@@ -41,7 +43,7 @@ function createPracticeView({store,client,toast=()=>{},navigate=()=>{}}={}){
   }
   function current(){return position().completed?null:bank().find(q=>q.id===position().selected)||null;}
   function clearTransient(){revealed=false;attempt=null;choice=null;shortDraft='';fillDraft='';}
-  function ensureSelected(){if(!bank().length)return;const f=filters(),pool=bank().filter(q=>view==='review'||q.category===ui.category);for(const key of ['subject','type','difficulty','tag']){if(f[key]&&!pool.some(q=>key==='tag'?(q.tags||[]).includes(f[key]):q[key]===f[key]))f[key]='';}const p=position();if(!p.completed&&!bank().some(q=>q.id===p.selected)){p.selected=listed()[0]?.id||null;}ui.selectedQuestionId=p.selected;}
+  function ensureSelected(){if(!bank().length)return;const f=filters(),items=pool();if(view!=='review'&&ui.category==='hot100'){f.subject='';f.type='';}for(const key of ['subject','type','difficulty','tag']){if(f[key]&&!items.some(q=>key==='tag'?(q.tags||[]).includes(f[key]):q[key]===f[key]))f[key]='';}const p=position();if(!p.completed&&!items.some(q=>q.id===p.selected)){p.selected=listed()[0]?.id||null;}ui.selectedQuestionId=p.selected;}
   function savePosition(){const pane=root?.querySelector('.practice-list-pane');if(pane&&!loading)position().scroll=pane.scrollTop;store.persist();}
   function resetSelection(){flushNote();clearTransient();position().selected=listed()[0]?.id||null;position().completed=false;position().scroll=0;ui.selectedQuestionId=position().selected;store.persist();}
   function select(id,{manual=true}={}){
@@ -57,26 +59,26 @@ function createPracticeView({store,client,toast=()=>{},navigate=()=>{}}={}){
     else {const index=previous.findIndex(q=>q.id===oldId);next=previous.slice(index+1).find(q=>list.some(x=>x.id===q.id));if(!next&&list.length&&!list.some(q=>q.id===oldId))next=list[0];}
     flushNote();clearTransient();position().selected=next?.id||null;position().completed=!next;ui.selectedQuestionId=next?.id||null;store.persist();render();
   }
-  function allTags(){return [...new Set(bank().filter(q=>view==='review'||q.category===ui.category).flatMap(q=>q.tags||[]))].sort();}
+  function allTags(){const f=filters();return [...new Set(pool().filter(q=>(!f.subject||q.subject===f.subject)&&(!f.type||q.type===f.type)).flatMap(q=>q.tags||[]))].sort();}
   function selectFilter(name,label,options){const f=filters();return `<select class="form-field" data-filter="${name}" aria-label="${label}"><option value="">全部${label}</option>${options.map(v=>{const [value,text]=Array.isArray(v)?v:[v,v];return `<option value="${e(value)}" ${f[name]===value?'selected':''}>${e(text)}</option>`;}).join('')}</select>`;}
   function toolbar(){
     const f=filters();const pending=store.pendingOps;const syncText=pending?'待同步'+(pending?` · ${pending}`:''):(client.online?'已同步':'本机服务未连接');
     return `${generationStatus()}<div class="practice-toolbar">${view==='review'?`<h2 class="practice-review-title">错题本</h2><div class="practice-statuses">${button('最近出错优先','wrong-sort','data-sort="recent"',ui.wrongSort==='recent'?'button-blue':'button-outline')}${button('错误次数最多','wrong-sort','data-sort="count"',ui.wrongSort==='count'?'button-blue':'button-outline')}</div>`:
-      `<div class="practice-tabs" role="tablist">${CATEGORIES.map(([key,label])=>`<button type="button" class="practice-tab ${key===ui.category?'is-active':''}" data-action="category" data-category="${key}" role="tab" aria-selected="${key===ui.category}">${label}</button>`).join('')}</div><div class="practice-statuses">${['pending','mastered'].map(s=>button(STATUS_LABEL[s],'status',`data-status="${s}"`,f.status===s?'button-blue':'button-outline')).join('')}<a class="text-link" href="#space/review">错题本 →</a></div>`}
+      `<div class="practice-source-bar"><a class="text-link" href="#space/practice">← 返回练习首页</a><h1>${ui.category==='hot100'?'力扣算法 Hot100':ui.category==='exam408'?'408 考研题库':'历史练习'}</h1><span class="practice-source-label">${ui.category==='hot100'?'100 道算法题 · 17 个专题':ui.category==='exam408'?'240 单选 · 60 综合应用':'旧题与记录保留'}</span></div><div class="practice-statuses">${['pending','mastered'].map(s=>button(STATUS_LABEL[s],'status',`data-status="${s}"`,f.status===s?'button-blue':'button-outline')).join('')}<a class="text-link" href="#space/review">错题本 →</a></div>`}
       ${unitNavigation()}<div class="practice-filters"><input type="search" class="form-field" data-filter="keyword" aria-label="搜索题目" placeholder="搜索题号、标题、题干、知识点" value="${e(f.keyword||'')}">
-      ${selectFilter('subject','科目',subjects())}${view==='review'?'':selectFilter('difficulty','难度',DIFFICULTY[ui.category])}
-      ${selectFilter('type','题型',Object.entries(TYPE_LABEL).filter(([type])=>bank().some(q=>q.type===type)))}${selectFilter('tag','知识点',allTags())}${button('清除筛选','clear-filters')}</div>
+      ${view!=='review'&&ui.category==='hot100'?'':selectFilter('subject','科目',subjects())}${view==='review'?'':selectFilter('difficulty','难度',DIFFICULTY[ui.category])}
+      ${view!=='review'&&ui.category==='hot100'?'':selectFilter('type','题型',Object.entries(TYPE_LABEL).filter(([type])=>pool().some(q=>q.type===type)))}${selectFilter('tag','知识点',allTags())}${button('清除筛选','clear-filters')}</div>
       <div class="practice-modes">${view==='review'?'':button(f.status==='mastered'?'随机回顾':'随机一题','random')}${button('重试同步','retry-sync')}${store.error?button('重新登录','login'):''}<span class="practice-sync" role="status">${e(syncText)}${store.error?' · '+e(store.error):''}</span><span>${listed().length} 道题</span></div></div>`;
   }
   function unitNavigation(){
-    const units=client.catalog?.().generations?.find(g=>g.curated&&g.status==='succeeded')?.units;
+    const units=ui.category==='hot100'||ui.category==='exam408'?null:client.catalog?.().generations?.find(g=>g.curated&&g.status==='succeeded')?.units;
     if(!units||view==='review')return '';
     const selected=filters().tag||'';
     return `<nav class="practice-units" aria-label="知识单元"><button type="button" data-action="unit" data-unit="" aria-pressed="${!selected}">全部知识点</button>${units.map(unit=>`<button type="button" data-action="unit" data-unit="${e(unit.name)}" aria-pressed="${selected===unit.name}">${e(unit.name)}<small>${Number(unit[ui.category])||10}</small></button>`).join('')}</nav>`;
   }
   function statusChip(id){const status=statusOf(id);return `<span class="chip chip-${status}">${STATUS_LABEL[status]}</span>${progress(id).confidence==='fuzzy'&&status==='pending'?'<span class="chip chip-fuzzy">待巩固</span>':''}`;}
-  function empty(){const complete=position().completed;return `<div class="practice-empty"><p>${view==='review'?'当前错题已清空。':!bank().length?'上传课程资料后，将自动生成 Hot 100 和基础 100；完成后会显示在这里。':complete?'当前筛选下的题目已刷完。':'当前筛选下没有题目。'}</p>${!bank().length?'<a class="text-link" href="#space/knowledge">上传课程资料 →</a>':button('调整筛选','clear-filters')}${view==='review'||!bank().length?'':button('查看已掌握','show-mastered')}</div>`;}
-  function listRows(){const list=listed();let topic='';return !list.length?empty():`<ul class="practice-list" role="listbox" aria-label="题目列表">${list.map(q=>{const heading=view!=='review'&&topic!==q.topic?`<li class="practice-topic" role="presentation">${e(q.category==='hot100'?(q.topic||q.subject):q.subject+' · '+(q.topic||q.tags[0]))}</li>`:'';topic=q.topic;return heading+`<li tabindex="0" class="practice-row ${q.id===position().selected?'is-active':''}" data-action="select" data-id="${e(q.id)}" role="option" aria-selected="${q.id===position().selected}"><span class="practice-row-id">${e(q.generated||q.curated?'#'+q.number:q.leetcodeNumber?'#'+q.leetcodeNumber:q.id)}</span><span class="practice-row-title">${e(q.title)}</span><span class="practice-row-meta">${e(q.difficulty)} · ${view==='review'?'错 '+(progress(q.id).wrongCount||0)+' 次':statusChip(q.id)}</span></li>`;}).join('')}</ul>`;}
+  function empty(){const complete=position().completed;return `<div class="practice-empty"><p>${view==='review'?'当前错题已清空。':!bank().length?'当前题库暂时没有可练习题目，请返回练习首页选择其他入口。':complete?'当前筛选下的题目已刷完。':'当前筛选下没有题目。'}</p>${!bank().length?'<a class="text-link" href="#space/practice">返回练习首页 →</a>':button('调整筛选','clear-filters')}${view==='review'||!bank().length?'':button('查看已掌握','show-mastered')}</div>`;}
+  function listRows(){const list=listed();let topic='';return !list.length?empty():`<ul class="practice-list" role="listbox" aria-label="题目列表">${list.map(q=>{const heading=view!=='review'&&topic!==q.topic?`<li class="practice-topic" role="presentation">${e(q.category==='hot100'?(q.topic||q.subject):q.subject+' · '+(q.topic||q.tags[0]))}</li>`:'';topic=q.topic;return heading+`<li tabindex="0" class="practice-row ${q.id===position().selected?'is-active':''}" data-action="select" data-id="${e(q.id)}" role="option" aria-selected="${q.id===position().selected}"><span class="practice-row-id">${e(q.bankSource==='exam408'?(q.year?q.year+'考点 · #'+q.number:'#'+q.number):q.generated||q.curated?'#'+q.number:q.leetcodeNumber?'#'+q.leetcodeNumber:q.id)}</span><span class="practice-row-title">${e(q.title)}</span><span class="practice-row-meta">${e(q.difficulty)} · ${view==='review'?'错 '+(progress(q.id).wrongCount||0)+' 次':statusChip(q.id)}</span></li>`;}).join('')}</ul>`;}
   function noteBlock(q){
     const note=store.state.notes[q.id]||{text:'',revision:0,conflicts:[]},text=store.hasDraft(q.id)?store.draft(q.id):note.text;
     const state=saving.has(q.id)?'保存中':noteErrors.has(q.id)||store.rejectedNote(q.id,text)?'保存失败 · 草稿已保留':store.hasDraft(q.id)||store.pendingOps?'待同步':'已保存';
@@ -87,27 +89,55 @@ function createPracticeView({store,client,toast=()=>{},navigate=()=>{}}={}){
   function statusActions(q){const status=statusOf(q.id);if(status==='wrong')return button('已攻克','conquer',`data-id="${e(q.id)}"`,'button-blue')+button('移回待刷','reset',`data-id="${e(q.id)}"`);
     if(status==='mastered')return button('移回待刷','reset')+button('加入错题本','mark-wrong');
     return button('已掌握','master',q.type==='short'&&!revealed?'disabled':'','button-blue')+button('待巩固','fuzzy',q.type==='short'&&!revealed?'disabled':'')+button(q.type==='short'?'忘记':'加入错题本','mark-wrong',q.type==='short'&&!revealed?'disabled':'');}
+  function paperBlock(q,answers=false){
+    if(!q.paper)return '';
+    const url=answers?q.paper.answersUrl:q.paper.url,page=answers?q.paper.answersPage:q.paper.page;
+    if(!url?.startsWith('https://www.xit.edu.cn/'))return '';
+    const title=answers?'高校整理解析':'高校公开原卷';
+    return `<section class="exam-paper"><header><strong>${title} · ${q.year} 年第 ${q.originalNumber} 题</strong><a class="text-link" href="${e(url)}#page=${page}" target="_blank" rel="noopener noreferrer">新窗口打开 ↗</a></header><iframe src="${e(url)}#page=${page}&view=FitH" title="${title}：请按题号定位" loading="lazy" referrerpolicy="no-referrer"></iframe><p class="exam-source-note">原卷阅读需要联网，PDF从首页打开，请按原题号查阅完整条件和图表；未显示PDF时可使用“新窗口打开”。资料由高校公开整理，解析不标作考试院官方答案。</p></section>`;
+  }
+  function writtenBlock(q){
+    if(!q.parts)return '';
+    const draft=ui.writtenDrafts?.[q.id]||{},row=progress(q.id),answers=draft.answers||row.writtenAnswers||{},scores=draft.scores||row.selfScores||{};
+    const total=Object.values(scores).reduce((sum,v)=>sum+Number(v||0),0),maximum=q.parts.reduce((sum,p)=>sum+p.points,0);
+    return `<div class="exam-parts">${q.selfScoreMode==='mastery'?'<p class="exam-written-state">本题按小问自评掌握点：0为需复习，1为要点已掌握，不对应原卷官方分值。</p>':''}${q.parts.map(part=>`<section class="exam-part"><h3>${e(part.label)} · ${part.points} ${q.selfScoreMode==='mastery'?'自评点':'分'}</h3><textarea data-written="${e(part.id)}" aria-label="${e(part.label)}作答过程" placeholder="记录你的答案、计算过程或伪代码" maxlength="12000">${e(answers[part.id]||'')}</textarea>${revealed?`<p><strong>参考解答与评分点：</strong>\n${e(part.reference)}</p><label class="exam-self-score">我的自评分<input type="number" min="0" max="${part.points}" step="0.5" data-self-score="${e(part.id)}" aria-label="${e(part.label)}自评分" value="${e(scores[part.id]??'')}"> / ${part.points}</label>`:''}</section>`).join('')}<p class="exam-written-state" role="status">${store.pendingOps?'作答待同步':'作答自动保存'}${Object.keys(scores).length?' · 自评 '+total+' / '+maximum+'（不计入单选正确率）':''}</p></div>`;
+  }
+  function onWrittenInput(el){
+    const q=current();if(!q?.parts)return;
+    ui.writtenDrafts=ui.writtenDrafts||{};
+    const row=progress(q.id),draft=ui.writtenDrafts[q.id]||{answers:{...(row.writtenAnswers||{})},scores:{...(row.selfScores||{})}};
+    if(el.dataset.written!==undefined)draft.answers[el.dataset.written]=el.value;
+    else{if(!el.checkValidity())return;const key=el.dataset.selfScore;if(el.value==='')delete draft.scores[key];else draft.scores[key]=Number(el.value);}
+    draft.dirty=true;ui.writtenDrafts[q.id]=draft;store.persist();writtenTarget=q.id;clearTimeout(writtenTimer);writtenTimer=setTimeout(flushWritten,900);
+  }
+  function flushWritten(){
+    clearTimeout(writtenTimer);writtenTimer=null;
+    const id=writtenTarget;writtenTarget=null;const draft=ui.writtenDrafts?.[id];if(!id||!draft?.dirty)return;
+    store.push('written-save',id,{questionType:'short',answers:{...draft.answers},scores:{...draft.scores}});draft.dirty=false;store.persist();flushOps();
+  }
   function detail(){
     const q=current();if(!q)return empty();
     let objective='';
     if(['single','multiple','boolean'].includes(q.type)){
       const options=q.type==='boolean'?['正确','错误']:q.options;
-      objective=`${q.type==='multiple'?'<p>多选题：请选择所有正确选项。</p>':''}<ul class="practice-options">${options.map((option,i)=>{const value=q.type==='boolean'?i===0:i;return `<li><button type="button" class="practice-option ${(q.type==='multiple'?(choice||[]).includes(i):choice===value)?'is-chosen':''} ${revealed&&(q.type==='multiple'?q.answer.includes(i):q.answer===value)?'is-correct':''}" data-action="pick" data-index="${i}" aria-pressed="${q.type==='multiple'?(choice||[]).includes(i):choice===value}" ${revealed?'disabled':''}>${e(option)}</button></li>`;}).join('')}</ul>${!revealed?button('提交答案','submit-single',choice===null||Array.isArray(choice)&&!choice.length?'disabled':'','button-blue'):''}`;
+      objective=`${q.type==='multiple'?'<p>多选题：请选择所有正确选项。</p>':''}<ul class="practice-options">${options.map((option,i)=>{const value=q.type==='boolean'?i===0:i;return `<li><button type="button" class="practice-option ${(q.type==='multiple'?(choice||[]).includes(i):choice===value)?'is-chosen':''} ${revealed&&(q.type==='multiple'?q.answer.includes(i):q.answer===value)?'is-correct':''}" data-action="pick" data-index="${i}" aria-pressed="${q.type==='multiple'?(choice||[]).includes(i):choice===value}" ${revealed?'disabled':''}>${q.bankSource==='exam408'?globalThis.XueyaRich.inline(option):e(option)}</button></li>`;}).join('')}</ul>${!revealed?button('提交答案','submit-single',choice===null||Array.isArray(choice)&&!choice.length?'disabled':'','button-blue'):''}`;
     }
     if(q.type==='fill')objective=`<div class="practice-fill"><input class="form-field" data-fill="${e(q.id)}" aria-label="填空答案" placeholder="填写答案" value="${e(attempt?.answer??fillDraft)}" ${revealed?'disabled':''}>${!revealed?button('提交答案','submit-fill','','button-blue'):''}</div>`;
-    return `<article class="practice-detail"><header class="practice-detail-head">${button('返回列表','back','', 'button-outline practice-back')}<h2>${e(q.title)}</h2>${statusChip(q.id)}<p class="practice-detail-meta">${e(q.generated||q.curated?'第'+q.number+'题':q.id)} · ${e(q.subject)} · ${e(q.difficulty)} · ${e((q.tags||[]).join(' / '))}</p></header><div class="practice-prompt">${e(q.prompt)}</div>
+    return `<article class="practice-detail"><header class="practice-detail-head">${button('返回列表','back','', 'button-outline practice-back')}<h2>${e(q.title)}</h2>${statusChip(q.id)}<p class="practice-detail-meta">${e(q.bankSource==='exam408'?'第'+q.number+'题':q.leetcodeNumber?'力扣 #'+q.leetcodeNumber:q.generated||q.curated?'第'+q.number+'题':'历史练习')}${q.bankSource==='algorithm'||q.category==='hot100'&&!q.bankSource?'':' · '+e(q.subject)} · ${e(q.difficulty)} · ${e((q.tags||[]).join(' / '))}</p>${q.origin&&q.bankSource==='exam408'?`<p class="practice-source-label">${e(q.origin.label)}${q.year?' · '+q.year+'年 · 参考题号'+q.originalNumber:''}</p>`:''}</header><div class="practice-prompt ${q.bankSource==='exam408'?'rich-content':''}">${q.bankSource==='exam408'?globalThis.XueyaRich.render(q.prompt):e(q.prompt)}</div>
     ${(q.samples||[]).map(s=>`<pre class="practice-sample">输入：${e(s.input)}
 输出：${e(s.output)}${s.explanation?'\n说明：'+e(s.explanation):''}</pre>`).join('')}${q.dataRange?`<p class="practice-range">数据范围：${e(q.dataRange)}</p>`:''}
     ${q.leetcodeUrl?`<a class="text-link" href="${e(q.leetcodeUrl)}" target="_blank" rel="noopener noreferrer">在力扣打开 ↗</a>`:''}
     ${(q.hints||[]).map((h,i)=>`<details class="practice-hints"><summary>提示 ${i+1}</summary><p>${e(h)}</p></details>`).join('')}${q.coreIdea?`<details class="practice-core"><summary>核心思路</summary><p>${e(q.coreIdea)}</p></details>`:''}
-    ${objective}${q.type==='short'&&!revealed?`<textarea class="form-field" data-short rows="4" placeholder="先回忆一下（临时草稿）">${e(shortDraft)}</textarea>`:''}
+    ${q.references?`<details class="practice-evidence"><summary>题目来源与核对</summary>${q.references.map(ref=>`<p><a class="text-link" href="${globalThis.XueyaRich.safeURL(ref.url)}" target="_blank" rel="noopener noreferrer">${e(ref.label)}${q.year?' · '+q.year+'年 · 参考第'+q.originalNumber+'题':''} ↗</a></p>`).join('')}</details>`:''}${paperBlock(q)}${objective}${writtenBlock(q)}${q.type==='short'&&!q.parts&&!revealed?`<textarea class="form-field" data-short rows="4" placeholder="先回忆一下（临时草稿）">${e(shortDraft)}</textarea>`:''}
     ${['short','code'].includes(q.type)&&!revealed?button(q.type==='short'?'查看参考答案与得分点':'查看完整题解','reveal'):''}
-    ${revealed?`<section class="practice-answer">${attempt?`<p class="practice-result">${attempt.correct?'回答正确':'回答错误'} · 你的答案：${e(answerText(q,attempt.answer))}</p>`:''}${q.type==='short'?`<p><strong>一句话核心答案：</strong>${e(q.answer)}</p><h3>关键得分点</h3><ul>${q.keyPoints.map(x=>'<li>'+e(x)+'</li>').join('')}</ul><h3>常见追问</h3><ul>${q.followUps.map(x=>'<li>'+e(x)+'</li>').join('')}</ul>`:['single','multiple','boolean','fill'].includes(q.type)?`<p>正确答案：<strong>${e(answerText(q,q.answer))}</strong></p>`:''}<p class="practice-explanation">${e(q.explanation)}</p>${['single','multiple','boolean','fill'].includes(q.type)?button('重新作答','re-answer'):''}${q.type==='fill'&&attempt&&!attempt.correct?button('此答案也正确','also-correct'):''}</section>`:''}
+    ${revealed?`<section class="practice-answer">${attempt?`<p class="practice-result">${attempt.correct?'回答正确':'回答错误'} · 你的答案：${e(answerText(q,attempt.answer))}</p>`:''}${q.type==='short'&&!q.parts?`<p><strong>一句话核心答案：</strong>${e(q.answer)}</p><h3>关键得分点</h3><ul>${(q.keyPoints||[]).map(x=>'<li>'+e(x)+'</li>').join('')}</ul><h3>常见追问</h3><ul>${(q.followUps||[]).map(x=>'<li>'+e(x)+'</li>').join('')}</ul>`:['single','multiple','boolean','fill'].includes(q.type)?`<p>正确答案：<strong>${e(answerText(q,q.answer))}</strong></p>`:''}<p class="practice-explanation">${e(q.explanation)}</p>${q.paper?paperBlock(q,true):''}${['single','multiple','boolean','fill'].includes(q.type)?button('重新作答','re-answer'):''}${q.type==='fill'&&attempt&&!attempt.correct?button('此答案也正确','also-correct'):''}</section>`:''}
     ${q.evidenceQuote?`<details class="practice-evidence"><summary>${q.curated?'知识点依据 · '+e(q.origin?.label||'课程题库'):'资料依据 · AI生成，答案请核对'}</summary><p>${e(q.documentName)}${q.sourceLocation?' · '+e(q.sourceLocation):''} · 内容修订 ${e(q.sourceVersion)}</p><blockquote>${e(q.evidenceQuote)}</blockquote>${q.curated?'<p>教材摘录用于说明相关知识点，不代表教材收录了这道原题或完整题解。选编题的原题链接见上方。</p>':''}</details>`:''}${solutionBlock(q)}<div class="practice-actions">${statusActions(q)}${button('下一题','next')}</div>${noteBlock(q)}</article>`;
   }
   function render(){
-    if(!root?.isConnected)return;if(root.querySelector('.practice-select-trigger[aria-expanded=true]')){pendingRender=true;return;}pendingRender=false;ensureSelected();const focused=root.contains(document.activeElement)?document.activeElement:null;
-    const filterName=focused?.dataset.filter,focusSelector=filterName?`[data-filter="${filterName}"]`:focused?.hasAttribute('data-note')?'[data-note]':focused?.hasAttribute('data-fill')?'[data-fill]':focused?.hasAttribute('data-short')?'[data-short]':null;
+    if(!root?.isConnected)return;
+    if(view!=='review'&&entry!=='practice'){root.innerHTML=entry==='materials'?window.XueyaPracticeHub.materials():window.XueyaPracticeHub.home();return;}
+    if(root.querySelector('.practice-select-trigger[aria-expanded=true]')){pendingRender=true;return;}pendingRender=false;ensureSelected();const focused=root.contains(document.activeElement)?document.activeElement:null;
+    const filterName=focused?.dataset.filter,focusSelector=filterName?`[data-filter="${filterName}"]`:focused?.hasAttribute('data-written')?`[data-written="${focused.dataset.written}"]`:focused?.hasAttribute('data-self-score')?`[data-self-score="${focused.dataset.selfScore}"]`:focused?.hasAttribute('data-note')?'[data-note]':focused?.hasAttribute('data-fill')?'[data-fill]':focused?.hasAttribute('data-short')?'[data-short]':null;
     const selection=focused?.selectionStart,selectionEnd=focused?.selectionEnd;
     const sameQuestion=root.dataset.renderedQuestion===(current()?.id||'');
     const openDetails=sameQuestion?[...root.querySelectorAll('details')].map(el=>el.open):[],detailScroll=sameQuestion?root.querySelector('.practice-detail-pane')?.scrollTop||0:0;
@@ -119,7 +149,7 @@ function createPracticeView({store,client,toast=()=>{},navigate=()=>{}}={}){
     if(focusSelector){const input=root.querySelector(focusSelector);input?.focus({preventScroll:true});if(selection!=null&&typeof input?.setSelectionRange==='function')try{input.setSelectionRange(selection,selectionEnd);}catch{}}
   }
   function updateNoteStatus(id){if(current()?.id!==id||!root?.isConnected)return;const label=root.querySelector('[data-note-status]');if(label)label.textContent=saving.has(id)?'保存中':noteErrors.has(id)||store.rejectedNote(id,store.draft(id))?'保存失败 · 草稿已保留':store.pendingOps||store.hasDraft(id)?'待同步':'已保存';}
-  async function flushOps(){try{await store.flush(client);for(const id of [...noteErrors])if(!store.hasDraft(id))noteErrors.delete(id);}catch(error){if(error.code==='AUTH_REQUIRED')toast('请重新登录原账号后同步，本地记录已保留');}if(root?.isConnected){const label=root.querySelector('.practice-sync');if(label)label.textContent=store.pendingOps?'待同步 · '+store.pendingOps:'已同步';if(current())updateNoteStatus(current().id);}}
+  async function flushOps(){try{await store.flush(client);for(const id of [...noteErrors])if(!store.hasDraft(id))noteErrors.delete(id);for(const [id,draft] of Object.entries(ui.writtenDrafts||{})){const row=progress(id);if(!draft.dirty&&JSON.stringify(draft.answers)===JSON.stringify(row.writtenAnswers)&&JSON.stringify(draft.scores)===JSON.stringify(row.selfScores))delete ui.writtenDrafts[id];}store.persist();}catch(error){if(error.code==='AUTH_REQUIRED')toast('请重新登录原账号后同步，本地记录已保留');}if(root?.isConnected){const label=root.querySelector('.practice-sync');if(label)label.textContent=store.pendingOps?'待同步 · '+store.pendingOps:'已同步';if(current())updateNoteStatus(current().id);}}
   function flushNote(){
     clearTimeout(noteTimer);noteTimer=null;const id=noteTarget;noteTarget=null;if(!id||!store.hasDraft(id))return;
     const text=store.draft(id),note=store.state.notes[id]||{text:'',revision:0};
@@ -133,7 +163,7 @@ function createPracticeView({store,client,toast=()=>{},navigate=()=>{}}={}){
   function act(action,payload={}){
     const q=current(),id=payload.id||q?.id;
     try{
-      if(action==='select'){select(id);return;}
+      if(action==='select'){flushWritten();select(id);return;}
       if(action==='unit'){filters().tag=payload.unit||'';resetSelection();render();return;}
       if(action==='resume-generation'){client.resumeGeneration(id).then(()=>sync()).then(render).catch(error=>toast(error.message||'暂时无法继续生成'));return;}
       if(action==='cancel-generation'){client.cancelGeneration(id).then(()=>sync()).then(render).catch(error=>toast(error.message||'暂时无法停止'));return;}
@@ -162,7 +192,7 @@ function createPracticeView({store,client,toast=()=>{},navigate=()=>{}}={}){
       }
     }catch(error){toast(error.message||'操作未完成');}
   }
-  function handleInput(event){const el=event.target;if(el.dataset.fill!==undefined){fillDraft=el.value;return true;}if(el.dataset.note!==undefined){onNoteInput(el.dataset.note,el.value);return true;}if(el.dataset.short!==undefined){shortDraft=el.value;return true;}if(el.dataset.filter!==undefined){flushNote();filters()[el.dataset.filter]=el.value;resetSelection();render();return true;}return false;}
+  function handleInput(event){const el=event.target;if(el.dataset.written!==undefined||el.dataset.selfScore!==undefined){onWrittenInput(el);return true;}if(el.dataset.fill!==undefined){fillDraft=el.value;return true;}if(el.dataset.note!==undefined){onNoteInput(el.dataset.note,el.value);return true;}if(el.dataset.short!==undefined){shortDraft=el.value;return true;}if(el.dataset.filter!==undefined){flushWritten();flushNote();const f=filters();f[el.dataset.filter]=el.value;if(['subject','type'].includes(el.dataset.filter)&&f.tag&&!pool().some(q=>(!f.subject||q.subject===f.subject)&&(!f.type||q.type===f.type)&&(q.tags||[]).includes(f.tag)))f.tag='';resetSelection();render();return true;}return false;}
   function bind(node){
     node.onclick=event=>{const el=event.target.closest('[data-action]');if(el&&node.contains(el)){event.preventDefault();event.stopPropagation();act(el.dataset.action,el.dataset);}};
     node.oninput=event=>{if(event.target.tagName!=='SELECT')handleInput(event);};
@@ -172,7 +202,7 @@ function createPracticeView({store,client,toast=()=>{},navigate=()=>{}}={}){
   }
   async function sync(){
     if(syncing||root?.querySelector('.practice-select-trigger[aria-expanded=true]'))return;syncing=true;
-    try{const before=JSON.stringify(store.state.statuses),version=client.version;await store.flush(client);const state=await client.refreshState();store.applyServer(state);await client.refreshBank?.();
+    try{for(const [id,draft] of Object.entries(ui.writtenDrafts||{})){if(draft.dirty){writtenTarget=id;flushWritten();}}const before=JSON.stringify(store.state.statuses),version=client.version;await store.flush(client);const state=await client.refreshState();store.applyServer(state);await client.refreshBank?.();
       if(version!==client.version){clearTransient();ensureSelected();}
       if(before!==JSON.stringify(store.state.statuses)){const p=position(),list=listed();if(p.completed&&list.length||p.selected&&!list.some(q=>q.id===p.selected)&&!(attempt&&statusOf(p.selected)==='wrong')){flushNote();clearTransient();p.completed=false;p.selected=list[0]?.id||null;ui.selectedQuestionId=p.selected;store.persist();}}
       for(const id of Object.keys(store.state.drafts)){if(store.queuedNote(id,store.draft(id))||store.rejectedNote(id,store.draft(id)))continue;noteTarget=id;flushNote();}loadError='';}
@@ -182,23 +212,24 @@ function createPracticeView({store,client,toast=()=>{},navigate=()=>{}}={}){
   async function initialize(){
     if(initialized)return;initialized=true;
     try{await store.ready;await client.initialize();if(client.loaded)store.applyServer(client.state());await sync();}
-    catch{loadError='题库暂不可用，请启动本机服务后重试。';}
+    catch(error){loadError=error.code==='WORKSPACE_BANK_OUTDATED'?'当前后台尚未加载新版练习题库，请重启本机服务后刷新页面。':'题库暂不可用，请启动本机服务后重试。';}
     finally{loading=false;render();}
     window.addEventListener('online',()=>sync().then(render));
     window.addEventListener('focus',()=>sync().then(render));
-    window.addEventListener('pagehide',()=>{flushNote();savePosition();});
+    window.addEventListener('pagehide',()=>{flushWritten();flushNote();savePosition();});
     setInterval(()=>{if(document.visibilityState==='visible'){const seq=store.state.serverSeq,version=client.version;sync().then(()=>{if(seq!==store.state.serverSeq||version!==client.version||pendingRender){if(root?.querySelector('.practice-select-trigger[aria-expanded=true]')){pendingRender=true;return;}pendingRender=false;render();}else if(current())updateNoteStatus(current().id);});}},5000);
   }
   function mount(node,nextView,params={}){
     const switched=root!==node||view!==nextView;
-    if(switched){flushNote();clearTransient();}root=node;view=nextView;
-    const category=params.category==='interview'?'basic':params.category;
+    if(switched){flushWritten();flushNote();clearTransient();}root=node;view=nextView;
+    entry=nextView==='review'?'practice':params.page==='materials'?'materials':params.category?'practice':'hub';
+    const category=params.category;
     if(category&&category!==ui.category){ui.category=category;clearTransient();}
     if(switched)ui.detailFullscreen=false;
     ensureSelected();bind(node);render();store.persist();
     if(initialized&&!loading)sync().then(render);
   }
-  return {initialize,beforeRender(){flushNote();savePosition();},afterRender(){},mountPractice(node,params={}){mount(node,'practice',params);},mountReview(node,params={}){mount(node,'review',params);},handleAction:act,handleInput,flushNote};
+  return {initialize,beforeRender(){flushWritten();flushNote();savePosition();},afterRender(){},mountPractice(node,params={}){mount(node,'practice',params);},mountReview(node,params={}){mount(node,'review',params);},handleAction:act,handleInput,flushNote};
 }
 return{createPracticeView,CATEGORIES,SUBJECTS,STATUS_LABEL,TYPE_LABEL};
 });

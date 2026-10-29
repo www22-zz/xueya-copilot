@@ -17,14 +17,19 @@ CODING = re.compile(r'```(?:python|java|cpp|c\+\+|c\b|javascript|js\b|sql)|\b(?:
 
 
 class PracticeGeneration:
-    def __init__(self, app):
+    def __init__(self, app, *, legacy_enabled=False):
         self.p, self.rag = app.state.platform, app.state.rag
         self.provider, self.config = app.state.provider, app.state.config
         self.state = PracticeState(self.p)
+        # Retain the old implementation for historical data and controlled tests.
+        # Production uploads no longer opt into the retired 200-question flow.
+        self.legacy_enabled = bool(legacy_enabled)
         from .curated_practice import CuratedPractice
         self.curated = CuratedPractice(self.p, self.rag)
         self.p.jobs.register(JOB, self.execute)
         self.rag.on_publish = self.document_ready
+        for row in ([] if self.legacy_enabled else self.p.db.all("SELECT id,user_id FROM jobs WHERE type=? AND status IN ('queued','running','cancelling')", (JOB,))):
+            self.p.jobs.cancel(row['id'],row['user_id'])
 
     def read(self, account, set_id):
         scope = self.state.scope(account)
@@ -37,6 +42,8 @@ class PracticeGeneration:
 
     def watch(self, account, source_scope, document_id):
         """Only user material uploads opt in; demo/CLI imports never start paid generation."""
+        if not self.legacy_enabled:
+            return {'id':None,'status':'deferred','completed':0,'target':100,'documentId':document_id}
         doc = self.rag.document(source_scope, document_id, active=True)
         set_id = 'practice-set-' + digest([account, source_scope.wire(), document_id])[:32]
         with self.p.db.transaction():
@@ -56,6 +63,8 @@ class PracticeGeneration:
             return self.summary(account, self.read(account, set_id))
 
     def document_ready(self, scope, result):
+        if not self.legacy_enabled:
+            return
         marker = self.p.repo.read(scope, 'artifact', 'practice-watch-' + result['documentId'])
         if not marker:
             return
@@ -76,6 +85,7 @@ class PracticeGeneration:
             self.save(watcher['account'], value)
 
     def enqueue(self, value):
+        require(self.legacy_enabled, 'PRACTICE_GENERATION_RETIRED')
         scope = self.state.scope(value['account'])
         job = self.p.jobs.submit(scope.user_id, {'type': JOB, 'courseId': scope.course_id, 'resource': 'api',
             'maxAttempts': 1, 'idempotencyKey': 'practice-' + str(uuid4()),
@@ -135,6 +145,7 @@ class PracticeGeneration:
                 'questions': questions, 'generations': summaries, 'available': bool(self.config.api_key)}
 
     def resume(self, account, set_id):
+        require(self.legacy_enabled, 'PRACTICE_GENERATION_RETIRED')
         with self.p.db.transaction():
             value = self.read(account, set_id)
             summary = self.summary(account, value)
@@ -158,6 +169,7 @@ class PracticeGeneration:
             return self.summary(account, value)
 
     async def execute(self, scope, args, *, progress, checkpoint, commit):
+        require(self.legacy_enabled, 'PRACTICE_GENERATION_RETIRED')
         account = scope.user_id.removeprefix('practice:')
         value = self.read(account, args.get('setId'))
         require(value['batch'] == args.get('batch') and value['status'] == 'generating', 'NOT_SENT')
@@ -186,6 +198,7 @@ class PracticeGeneration:
 
         class Adapter:
             async def generate(self, request):
+                require(owner.legacy_enabled, 'PRACTICE_GENERATION_RETIRED')
                 with borrowed_api_permit(owner.p):
                     try:
                         return await owner.provider.generate(request['messages'], scope=scope, timeout=70,
@@ -220,6 +233,7 @@ class PracticeGeneration:
             output.append(converted)
 
         def publish():
+            require(self.legacy_enabled, 'PRACTICE_GENERATION_RETIRED')
             current_doc = self.rag.document(source_scope, doc['id'], active=True)
             require(current_doc['contentRevision'] == value['revision'], 'PRACTICE_SOURCE_CHANGED')
             value['questions'].extend(output)

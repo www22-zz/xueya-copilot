@@ -16,7 +16,7 @@ COURSE_NAME = '练习'
 MAX_OPS = 200
 MAX_OP_BYTES = 1_000_000
 MAX_NOTE_BYTES = 200_000
-ACTIONS = ('answer', 'correct', 'master', 'conquer', 'fuzzy', 'mark-wrong', 'reset', 'note-save')
+ACTIONS = ('answer', 'correct', 'master', 'conquer', 'fuzzy', 'mark-wrong', 'reset', 'note-save', 'written-save')
 
 
 class PracticeState:

@@ -2,12 +2,16 @@
 (function(root,factory){const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;else root.XueyaPracticeStore=api;})(typeof globalThis!=='undefined'?globalThis:this,function(){
 'use strict';
 const KEY='xueya-practice-v1',OPS='xueya-practice-ops';
-const CATEGORIES=['hot100','basic'],STATUSES=['pending','mastered','wrong'],ACTIONS=['answer','correct','master','conquer','fuzzy','mark-wrong','reset','note-save'];
+const CATEGORIES=['hot100','exam408','legacy','basic','interview'],STATUSES=['pending','mastered','wrong'],ACTIONS=['answer','correct','master','conquer','fuzzy','mark-wrong','reset','note-save','written-save'];
 const OBJECTIVE=['single','multiple','boolean','fill'];
 const blank=()=>({status:'pending',confidence:'unknown',wrongCount:0,correctCount:0,wrongEnteredAt:null,lastWrongAt:null,lastResult:null,masteredAt:null,lastOperationAt:null,revision:0});
 function entry(progress,questionId){let row=progress[questionId];if(!row){row=blank();progress[questionId]=row;}return row;}
 function apply(progress,question,action,payload={}){
   const type=question&&question.type,row=entry(progress,question&&question.id),at=payload.at||'';
+  if(action==='written-save'){
+    if(type!=='short')throw new Error('WRITTEN_QUESTION_REQUIRED');
+    row.writtenAnswers={...(payload.answers||{})};row.selfScores={...(payload.scores||{})};row.lastOperationAt=at;row.revision+=1;return row;
+  }
   if(action==='answer'){
     if(!OBJECTIVE.includes(type))throw new Error('OBJECTIVE_ANSWER_ONLY');
     if(!['correct','wrong'].includes(payload.result))throw new Error('INVALID_ANSWER_RESULT');

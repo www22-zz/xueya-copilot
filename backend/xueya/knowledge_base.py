@@ -141,7 +141,10 @@ def install_knowledge_base(app):
             host.state.knowledge = KnowledgeBase(host)
             from .practice_generation import PracticeGeneration
             host.state.practice_generation = PracticeGeneration(host)
-            host.state.practice_analysis.generated_catalog = lambda account: host.state.practice_generation.catalog(account, history=True)['questions']
+            def analysis_catalog(account):
+                from .practice_catalog import exam_bank
+                return host.state.practice_generation.catalog(account, history=True)['questions'] + exam_bank()['questions']
+            host.state.practice_analysis.generated_catalog = analysis_catalog
             from .demo_import import DemoImport
             demo = DemoImport(host.state.knowledge, host.state.config)
             host.state.knowledge.demo = demo
@@ -186,7 +189,7 @@ def install_knowledge_base(app):
             return success(job=kb.visual.submit(scope, value))
         if operation == 'catalog' and not post:
             account = (app.state.account.current(request) or {}).get('username') or 'local'
-            return success(**kb.catalog(scope), practiceGenerations=app.state.practice_generation.catalog(account, scope.course_id)['generations'])
+            return success(**kb.catalog(scope), practiceGenerations=app.state.practice_generation.catalog(account, scope.course_id)['generations'] if app.state.practice_generation.legacy_enabled else [])
         if operation == 'search' and post:
             mode = value.get('mode', 'lexical')
             require(mode in ('lexical', 'vector', 'hybrid', 'rerank'), 'INVALID_SEARCH_MODE')

@@ -24,7 +24,7 @@
       if(!active())return;
       if(event.pointerType!=='mouse'||!fine.matches||reduced.matches)return hide();
       const target=event.target instanceof Element?event.target:null;
-      const editing=Boolean(target?.closest('dialog,input,textarea,select,[contenteditable="true"],.source-quote,.message-body p,.knowledge-card p,.document-copy,.quiz-feedback'));
+      const editing=Boolean(target?.closest('iframe,object,embed,dialog,input,textarea,select,[contenteditable="true"],.source-quote,.message-body p,.knowledge-card p,.document-copy,.quiz-feedback'));
       if(editing){hide();document.body.classList.add('cursor-editing');return;}
       document.body.classList.remove('cursor-editing');
       targetX=event.clientX;targetY=event.clientY;
