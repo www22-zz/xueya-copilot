@@ -391,3 +391,17 @@ generation摘要含 `{id,courseId,documentId,name,status,revision,jobId,complete
 原ops/state/notes契约保留，增加生成题ID可用性检查。多选及判断与单选/填空相同，答错自动进错题本；多选答案必须集合完全相等，判断严格按布尔值判定。学习分析快照纳入当前账号生成题及这两类客观题记录。浏览器题库缓存按账号和课程隔离；资料归档、替换或正文修订后，当前题库停止使用失效资料，历史题目依据和学习记录仍保留。
 
 2026-10-28 选择性整合补充：学习分析快照超过原大小限制时，可省略从未有个人作答、操作、自评或笔记的题目明细；`stats.bankQuestions`及作答/错题等整体统计保持完整，增加可选`omittedUnpracticedQuestions`并在`limitations`说明省略范围。已记录题目仍保留；若实际个人记录本身过大，继续返回`ANALYSIS_TOO_LARGE`，不放宽原请求大小上限。客观正确率包含单选、多选、判断和填空，算法仍为自评。
+
+
+## 2026-10-29：固定练习来源与综合题自评
+
+本节覆盖此前自动200题的生产行为说明，旧接口兼容读取保留。
+
+- `GET /api/practice/bank?source=workspace`：账号鉴权与原接口一致，返回固定算法100、408共300题、可追溯旧历史来源；不依赖courseId。旧无source调用仍保留原固定250契约。
+- `bankSource`取algorithm、exam408、legacy。不能只靠category=hot100分辨来源；旧生成和精选题也有此category。算法原ID、力扣链接和题解不变。
+- 408 `origin.kind`取adapted或authored；year及originalNumber是参考考点的来源身份。改编题自己的条件和答案不等于原卷。`topic`为章，`subtopic`为细分点，`tags`含两者；version随固定内容改变。
+- 综合题type=short，有parts数组，每项`{id,label,points,reference}`。points为练习建议上限，reference为该问参考解答与评分点。题干/解答均在本地，不要求远程PDF读取。
+- `POST /api/practice/ops`增加kind=`written-save`，例：`{opId:"unique",kind:"written-save",questionId:"e408-2021-41",payload:{questionType:"short",answers:{p1:"我的过程"},scores:{p1:2.5}}}`。answers每问最多12000字符，必须为真实小问ID；scores必须是有限数，0到相应points，不能是布尔值。操作逐条接受/拒绝，opId去重，沿用事件日志及serverSeq。相应state.statuses保存writtenAnswers及selfScores。
+- 自评分不是客观判题，不增加correctCount/wrongCount。无分草稿不算自评活动，反复保存相同评分不重复统计；自评不自动改变待刷/掌握状态。
+- `PracticeGeneration`生产默认legacy_enabled=False。上传返回practiceGeneration.status=deferred、target=100，只做解析；catalog不展示旧批次。启动取消旧生成活跃队列，watch/callback/enqueue/resume/execute/provider/publish均阻止旧200题续发。resume返回PRACTICE_GENERATION_RETIRED。受控兼容测试可显式开启旧实现，不代表生产仍自动调用。
+- 浏览器workspace-v1缓存按账号隔离，必须含algorithm100与exam408300才可接收。旧后台忽略source返回旧题库时显示WORKSPACE_BANK_OUTDATED，不静默缓存空408。有效完整缓存支持离线；旧课程缓存不覆盖新来源。
