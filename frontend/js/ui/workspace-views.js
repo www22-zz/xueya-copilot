@@ -308,6 +308,184 @@ function createViews(ctx,base){
     `</div>`;
     return renderCheckinWidget() + base.renders.overview().replace(/<form id="chatForm"[\s\S]*?<\/form>/,composer()) + bottomBarHtml;
   }
+
+  function getFollowupQuestions(m, state) {
+    if (Array.isArray(m.suggestedQuestions) && m.suggestedQuestions.length) {
+      return m.suggestedQuestions;
+    }
+    const text = (m.text || '') + ' ' + (m.title || '');
+    const questions = [];
+    if (/二叉搜索树|BST|二叉树|树高|AVL|平衡树|红黑树/i.test(text)) {
+      questions.push('如果二叉搜索树极度倾斜退化为链表，该如何恢复平衡？');
+      questions.push('AVL 树与红黑树在插入和查找性能上有什么核心区别？');
+      questions.push('如何在代码中用非递归方式实现二叉树遍历？');
+    } else if (/快速排序|归并排序|堆排序|冒泡|排序算法|时间复杂度|O\(n/i.test(text)) {
+      questions.push('快速排序在什么特殊数据分布下会退化到 O(n²)？');
+      questions.push('归并排序和堆排序各自适用的工业级场景是什么？');
+      questions.push('这几种排序算法的空间复杂度和稳定性如何对比？');
+    } else if (/哈希|散列表|hash|冲突|拉链法|开放寻址/i.test(text)) {
+      questions.push('哈希冲突的常见解决方式（拉链法 vs 开放寻址）各有什么优缺点？');
+      questions.push('当哈希表的装载因子过高时，rehash 的渐进式扩容是如何实现的？');
+      questions.push('在 Java HashMap 或 Python dict 中底层是如何优化的？');
+    } else if (/进程|线程|死锁|互斥|并发|CPU|调度/i.test(text)) {
+      questions.push('死锁产生的四个必要条件是什么，如何在设计中预防？');
+      questions.push('进程上下文切换与线程切换在性能开销上有何本质差异？');
+      questions.push('常见的进程间通信方式（IPC）有哪些，各自速度如何？');
+    } else if (/TCP|UDP|握手|挥手|HTTP|网络/i.test(text)) {
+      questions.push('为什么 TCP 挥手需要经历 TIME_WAIT 状态（2MSL）？');
+      questions.push('TCP 的拥塞控制机制（慢启动、拥塞避免、快重传）是如何协同工作的？');
+      questions.push('HTTP/2 的多路复用与 HTTP/3 基于 QUIC 的改进有什么关键点？');
+    } else if (/动态规划|DP|背包|贪心|状态转移/i.test(text)) {
+      questions.push('如何判断一个问题是否满足“最优子结构”和“重叠子问题”？');
+      questions.push('动态规划的状态转移方程在推导时有哪些系统化的思路？');
+      questions.push('空间压缩技巧：如何将二维 DP 数组优化为一维？');
+    } else {
+      const prevUser = [...(state.messages || [])].reverse().find(msg => msg.role === 'user' && msg.text !== m.title);
+      if (prevUser && prevUser.text) {
+        questions.push(`结合刚才讨论的「${prevUser.text.slice(0, 16)}」，这个方案有什么优化空间？`);
+      } else {
+        questions.push('能为我针对刚才解释的要点，出一道经典考查题吗？');
+      }
+      questions.push('在实际工业生产环境或大型项目中，通常怎么落地该技术？');
+      questions.push('这个概念最容易混淆的误区或踩坑点有哪些？');
+    }
+    m.suggestedQuestions = questions.slice(0, 3);
+    return m.suggestedQuestions;
+  }
+
+  function getInitialCourseSuggestions(state) {
+    const list = [];
+    const docs = state.documents || [];
+    const docNames = docs.map(d => d.name).join(' ');
+
+    if (/树|二叉/i.test(docNames) || state.courseId === 'course-default') {
+      list.push('二叉搜索树查找的时间复杂度为什么是 O(log n)？');
+      list.push('平衡二叉树（AVL）失衡时如何进行单旋和双旋？');
+      list.push('红黑树相比 AVL 树为什么在插入删除频繁时性能更好？');
+      list.push('哈夫曼树的构造规则与带权路径长度（WPL）如何计算？');
+    } else if (/系统|进程|内存/i.test(docNames)) {
+      list.push('进程与线程的核心区别及各自的内存模型是什么？');
+      list.push('虚拟内存分页管理中，快表（TLB）是如何加速地址转换的？');
+      list.push('死锁的四大必要条件是什么，有哪些常用的预防策略？');
+    } else if (/网络|TCP|HTTP/i.test(docNames)) {
+      list.push('为什么 TCP 握手需要三次，而挥手需要四次？');
+      list.push('TCP 拥塞控制机制（慢启动、拥塞避免、快重传）是如何协同工作的？');
+      list.push('HTTP/2 与 HTTP/3 在解决队头阻塞上有何不同策略？');
+    } else {
+      list.push('二叉搜索树的查找复杂度与二分查找有什么联系？');
+      list.push('快速排序在什么情况下会发生性能退化？');
+      list.push('如何用动态规划求解经典的 0-1 背包问题？');
+      list.push('哈希冲突时拉链法与开放寻址法各自适用的场景是什么？');
+    }
+
+    // Inspect history memory from past sessions
+    const pastUserQuestions = (state.sessions || [])
+      .filter(s => s.id !== state.sessionId)
+      .flatMap(s => (s.messages || []).filter(m => m.role === 'user').map(m => m.text))
+      .filter(Boolean);
+
+    if (pastUserQuestions.length) {
+      const recent = pastUserQuestions[pastUserQuestions.length - 1];
+      if (recent && !list.includes(recent)) {
+        list.unshift(`继续深入探索上次学习的：「${recent.slice(0, 20)}」`);
+      }
+    }
+    return list.slice(0, 4);
+  }
+
+  function getSelectionQuestions(rawText) {
+    const text = (rawText || '').trim();
+    if (/树|AVL|红黑树|平衡/i.test(text)) {
+      return [
+        '为什么需要这种平衡机制，与普通二叉树有何区别？',
+        '失衡调整时的旋转操作与复杂度是如何保证的？',
+        '在工业级软件（如数据库/Linux内核）中如何应用？',
+        '有哪些经典考查题型与易错点？'
+      ];
+    }
+    if (/O\(|复杂度|时间|空间/i.test(text)) {
+      return [
+        '最坏情况、最好情况与均摊复杂度各是多少？',
+        '在海量数据或极端分布下是否会发生性能退化？',
+        '有没有空间换时间或进一步常数级优化的策略？',
+        '如何通过推导或数学归纳法证明这一复杂度？'
+      ];
+    }
+    if (/TCP|HTTP|网络|握手|协议/i.test(text)) {
+      return [
+        '该协议机制的设计初衷和要解决的核心痛点是什么？',
+        '报文交互的具体流程与状态转换是怎样的？',
+        '当网络出现丢包、超时或高延迟时如何应对？',
+        '与其它同类协议相比有什么优劣势？'
+      ];
+    }
+    if (/进程|线程|锁|并发|内存/i.test(text)) {
+      return [
+        '它在操作系统底层是如何调度和分配资源的？',
+        '高并发场景下可能产生什么竞态条件或死锁风险？',
+        '硬件 CPU 或内核做了哪些加速优化？',
+        '有什么最佳实践来保障并发安全性？'
+      ];
+    }
+    return [
+      '请用通俗的语言深度剖析其核心含义',
+      '它的工作底层原理与算法执行流程是什么？',
+      '在实际生产工程或系统设计中有哪些应用？',
+      '有哪些常见的设计陷阱或易错考点？'
+    ];
+  }
+
+  function sidebarAskPanel() {
+    return `<aside id="chatSidebarAskPanel" class="chat-sidebar-ask-panel ${state.sidebarAskOpen?'is-open':''}" aria-label="侧边栏划词提问" ${state.sidebarAskOpen?'':'hidden'}>`+
+      `<div class="sidebar-ask-header">`+
+        `<div class="sidebar-ask-title-group">`+
+          `<span class="sidebar-ask-badge">划词提问</span>`+
+          `<h3 class="sidebar-ask-title">侧边提问助手</h3>`+
+        `</div>`+
+        `<button type="button" class="sidebar-ask-close" data-close-sidebar-ask aria-label="关闭侧边提问">×</button>`+
+      `</div>`+
+      `<div class="sidebar-ask-body">`+
+        (state.sidebarAskText ? `
+          <div class="sidebar-ask-quote-card">
+            <div class="quote-card-header">
+              <span class="quote-icon">“</span>
+              <span>选中的重点内容</span>
+            </div>
+            <blockquote class="quote-card-text">${e(state.sidebarAskText)}</blockquote>
+          </div>
+          <div class="sidebar-ask-prompt-section">
+            <div class="sidebar-section-title">
+              <span class="sparkle-icon">💡</span>
+              <span>针对所选词句的提问推荐：</span>
+            </div>
+            <div class="sidebar-prompt-chips">
+              ${getSelectionQuestions(state.sidebarAskText).map(q => `
+                <button type="button" class="sidebar-suggest-chip" data-sidebar-quick-ask="${e(q)}" data-prompt="关于「${e(state.sidebarAskText.length > 50 ? state.sidebarAskText.slice(0, 50) + '…' : state.sidebarAskText)}」：${e(q)}" title="点击立即向 Copilot 提问">
+                  <span>${e(q)}</span>
+                  <span class="chip-arrow">↗</span>
+                </button>
+              `).join('')}
+            </div>
+          </div>
+        ` : `
+          <div class="sidebar-ask-empty-guide">
+            <div class="empty-guide-icon">💡</div>
+            <h4>划词提问助手已就绪</h4>
+            <p>在左侧对话中用鼠标划选任意词句，点击浮动菜单中的<strong>【侧边提问】</strong>，即可针对所选内容在此深度剖析。</p>
+          </div>
+        `)+
+        `<form id="sidebarAskForm" class="sidebar-ask-form">`+
+          `<label class="sr-only" for="sidebarAskInput">侧边提问输入框</label>`+
+          `<textarea id="sidebarAskInput" class="sidebar-ask-textarea" placeholder="${state.sidebarAskText ? '输入你想对选中内容具体追问的问题…' : '输入你想提问的课程问题…'}" rows="3" maxlength="4000">${e(state.sidebarAskDraft||'')}</textarea>`+
+          `<div class="sidebar-ask-actions">`+
+            (state.sidebarAskText ? `<button type="button" class="button button-outline button-small" data-sidebar-fill-composer>填入主输入框</button>` : '')+
+            `<button type="submit" class="button button-blue button-small" ${state.pending?'disabled':''}>立即提问</button>`+
+          `</div>`+
+        `</form>`+
+      `</div>`+
+    `</aside>`;
+  }
+
   function message(m,index){
     if(m.role==='user')return `<article class="message user-message"><div class="message-body">${m.images?.length?`<div class="sent-image-gallery">${m.images.map(ref=>`<button type="button" class="sent-image-thumb" data-message-image="${e(ref.key)}" title="${e(ref.name)}" aria-label="放大图片 ${e(ref.name)}"><img data-sent-image="${e(ref.key)}" ${ctx.getMessageImage?.(ref)?`src="${e(ctx.getMessageImage(ref))}"`:'hidden'} alt="${e(ref.name)}" title="${e(ref.name)}"><span data-image-missing ${ctx.getMessageImage?.(ref)?'hidden':''}>${e(ref.name)} · 读取图片</span></button>`).join('')}</div>`:''}<p>${e(m.text)}</p>${(m.attachmentNames||m.imageNames)?.length?`<small>附件：${(m.attachmentNames||m.imageNames).map(e).join('、')}</small>`:''}${m.transcript?`<details><summary>已核对的语音文字</summary><p>${e(m.transcript)}</p></details>`:''}</div></article>`;
     const interactive=Boolean(state.agentFeatures?.interactive&&state.agentFeatures?.configured);
@@ -328,7 +506,9 @@ function createViews(ctx,base){
     const branchSvg='<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>';
     const regenSvg='<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>';
     const actionButtons=!isThinking&&!m.failed&&!m.cancelled?`<div class="message-actions doubao-action-bar" role="toolbar" aria-label="回答操作"><button type="button" class="action-icon-btn" data-copy-message="${index}" title="复制回答" aria-label="复制回答">${copySvg}</button><button type="button" class="action-icon-btn ${isReadingThis?'is-playing':''}" data-tts-read="${index}" title="${isReadingThis?'停止朗读':'语音朗读'}" aria-label="${isReadingThis?'停止朗读':'语音朗读'}">${ttsSvg}</button><button type="button" class="action-icon-btn ${myFeedback?.rating==='helpful'?'is-active is-helpful':''}" data-feedback="${index}" data-rating="helpful" title="赞" aria-label="赞">${thumbUpSvg}</button><button type="button" class="action-icon-btn ${myFeedback?.rating==='unhelpful'?'is-active is-unhelpful':''}" data-feedback="${index}" data-rating="unhelpful" title="踩" aria-label="踩">${thumbDownSvg}</button><button type="button" class="action-icon-btn" data-branch="${index}" title="新建分支（从此处开启新对话）" aria-label="新建分支（从此处开启新对话）">${branchSvg}</button><button type="button" class="action-icon-btn action-icon-warn ${myFeedback?.rating==='incorrect'?'is-active':''}" data-feedback="${index}" data-rating="incorrect" title="引用或内容有误（报错）" aria-label="引用或内容有误（报错）">${alertSvg}</button><button type="button" class="action-icon-btn" data-regenerate="${index}" title="重新生成" aria-label="重新生成">${regenSvg}</button></div>`:'';
-    return `<article class="message ai-message ${isThinking?'loading-message':''}" data-message-index="${index}"><div class="message-avatar">${icon('spark')}</div><div class="message-body"><div class="message-meta"><strong>学涯 Copilot</strong><span ${isThinking?'hidden':''}>${e(m.engine||'本地检索摘录')} · ${m.sources?.length||0} 个来源${Number.isFinite(m.timings?.totalMs)?' · '+(m.timings.totalMs/1000).toFixed(1)+' 秒':''}</span></div>${thinkingBlock}<div class="rich-content">${renderedBody}${isThinking&&m.text?'<span class="stream-cursor" aria-hidden="true"></span>':''}</div>${citations(m.sources)}${globalThis.XueyaAgentRuns?.markup(m,index,interactive)||''}${actionButtons}</div></article>`;
+    const followupBlock = (!isThinking && !m.failed && !m.cancelled && m.text) ?
+      `<div class="suggested-followup-box" data-parent-index="${index}"><div class="suggested-followup-title"><span class="suggested-spark">✦</span><span>用户可能会提问的问题：</span></div><div class="suggested-chips">${getFollowupQuestions(m, state).map(q => `<button type="button" class="suggested-chip" data-prompt="${e(q)}" title="点击直接向 Copilot 提问"><span>${e(q)}</span><span class="chip-arrow" aria-hidden="true">↗</span></button>`).join('')}</div></div>` : '';
+    return `<article class="message ai-message ${isThinking?'loading-message':''}" data-message-index="${index}"><div class="message-avatar">${icon('spark')}</div><div class="message-body"><div class="message-meta"><strong>学涯 Copilot</strong><span ${isThinking?'hidden':''}>${e(m.engine||'本地检索摘录')} · ${m.sources?.length||0} 个来源${Number.isFinite(m.timings?.totalMs)?' · '+(m.timings.totalMs/1000).toFixed(1)+' 秒':''}</span></div>${thinkingBlock}<div class="rich-content">${renderedBody}${isThinking&&m.text?'<span class="stream-cursor" aria-hidden="true"></span>':''}</div>${citations(m.sources)}${globalThis.XueyaAgentRuns?.markup(m,index,interactive)||''}${actionButtons}${followupBlock}</div></article>`;
   }
   function explicitScope(){try{const v=JSON.parse(localStorage.getItem('xueya-c-learning:'+state.courseId+':scope:'+state.sessionId));return Array.isArray(v)?v:null;}catch{return null;}}
   function chat(){
@@ -337,12 +517,13 @@ function createViews(ctx,base){
         `<div class="chat-top-external-bar" role="toolbar" aria-label="快捷操作">`+
           `<button type="button" class="sidebar-ext-btn sidebar-toggle-btn" data-toggle-sidebar title="收起/展开侧边栏" aria-label="收起/展开侧边栏"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="4" ry="4"/><line x1="9" y1="3" x2="9" y2="21"/></svg></button>`+
           `<button type="button" class="sidebar-ext-btn sidebar-new-btn" data-new-session title="新对话" aria-label="开启新对话" ${state.pending?'disabled':''}><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>`+
+          `<button type="button" class="sidebar-ext-btn sidebar-ask-btn ${state.sidebarAskOpen?'is-active':''}" data-toggle-sidebar-ask title="打开/收起划词提问侧边栏" aria-label="打开/收起划词提问侧边栏"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><line x1="9" y1="10" x2="15" y2="10"/><line x1="12" y1="7" x2="12" y2="13"/></svg></button>`+
         `</div>`+
         `<div class="chat-mode-tabs" role="group" aria-label="问答模式">${[['ask','资料问答'],['summarize','知识整理'],['quiz','开放练习']].map(([mode,label])=>`<button type="button" class="${mode===state.mode?'active':''}" aria-pressed="${mode===state.mode}" data-mode="${mode}">${label}</button>`).join('')}${button('新对话','data-clear-chat '+(state.pending?'disabled':''))}</div>`+
         `<details class="scope-picker"><summary>资料范围：${explicitScope()!==null?explicitScope().length+' 份资料':state.selectedDocuments.length?state.selectedDocuments.length+' 份资料':'当前课程全部有效资料'}</summary><div>${state.documents.filter(d=>!d.superseded&&!d.archived).map(d=>`<label><input type="checkbox" data-scope="${e(d.id)}" ${(explicitScope()===null&&!state.selectedDocuments.length||state.selectedDocuments.includes(d.id))?'checked':''} ${state.pending?'disabled':''}>${e(d.name)}</label>`).join('')||'<p>请先添加资料。</p>'}</div></details>`+
-        `<div class="chat-thread" id="chatThread" data-session-id="${e(state.sessionId)}" tabindex="0" aria-label="对话记录" aria-live="polite" aria-busy="${state.pending}">${state.messages.length?state.messages.map(message).join(''):`<div class="chat-empty"><span class="chat-empty-symbol">${icon('spark')}</span><h2>从一个问题开始。</h2><p>先上传课程资料，让回答能回到原文。</p><a class="text-link" href="#space/knowledge">整理课程资料 →</a></div>`}</div>`+
+        `<div class="chat-thread" id="chatThread" data-session-id="${e(state.sessionId)}" tabindex="0" aria-label="对话记录" aria-live="polite" aria-busy="${state.pending}">${state.messages.length?state.messages.map(message).join(''):`<div class="chat-empty"><span class="chat-empty-symbol">${icon('spark')}</span><h2>从一个问题开始，走向真正理解。</h2><p>围绕课程资料与计算机核心知识点，学涯 Copilot 为你逐层剖析依据。</p><div class="chat-starter-suggested"><div class="starter-suggested-header"><span class="starter-spark">✦</span><span>猜你想问 · 根据课程与历史记忆推荐：</span></div><div class="starter-chips">${getInitialCourseSuggestions(state).map(q => `<button type="button" class="suggested-chip" data-prompt="${e(q)}" title="点击直接提问"><span>${e(q)}</span><span class="chip-arrow" aria-hidden="true">↗</span></button>`).join('')}</div></div><div class="chat-empty-links"><a class="text-link" href="#space/knowledge">整理课程资料 →</a><a class="text-link" href="#space/courses">进入课程视频学堂 →</a></div></div>`}</div>`+
         composer()+
-      `</div></div>`;
+      `</div>`+sidebarAskPanel()+`</div>`;
   }
   function documentRows(query=''){
     const list=state.documents.filter(d=>(!globalThis.XueyaPlatform?.available||!d.remote)&&((d.name+' '+(d.tags||[]).join(' ')+' '+(d.chapter||'')).toLowerCase().includes(query.toLowerCase())));
