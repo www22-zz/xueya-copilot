@@ -173,7 +173,7 @@
       }});
       controller.signal.throwIfAborted();
       if(result.transcript)userMessage.transcript=result.transcript;
-      Object.assign(ai,{text:result.answer,reasoning:result.reasoning||'',sources:result.sources,engine:result.engine,failed:result.answerStatus==='unavailable',...(result.answerStatus?{answerStatus:result.answerStatus}:{}),...(result.reason?{reason:result.reason}:{}),...(result.timings?{timings:result.timings}:{}),...(result.agent?{agent:result.agent}:{}),...(result.workflow?{workflow:result.workflow}:{}),...(result.artifacts?{artifacts:result.artifacts}:{})});
+      Object.assign(ai,{text:result.answer,reasoning:result.reasoning||'',sources:result.sources,engine:result.engine,failed:result.answerStatus==='unavailable',...(result.answerStatus?{answerStatus:result.answerStatus}:{}),...(result.reason?{reason:result.reason}:{}),...(result.verification?{verification:result.verification}:{}),...(result.fallback?{fallback:result.fallback}:{}),...(result.timings?{timings:result.timings}:{}),...(result.agent?{agent:result.agent}:{}),...(result.workflow?{workflow:result.workflow}:{}),...(result.artifacts?{artifacts:result.artifacts}:{})});
       if(result.agent)ai.toolCalls=window.XueyaMCPTrace.collect(ai.toolCalls,result.agent);
       if(result.toolCalls)ai.toolCalls=result.toolCalls;
       if(result.runId)ai.runId=result.runId;

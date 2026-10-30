@@ -235,6 +235,16 @@ G5 复用同一学习主平台，新增分段媒体任务与有出处复习音�
 
 主服务通用聊天直接接收模型回答正文，不向上游强制 JSON 格式；宿主将每个正文增量做 JSON 字符串转义，继续以既有 `content` JSON 增量和最终 `done.answer` 发布。因此普通文字、Markdown 和用户要求的代码/JSON 示例不会因为不是 `{"answer":...}` 而丢弃。结构化课程任务和旧兼容调用仍执行原有格式/证据校验。工作流失败沿用 `general-chat-unavailable`、降级 `workflow` 和最终 `done`：空正文提示没有返回回答，截断/缺失结束帧提示回答不完整；仅确认本机未配置密钥时提示配置密钥，其他服务故障提示稍后重试。不透出上游原始错误或自动重试付费请求。
 
+#### 可选：知识库失败后的单次自主回答（2026-10-31）
+
+宿主开关`AI_RAG_GENERAL_FALLBACK=1`启用网页文字问答的单次MiMo自主回答；客户端不能修改这个开关。它覆盖资料不足、证据核对失败、模型引文格式错误、文字生成超时或不完整，以及只读规划未生成答案。原本正常的资料回答继续保留引用。图片、学习记录写操作及需要用户确认的任务不因此自动改用通用回答。
+
+切换前关闭原生成器及工具会话，新请求只携带问题和对话语境，不携带当前检索材料/证据包。旧的超时请求不重放；最多新发一次不同的通用请求（90秒上限），共用原调用数、token、时间和费用预算。取消、权限错误、资料版本失效及已耗尽的预算不触发额外请求。新请求仍失败时返回未完成，不循环重试。
+
+成功的自主回答固定以“模型自主回答（未使用知识库证据）”标注，`engine='general-chat'`、`verification='general-knowledge-not-course-verified'`，`sources/sourceObjects/sourceDetails/claims`均为空。可选`fallback={from:'course-rag',reason,attempts:1,sameRequestReplayed:false}`记录原失败原因，不能把该结果宣称为知识库支持的答案。
+
+沿用既有SSE事件类型：切换的`workflow`帧可增加`resetAnswer:true`，客户端先清空原答案/推理增量，再接收新的`content`，以最终`done`为准；旧客户端仍可依据最终done替换正文。浏览器显示“MiMo 自主回答”，后续通用追问不继承更早的课程引用。主聊天流的等待上限调整为240秒，用户取消保持有效。`/api/health`可选返回`ragGeneralFallbackEnabled`，用于核对当前宿主开关是否已加载。
+
 主服务通用聊天请求显式设置 `thinking: {type: "disabled"}`，并引导简单问题简短作答以减少等待；仍调用同一外部模型并由宿主保证 JSON 接口、流式事件和调用账本。课程资料问答及学习规划不自动套用此设置，继续使用原有推理模式。该优化不承诺固定响应时间，网络和服务端排队仍影响延迟。
 
 聊天工作流的浏览器上下文通过同进程 MCP 会话调用原有课程工具，不再逐条消息启动 stdio 子进程；独立 stdio MCP 入口仍保留。工具参数校验、只读白名单、预算及课程隔离不变。主模型 HTTP 连接池随应用启动和关闭，逐请求超时仍独立生效，SSE 在 `[DONE]` 后消费 HTTP 收尾以允许安全复用连接，不再转发收尾后的内容，不自动重发失败请求。
@@ -405,3 +415,10 @@ generation摘要含 `{id,courseId,documentId,name,status,revision,jobId,complete
 - 自评分不是客观判题，不增加correctCount/wrongCount。无分草稿不算自评活动，反复保存相同评分不重复统计；自评不自动改变待刷/掌握状态。
 - `PracticeGeneration`生产默认legacy_enabled=False。上传返回practiceGeneration.status=deferred、target=100，只做解析；catalog不展示旧批次。启动取消旧生成活跃队列，watch/callback/enqueue/resume/execute/provider/publish均阻止旧200题续发。resume返回PRACTICE_GENERATION_RETIRED。受控兼容测试可显式开启旧实现，不代表生产仍自动调用。
 - 浏览器workspace-v1缓存按账号隔离，必须含algorithm100与exam408300才可接收。旧后台忽略source返回旧题库时显示WORKSPACE_BANK_OUTDATED，不静默缓存空408。有效完整缓存支持离线；旧课程缓存不覆盖新来源。
+
+
+### 2026-10-31 连贯正文输出
+
+网页资料问答的最终正文保留模型生成的完整 `answer`，不再用 `claims` 条目拼接替代。发布前将正文及其证据笔记在同一次来源核对中检查；正文不通过时不会用已通过的零散摘录冒充完整回答。SSE 在核对完成前仅报告工作进度，通过后沿用原 content/done 格式发布正文。`verification=reviewed-narrative` 表示整篇正文经过模型来源核对，不表示绝对正确；完全逐字的正文仍为 verbatim-only。
+
+自主兜底仍是一次独立、无课程证据包的请求，使用独立HTTP连接，避免承接异常的池内连接；不会重发原请求或循环调用。连接异常与超时分别记录错误类别，仅记录类别及异常类型，不记录密钥或请求正文。没有新付费在线验收。

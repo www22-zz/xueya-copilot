@@ -2,7 +2,7 @@
 (function(root,factory){if(typeof module==='object'&&module.exports)module.exports=factory(require('../../../shared/learning.js'),require('../../../shared/contracts/index.js'),require('../../../shared/agent/sse.js'),require('../../../shared/agent/context.js'),require('../../../shared/agent/tasks.js'));else root.XueyaChat=factory(root.XueyaLearning,root.XueyaContracts,root.XueyaSSE,root.XueyaContext,root.XueyaTasks);})(typeof globalThis!=='undefined'?globalThis:this,function(L,C,SSE,Context,Tasks){
   'use strict';
 
-  function createChatService({fetchImpl=globalThis.fetch,protocol=globalThis.location?.protocol||'http:',timeoutMs=30000,streamTimeoutMs=90000}={}){
+  function createChatService({fetchImpl=globalThis.fetch,protocol=globalThis.location?.protocol||'http:',timeoutMs=30000,streamTimeoutMs=240000}={}){
     function prepare(input,{currentSourcesOnly=false}={}){
       const request=C.normalizeChatRequest(input);
       if(typeof input.courseId==='string')request.courseId=input.courseId.slice(0,150);
@@ -17,10 +17,10 @@
     }
     function success(payload,hits){
       if(payload?.ok!==true||typeof payload.answer!=='string'||!payload.answer.trim()||!Array.isArray(payload.sources))throw new Error('AI_UNAVAILABLE');
-      const local=payload.engine==='local-workflow',unavailable=payload.engine==='general-chat-unavailable',incomplete=payload.answerStatus==='unavailable',info=payload.engine==='assistant-info',dynamic=payload.agent?.planRevision>0;
+      const local=payload.engine==='local-workflow',unavailable=payload.engine==='general-chat-unavailable',incomplete=payload.answerStatus==='unavailable',info=payload.engine==='assistant-info',dynamic=payload.agent?.planRevision>0,autonomous=payload.engine==='general-chat'&&Boolean(payload.fallback);
       const resolved=[...(Array.isArray(payload.sourceDetails)?payload.sourceDetails:[]),...(Array.isArray(payload.sourceObjects)?payload.sourceObjects:[])].filter(s=>s&&typeof s.id==='string'&&typeof s.quote==='string'&&typeof s.title==='string'&&typeof s.location==='string');
       const sources=[...new Set(payload.sources)].map(id=>resolved.find(source=>source.id===id)||hits.find(source=>source.id===id)).filter(Boolean);
-      return{answer:payload.answer,sources,engine:incomplete?'回答未完成':info?'应用信息':dynamic?'AI 学习规划':unavailable?'通用问答暂不可用':local?'本地学习流程':payload.engine==='general-chat'?'MiMo 通用问答':'MiMo 资料问答',online:!incomplete&&!info&&(dynamic||!local&&!unavailable),knowledgePoints:payload.knowledgePoints||[],model:payload.model,...(payload.answerStatus?{answerStatus:payload.answerStatus}:{}),...(payload.reason?{reason:payload.reason}:{}),...(payload.timings?{timings:payload.timings}:{}),...(payload.agent?{agent:payload.agent}:{}),...(payload.workflow?{workflow:payload.workflow}:{}),...(payload.artifacts?{artifacts:payload.artifacts}:{})};
+      return{answer:payload.answer,sources:autonomous?[]:sources,engine:incomplete?'回答未完成':info?'应用信息':autonomous?'MiMo 自主回答':dynamic?'AI 学习规划':unavailable?'通用问答暂不可用':local?'本地学习流程':payload.engine==='general-chat'?'MiMo 通用问答':'MiMo 资料问答',online:!incomplete&&!info&&(dynamic||!local&&!unavailable),knowledgePoints:payload.knowledgePoints||[],model:payload.model,...(payload.answerStatus?{answerStatus:payload.answerStatus}:{}),...(payload.reason?{reason:payload.reason}:{}),...(payload.verification?{verification:payload.verification}:{}),...(payload.fallback?{fallback:payload.fallback}:{}),...(payload.timings?{timings:payload.timings}:{}),...(payload.agent?{agent:payload.agent}:{}),...(payload.workflow?{workflow:payload.workflow}:{}),...(payload.artifacts?{artifacts:payload.artifacts}:{})};
     }
     function fallback(request,hits,context){
       const greeting=Tasks.conversationReply(request.question,request.mode);
@@ -71,6 +71,7 @@
             try{event=JSON.parse(data);}catch{throw new Error('AI_INVALID_RESPONSE');}
             if(event.type==='error')throw new Error(event.error||'AI_UNAVAILABLE');
             if(event.type==='workflow'){
+              if(event.resetAnswer===true){content='';reasoning='';onUpdate({answer:'',reasoning:''});}
               if(event.agent)agent=event.agent;
               if(event.toolCalls)toolCalls=event.toolCalls;
               if(event.runId)runId=event.runId;

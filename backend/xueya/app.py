@@ -151,6 +151,7 @@ def create_app(config: Config | None = None, *, provider=None, start_jobs=True):
     async def health():
         platform = app.state.platform
         return success(engine="xiaomi-mimo" if config.api_key else "local-fallback", model=config.model,
+                       ragGeneralFallbackEnabled=config.rag_general_fallback,
                        **({"instanceId": app.state.instance_id} if app.state.instance_id else {}),
                        **({"platform": {"schemaVersion": "1.0", "storage": "sqlite", "inference": "external-api-only", "resources": platform.resources.stats()}} if platform else {}))
 

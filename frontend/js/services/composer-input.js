@@ -7,7 +7,7 @@
     const key=()=>state.courseId+':'+state.sessionId;
     function release(){clearInterval(timer);clearTimeout(deadline);stream?.getTracks().forEach(track=>track.stop());stream=null;}
     function cancel(redraw=true){epoch++;controller?.abort();controller=null;const active=recorder;recorder=null;if(active?.state==='recording'){active.onstop=null;active.stop();}release();phase='idle';error='';audioFile=null;media=null;if(redraw)render();}
-    function fail(err){phase='error';error=({NotAllowedError:'无法使用麦克风，请在浏览器地址栏允许麦克风后重试。',NotFoundError:'没有找到麦克风，请检查设备连接。',NotReadableError:'麦克风正被占用，请关闭其他录音程序后重试。',ASR_NOT_CONFIGURED:'尚未配置语音识别服务，请检查服务设置。',AI_UNAVAILABLE:'语音识别服务暂不可用，录音已保留，可手动重试。',LOGIN_REQUIRED:'请先登录，再重试语音识别。'}[err.code||err.name]||err.message||'录音未完成，请重试。');render();toast(error);}
+    function fail(err){phase='error';error=({NotAllowedError:'无法使用麦克风，请在浏览器地址栏允许麦克风后重试。',NotFoundError:'没有找到麦克风，请检查设备连接。',NotReadableError:'麦克风正被占用，请关闭其他录音程序后重试。',ASR_NOT_CONFIGURED:'尚未配置语音识别服务，请检查服务设置。',AI_TIMEOUT:'语音识别响应超时，录音已保留。请先到任务与用量核对本次调用。',AI_UNAVAILABLE:'语音识别服务暂不可用，录音已保留，可手动重试。',LOGIN_REQUIRED:'请先登录，再重试语音识别。'}[err.code||err.name]||err.message||'录音未完成，请重试。');render();toast(error);}
     async function pcm(blob){
       const context=new AudioContext();
       try{
@@ -66,6 +66,6 @@
       }catch(err){if(version===epoch){release();fail(err);}}
     }
     window.addEventListener('pagehide',()=>cancel(false));
-    return {toggle,cancel,retry(){if(!busy()&&audioFile&&owner===key())return transcribe(epoch);},get busy(){return busy();},get status(){return {phase,error,canRetry:!!audioFile};},mount(){if((owner&&owner!==key())||!['overview','chat'].includes(state.view)){if(phase!=='idle'||audioFile)cancel(false);}}};
+    return {toggle,cancel,retry(){if(!busy()&&audioFile&&owner===key())return transcribe(epoch);},get busy(){return busy();},get status(){return {phase,error,canRetry:!!audioFile};},mount(){if((owner&&owner!==key())||!['overview','ask','chat'].includes(state.view)){if(phase!=='idle'||audioFile)cancel(false);}}};
   }};
 })();

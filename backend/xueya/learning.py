@@ -94,11 +94,11 @@ def route_task(question, mode="ask"):
         return "review"
     if re.search(r"总结|归纳|整理.{0,6}(?:重点|知识)", question):
         return "summarize"
-    return "quiz" if re.search(r"(?:出|生成).{0,4}(?:练习|题目|题)|练习题|测验", question) else "ask"
+    return "quiz" if re.search(r"(?:出(?!现|错)|生成).{0,4}(?:练习|题目|试题)|(?:出|生成)(?:[一二两三四五六七八九十几\d]+)?(?:道|套|个)?题|(?:出|生成)[一二两三四五六七八九十几\d]+(?:道|套|个)[^。！？?]{0,12}题|练习题|测验", question) else "ask"
 
 
 def refers_previous(question):
-    return bool(re.search(r"它|这个|这些|这种|这样|那个|那些|上述|刚才|上面|前面|继续|进一步|再解释|再说|展开讲|换个说法|举个例|举一个例|^(?:为什么|为何|怎么理解)[呢吗？?。！!\s]*$", question))
+    return bool(re.search(r"^那|它|这个|这些|这种|这样|那个|那些|上述|刚才|上面|前面|继续|进一步|再解释|再说|展开讲|换个说法|举个例|举一个例|^(?:为什么|为何|怎么理解)[呢吗？?。！!\s]*$", question))
 
 
 def local_answer(question, mode, sources):

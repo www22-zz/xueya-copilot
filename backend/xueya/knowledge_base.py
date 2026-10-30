@@ -49,12 +49,12 @@ class KnowledgeBase:
             self.p.repo.put(self.p.scope(course_id), 'artifact', 'knowledge-base-profile', content, 0)
         return next(c for c in self.p.repo.courses(self.p.user_id) if c['id'] == course_id)
 
-    def upload(self, scope, buffer, name, chapter, key):
+    def upload(self, scope, buffer, name, chapter, key, *, review=False):
         require(isinstance(name, str) and not name.startswith('~$'), 'TEMPORARY_FILE_FORBIDDEN')
         require(not any(c in name for c in ('/', '\\', '\x00')), 'INVALID_FILE_NAME')
         require(isinstance(chapter, str) and len(chapter) <= 200, 'INVALID_CHAPTER')
         chapter = chapter.strip() or infer_chapter(name)
-        signature = digest({'name': name, 'chapter': chapter, 'bytes': hashlib.sha256(buffer).hexdigest()})
+        signature = digest({'name': name, 'chapter': chapter, 'bytes': hashlib.sha256(buffer).hexdigest(), **({'review': True} if review else {})})
         key = identifier(key)
         with self.p.db.transaction():
             receipt_id = 'knowledge-import-' + digest(key)[:40]
@@ -68,14 +68,18 @@ class KnowledgeBase:
                 require(doc['knowledgeImportSignature'] == signature, 'IDEMPOTENCY_CONFLICT')
             else:
                 self.library.annotate(scope, job, {'chapter': chapter, 'knowledgeImportSignature': signature,
-                                                 'origin': {'type': 'local-file', 'fileName': name}})
+                                                 'origin': {'type': 'local-file', 'fileName': name},
+                                                 **({'knowledgeReview': {'confirmedRevision': None}} if review else {})})
             if not prior:
                 self.p.repo.put(scope, 'artifact', receipt_id, {'kind': 'knowledge-import-receipt', 'signature': signature, 'documentId': doc['id']}, 0)
             return {'job': job, 'documentId': doc['id']}
 
     def capabilities(self):
         return {'lexical': True, 'embedding': bool(self.rag.embedding),
-                'ocr': bool(self.rag.ocr), 'rerank': bool(self.rag.rerank), 'externalVerified': False}
+                'ocr': bool(self.rag.ocr), 'rerank': bool(self.rag.rerank), 'externalVerified': False,
+                'embeddingModel': self.rag.embedding.settings.model if self.rag.embedding else None,
+                'ocrModel': self.rag.ocr.settings.model if self.rag.ocr else None,
+                'embeddingInput': ['text'], 'ocrBatchLimit': 20 if self.rag.ocr and self.rag.ocr.name == 'moark-mineru-ocr' else 64}
 
     def catalog(self, scope):
         # Latest task per document, including retries/reparses and external index jobs.
@@ -103,7 +107,8 @@ class KnowledgeBase:
                           partialImages=sum(bool(r.get('partial')) for r in image_reviews),
                           unreadableImages=sum(r['kind'] == 'unreadable' for r in image_reviews))
             documents.append({**{k: doc.get(k) for k in ('id', 'name', 'chapter', 'version', 'contentRevision', 'kind', 'size', 'status', 'indexStatus', 'archived', 'quality')},
-                              'review': review, 'ocrPreparation': doc.get('ocrPreparation'),
+                              'review': review, 'ocrPreparation': doc.get('ocrPreparation'), 'pageSelection': doc.get('pageSelection'),
+                              'knowledgeReview': doc.get('knowledgeReview'), 'reviewReady': self.rag.reviewed(doc),
                               'sourceCount': len(doc.get('chunks', [])), 'task': latest.get(doc['id']),
                               'vectorReady': bool(self.rag.embedding and doc.get('embeddingIdentity') == self.rag.embedding.identity and doc.get('indexStatus') == 'ready')})
         active = [d for d in documents if not d['archived']]
@@ -163,9 +168,10 @@ def install_knowledge_base(app):
         kb, q, post = app.state.knowledge, request.query_params, request.method == 'POST'
         if operation == 'upload' and post:
             scope = kb.p.scope(q.get('courseId', 'course-default'))
-            uploaded = kb.upload(scope, await body(request, document_limit(q.get('name'))), q.get('name'), q.get('chapter', ''), request.headers.get('idempotency-key'))
+            review = q.get('review') == '1'
+            uploaded = kb.upload(scope, await body(request, document_limit(q.get('name'))), q.get('name'), q.get('chapter', ''), request.headers.get('idempotency-key'), review=review)
             account = (app.state.account.current(request) or {}).get('username') or 'local'
-            generated = app.state.practice_generation.watch(account, scope, uploaded['documentId'])
+            generated = None if review else app.state.practice_generation.watch(account, scope, uploaded['documentId'])
             return success(**uploaded, practiceGeneration=generated)
         value = await json_body(request) if post else {}
         if operation == 'bases' and not post:
@@ -173,6 +179,10 @@ def install_knowledge_base(app):
         if operation == 'create' and post:
             return success(base=kb.create(value))
         scope = kb.p.scope(value.get('courseId') or q.get('courseId') or 'course-default')
+        if operation == 'review-confirm' and post:
+            require(value.get('confirmed') is True, 'CONFIRMATION_REQUIRED')
+            require(type(value.get('version')) is int, 'INVALID_VERSION')
+            return success(**kb.rag.confirm_review(scope, value.get('documentId'), value['version']))
         if operation == 'replacement-preview' and post:
             return success(preview=kb.replacement.preview(scope, value))
         if operation == 'replacement-apply' and post:
@@ -213,6 +223,7 @@ def install_knowledge_base(app):
                 require(doc['kind'] == 'pdf', 'OCR_PDF_REQUIRED')
                 pages = kb.rag.artifact(scope, doc)['pages']
                 chosen = value.get('pages')
+                require(chosen is None or isinstance(chosen, list) and 0 < len(chosen) <= kb.capabilities()['ocrBatchLimit'], 'OCR_PAGE_LIMIT')
                 require(chosen is not None or 0 < sum(bool(p.get('needsOcr')) for p in pages) <= 64, 'OCR_PAGE_LIMIT')
             return success(job=kb.rag.submit(scope, 'rag-'+action, value.get('documentId'), value.get('idempotencyKey'), expected_version=value['version'], pages=value.get('pages')))
         if operation == 'task' and post:

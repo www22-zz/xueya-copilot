@@ -19,6 +19,7 @@ class Config:
     platform_enabled: bool = True
     auto_import_demo: bool = False
     preserve_legacy_data: bool = False
+    rag_general_fallback: bool = False
     tool_timeout: float = 5.0
     max_output_tokens: int = 4096
     run_model_calls: int = 10
@@ -42,6 +43,7 @@ class Config:
         from .execution_budget import decimal_setting
         require(type(self.auto_import_demo) is bool, 'INVALID_DEMO_IMPORT_CONFIG')
         require(type(self.preserve_legacy_data) is bool, 'INVALID_PRESERVATION_CONFIG')
+        require(type(self.rag_general_fallback) is bool, 'INVALID_GENERAL_FALLBACK_CONFIG')
         for value in (self.max_output_tokens, self.run_model_calls, self.run_tool_calls, self.run_output_tokens):
             require(type(value) is int and value > 0, 'AI_INVALID_BUDGET_CONFIG')
         import math
@@ -76,6 +78,7 @@ def load_config() -> Config:
                   platform_enabled=env.get("XUEYA_PLATFORM_ENABLED", "1") != "0",
                   auto_import_demo=env.get('XUEYA_AUTO_IMPORT_DEMO', '1') == '1',
                   preserve_legacy_data=env.get('XUEYA_PRESERVE_LEGACY_DATA', '0') == '1',
+                  rag_general_fallback=env.get('AI_RAG_GENERAL_FALLBACK', '0') == '1',
                   tool_timeout=max(.05, min(60, float(env.get("MCP_TOOL_TIMEOUT_MS", 5000))/1000)),
                   max_output_tokens=int(env.get('AI_MAX_OUTPUT_TOKENS', 4096)),
                   run_model_calls=int(env.get('AI_RUN_MAX_MODEL_CALLS', 10)),
