@@ -51,6 +51,10 @@ test('ordinary conversation follow-up carries its kind through the browser reque
   assert.deepEqual(sent.history,input.history);
   state.messages.push({role:'ai',engine:'MiMo 资料问答',text:'课程原文',sources:[{id:'source-1'}]});
   assert.equal(workspace.historyFor('再解释一下').previousAnswerKind,undefined);
+  state.messages.push({role:'ai',engine:'MiMo 自主回答',text:'自主解释，未引用课程。',sources:[]});
+  const autonomous=workspace.historyFor('那再举个例子');
+  assert.equal(autonomous.previousAnswerKind,'general');
+  assert.deepEqual(autonomous.previousSources,[],'do not resurrect an older RAG citation');
 });
 
 test('workspace migration preserves messages and materials while retiring old learning records',()=>{

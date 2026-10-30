@@ -19,7 +19,7 @@ def route_task(question, mode='ask'):
         return 'conversation'
     for pattern, intent in [(r'(复习|学习|备考).{0,10}(计划|安排)|(计划|安排).{0,10}(复习|学习|备考)', 'plan'),
                             (r'薄弱|弱项|掌握情况|错题分析|学习情况|学习进度|复习重点', 'review'),
-                            (r'总结|归纳|整理.{0,6}(重点|知识)', 'summarize'), (r'(出|生成).{0,4}(练习|题目|题)|练习题|测验', 'quiz')]:
+                            (r'总结|归纳|整理.{0,6}(重点|知识)', 'summarize'), (r'(?:出(?!现|错)|生成).{0,4}(?:练习|题目|试题)|(?:出|生成)(?:[一二两三四五六七八九十几\d]+)?(?:道|套|个)?题|(?:出|生成)[一二两三四五六七八九十几\d]+(?:道|套|个)[^。！？?]{0,12}题|练习题|测验', 'quiz')]:
         if re.search(pattern, question):
             return intent
     return 'ask'
@@ -30,7 +30,7 @@ def requires_course_evidence(question, mode='ask'):
 
 
 def refers_to_previous(question):
-    return bool(re.search(r'它|这个|这些|这种|这样|那个|那些|上述|刚才|上面|前面|继续|进一步|再解释|再说|展开讲|换个说法|举个例|举一个例|^(为什么|为何|怎么理解)[呢吗？?。！!\s]*$', question))
+    return bool(re.search(r'^那|它|这个|这些|这种|这样|那个|那些|上述|刚才|上面|前面|继续|进一步|再解释|再说|展开讲|换个说法|举个例|举一个例|^(为什么|为何|怎么理解)[呢吗？?。！!\s]*$', question))
 
 
 def retrieval_query(request, library):
@@ -88,6 +88,8 @@ def answer_unavailable(reason, *, configured=True):
         return '已找到相关资料，但尚未配置 AI 问答服务，暂时无法整理解释。你可以先查看下方参考资料。'
     if reason in ('CLAIMS_NEED_REVIEW', 'INVALID_CLAIM_EVIDENCE'):
         return '已找到相关资料，但这次解释未通过来源核对，暂未生成可用回答。你可以先查看下方参考资料。'
+    if reason == 'AI_TIMEOUT':
+        return '已找到相关资料，但 AI 服务响应超时，本次未生成回答。没有自动重试；你可以先查看下方参考资料，并在任务与用量中核对本次调用。'
     return '这次 AI 回答未能完成，未将检索原文作为答案返回。相关资料保留在下方，供你核对。'
 
 

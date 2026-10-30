@@ -12,6 +12,57 @@ from test_practice_cleanup import seed
 
 
 @pytest.mark.asyncio
+async def test_selected_chapter_preserves_original_pages_review_gate_and_corrections(platform):
+    from types import SimpleNamespace
+    from backend.xueya.library_http import Library
+    from backend.xueya.knowledge_base import KnowledgeBase
+    rag = RagService(platform)
+    app = SimpleNamespace(state=SimpleNamespace(platform=platform, rag=rag))
+    app.state.library = Library(app)
+    kb = KnowledgeBase(app)
+    scope = platform.scope()
+    upload = kb.upload(scope, pdf(3), 'chapter.pdf', '栈与队列', 'chapter', review=True)
+    await completed(platform, upload['job'])
+    doc = rag.document(scope, upload['documentId'])
+    code = '```cpp\nvoid DeQueue() {\n  if (front == rear) throw "empty";\n  front = (front + 1) % QueueSize;\n}\n```'
+    pack = {'schema': 'prepared-pdf-ocr-v1', 'sourceFileHash': doc['fileHash'], 'engine': 'fixture',
+            'selectedPages': [2], 'pages': [{'page': 2, 'text': '循环队列出队操作。\n\n'+code, 'textFormat': 'markdown'}]}
+    for selection in ([], [True], [0], [4], [2, 2], [3, 2], None):
+        with pytest.raises(AppError, match='INVALID_PREPARED_PAGE_SELECTION'):
+            rag.prepared_pdf.submit(scope, doc['id'], {**pack, 'selectedPages': selection}, 'bad')
+    with pytest.raises(AppError, match='PREPARED_PDF_PAGE_MISMATCH'):
+        rag.prepared_pdf.submit(scope, doc['id'], {**pack, 'pages': [{'page': 1, 'text': 'wrong page'}]}, 'bad')
+    await completed(platform, rag.prepared_pdf.submit(scope, doc['id'], pack, 'selected'))
+    doc = rag.document(scope, doc['id'])
+    artifact = rag.artifact(scope, doc)
+    assert [p['number'] for p in artifact['pages']] == [2]
+    assert [p['number'] for p in artifact['originalPages']] == [1, 2, 3]
+    assert 'text' not in artifact['originalPages'][0]
+    assert [b['text'] for b in artifact['blocks'] if b['type'] == 'code'] == [code]
+    assert all(s['page'] == 2 for s in doc['chunks'])
+    assert not rag.sources(scope)  # Publication alone cannot claim human confirmation.
+    assert kb.catalog(scope)['documents'][0]['pageSelection'] == {'pages': [2], 'originalPageCount': 3}
+    rag.confirm_review(scope, doc['id'], doc['version'])
+    assert rag.sources(scope) and all(rag.validate(scope, s) for s in rag.sources(scope))
+    doc = rag.document(scope, doc['id'])
+    block = artifact['blocks'][0]
+    rag.correct(scope, doc['id'], doc['version'], block['id'], '循环队列的出队操作。', '核对原文')
+    doc = rag.document(scope, doc['id'])
+    assert doc['pageSelection']['pages'] == [2] and not rag.sources(scope)
+    assert len(rag.artifact(scope, doc)['originalPages']) == 3
+    # A later import may choose a different original page, then restore the full file.
+    other = {**pack, 'selectedPages': [3], 'pages': [{'page': 3, 'text': '链队列有头结点。'}]}
+    await completed(platform, rag.prepared_pdf.submit(scope, doc['id'], other, 'other-page'))
+    assert rag.document(scope, doc['id'])['pageSelection']['pages'] == [3]
+    full = {k: v for k, v in pack.items() if k != 'selectedPages'}
+    full['pages'] = [{'page': n, 'text': '原教材第%d页正文。' % n} for n in (1, 2, 3)]
+    await completed(platform, rag.prepared_pdf.submit(scope, doc['id'], full, 'restore-full'))
+    restored = rag.document(scope, doc['id'])
+    assert 'pageSelection' not in restored
+    assert [p['number'] for p in rag.artifact(scope, restored)['pages']] == [1, 2, 3]
+
+
+@pytest.mark.asyncio
 async def test_prepared_pdf_atomic_pages_versions_idempotence_and_cancel(platform):
     rag = RagService(platform)
     scope = platform.scope()

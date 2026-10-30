@@ -5,7 +5,7 @@ existing FileStore, repository and leased CPU queue.
 """
 import json
 from .common import digest, identifier, require
-from .rag_parse import assemble, MAX_TEXT
+from .rag_parse import assemble, text_blocks, MAX_TEXT
 
 
 class PreparedPdf:
@@ -17,25 +17,43 @@ class PreparedPdf:
         require(doc['kind'] == 'pdf' and isinstance(value, dict), 'PREPARED_PDF_REQUIRED')
         require(value.get('schema') == 'prepared-pdf-ocr-v1' and value.get('sourceFileHash') == doc['fileHash'], 'PREPARED_PDF_HASH_MISMATCH')
         pages = value.get('pages')
-        original = self.rag.artifact(scope, doc)['pages']
-        require(isinstance(pages, list) and len(pages) == len(original), 'PREPARED_PDF_PAGE_MISMATCH')
+        active = self.rag.artifact(scope, doc)
+        # Page identity comes from the parsed original, never from uploaded metadata.
+        original = active.get('originalPages', active['pages'])
+        selected = value.get('selectedPages')
+        if 'selectedPages' in value:
+            require(isinstance(selected, list) and bool(selected)
+                    and all(type(n) is int for n in selected)
+                    and selected == sorted(set(selected))
+                    and set(selected) <= {p['number'] for p in original}, 'INVALID_PREPARED_PAGE_SELECTION')
+            expected = [p for p in original if p['number'] in set(selected)]
+        else:
+            expected = original
+        require(isinstance(pages, list) and len(pages) == len(expected), 'PREPARED_PDF_PAGE_MISMATCH')
         engine = value.get('engine')
         require(isinstance(engine, str) and 0 < len(engine) <= 120, 'INVALID_PREPARED_OCR')
         output = []
         total = 0
-        for row, before in zip(pages, original):
+        for row, before in zip(pages, expected):
             require(isinstance(row, dict) and type(row.get('page')) is int and row['page'] == before['number'], 'PREPARED_PDF_PAGE_MISMATCH')
             text = row.get('text')
             require(isinstance(text, str) and '\x00' not in text, 'INVALID_PREPARED_OCR')
             blank = row.get('reviewedBlank') is True
             require(bool(text.strip()) != blank, 'PREPARED_PDF_UNRESOLVED_PAGE')
+            text_format = row.get('textFormat', 'text')
+            require(text_format in ('text', 'markdown'), 'INVALID_PREPARED_OCR')
             total += len(text) + 1
             require(total <= MAX_TEXT, 'PARSED_TEXT_TOO_LARGE')
             output.append({'number': row['page'], 'text': text, 'method': 'prepared-ocr', 'needsOcr': False,
                            'hasImages': before.get('hasImages', True), 'width': before.get('width'), 'height': before.get('height'),
+                           'blocks': text_blocks(text, row['page'], markdown=text_format == 'markdown', method='prepared-ocr'),
                            'ocrPreparation': {'engine': engine, 'reviewedBlank': blank,
                                               'textIndependentlyReviewed': False, 'formulaAndCodeNeedReview': True}})
         parsed = assemble(output, 'pdf', doc['fileHash'])
+        if selected is not None:
+            parsed['originalPages'] = [{k: p[k] for k in ('number', 'width', 'height', 'hasImages', 'bbox') if k in p}
+                                       for p in original]
+            parsed['pageSelection'] = {'pages': selected, 'originalPageCount': len(original)}
         parsed['preparation'] = {'engine': engine, 'sourceFileHash': doc['fileHash'],
                                  'notice': 'OCR整理文本；公式、代码和图表请核对原PDF，不等同逐字人工校订。'}
         return parsed

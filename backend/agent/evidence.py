@@ -1,11 +1,38 @@
 from ..core import require, clone, fingerprint, resolve, check_cancel
+import re
+
+
+def citation_aliases(sources):
+    """Request-local short handles, disjoint from all real IDs in this package."""
+    used, aliases = {s['id'] for s in sources}, {}
+    for index, source in enumerate(sources, 1):
+        alias = 'cite'+str(index)
+        while alias in used:
+            alias = '_'+alias
+        used.add(alias)
+        aliases[alias] = source['id']
+    return aliases
+
+
+def citation_source_id(value, sources):
+    if not isinstance(value, str):
+        return None
+    if value in {s['id'] for s in sources}:
+        return value
+    return citation_aliases(sources).get(value)
 
 
 def quote_spans(source):
     """Server-owned exact quotes. IDs avoid asking a model to retype OCR glyphs."""
     quote = source['quote']
     lines = list(dict.fromkeys(line.strip() for line in quote.splitlines() if line.strip()))[:128]
-    return {'q0': quote, **{'q'+str(i): line for i, line in enumerate(lines, 1)}}
+    result = {'q0': quote, **{'q'+str(i): line for i, line in enumerate(lines, 1)}}
+    # Keep legacy line IDs stable, and offer complete sentences spanning PDF
+    # line wraps. These are exact substrings, never repaired or paraphrased text.
+    if source.get('blockType') != 'code' and not quote.lstrip().startswith('```'):
+        sentences = [m[0].strip() for m in re.finditer(r'[^。！？]+[。！？]|[^。！？]+$', quote)]
+        result.update({'s'+str(i): text for i, text in enumerate(sentences[:16], 1) if 6 <= len(text) <= 1500})
+    return result
 
 
 def evidence_package(value):
@@ -32,7 +59,7 @@ async def validate_claims(claims, pack, review=None, signal=None):
         refs = []
         for ref in claim['evidence']:
             require(isinstance(ref, dict), 'INVALID_CITATION')
-            source = sources.get(ref.get('sourceId'))
+            source = sources.get(citation_source_id(ref.get('sourceId'), pack['sources']))
             require(source, 'INVALID_CITATION')
             quote = ref.get('quote')
             if 'quoteId' in ref:

@@ -16,6 +16,7 @@ from .common import require
 from .document_limits import document_limit
 from .rag_api import ApiSettings, EmbeddingProvider, OcrProvider, RerankProvider
 from .rag_service import RagService
+from .rag_moark import MinerUProvider, QwenEmbeddingProvider
 
 
 def configured_service(platform, root):
@@ -26,18 +27,23 @@ def configured_service(platform, root):
             if "=" in line and not line.lstrip().startswith("#"):
                 key, value = line.split("=", 1)
                 env.setdefault(key.strip(), value.strip().strip("\"'"))
-    def settings(prefix, default_url):
+    def settings(prefix, default_url, dimension=1024):
         key, model = env.get(prefix+"_API_KEY", ""), env.get(prefix+"_MODEL", "")
         if not key or not model:
             return None
         return ApiSettings(key=key, model=model, base_url=env.get(prefix+"_BASE_URL", default_url),
-                           dimension=int(env.get(prefix+"_DIMENSION", "1024")), revision=env.get(prefix+"_REVISION", "1"))
-    embedding = settings("RAG_EMBEDDING", "https://api.jina.ai/v1")
+                           dimension=int(env.get(prefix+"_DIMENSION", str(dimension))), revision=env.get(prefix+"_REVISION", "1"),
+                           timeout=float(env.get(prefix+"_TIMEOUT_SECONDS", "45")))
+    embedding_kind, ocr_kind = env.get("RAG_EMBEDDING_PROVIDER", "jina"), env.get("RAG_OCR_PROVIDER", "mistral")
+    require(embedding_kind in ("jina", "moark-qwen"), "INVALID_EMBEDDING_PROVIDER")
+    require(ocr_kind in ("mistral", "moark-mineru"), "INVALID_OCR_PROVIDER")
+    embedding = settings("RAG_EMBEDDING", "https://api.moark.com/v1" if embedding_kind == "moark-qwen" else "https://api.jina.ai/v1",
+                         (4096 if "8B" in env.get("RAG_EMBEDDING_MODEL", "") else 2048) if embedding_kind == "moark-qwen" else 1024)
     rerank = settings("RAG_RERANK", "https://api.jina.ai/v1")
-    ocr = settings("RAG_OCR", "https://api.mistral.ai/v1")
-    return RagService(platform, embedding=EmbeddingProvider(platform, embedding, name="jina-embedding") if embedding else None,
+    ocr = settings("RAG_OCR", "https://api.moark.com/v1" if ocr_kind == "moark-mineru" else "https://api.mistral.ai/v1")
+    return RagService(platform, embedding=(QwenEmbeddingProvider(platform, embedding, name="moark-qwen-embedding") if embedding_kind == "moark-qwen" else EmbeddingProvider(platform, embedding, name="jina-embedding")) if embedding else None,
                       rerank=RerankProvider(platform, rerank, name="jina-rerank") if rerank else None,
-                      ocr=OcrProvider(platform, ocr, name="mistral-ocr") if ocr else None)
+                      ocr=(MinerUProvider(platform, ocr, name="moark-mineru-ocr") if ocr_kind == "moark-mineru" else OcrProvider(platform, ocr, name="mistral-ocr")) if ocr else None)
 
 
 def install_rag(app, *, service_factory=None):

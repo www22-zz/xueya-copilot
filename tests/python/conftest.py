@@ -4,6 +4,7 @@ from contextlib import contextmanager
 from dataclasses import replace
 from pathlib import Path
 import socket
+import shutil
 import threading
 import time
 import pytest
@@ -26,9 +27,19 @@ def platform(tmp_path):
     asyncio.run(p.close())
 
 
+@pytest.fixture(scope="session")
+def http_root(tmp_path_factory):
+    root = tmp_path_factory.mktemp("http-root")
+    project = Path(__file__).resolve().parents[2]
+    for directory in ("frontend", "shared"):
+        shutil.copytree(project / directory, root / directory)
+    return root
+
+
 @pytest.fixture
-def client(tmp_path):
-    app = create_app(Config(data_dir=tmp_path / "http-data"))
+def client(tmp_path, http_root):
+    # Default HTTP fixtures must never read the developer's private .env.
+    app = create_app(Config(root=http_root, data_dir=tmp_path / "http-data"))
     with TestClient(app, base_url="http://127.0.0.1") as c:
         c.platform = app.state.platform
         c.platform_headers = {"X-Xueya-Token": c.get("/api/platform/bootstrap").json()["token"]}

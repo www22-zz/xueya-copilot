@@ -43,11 +43,95 @@ def terms(text, dictionary=None):
     return output
 
 
+def definition_subject(query):
+    compact = re.sub(r'\s+', '', str(query)).strip('？?。.!！')
+    compact = re.sub(r'^(?:请问|请解释一下|请解释|解释一下|介绍一下)', '', compact)
+    # A second question must not hide the definition requested in the first one.
+    compact = re.split(r'[？?。；;，,]', compact, maxsplit=1)[0]
+    match = (re.search(r'(?:什么是|什么叫|何谓)([^，,？?。；;]{1,40})', compact)
+             or re.fullmatch(r'(.{1,40}?)(?:的(?:基本)?(?:定义|概念|含义)(?:是什么|是啥|是)?|是什么)', compact))
+    return match[1].strip() if match else None
+
+
+def comparison_subjects(query):
+    """Transparent vocabulary expansion; require both named comparison targets."""
+    if not re.search(r'区别|不同|差异|异同|比较|对比|不选|不用|而不是|替代', query):
+        return []
+    names = [term for term in TERMS if term in query]
+    names = [name for name in names if not any(name != other and name in other for other in names)]
+    return names if 2 <= len(names) <= 4 else []
+
+
+def defining_strength(source, subject):
+    names = [subject]
+    for term, aliases in TERMS.items():
+        if subject == term or subject.casefold() in aliases:
+            names += [term, *aliases]
+    text, strength = source['quote'], 0
+    for name in names:
+        word = r'(?<![\u3400-\u9fffA-Za-z0-9_])'+re.escape(name)
+        heading = bool(re.search(r'^\s*[\d一二三四五六七八九十.．、()（）\s]*'+re.escape(name)+r'的(?:基本)?(?:定义|概念)\s*[:：]?\s*$', text, re.M | re.I))
+        prose = bool(re.search(word+r'(?:\s*[（(][^）)\n]{0,60}[）)])?\s*(?:是|指)', text, re.I))
+        named = bool(re.search(r'称为\s*'+re.escape(name)+r'(?![\u3400-\u9fffA-Za-z0-9_])', text, re.I))
+        strength = max(strength, 2*heading+prose, int(named))
+    return strength
+
+
+def preserve_definitions(query, ranked, candidates):
+    """Keep required definitions through fusion; candidates share the same scope."""
+    subjects = comparison_subjects(query)
+    subject = definition_subject(query)
+    subjects = subjects or ([subject] if subject else [])
+    chosen = {}
+    for name in subjects:
+        matches = [(score, source) for score, source in candidates if defining_strength(source, name)]
+        if matches:
+            _, source = min(matches, key=lambda row: (-defining_strength(row[1], name), -row[0], source_order(row[1])))
+            chosen[source['id']] = source
+    if not chosen:
+        return ranked
+    ceiling = max((score for score, _ in ranked), default=0)+1
+    return [(ceiling, source) for source in chosen.values()]+[(score, source) for score, source in ranked if source['id'] not in chosen]
+
+
+def preserve_sections(query, ranked, sources):
+    """Honor explicit heading identifiers, within the caller's existing scope.
+
+    A user asking for C06 or SQ01.3 should receive that actual section rather
+    than adjacent prose repeating the same topic words. No document is opened
+    outside the already filtered source set; the caller revalidates after awaits.
+    """
+    requested = {m.casefold() for m in re.findall(r'(?<![A-Za-z0-9_])[A-Za-z]{1,6}\d{1,4}(?:\.\d+)*(?![A-Za-z0-9_])', query)}
+    if not requested:
+        return ranked
+    chosen = []
+    for source in sources:
+        for heading in source.get('sectionPath', []):
+            match = re.match(r'^([A-Za-z]{1,6}\d{1,4}(?:\.\d+)*)\b', heading)
+            if match and match[1].casefold() in requested:
+                chosen.append(source)
+                break
+    if not chosen:
+        return ranked
+    chosen.sort(key=lambda s: (s.get('blockType') == 'heading', source_order(s)))
+    ids = {s['id'] for s in chosen}
+    ceiling = max((score for score, _ in ranked), default=0)+1
+    return [(ceiling, s) for s in chosen]+[(score, s) for score, s in ranked if s['id'] not in ids]
+
+
 def lexical(query, sources, *, limit=24):
     query_terms = set(terms(query))
+    subject = definition_subject(query)
+    if subject:
+        query_terms.update(terms(subject))
     if not query_terms or not sources:
         return []
     documents = [Counter(terms(s.get("title", "")+" "+s["quote"]+" "+" ".join(s.get("sectionPath", [])))) for s in sources]
+    single_concept = str(query).strip('？?。 \t\n')
+    if single_concept in ('栈', '树', '图'):
+        for source, doc in zip(sources, documents):
+            if single_concept in source.get('title', '') + source['quote']:
+                doc[single_concept] = max(1, doc[single_concept])
     df = Counter(t for doc in documents for t in doc)
     average = sum(sum(doc.values()) for doc in documents)/len(documents) or 1
     rows = []
@@ -61,24 +145,21 @@ def lexical(query, sources, *, limit=24):
             rows.append((score, source))
     # Definition questions need the defining prose ahead of dense code/index
     # fragments that repeat the same term. The original quotes stay unchanged.
-    compact = re.sub(r'\s+', '', str(query)).strip('？?。.!！')
-    compact = re.sub(r'^(?:请问|请解释一下|请解释|解释一下|介绍一下)', '', compact)
-    match = re.search(r'什么是([^，,？?。；;]{1,40})', compact) or re.fullmatch(r'(.{1,40}?)(?:的定义是什么|的含义是什么|是什么|的定义)', compact)
-    if match and rows:
-        subject = match[1].strip()
-        names = [subject]
-        for term, aliases in TERMS.items():
-            if subject == term or subject.casefold() in aliases:
-                names += [term, *aliases]
-        def defining(source):
-            text = source['quote']
-            for name in names:
-                word = r'(?<![\u3400-\u9fffA-Za-z0-9_])'+re.escape(name)
-                if re.search(word+r'(?:\s*[（(][^）)\n]{0,60}[）)])?\s*(?:是|指|的定义|的基本概念)', text, re.I) or re.search(r'称为\s*'+word, text, re.I):
-                    return True
-            return False
+    if subject and rows:
         priority = max(score for score, _ in rows)+1
-        rows = [(score+priority if defining(source) else score, source) for score, source in rows]
+        rows = [(score+priority*defining_strength(source, subject), source) for score, source in rows]
+    # Reserve a defining passage for each side instead of letting repeated words
+    # in exercises crowd one side out. Operates only on the caller's scoped rows.
+    subjects = comparison_subjects(query)
+    if subjects and rows:
+        priority = max(score for score, _ in rows)+1
+        chosen = set()
+        for name in subjects:
+            candidates = [(score, source) for score, source in rows if defining_strength(source, name)]
+            if candidates:
+                _, best = min(candidates, key=lambda row: (-defining_strength(row[1], name), -row[0], source_order(row[1])))
+                chosen.add(best['id'])
+        rows = [(score+priority if source['id'] in chosen else score, source) for score, source in rows]
     return sorted(rows, key=lambda row: (-row[0], source_order(row[1])))[:limit]
 
 
@@ -129,11 +210,20 @@ def compress(query, ranked, *, budget=2000, limit=6):
     require(type(budget) is int and 32 <= budget <= 16000 and type(limit) is int and 1 <= limit <= 20, "INVALID_BUDGET")
     evidence, used, ranges, quotes = [], 0, [], set()
     qterms = set(terms(query))
+    # Headings provide navigation metadata but rarely prove an explanation.
+    # Keep their fallback availability without allowing short titles to crowd
+    # out equally scoped prose/code, even when a vector rank puts titles first.
+    ranked = sorted(ranked, key=lambda row: row[1].get('blockType') == 'heading')
     for score, source in ranked:
         if len(evidence) >= limit:
             break
         start, end = source["start"], source["end"]
-        if any(doc == source["documentId"] and max(start, a) < min(end, b) for doc, a, b in ranges):
+        # Sliding chunks deliberately overlap. Dropping every overlapping sibling
+        # loses the continuation containing a condition/formula; only suppress
+        # substantial overlap, while still charging all returned bytes.
+        if any(doc == source["documentId"] and
+               max(0, min(end, b)-max(start, a))*2 >= min(end-start, b-a)
+               for doc, a, b in ranges):
             continue
         quote, offset = source["quote"], 0
         if quote.strip() in quotes:

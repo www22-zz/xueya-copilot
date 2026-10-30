@@ -51,7 +51,7 @@ def test_general_chat_format_on_default_http_and_sse(client, path, content, reas
     assert len(calls) == 1  # Never retry a charged request to repair its format.
     assert 'response_format' not in calls[0]
     assert calls[0]['thinking'] == {'type': 'disabled'}
-    assert '简单问题直接简短回答' in calls[0]['messages'][0]['content']
+    assert '用自然连贯的中文段落回答' in calls[0]['messages'][0]['content']
     assert calls[0]['stream'] is True
     assert client.platform.resources.stats()['active']['api'] == 0
 

@@ -17,7 +17,7 @@
     if(/(?:复习|学习|备考).{0,10}(?:计划|安排)|(?:计划|安排).{0,10}(?:复习|学习|备考)/.test(question))return'plan';
     if(/薄弱|弱项|掌握情况|错题分析|学习情况|学习进度|复习重点/.test(question))return'review';
     if(/总结|归纳|整理.{0,6}(?:重点|知识)/.test(question))return'summarize';
-    if(/(?:出|生成).{0,4}(?:练习|题目|题)|练习题|测验/.test(question))return'quiz';
+    if(/(?:出(?!现|错)|生成).{0,4}(?:练习|题目|试题)|(?:出|生成)(?:[一二两三四五六七八九十几\d]+)?(?:道|套|个)?题|(?:出|生成)[一二两三四五六七八九十几\d]+(?:道|套|个)[^。！？?]{0,12}题|练习题|测验/.test(question))return'quiz';
     return'ask';
   }
 
@@ -26,7 +26,7 @@
   }
 
   function refersToPrevious(question){
-    return /它|这个|这些|这种|这样|那个|那些|上述|刚才|上面|前面|继续|进一步|再解释|再说|展开讲|换个说法|举个例|举一个例|^(?:为什么|为何|怎么理解)[呢吗？?。！!\s]*$/.test(question);
+    return /^那|它|这个|这些|这种|这样|那个|那些|上述|刚才|上面|前面|继续|进一步|再解释|再说|展开讲|换个说法|举个例|举一个例|^(?:为什么|为何|怎么理解)[呢吗？?。！!\s]*$/.test(question);
   }
 
   function retrievalQuery({question,history=[]},library){

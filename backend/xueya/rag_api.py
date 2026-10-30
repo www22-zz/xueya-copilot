@@ -80,36 +80,52 @@ class ApiClient:
         return {"provider": self.settings.base_url, "model": self.settings.model, "revision": self.settings.revision}
 
     async def post(self, scope, path, payload):
+        async def operation(client, request_id):
+            return await self.exchange(client, "POST", path, json={"model": self.settings.model, **payload})
+        return await self.invoke(scope, payload, operation)
+
+    async def exchange(self, client, method, path, **kwargs):
+        async with client.stream(method, self.settings.base_url.rstrip("/")+path, **kwargs) as response:
+            require(response.is_success, "RAG_API_REJECTED")
+            buffer = bytearray()
+            async for part in response.aiter_bytes():
+                buffer.extend(part)
+                require(len(buffer) <= 16_000_000, "RAG_API_RESPONSE_TOO_LARGE")
+            value = json.loads(buffer)
+            require(isinstance(value, dict), "INVALID_RAG_API_RESPONSE")
+            return value
+
+    async def invoke(self, scope, payload, operation, *, request_id=None):
+        """One ledger entry per billable request; task polling reuses its entry."""
         require(self.settings.key and self.settings.model, "NOT_SENT")
         self.platform.repo.require_course(scope)
         release = (lambda: None) if _leased_platform.get() is self.platform else self.platform.resources.acquire("api")
         require(release is not None, "NOT_SENT")
-        request_id, sent, complete, usage = str(uuid4()), False, False, None
+        resumed = request_id is not None
+        request_id, sent, complete, usage = request_id or str(uuid4()), False, False, None
         try:
             budget = current_budget.get()
-            if budget:
+            if budget and not resumed:
                 budget.model([], 0, capability='rag', model=self.settings.model)
-            self.platform.db.execute("INSERT INTO invocations(id,user_id,course_id,status,provider,request_hash,at,updated_at) VALUES(?,?,?,?,?,?,?,?)",
-                                     (request_id, scope.user_id, scope.course_id, "pending", self.name, digest({"model": self.settings.model, "revision": self.settings.revision, "payload": payload}), utc_now(), utc_now()))
+            if resumed:
+                row = self.platform.db.one("SELECT id FROM invocations WHERE id=? AND user_id=? AND course_id=? AND provider=?", (request_id, scope.user_id, scope.course_id, self.name))
+                require(row is not None, "OCR_TASK_RECEIPT_MISSING")
+            else:
+                self.platform.db.execute("INSERT INTO invocations(id,user_id,course_id,status,provider,request_hash,at,updated_at) VALUES(?,?,?,?,?,?,?,?)",
+                                         (request_id, scope.user_id, scope.course_id, "pending", self.name, digest({"model": self.settings.model, "revision": self.settings.revision, "payload": payload}), utc_now(), utc_now()))
             from .invocation_context import attach_invocation
             purpose = 'embedding' if isinstance(self, EmbeddingProvider) else 'rerank' if isinstance(self, RerankProvider) else 'ocr'
-            attach_invocation(self.platform, scope, request_id, capability=purpose, model=self.settings.model,
-                              base_url=self.settings.base_url, key=self.settings.key)
+            if not resumed:
+                attach_invocation(self.platform, scope, request_id, capability=purpose, model=self.settings.model,
+                                  base_url=self.settings.base_url, key=self.settings.key)
             async with asyncio.timeout(min(self.settings.timeout, budget.remaining() if budget else self.settings.timeout)):
                 async with httpx.AsyncClient(timeout=self.settings.timeout, follow_redirects=False, transport=self.transport,
                                              headers={"Authorization": "Bearer "+self.settings.key}) as client:
                     sent = True
-                    async with client.stream("POST", self.settings.base_url.rstrip("/")+path, json={"model": self.settings.model, **payload}) as response:
-                        require(response.is_success, "RAG_API_REJECTED")
-                        buffer = bytearray()
-                        async for part in response.aiter_bytes():
-                            buffer.extend(part)
-                            require(len(buffer) <= 16_000_000, "RAG_API_RESPONSE_TOO_LARGE")
-                        value = json.loads(buffer)
-                        require(isinstance(value, dict), "INVALID_RAG_API_RESPONSE")
-                        usage = value.get("usage", value.get("usage_info"))
-                        complete = True
-                        return value
+                    value = await operation(client, request_id)
+                    usage = value.get("usage", value.get("usage_info"))
+                    complete = True
+                    return value
         finally:
             try:
                 status = "succeeded" if complete else "unknown" if sent else "not_sent"
