@@ -39,6 +39,10 @@ python -m venv .venv
 
 知识库支持最大64MiB的PDF；扫描教材须先完成文字识别，之后才能预览并确认替换旧PPT资料。OCR每次仅处理显式选择的一批，不会自动调用整本教材；未配置服务时显示待识别。接口、当前扫描教材准备状态及限制见 [PDF教材换库](docs/contracts/pdf-knowledge.md)。
 
+“栈与队列”可直接使用新编写的 [Markdown知识库](materials/stack-queue/栈与队列知识库.md)，包含基础概念补课、核心实现、进阶算法和13个可分别编译的C++17完整程序，无需OCR。使用、验证与RAG接入方式见 [教材说明](materials/stack-queue/README.md)。
+
+演示可使用 [提问清单](materials/stack-queue/演示提问清单.md) 或 [直接复制的问题](materials/stack-queue/演示问题.txt)，分别注明历史真实问答与本地规则验证。本机已启用`AI_RAG_GENERAL_FALLBACK=1`：资料不足或回答未完成时，最多切换一次不带课程引用的MiMo自主回答；不会重放原超时请求，界面明确区分资料回答与自主回答。
+
 ## 验证
 
 ```powershell
@@ -65,6 +69,8 @@ Node.js 20+ 用于前端回归。可选浏览器检查为 `node tests/e2e/browse
 | `docs/` | 最终操作指南、接口契约、技术报告与交付说明 |
 
 ## 文档
+
+- [MinerU / Qwen 教材解析、校正与向量检索](docs/contracts/mineru-qwen.md)（含已核验的服务协议、样本验证和Markdown替代方案）
 
 - [最终交付说明与已知限制](docs/delivery/FINAL-DELIVERY.md)
 - [技术报告](docs/reports/学涯Copilot技术报告.md) · [演示与验收指南](docs/demo/演示与验收指南.md)

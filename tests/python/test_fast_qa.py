@@ -47,12 +47,14 @@ async def test_claim_parser_ignores_strings_and_never_publishes_unchecked_text()
 class DelayedResponse(httpx.AsyncByteStream):
     def __init__(self, release, claim=CLAIM, before_tail=None):
         self.release, self.claim, self.before_tail = release, claim, before_tail
+        self.started = asyncio.Event()
         self.finished = False
         self.closed = False
 
     async def __aiter__(self):
         prefix = '{"claims":['+dumps(self.claim)
         yield ('data: '+dumps({'choices': [{'delta': {'content': prefix}}]})+'\n\n').encode()
+        self.started.set()
         await self.release.wait()
         if self.before_tail:
             self.before_tail()
@@ -80,19 +82,23 @@ def seed(platform):
     return {'question': '队列是什么？', 'sources': [SOURCE], 'documentIds': [SOURCE['documentId']]}
 
 
-async def test_first_verified_claim_arrives_before_model_finishes_and_uses_one_call(platform):
+async def test_complete_narrative_waits_for_model_and_uses_one_call(platform):
     request = seed(platform)
     release = asyncio.Event()
     response = DelayedResponse(release)
     agent, captured = model(platform, response)
     events = []
-    async with asyncio.timeout(5), aclosing(agent.workflow(request)) as stream:
-        async for event in stream:
-            events.append(event)
-            if event['type'] == 'content' and not release.is_set():
-                assert not response.finished
-                assert CLAIM['text'] in event['text']
-                release.set()
+    async def consume():
+        async with aclosing(agent.workflow(request)) as stream:
+            async for event in stream:
+                events.append(event)
+    async with asyncio.timeout(5):
+        task = asyncio.create_task(consume())
+        await response.started.wait()
+        assert not response.finished
+        assert not any(e['type'] == 'content' for e in events)
+        release.set()
+        await task
     result = events[-1]
     assert result['type'] == 'done' and result['sources'] == [SOURCE['id']]
     assert result['answer'] == CLAIM['text']+' [1]'
@@ -125,6 +131,7 @@ async def test_invalid_claim_never_streams_and_no_paid_retry(platform):
 async def test_source_revision_change_stops_final_publication(platform):
     request = seed(platform)
     release = asyncio.Event()
+    release.set()
     def change():
         platform.repo.put(platform.scope(), 'source', SOURCE['id'], {**SOURCE, 'location': '更正页码'}, 1)
     response = DelayedResponse(release, before_tail=change)
@@ -139,17 +146,23 @@ async def test_source_revision_change_stops_final_publication(platform):
     assert '资料已更新' in events[-1]['answer']
 
 
-async def test_cancel_after_first_claim_closes_transport_and_records_interruption(platform):
+async def test_cancel_before_narrative_closes_transport_and_records_interruption(platform):
     request = seed(platform)
     response = DelayedResponse(asyncio.Event())
     agent, _ = model(platform, response)
-    async with asyncio.timeout(5), aclosing(agent.workflow(request)) as stream:
-        async for event in stream:
-            if event['type'] == 'content':
-                break
-    assert response.closed and current_timing.get() is None
+    async def consume():
+        async with aclosing(agent.workflow(request)) as stream:
+            async for event in stream:
+                assert event['type'] != 'content'
+    async with asyncio.timeout(5):
+        task = asyncio.create_task(consume())
+        await response.started.wait()
+        task.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await task
+    assert response.closed
     run = platform.repo.all(platform.scope(), 'run')[0]
-    assert run['status'] == 'interrupted' and run['timings']['route'] == 'fast-qa'
+    assert run['status'] == 'cancelled' and run['timings']['route'] == 'fast-qa'
     assert platform.db.one('SELECT status FROM invocations')['status'] == 'unknown'
 
 

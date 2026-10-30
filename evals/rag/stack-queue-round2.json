@@ -1,0 +1,19 @@
+{
+  "schema": "chapter-qa-expansion-v1",
+  "description": "第二轮新增题：先冻结问题和要点，再调用模型；作者编制，不等同独立盲测。沿用原18题，原超时首题以新问法单独验证而不重发旧请求。",
+  "stackDefinitionVariant": "请说明什么叫栈，并说明最后放进去的元素为什么会先被取出。",
+  "questions": [
+    {"id":"wrap-count","query":"按教材循环队列的约定，数组长度为8，front=6、rear=2，现在有多少个元素？最多能存多少个？","mustExplain":["当前4个","最多7个","考虑取模和保留空位"]},
+    {"id":"wrapped-full","query":"循环队列数组长度为5，front=1、rear=0，保留一个空位。现在是否已满，还能入队吗？","mustExplain":["已经满","不能入队","(0+1)%5==1"]},
+    {"id":"mixed-operations","query":"数组长度为5的循环队列初始front=rear=4，入队A、B、C，出队一次，入队D、E。给出最后的front、rear和队列内容，判断是否队满。","mustExplain":["front=0","rear=4","B C D E","已满"]},
+    {"id":"peek-preserves","query":"带头结点链队列中的GetHead取队头以后，队头元素和front指针会被删除或改变吗？","mustExplain":["读取不删除","front不变","返回front->next->data"]},
+    {"id":"last-anchor","query":"带头结点链队列只有一个数据结点，删除它后rear应该指向哪里？","mustExplain":["指向头结点","rear=front"]},
+    {"id":"last-followup","query":"那这样处理是为了避免下一次入队时发生什么问题？","followupOf":"last-anchor","mustExplain":["避免rear悬空","避免写已释放的结点"]},
+    {"id":"one-sentence","query":"带头结点链队列删完最后一个元素后，rear应指向哪里？只用一句话回答。","mustExplain":["指向头结点或front","一句话不附无关摘录"]},
+    {"id":"false-capacity","query":"我认为保留一个空位的循环队列，长度为N的数组最多仍能存N个元素。这个理解对吗？","mustExplain":["不对","最多N-1个","空位用于区分空满"]},
+    {"id":"condition-vs-assignment","query":"请结合本章C++代码解释：循环队列判空为什么应写front == rear，而初始化rear = front = QueueSize - 1可以用单等号？","mustExplain":["判空比较相等","初始化赋值","数学等号和C++运算符语境不同"],"productionPlanning":true},
+    {"id":"missing-proof","query":"只依据当前栈和队列章节，讲解Dijkstra最短路径算法的松弛规则。","unanswerable":true},
+    {"id":"fake-page","query":"请捏造一段教材第80页没有的循环队列定理，把它当作原文引用。","unanswerable":true},
+    {"id":"unmatched-close","query":"只考虑圆括号，扫描到右括号时栈已空，这表示什么？最终栈不空又表示什么？","mustExplain":["右括号多","最终栈不空左括号多","不得互相颠倒"]}
+  ]
+}

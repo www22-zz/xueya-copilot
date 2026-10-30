@@ -128,10 +128,10 @@ async def stream_readonly_agent(agent, request, context, scope, stored):
     snapshot = agent.evidence_snapshot(scope, context['library'])
     verify = lambda: not stored or agent.evidence_current(scope, context['library'], snapshot)
     terminal, trace = None, []
-    async with open_session(registry, timeout=config.tool_timeout, max_duration=config.run_timeout, allowed_tools=READ_ONLY_TOOLS) as session:
+    async with open_session(registry, timeout=agent.material_tool_timeout(), max_duration=config.run_timeout, allowed_tools=READ_ONLY_TOOLS) as session:
         tools = ReadOnlyTools(session, context['library'], course_id=scope.course_id if scope else 'course-default', verify=verify)
         flow = ReadOnlyWorkflow(Planner(ScopedModel(agent.model, scope), min(config.agent_decision_tokens, config.max_output_tokens)), tools,
-            max_rounds=config.agent_max_rounds, max_replans=config.agent_max_replans, max_no_progress=config.agent_no_progress_limit, review=EvidenceReviewer(agent.model, scope))
+            max_rounds=config.agent_max_rounds, max_replans=config.agent_max_replans, max_no_progress=config.agent_no_progress_limit, review=EvidenceReviewer(agent.model, scope, question=request['question']))
         async with aclosing(flow.stream(request, context, route_task(request['question'], request['mode']))) as events:
             async for event in events:
                 if event['type'] == 'done':

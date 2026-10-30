@@ -12,6 +12,25 @@ function body(text,step=1){
 }
 const event=value=>'data: '+JSON.stringify(value)+'\n\n';
 
+test('a server autonomous fallback resets partial text and never inherits course citations',async()=>{
+  const updates=[];
+  const cited={id:'course-hit',title:'教材',quote:'课程证据',location:'SQ02'};
+  const fallback={from:'course-rag',reason:'CLAIMS_NEED_REVIEW',attempts:1,sameRequestReplayed:false};
+  const stream=event({type:'content',text:'{"answer":"旧课程片段'})
+    +event({type:'workflow',stage:'general-fallback',status:'running',label:'切换模型自主回答',resetAnswer:true,fallback})
+    +event({type:'content',text:'{"answer":"模型自主回答：新的说明。"}'})
+    +event({type:'done',ok:true,engine:'general-chat',answerStatus:'answered',answer:'模型自主回答：新的说明。',
+      sources:[cited.id],sourceDetails:[cited],verification:'general-knowledge-not-course-verified',fallback});
+  const service=createChatService({fetchImpl:async()=>new Response(body(stream),{headers:{'Content-Type':'text/event-stream'}})});
+  const result=await service.stream({question:'解释队列。',sources:[cited]},{workflow:true,onUpdate:u=>updates.push(u)});
+  assert.equal(result.engine,'MiMo 自主回答');assert.equal(result.online,true);
+  assert.deepEqual(result.sources,[]);assert.deepEqual(result.fallback,fallback);
+  assert.equal(result.verification,'general-knowledge-not-course-verified');
+  const reset=updates.findIndex(u=>u.answer==='');assert.ok(reset>=0);
+  assert.ok(updates.slice(reset+1).some(u=>u.answer?.includes('新的说明')));
+  assert.equal(updates.slice(reset+1).some(u=>u.answer?.includes('旧课程片段')),false);
+});
+
 test('SSE framing preserves split UTF-8, CRLF, comments, multiline data and a final partial frame',async()=>{
   const text=': keepalive\r\n\r\ndata: {"answer":\r\ndata: "中文原文"}\r\n\r\ndata: [DONE]';
   const data=[];

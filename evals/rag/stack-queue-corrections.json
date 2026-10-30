@@ -1,0 +1,78 @@
+{
+  "schema": "chapter-corrections-v1",
+  "sourceFileHash": "536aca02ecdab9352293b3cdcc1ac760e2e6dcdf5a581f03f0b71eeda1047757",
+  "reviewMethod": "AI逐页查看原PDF图像后校正关键符号；不是独立人工校对，供用户复核",
+  "humanReviewed": false,
+  "patches": [
+    {
+      "page": 93,
+      "before": "（ rear + 1 ） ％\nrear\nQueueSizeo",
+      "after": "rear = (rear + 1) % QueueSize。"
+    },
+    {
+      "page": 93,
+      "before": "front== rearo",
+      "after": "front == rear。"
+    },
+    {
+      "page": 93,
+      "before": "front ： rearo",
+      "after": "front == rear。"
+    },
+    {
+      "page": 93,
+      "before": "可以浪费一个数组元素空间六把图 3 一 12 （ a ）和（）所示的情况视为队满，",
+      "after": "可以浪费一个数组元素空间，把图 3—12(a) 和 (c) 所示的情况视为队满，"
+    },
+    {
+      "page": 93,
+      "before": "(rear+l) ％ QueueSize=front0",
+      "after": "(rear + 1) % QueueSize == front。"
+    },
+    {
+      "page": 94,
+      "before": "rear= front 一 QueueSize— 1",
+      "after": "rear = front = QueueSize - 1"
+    },
+    {
+      "page": 98,
+      "before": "template <typename DataType>\n《 DataType Lin kQueue<DataType> 氵： DeQueue 0\nfront\nDataType x\nNodeZDataType> p *'inullptr;\ni f (xear = — fron 0 \" 'throw \" 下溢 '\nP = front->next; x 0 以\nfront—l> nextu p—>next;\ni 了 @一 >next # n 11p 七 r 〗 'front;\ndelete P$\nreturn x;",
+      "after": "```cpp\ntemplate <typename DataType>\nDataType LinkQueue<DataType>::DeQueue()\n{\n    DataType x;\n    Node<DataType> *p = nullptr;\n    if (rear == front) throw \"下溢\";\n    p = front->next; x = p->data;\n    front->next = p->next;\n    if (p->next == nullptr) rear = front;\n    delete p;\n    return x;\n}\n```"
+    },
+    {
+      "page": 98,
+      "before": "front—>next—>datao",
+      "after": "front->next->data。"
+    },
+    {
+      "page": 98,
+      "before": "front 是否等于 rearo",
+      "after": "front 是否等于 rear。"
+    },
+    {
+      "page": 95,
+      "before": "(rear+l) QueueSize;\ndata#earl\n（ 4 ）出队操作\n0 队尾指针在循环意义下加 1\n/ / 在队尾处插人元素\n循环队列的出队操作只需将队头位置 front 在循环意义下加 1 ，然后读取并返回队头\n元素，成员函数定义如下：\nternp 〕 „ate < typename DataType>\n:DatäType CirQueue<DataType> = DeQueue （）\n.front) throw \" 下溢 \" ；\nf '(rear\n《《 on 辶 = (front+l) %•ueuesize; / / 队头在循环意义下加 1\n回 ． ：回\n源代码\nda€a [frontl\n（ 5 ）取队头元素\n／ / 返回出队前的队头元素\n读取队头元素与出队操作类似，唯一的区别是不改变队头位置，成员函数定义如下：\n《 €emplate ypename 'DataType>\nDataType CirQueue<DataType> ；： GetHead()\nfront) 0 讧 ow \" 下溢 “\n.i 了了\n@了却 QueueS 之 00\n（ 6 ）判空操作\n/ / 注意不修改队头指针\n0\n源代码\n循环队列的判空操作只需判断 front 是否等于 rearo\n",
+      "after": "```cpp\nrear = (rear + 1) % QueueSize; // 队尾指针在循环意义下加1\ndata[rear] = x; // 在队尾处插入元素\n}\n```\n\n（4）出队操作\n循环队列的出队操作只需将队头位置 front 在循环意义下加1，然后读取并返回队头元素，成员函数定义如下：\n\n```cpp\ntemplate <typename DataType>\nDataType CirQueue<DataType>::DeQueue()\n{\n    if (rear == front) throw \"下溢\";\n    front = (front + 1) % QueueSize;\n    return data[front];\n}\n```\n\n（5）取队头元素\n读取队头元素与出队操作类似，唯一的区别是不改变队头位置，成员函数定义如下：\n\n```cpp\ntemplate <typename DataType>\nDataType CirQueue<DataType>::GetHead()\n{\n    if (rear == front) throw \"下溢\";\n    return data[(front + 1) % QueueSize]; // 注意不修改队头指针\n}\n```\n\n（6）判空操作\n循环队列的判空操作只需判断 front 是否等于 rear。\n\n",
+      "reviewMethod": "AI对照PDF第95页图像转录，代码块仅为排版，未独立人工复核"
+    },
+    {
+      "page": 84,
+      "before": "栈（ stack ）是限定仅在表的一端进行插人和删除操作的线性表，允许回\n插人和删除的一端称为栈顶（ stack top ），另一端称为栈底（ stack\n子课的\nbott 。 m ），不含任何数据元素的栈称为空栈。\n如图 3 一 3 所示，栈中有三个元素，插人元素（也称人栈、进栈、压栈）的顺序是、、\n。当需要删除元素（也称出栈、弹栈）时只能删除 a3 ，换言之，任何时刻出栈的元素都只\n能是栈顶元素，即最后人栈者最先出栈，所以栈中元素除了具有线性关系外，还具有后进\n入栈\n图 3 一 3\n出栈\n丐栈顶\n栈底\n栈的示意图\n先出（ last in first 。 ut 产的特性。\n",
+      "after": "栈（stack）是限定仅在表的一端进行插入和删除操作的线性表，允许插入和删除的一端称为栈顶（stack top），另一端称为栈底（stack bottom），不含任何数据元素的栈称为空栈。\n\n如图3—3所示，栈中有三个元素，插入元素（也称入栈、进栈、压栈）的顺序是a1、a2、a3。当需要删除元素（也称出栈、弹栈）时只能删除a3，换言之，任何时刻出栈的元素都只能是栈顶元素，即最后入栈者最先出栈，所以栈中元素除了具有线性关系外，还具有后进先出（last in first out）的特性。\n\n",
+      "reviewMethod": "AI对照原PDF第84页图像转录定义和顺序，删除混入正文的图示标签，不是新增事实"
+    },
+    {
+      "page": 91,
+      "before": "队列（ queue ）是只允许在一端进行插人操作，在另一端进行删除操作回\n的线性表，允许插人（也称人队、进队）的一端称为队尾（ queue 一 tail) ，允许\n电子课件\n删除（也称出队）的一端称为队头（ queue 一 head ）。图 3 一 8 所示是一个有 5\n个元素的队列，人队的顺序为、、口 3 、 0 、，出队的顺序依然是 @ “ 2 、 43 、 a 4 、口 5 ，即最\n先人队者最先出队。所以队列中的元素除了具有线性关系外，还具有先进先出（ first in\nfirst out ）的特性。\n出队\n队头元素\n队尾元素\n图 3 一 8 队列的示意图\n",
+      "after": "队列（queue）是只允许在一端进行插入操作，在另一端进行删除操作的线性表，允许插入（也称入队、进队）的一端称为队尾（queue-tail），允许删除（也称出队）的一端称为队头（queue-head）。\n\n图3—8所示是一个有5个元素的队列，入队的顺序为a1、a2、a3、a4、a5，出队的顺序依然是a1、a2、a3、a4、a5，即最先入队者最先出队。所以队列中的元素除了具有线性关系外，还具有先进先出（first in first out）的特性。\n\n",
+      "reviewMethod": "AI对照原PDF第91页图像转录定义和顺序，保留原始OCR供追溯"
+    }
+  ],
+  "userEdits": {
+    "sourceSha256": "ee0b79dfcc39d65a0c3370c2985ae39e932d79054d51718e3ca9201420dcba1b",
+    "readDate": "2026-10-30",
+    "mathematicalEquality": "=",
+    "cppComparison": "==",
+    "scope": "已读取用户对93/94/98页三行的修订；不代表整章文字已人工确认"
+  }
+}

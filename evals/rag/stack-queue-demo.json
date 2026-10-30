@@ -1,0 +1,196 @@
+{
+  "schema": "stack-queue-demo-v1",
+  "material": "materials/stack-queue/栈与队列知识库.md",
+  "materialSha256": "7a36da9a2a222b39d22c13a720f587f7f2d21073dbfbcccc9b2769c222d0652a",
+  "note": "真实题来自历史成功记录，本轮未重新付费验证；本地规则题在当前正文上另行零模型验证。历史成功不保证每次模型输出相同。",
+  "historicalLive": [
+    {
+      "id": "stack-basics",
+      "question": "用叠盘子的例子解释栈顶和后进先出，并说明取顶与出栈的区别。",
+      "expectedPoints": [
+        "栈顶取放",
+        "后进先出",
+        "取顶不删除，出栈删除"
+      ],
+      "sections": [
+        "SQ02"
+      ],
+      "verificationType": "historical-live-grounded-answer",
+      "answerVerification": "reviewed-claims",
+      "verifiedOn": "2026-10-30",
+      "answerSha256": "0489507743be84409d2842fa3b83c44235ce566e802a84acc6488d57cbfcc70d",
+      "record": "test-results/stack-queue-md/live-result.json"
+    },
+    {
+      "id": "fifo-task",
+      "question": "任务要求先提交先处理，为什么考虑普通队列？入队和出队各在哪端？",
+      "expectedPoints": [
+        "先提交先处理对应FIFO",
+        "队尾入队，队头出队"
+      ],
+      "sections": [
+        "SQ07"
+      ],
+      "verificationType": "historical-live-grounded-answer",
+      "answerVerification": "reviewed-claims",
+      "verifiedOn": "2026-10-30",
+      "answerSha256": "e6d0cfbb81791386abff2321fc594b9a4adb8be2a345a8b2b40a320ced6199b4",
+      "record": "test-results/stack-queue-md/live-result.json"
+    },
+    {
+      "id": "headnode-basics",
+      "question": "头结点和首元结点是同一个结点吗？本资料的链队列为何保留头结点？",
+      "expectedPoints": [
+        "辅助头结点与首个有效结点不同",
+        "空链队列仍可保留头结点"
+      ],
+      "sections": [
+        "SQ01.8",
+        "SQ13"
+      ],
+      "verificationType": "historical-live-grounded-answer",
+      "answerVerification": "reviewed-claims",
+      "verifiedOn": "2026-10-30",
+      "answerSha256": "2d94d3c434e2b712ed101aef396fc7129f3b5ebc347c10d6d3e097c300331e9c",
+      "record": "test-results/stack-queue-md/live-result.json"
+    },
+    {
+      "id": "capacity-basics",
+      "question": "空队列是否一定没有分配内存？数组长度和本资料循环队列容量有什么区别？",
+      "expectedPoints": [
+        "空不等于未分配内存",
+        "数组长度N，保留空位容量N-1"
+      ],
+      "sections": [
+        "SQ01.4",
+        "SQ09"
+      ],
+      "verificationType": "historical-live-grounded-answer",
+      "answerVerification": "reviewed-claims",
+      "verifiedOn": "2026-10-30",
+      "answerSha256": "579c4039c0f8903510e326fea559a03843a0cbd05c49d2f2620e7f6cf736cfa8",
+      "record": "test-results/stack-queue-md/live-result.json"
+    },
+    {
+      "id": "remainder-basics",
+      "question": "计算循环队列元素数为什么写rear-front+N再取模，而不是只用rear-front？",
+      "expectedPoints": [
+        "C++负数余数可能为负",
+        "加N后再取模"
+      ],
+      "sections": [
+        "SQ01.7"
+      ],
+      "verificationType": "historical-live-grounded-answer",
+      "answerVerification": "verbatim-only",
+      "verifiedOn": "2026-10-30",
+      "answerSha256": "b692512addbad1c583c531941b750179c4eedd4c91b38225e97ef292723d757c",
+      "record": "test-results/stack-queue-md/live-result.json"
+    },
+    {
+      "id": "front-convention",
+      "question": "本资料循环队列front指向哪里？取队头时能直接读取data[front]吗？",
+      "expectedPoints": [
+        "front指向队头前一位置",
+        "读data[(front+1)%N]前先判空"
+      ],
+      "sections": [
+        "SQ09"
+      ],
+      "verificationType": "historical-live-grounded-answer",
+      "answerVerification": "reviewed-claims",
+      "verifiedOn": "2026-10-30",
+      "answerSha256": "b879ceaa629593d8eff27f4ca7d211a32177448577ecdebf75bf40c6fc9c9e93",
+      "record": "test-results/stack-queue-md/live-result.json"
+    },
+    {
+      "id": "linked-last-why",
+      "question": "带头结点链队列最后有效结点被删除后，rear为什么要回到头结点？",
+      "expectedPoints": [
+        "rear回到front",
+        "避免悬空指针，恢复空状态"
+      ],
+      "sections": [
+        "SQ13",
+        "C06"
+      ],
+      "verificationType": "historical-live-grounded-answer",
+      "answerVerification": "reviewed-claims",
+      "verifiedOn": "2026-10-30",
+      "answerSha256": "f54a0eddf4798a773cfcca80ae4d5afeb918721eb7836bfa8ba4ce733da280ce",
+      "record": "test-results/stack-queue-md/live-result.json"
+    },
+    {
+      "id": "amortized",
+      "question": "两栈队列为什么只有输出栈为空时才转移？一次出队会不会是线性时间？",
+      "expectedPoints": [
+        "out空时才倒栈",
+        "单次最坏O(n)，均摊O(1)"
+      ],
+      "sections": [
+        "SQ19"
+      ],
+      "verificationType": "historical-live-grounded-answer",
+      "answerVerification": "reviewed-claims",
+      "verifiedOn": "2026-10-30",
+      "answerSha256": "f8283a674ac9cda91417db0b8781f02c2be6ba7d945347e60f12f4bcd9406cc3",
+      "record": "test-results/stack-queue-md/live-result.json"
+    },
+    {
+      "id": "bfs-boundary",
+      "question": "BFS可以直接处理不同边权的最短路径吗？解释入队时标记顶点的原因。",
+      "expectedPoints": [
+        "普通BFS不用于任意不同边权",
+        "入队标记，避免重复"
+      ],
+      "sections": [
+        "SQ18"
+      ],
+      "verificationType": "historical-live-grounded-answer",
+      "answerVerification": "reviewed-claims",
+      "verifiedOn": "2026-10-30",
+      "answerSha256": "b694355e9c4513efdacf2bca0b1312e77679838150a16154cbcc532f13037e10",
+      "record": "test-results/stack-queue-md/remaining-result.json"
+    }
+  ],
+  "localRule": [
+    {
+      "id": "demo-ring-steps",
+      "question": "数组长度为5的循环队列初始front=rear=4，入队A、B、C，出队一次，入队D、E。给出最后的front、rear和队列内容，判断是否队满。",
+      "expected": {
+        "front": 0,
+        "rear": 4,
+        "items": [
+          "B",
+          "C",
+          "D",
+          "E"
+        ],
+        "count": 4,
+        "capacity": 4,
+        "full": true
+      }
+    },
+    {
+      "id": "demo-wrapped-count",
+      "question": "循环队列数组长度为8，front=6，rear=2，有多少元素，最多存几个？",
+      "expected": {
+        "count": 4,
+        "capacity": 7,
+        "full": false
+      }
+    },
+    {
+      "id": "demo-linked-last",
+      "question": "带头结点链队列删除最后一个元素后rear指向哪里？一句话回答。",
+      "expected": {
+        "rear": "front/header"
+      }
+    }
+  ],
+  "optionalFallback": {
+    "question": "哈希冲突是什么，通常有哪些处理方法？",
+    "verificationType": "controlled-transport-only",
+    "expected": "模型自主回答，知识库引用为空；不是本轮真实付费验证题"
+  }
+}

@@ -4,21 +4,38 @@ import re
 from backend.agent.evidence import validate_claims
 from backend.core import DomainError
 
-COMPLEX = re.compile(r'跨章|跨文档|跨资料|跨文件|综合|整章|整门|所有章节|所有资料|全部资料|多步骤|多章节|多个(?:文件|文档|资料)|详细分析|全面分析|章节.{0,12}(?:对比|比较)|学习.{0,8}(?:计划|安排)|复习|备考|测验|出题|错题|学习包|思维导图|知识图谱|证明|推导|代码|编程|实现|算法设计|逐步|分步骤|分别|这一章|这章|总结|梳理|先.{1,80}(?:再|然后)|compare all|entire chapter|whole chapter|study plan|prove|derive|implement|across|multi.step', re.I)
+COMPLEX = re.compile(r'跨章|跨文档|跨资料|跨文件|综合|整章|整门|所有章节|所有资料|全部资料|多步骤|多章节|多个(?:文件|文档|资料)|详细分析|全面分析|章节.{0,12}(?:对比|比较)|学习.{0,8}(?:计划|安排)|复习|备考|测验|出题|错题|学习包|思维导图|知识图谱|证明|推导|代码|编程|实现|算法设计|逐步|分步骤|这一章|这章|总结|梳理|先.{1,80}(?:再|然后)|compare all|entire chapter|whole chapter|study plan|prove|derive|implement|across|multi.step', re.I)
 
 
 def ordinary_question(request, intent):
     question = request['question']
+    routing_question = question
+    if ('代码' in question and re.search(r'解释|说明|含义|为什么|区别', question)
+            and not re.search(r'编写|生成|写.{0,20}代码|修改|重构', question)):
+        # Reading an existing snippet needs evidence, not a multi-round plan.
+        # Other complexity markers (proof, implementation, cross-document) remain.
+        routing_question = question.replace('代码', '')
     return (intent == 'ask' and request['mode'] == 'ask' and len(question) <= 500
-            and len(re.findall(r'[?？]', question)) <= 2 and not COMPLEX.search(question))
+            and len(re.findall(r'[?？]', question)) <= 2 and not COMPLEX.search(routing_question))
 
 
 def fast_messages(messages):
     messages[0] = {**messages[0], 'content': messages[0]['content'] +
-        '这是普通资料问答，请直接简短回答，不要规划任务。请先输出 claims 数组，再输出 answer、sources、knowledgePoints。'
-        'claims 的第一项优先给出直接摘自资料的核心结论句（text 与 evidence.quote 完全一致，kind 设为 excerpt，以便系统即时验证并向用户秒级呈现）；'
-        '随后的段落再用自己的话展开通俗解释或推导（kind 设为 paraphrase 或 inference，evidence.quote 必须逐字引用资料）。先直观结论再解释原因，最多6项。'
-        'evidence可以只填写sourceId与quoteId，由服务端恢复所选原文，避免重抄OCR字形；直接摘录的text仍需与原文完全一致。不得为了提前输出而编造证据。'}
+        '这是资料教学问答，请结合相关片段组织完整、通俗且有依据的讲解，不要规划任务或堆砌原文。除非用户要求简答，先给结论，再解释机制和原因，结合题设给出具体例子或逐步推导，最后澄清易混淆点；不为凑长度重复内容。请先输出 claims 数组，再输出 answer、sources、knowledgePoints。'
+        '最多给出一项与问题直接相关且语义完整的原文摘录，优先选s开头的完整句编号。OCR噪声或断行使原句不清楚时，不要逐行粘贴，直接用paraphrase解释并提供依据；'
+        '随后的段落再用自己的话展开通俗解释或推导（kind 设为 paraphrase 或 inference，evidence.quote 必须逐字引用资料）。先直观结论再解释原因，按需要给出完整的解释，各项保持语义连贯。'
+        'evidence可以只填写sourceId与quoteId，由服务端恢复所选原文，避免重抄OCR字形；直接摘录的text仍需与原文完全一致。不得为了提前输出而编造证据。'
+        '标题用于定位，不能拿只有主题名称的标题当作解释依据。不要把资料中另一个数值例子的答案放到当前题目的答案前；'
+        '只解释当前输入，示例与题设不同必须明确区分。不要用原文未定义的括号别名把两个不同概念说成同义词。'
+        '用户明确要求一句话、只给结果或限定格式时，遵守该要求，可只输出一项paraphrase或inference，不必额外附摘录；事实依据仍须完整且通过核对。'}
+    try:
+        question = json.loads(messages[-1]['content']).get('question', '')
+    except (ValueError, TypeError, AttributeError):
+        question = ''
+    if re.search(r'\d|一句话|只用|^(?:那|它|这样)|\b(?:front|rear|GetHead)\b', question):
+        messages[0]['content'] += ('本题需要明确结果、位置或连续推理。只输出直接回答问题的paraphrase或inference，不额外摘录；'
+            '不要用相关的定义或判空条件代替实际询问的结果。推理用“按题设”明确给定数值或操作序列；'
+            '证据优先选相关来源的q0完整片段；不同规则来自不同片段时必须全部列入evidence，不能只引用含主题词的句子。')
     return messages
 
 

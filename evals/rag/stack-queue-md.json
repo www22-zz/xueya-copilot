@@ -1,0 +1,38 @@
+{
+  "schema": "authored-markdown-evidence-v1",
+  "material": "materials/stack-queue/栈与队列知识库.md",
+  "note": "作者设计的检索证据和本地计算检查；不是独立盲测集，不计算模型答案准确率。",
+  "queries": [
+    {"id":"stack-definition","query":"栈是什么？入栈、出栈在哪里进行？","section":"SQ02","contains":"只允许在栈顶"},
+    {"id":"queue-definition","query":"队列的先进先出是什么意思？入队出队分别在哪端？","section":"SQ07","contains":"在队尾插入，在队头删除"},
+    {"id":"array-stack","query":"固定数组顺序栈top=-1表示什么，怎样判断栈满？","section":"SQ05","contains":"top == -1"},
+    {"id":"pointer-basics","query":"Node* p与p->next是什么，delete以后还能读取吗？","section":"SQ01.3","contains":"不能继续通过p读取"},
+    {"id":"modulo-basics","query":"C++取模遇到负数时，为什么循环队列长度要先加N？","section":"SQ01.7","contains":"负余数"},
+    {"id":"complexity-basics","query":"均摊复杂度和随机输入的平均复杂度一样吗？","section":"SQ01.9","contains":"均摊复杂度与对随机输入求平均复杂度"},
+    {"id":"headnode-basics","query":"头结点、头指针和首元结点分别是什么？","section":"SQ01.8","contains":"首元结点才是"},
+    {"id":"capacity-basics","query":"容器长度和容量相同吗，空队列还能占内存吗？","section":"SQ01.4","contains":"空容器仍可以占有"},
+    {"id":"false-overflow","query":"顺序队列数组低下标有空位，队尾却不能继续入队，是为什么？","section":"SQ08","contains":"假溢出"},
+    {"id":"ring-full","query":"循环队列保留一个空位，队满条件与容量是什么？","section":"SQ09","contains":"队满的条件"},
+    {"id":"ring-convention","query":"本资料循环队列front指向队头还是队头前一个位置？","section":"SQ09","contains":"队头元素的前一个位置"},
+    {"id":"ring-code","query":"CircularQueue enqueue dequeue完整代码","section":"C05","contains":"class CircularQueue"},
+    {"id":"last-node","query":"带头结点链队列删除最后有效结点后rear为什么要重置？","section":"SQ13","contains":"悬空指针"},
+    {"id":"linked-code","query":"LinkedQueue dequeue删除结点的完整C++程序","section":"C06","contains":"if (p->next == nullptr) rear = front"},
+    {"id":"explicit-code-section","query":"请依据C06给出链队列的dequeue函数，并解释if (p->next == nullptr) rear = front;的作用。","section":"C06","contains":"class LinkedQueue"},
+    {"id":"brackets","query":"括号([)]数量相等却不合法，怎样用栈检查嵌套？","section":"SQ15","contains":"数量相等但嵌套错误"},
+    {"id":"postfix","query":"后缀表达式减法，弹出的第一个操作数是左边还是右边？","section":"SQ16","contains":"先弹右操作数"},
+    {"id":"bfs","query":"BFS为什么要在入队时标记，适用什么最短路径？","section":"SQ18","contains":"入队时"},
+    {"id":"two-stacks","query":"两个栈实现队列，什么时候转移，最坏与均摊复杂度？","section":"SQ19","contains":"单次出队最坏O(n)"},
+    {"id":"minimum","query":"最小栈出现两个相同最小值，弹出一个后怎样处理？","section":"SQ20","contains":"重复最小值"},
+    {"id":"monotonic-stack","query":"单调栈求右侧第一个严格更大元素，等于时怎么处理？","section":"SQ21","contains":"相等元素不会"},
+    {"id":"sliding-window","query":"单调队列求滑动窗口最大值为什么保存下标？","section":"SQ22","contains":"过期与重复值"},
+    {"id":"window-code","query":"windowMax滑动窗口最大值的完整代码","section":"C13","contains":"std::vector<int> windowMax"},
+    {"id":"missing-values","query":"只有front和rear能确定循环队列具体数值吗？","section":"SQ10","contains":"不能推断"}
+  ],
+  "calculations": [
+    {"id":"wrapped-count","query":"循环队列数组长度为9，front=7，rear=3，有多少元素，最多存几个？","expected":{"count":5,"capacity":8}},
+    {"id":"wrapped-full","query":"循环队列数组长度为7，front=3，rear=2，有多少元素，是否队满？","expected":{"count":6,"full":true}},
+    {"id":"capacity","query":"循环队列数组长度为12，最多能存多少个元素？","expected":{"capacity":11}},
+    {"id":"mixed-operations","query":"循环队列数组长度为6，初始front=rear=5，入队A、B、C，出队一次，入队D、E，最后指针和内容是什么？","expected":{"front":0,"rear":4,"items":["B","C","D","E"]}},
+    {"id":"linked-last","query":"带头结点链队列删除最后一个元素后rear指向哪里？一句话回答。","expected":{"rear":"front/header"}}
+  ]
+}

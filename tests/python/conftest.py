@@ -28,7 +28,8 @@ def platform(tmp_path):
 
 @pytest.fixture
 def client(tmp_path):
-    app = create_app(Config(data_dir=tmp_path / "http-data"))
+    # Default HTTP fixtures must never read the developer's private .env.
+    app = create_app(Config(root=tmp_path, data_dir=tmp_path / "http-data"))
     with TestClient(app, base_url="http://127.0.0.1") as c:
         c.platform = app.state.platform
         c.platform_headers = {"X-Xueya-Token": c.get("/api/platform/bootstrap").json()["token"]}

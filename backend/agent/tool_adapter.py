@@ -1,6 +1,7 @@
 """Trusted read-only tool catalogue and bounded observations over an MCP session."""
 from jsonschema import Draft202012Validator
 from ..core import require, clone, dumps, fingerprint, resolve, valid_date
+from .evidence import quote_spans
 
 TOOL_DESCRIPTIONS = {
     'search_materials': '在本次允许的课程原文中搜索。无命中时可改写检索词；搜索结果不能代替read_source核对。参数query为具体知识关键词。',
@@ -75,7 +76,16 @@ class ReadOnlyTools:
             if name == 'read_source':
                 require(sources[0]['id'] == args['sourceId'], 'MCP_INVALID_RESULT')
                 self.evidence[sources[0]['id']] = clone(self.sources[sources[0]['id']])
-                return {'source': clone(self.sources[sources[0]['id']])}
+                actual = clone(self.sources[sources[0]['id']])
+                data = {'source': actual, 'quoteSpans': []}
+                spans = quote_spans(actual)
+                keys = ['q0'] + [key for key in spans if key.startswith('s')] + [key for key in spans if key.startswith('q') and key != 'q0']
+                for key in keys:
+                    candidate = {'quoteId': key, 'quote': spans[key]}
+                    data['quoteSpans'].append(candidate)
+                    if len(dumps(data).encode()) > 6000:
+                        data['quoteSpans'].pop()
+                return data
             return {'sources': [{**{k: s.get(k) for k in ('id', 'title', 'location')}, 'excerpt': s['quote'][:200]} for s in sources],
                     'warnings': [s for s in value.get('warnings', []) if isinstance(s, str)][:8]}
         if name == 'analyze_progress':

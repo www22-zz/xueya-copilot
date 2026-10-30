@@ -82,8 +82,8 @@ class MimoProvider:
                 self._shared_client = None
 
     @asynccontextmanager
-    async def client(self, timeout):
-        if self._shared_client is not None:
+    async def client(self, timeout, *, fresh=False):
+        if self._shared_client is not None and not fresh:
             yield self._shared_client
         else:
             async with self.new_client(timeout) as client:
@@ -133,12 +133,12 @@ class MimoProvider:
                     state['usable'] = True
                     return {'content': content, 'model': self.config.model, 'usage': state['usage'], 'finishReason': state['finishReason']}
 
-    async def stream(self, messages, *, scope=None, timeout=60, max_output_tokens=None, response_format=None, thinking=None):
+    async def stream(self, messages, *, scope=None, timeout=60, max_output_tokens=None, response_format=None, thinking=None, fresh_connection=False):
         require(response_format is None or response_format == {'type': 'json_object'}, 'AI_INVALID_RESPONSE_FORMAT')
         require(thinking is None or thinking in ({'type': 'enabled'}, {'type': 'disabled'}), 'AI_INVALID_THINKING_MODE')
         async with self.invocation(messages, scope, max_output_tokens=max_output_tokens) as state:
             timeout = min(timeout, current_budget.get().remaining())
-            async with asyncio.timeout(timeout), self.client(timeout) as client:
+            async with asyncio.timeout(timeout), self.client(timeout, fresh=fresh_connection) as client:
                 async with client.stream('POST', self.config.base_url.rstrip('/')+'/chat/completions', timeout=timeout,
                     json={'model': self.config.model, 'temperature': .2, 'messages': messages, 'stream': True,
                           'max_completion_tokens': state['outputLimit'], 'stream_options': {'include_usage': True},

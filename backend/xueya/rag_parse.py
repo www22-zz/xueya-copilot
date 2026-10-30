@@ -252,5 +252,6 @@ def structured_chunks(parsed, document, *, size=600, overlap=80):
                            "page": block["page"], "bbox": block.get("bbox"), "blockId": block["id"], "blockType": block["type"],
                            "parentId": parent, "sectionPath": list(path), "parserVersion": parsed["parserVersion"],
                            "method": block["method"], "confidence": block.get("confidence"), "keywords": [], "sample": False,
-                           "location": f"第 {block['page']} 页" if block["page"] is not None else f"字符 {start}–{end}"})
+                           "location": (f"第 {block['page']} 页" if block["page"] is not None else
+                                        (" > ".join(path[-2:])+" · " if parsed['kind'] == 'md' and path else "")+f"字符 {start}–{end}")})
     return chunks

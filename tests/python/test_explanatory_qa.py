@@ -21,7 +21,7 @@ def claim(text=TEXT, kind='paraphrase', quote=None, source_id=None):
 
 def host(tmp_path, claims, verdict='supported', *, options=None, on_review=None, complex_task=False):
     calls = []
-    answer = {'answer': '不能绕过claims发布的正文', 'claims': claims, 'sources': [SOURCE['id']], 'knowledgePoints': []}
+    answer = {'answer': '\n\n'.join(c['text'] for c in claims), 'claims': claims, 'sources': [SOURCE['id']], 'knowledgePoints': []}
     def upstream(request):
         body = json.loads(request.content)
         calls.append(body)
@@ -31,7 +31,7 @@ def host(tmp_path, claims, verdict='supported', *, options=None, on_review=None,
             if isinstance(verdict, httpx.Response):
                 return verdict
             batch = json.loads(body['messages'][-1]['content'])['claims']
-            content = {'verdicts': [{'index': c['index'], 'status': verdict if isinstance(verdict, str) else verdict[c['index']]} for c in batch]} if isinstance(verdict, (str, list)) else verdict
+            content = {'verdicts': [{'index': c['index'], 'status': verdict if isinstance(verdict, str) else (verdict[c['index']] if c['index'] < len(verdict) else 'unsupported' if 'unsupported' in verdict else 'supported')} for c in batch]} if isinstance(verdict, (str, list)) else verdict
             return httpx.Response(200, json={'choices': [{'message': {'content': dumps(content)}, 'finish_reason': 'stop'}]})
         planned = planner_response(body) if complex_task else None
         if planned is not None:
@@ -69,13 +69,14 @@ def test_supported_explanation_is_not_replaced_by_a_quote(tmp_path, path):
     app, calls = host(tmp_path, [claim(), claim(INFERENCE, 'inference')])
     result, events = ask(app, path)
     assert TEXT in result['answer'] and INFERENCE in result['answer']
-    assert '基于资料的推理：' in result['answer']
-    assert result['verification'] == 'reviewed-claims'
+    narrative = path.startswith('/api/agent')
+    assert ('基于资料的推理：' in result['answer']) is not narrative
+    assert result['verification'] == ('reviewed-narrative' if narrative else 'reviewed-claims')
     assert result['sources'] == [SOURCE['id']]
     assert '不能绕过claims' not in result['answer']
     assert len(calls) == 2
     review = json.loads(calls[-1]['messages'][-1]['content'])['claims']
-    assert len(review) == 2 and review[0]['evidence'][0]['quote'] == SOURCE['quote']
+    assert len(review) == (3 if narrative else 2) and review[0]['evidence'][0]['quote'] == SOURCE['quote']
     assert calls[-1]['response_format'] == {'type': 'json_object'}
     if events:
         text = ''.join(e.get('text', '') for e in events if e['type'] == 'content')
@@ -105,9 +106,9 @@ def test_forged_citation_is_rejected_before_review(tmp_path, bad):
 def test_keep_supported_explanation_and_omit_an_unsupported_claim(tmp_path):
     app, calls = host(tmp_path, [claim(), claim('队列可以保证所有问题最快得到解决。')], ['supported', 'unsupported'])
     result, events = ask(app)
-    assert TEXT in result['answer'] and '所有问题最快' not in dumps(events)
-    assert result['omittedClaims'] == 1 and '已省略' in result['answer']
-    assert result['verification'] == 'reviewed-claims' and len(calls) == 2
+    assert TEXT not in result['answer'] and '所有问题最快' not in dumps(events)
+    assert result['answerStatus'] == 'unavailable'
+    assert result['verification'] == 'not-generated' and len(calls) == 2
 
 
 def test_review_cannot_bypass_shared_model_budget(tmp_path):
@@ -130,7 +131,7 @@ def test_complex_agent_uses_the_same_review_and_keeps_planning(tmp_path):
     app, calls = host(tmp_path, [claim()], complex_task=True)
     result, _ = ask(app, question='跨章节综合分析队列')
     assert result['agent']['decisionCount'] >= 3
-    assert result['verification'] == 'reviewed-claims'
+    assert result['verification'] == 'reviewed-narrative'
     assert TEXT in result['answer'] and result['sources'] == [SOURCE['id']]
     assert len(calls) == result['agent']['decisionCount']+1
 
@@ -153,7 +154,7 @@ def test_excerpt_prefix_and_reviewed_explanation_form_one_valid_stream(tmp_path)
     streamed = json.loads(''.join(e.get('text', '') for e in events if e['type'] == 'content'))
     assert streamed['answer'] == result['answer']
     assert streamed['sources'] == result['sources'] == [SOURCE['id']]
-    assert TEXT in result['answer'] and result['verification'] == 'reviewed-claims'
+    assert TEXT in result['answer'] and result['verification'] == 'reviewed-narrative'
 
 
 async def test_cancel_during_review_releases_slot_without_publishing_paraphrase(platform):

@@ -18,7 +18,7 @@ from .parse_worker import parse_artifact
 from .rag_api import borrowed_api_permit
 from .document_limits import document_limit
 from .rag_parse import KINDS, assemble, quality, structured_chunks, text_blocks
-from .rag_search import compress, conflicts, exact, fuse, lexical, normalize, rewrite_query
+from .rag_search import compress, conflicts, exact, fuse, lexical, normalize, preserve_definitions, preserve_sections, rewrite_query
 
 
 class RagService:
@@ -46,6 +46,20 @@ class RagService:
         require(row is not None and row["value"].get("documentId") == doc["id"] and row["value"].get("contentRevision") == doc.get("contentRevision"), "ARTIFACT_NOT_FOUND")
         return row["value"]
 
+    @staticmethod
+    def reviewed(doc):
+        review = doc.get('knowledgeReview')
+        return not review or review.get('confirmedRevision') == doc.get('contentRevision')
+
+    def confirm_review(self, scope, document_id, version):
+        with self.p.db.transaction():
+            doc = self.document(scope, document_id, active=True)
+            require(doc['version'] == version, 'VERSION_CONFLICT')
+            require(bool(doc.get('chunks')), 'NO_SOURCES')
+            saved = self.repo.put(scope, 'document', document_id, {**doc, 'status': '已确认，可检索', 'knowledgeReview': {
+                'confirmedRevision': doc['contentRevision'], 'confirmedAt': utc_now(), 'confirmedBy': scope.user_id}}, version)
+            return {'documentId': document_id, 'version': saved['version'], 'contentRevision': doc['contentRevision']}
+
     def submit(self, scope, job_type, document_id, key, *, expected_version=None, pages=None):
         self.repo.require_course(scope)
         identifier(key)
@@ -70,6 +84,7 @@ class RagService:
             pending = {page['number'] for page in self.artifact(scope, doc)['pages'] if page['needsOcr']}
             require(set(pages) <= pending, 'INVALID_OCR_PAGES')
         if job_type == "rag-index":
+            require(self.reviewed(doc), 'KNOWLEDGE_REVIEW_REQUIRED')
             require(self.embedding is not None and self.embedding.settings.key, "EMBEDDING_UNAVAILABLE")
         provider = self.embedding if job_type == "rag-index" else self.ocr if job_type == "rag-ocr" else None
         return self.p.jobs.submit(scope.user_id, {"type": job_type, "courseId": scope.course_id, "resource": resource,
@@ -121,6 +136,11 @@ class RagService:
         """Must be called synchronously within the leased commit or a transaction."""
         current = self.document(scope, doc["id"], active=True)
         require(current["version"] == doc["version"], "VERSION_CONFLICT")
+        if doc.get('pageSelection') and not parsed.get('pageSelection'):
+            old = self.artifact(scope, doc)
+            if [p['number'] for p in parsed['pages']] == doc['pageSelection']['pages']:
+                # Text corrections/OCR keep the chapter boundary and original page map.
+                parsed = {**parsed, 'pageSelection': doc['pageSelection'], 'originalPages': old['originalPages']}
         revision = doc.get("contentRevision", 0)+1
         sources = structured_chunks(parsed, {**doc, "contentRevision": revision})
         artifact_id = "rag-"+digest({"document": doc["id"], "revision": revision, "text": parsed["textHash"]})[:40]
@@ -150,6 +170,12 @@ class RagService:
                    "meta": f"{len(sources)}个原文片段"}
         if parsed.get('preparation'):
             updated['ocrPreparation'] = parsed['preparation']
+        if parsed.get('pageSelection'):
+            updated['pageSelection'] = parsed['pageSelection']
+        else:
+            updated.pop('pageSelection', None)
+        if doc.get('knowledgeReview'):
+            updated['status'] = '待人工校正与确认'
         saved = self.repo.put(scope, "document", doc["id"], updated, doc["version"])
         self._prune_vectors(scope)
         result = {"documentId": doc["id"], "version": saved["version"], "contentRevision": revision, "sourceCount": len(sources), "warnings": parsed["warnings"]}
@@ -187,7 +213,7 @@ class RagService:
                       [{**b, 'start': b['start']-page['start'], 'end': b['end']-page['start']} for b in old['blocks'] if b['page'] == number])
             rebuilt.append({**page, "text": part, "method": replacement["method"] if replacement else page["method"],
                             "needsOcr": not part.strip() or quality(part) < .85 if replacement else page["needsOcr"],
-                            **({"images": replacement.get("images", []), "ocrDimensions": replacement.get("dimensions", {})} if replacement else {}),
+                            **({"images": replacement.get("images", []), "ocrDimensions": replacement.get("dimensions", {}), "rawResultHash": replacement.get("rawResultHash")} if replacement else {}),
                             "blocks": blocks})
         parsed = assemble(rebuilt, doc["kind"], doc["fileHash"])
         checkpoint({"documentId": doc["id"], "stage": "ocr-returned"})
@@ -215,7 +241,7 @@ class RagService:
         self.repo.require_course(scope, archived=True)
         require(document_ids is None or isinstance(document_ids, list) and len(document_ids) <= 100 and all(isinstance(d, str) for d in document_ids), "INVALID_FILTER")
         require(section is None or isinstance(section, str) and len(section) <= 200, "INVALID_FILTER")
-        documents = {d["id"]: d for d in self.repo.all(scope, "document") if not d.get("deleted") and not d.get("superseded") and not d.get("archived")}
+        documents = {d["id"]: d for d in self.repo.all(scope, "document") if not d.get("deleted") and not d.get("superseded") and not d.get("archived") and self.reviewed(d)}
         result, artifacts = [], {}
         for source in self.repo.all(scope, "source"):
             doc = documents.get(source.get("documentId"))
@@ -240,6 +266,7 @@ class RagService:
         require(row is not None, "SOURCE_NOT_FOUND")
         source = {**row["value"], "id": source_id, "version": row["version"]}
         doc = self.document(scope, source.get("documentId"), active=True)
+        require(self.reviewed(doc), 'KNOWLEDGE_REVIEW_REQUIRED')
         require(source.get("documentRevision") == doc.get("contentRevision"), "SOURCE_VERSION_CONFLICT")
         artifact = self.artifact(scope, doc)
         self._check_source(source, doc, artifact)
@@ -335,6 +362,8 @@ class RagService:
         elif mode != "lexical":
             warnings.append("EMBEDDING_UNAVAILABLE")
         ranked = lexical_rank if mode == "lexical" else vector_rank if mode == "vector" and vector_rank else fuse(lexical_rank, vector_rank)
+        if mode == 'hybrid':
+            ranked = preserve_definitions(rewritten, ranked, lexical_rank)
         if mode == "rerank":
             if self.rerank and ranked:
                 try:
@@ -348,6 +377,7 @@ class RagService:
             else:
                 warnings.append("RERANK_UNAVAILABLE")
         # Re-read after awaits: deletion/revision changes during an API call cannot resurrect sources.
+        ranked = preserve_sections(rewritten, ranked, sources)
         live = []
         for score, source in ranked:
             try:
@@ -399,7 +429,7 @@ class RagService:
     def export(self, scope, document_id):
         doc = self.document(scope, document_id, active=True)
         return {"documentId": doc["id"], "name": doc["name"], "contentRevision": doc["contentRevision"],
-                "fileHash": doc["fileHash"], "artifact": copy.deepcopy(self.artifact(scope, doc))}
+                "fileHash": doc["fileHash"], "document": doc, "artifact": copy.deepcopy(self.artifact(scope, doc))}
 
     def context(self, scope, source_id):
         source = self.read(scope, source_id)

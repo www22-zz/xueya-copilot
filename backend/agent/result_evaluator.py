@@ -42,7 +42,7 @@ class ResultEvaluator:
         if sources:
             if answer and isinstance(answer.get('answer'), str) and isinstance(answer.get('sources'), list):
                 try:
-                    value = await finalize_answer(dumps(answer), sources, 'external-planner', question=self.request['question'], mode=self.request['mode'], review=self.review)
+                    value = await finalize_answer(dumps(answer), sources, 'external-planner', question=self.request['question'], mode=self.request['mode'], review=self.review, narrative=self.intent == 'ask' and getattr(self.review, 'narrative', False))
                     parts.append(value['answer'])
                     used_ids = value['sources']
                     verification, model, engine = value['verification'], value['model'], value['engine']
