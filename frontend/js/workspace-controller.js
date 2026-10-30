@@ -245,7 +245,7 @@ function createWorkspace(ctx){
     const dialog=document.createElement('dialog');dialog.id='workspaceDialog';dialog.className='source-dialog workspace-dialog';dialog.setAttribute('aria-labelledby','workspaceDialogTitle');dialog.innerHTML=`<div class="dialog-head"><h2 id="workspaceDialogTitle"></h2><button type="button" class="icon-button" data-close-dialog aria-label="关闭编辑面板">×</button></div><div id="workspaceDialogBody"></div>`;document.body.append(dialog);
     dialog.addEventListener('submit',async event=>{if(event.target.id!=='workspaceForm')return;event.preventDefault();if(!editorSubmit)return;const submit=event.submitter;if(submit)submit.disabled=true;try{const result=await editorSubmit(new FormData(event.target));if(result!==false)dialog.close();}catch(error){$('#editorError').textContent=error.message||'保存失败，请重试。';}finally{if(submit)submit.disabled=false;}});
     $('#courseSelect').addEventListener('change',event=>selectCourse(event.target.value));
-    
+
     globalThis.addEventListener('xueya:sidebar-ask', event => {
       const { text, messageIndex } = event.detail || {};
       if (!text) return;

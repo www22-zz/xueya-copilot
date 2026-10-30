@@ -662,7 +662,7 @@
                   </div>
                 </div>
                 <p class="video-summary">${escapeHTML(currentEp?.summary || course.description)}</p>
-                
+
                 ${currentEp?.keyPoints?.length ? `
                   <div class="video-keypoints-box">
                     <span class="keypoints-label">本节核心知识点：</span>
