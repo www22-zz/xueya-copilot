@@ -7,6 +7,8 @@
 })(typeof globalThis !== 'undefined' ? globalThis : this, function() {
   'use strict';
 
+  const escapeHTML = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+
   const STORAGE_KEY = 'xueya-video-courses-v1';
   const PROGRESS_KEY = 'xueya-video-progress-v1';
 
@@ -404,6 +406,7 @@
     let searchQuery = '';
     let isAddModalOpen = false;
     let activeSource = 'bilibili'; // 'bilibili' | 'html5' | 'algo-demo'
+    let mountController;
     const localVideosMap = {}; // key: "courseId:epId" -> { url, name }
 
     function getAllCourses() {
@@ -506,7 +509,7 @@
               `).join('')}
             </div>
             <div class="courses-search-wrap">
-              <input type="search" class="courses-search-input" id="courseSearchInput" placeholder="搜索课程名称、知识点或讲师…" value="${searchQuery}">
+              <input type="search" class="courses-search-input" id="courseSearchInput" placeholder="搜索课程名称、知识点或讲师…" value="${escapeHTML(searchQuery)}">
             </div>
           </div>
 
@@ -516,32 +519,32 @@
               const finishedCount = prog?.episodes ? Object.values(prog.episodes).filter(e => e.completed).length : 0;
               const percent = c.episodes.length ? Math.round((finishedCount / c.episodes.length) * 100) : 0;
               return `
-                <article class="course-card" data-course-card-id="${c.id}">
-                  <div class="course-card-cover" style="background: ${c.coverGradient || '#1e293b'};">
+                <article class="course-card" data-course-card-id="${escapeHTML(c.id)}">
+                  <div class="course-card-cover" style="background: ${escapeHTML(c.coverGradient || '#1e293b')};">
                     <div class="cover-top-row">
-                      <span class="course-badge">${c.badge || c.categoryName}</span>
-                      <span class="course-level">${c.level || '精选'}</span>
+                      <span class="course-badge">${escapeHTML(c.badge || c.categoryName)}</span>
+                      <span class="course-level">${escapeHTML(c.level || '精选')}</span>
                     </div>
                     <div class="cover-icon-box">
                       <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                         <polygon points="5 3 19 12 5 21 5 3"></polygon>
                       </svg>
                     </div>
-                    <div class="cover-duration-pill">${c.duration || (c.episodes.length + ' 课时')}</div>
+                    <div class="cover-duration-pill">${escapeHTML(c.duration || (c.episodes.length + ' 课时'))}</div>
                   </div>
                   <div class="course-card-body">
-                    <div class="course-category-tag">${c.categoryName}</div>
-                    <h3 class="course-title" title="${c.title}">${c.title}</h3>
-                    <p class="course-desc">${c.description || '深入剖析核心原理与工程实操，配套边看边问 AI 答疑。'}</p>
+                    <div class="course-category-tag">${escapeHTML(c.categoryName)}</div>
+                    <h3 class="course-title" title="${escapeHTML(c.title)}">${escapeHTML(c.title)}</h3>
+                    <p class="course-desc">${escapeHTML(c.description || '深入剖析核心原理与工程实操，配套边看边问 AI 答疑。')}</p>
                     <div class="course-tags">
-                      ${(c.tags || []).slice(0, 3).map(t => `<span class="course-tag">${t}</span>`).join('')}
+                      ${(c.tags || []).slice(0, 3).map(t => `<span class="course-tag">${escapeHTML(t)}</span>`).join('')}
                     </div>
                     <div class="course-card-footer">
                       <div class="course-instructor">
                         <span class="instructor-icon">👨‍🏫</span>
-                        <span class="instructor-name">${c.instructor || '名校精编教研组'}</span>
+                        <span class="instructor-name">${escapeHTML(c.instructor || '名校精编教研组')}</span>
                       </div>
-                      <button type="button" class="button button-blue button-small" data-enter-course="${c.id}">
+                      <button type="button" class="button button-blue button-small" data-enter-course="${escapeHTML(c.id)}">
                         ${percent > 0 ? (percent === 100 ? '复习课程' : `继续学习 (${percent}%)`) : '开始学习'}
                       </button>
                     </div>
@@ -584,12 +587,12 @@
               ← 返回课程学堂
             </button>
             <div class="player-breadcrumbs">
-              <span class="crumb-course">${course.title}</span>
+              <span class="crumb-course">${escapeHTML(course.title)}</span>
               <span class="crumb-sep">/</span>
-              <span class="crumb-ep">${currentEp?.title || '选集中'}</span>
+              <span class="crumb-ep">${escapeHTML(currentEp?.title || '选集中')}</span>
             </div>
             <div class="player-top-actions">
-              <button type="button" class="button button-outline button-small ${isCompleted ? 'is-completed' : ''}" data-toggle-ep-complete="${currentEp?.id}">
+              <button type="button" class="button button-outline button-small ${isCompleted ? 'is-completed' : ''}" data-toggle-ep-complete="${escapeHTML(currentEp?.id)}">
                 ${isCompleted ? '✓ 本节已学完' : '标记为已学完'}
               </button>
             </div>
@@ -613,7 +616,7 @@
                 📂 选取电脑本地视频
                 <input type="file" id="localVideoFileInput" accept="video/mp4,video/webm,video/ogg,video/mkv,.mp4,.webm,.mkv,.mov" hidden>
               </label>
-              ${localVideo?.name ? `<span class="current-local-name" title="${localVideo.name}">当前文件：${localVideo.name}</span>` : ''}
+              ${localVideo?.name ? `<span class="current-local-name" title="${escapeHTML(localVideo.name)}">当前文件：${escapeHTML(localVideo.name)}</span>` : ''}
             </div>
           </div>
 
@@ -621,10 +624,10 @@
             <div class="player-left-stage">
               <div class="video-screen-container">
                 ${activeSource === 'bilibili' ? `
-                  <iframe id="csBilibiliPlayer" class="cs-bilibili-iframe" src="https://player.bilibili.com/player.html?bvid=${bvid}&page=${bpage}&high_quality=1&danmaku=0&autoplay=0" scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true" sandbox="allow-top-navigation allow-same-origin allow-forms allow-scripts"></iframe>
+                  <iframe id="csBilibiliPlayer" class="cs-bilibili-iframe" src="https://player.bilibili.com/player.html?bvid=${encodeURIComponent(bvid)}&page=${encodeURIComponent(bpage)}&high_quality=1&danmaku=0&autoplay=0" scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true" sandbox="allow-top-navigation allow-same-origin allow-forms allow-scripts"></iframe>
                 ` : activeSource === 'html5' ? `
                   ${videoSrc ? `
-                    <video id="csVideoPlayer" class="cs-video-element" controls preload="metadata" src="${videoSrc}">
+                    <video id="csVideoPlayer" class="cs-video-element" controls preload="metadata" src="${escapeHTML(videoSrc)}">
                       <p>您的浏览器不支持 HTML5 视频播放。</p>
                     </video>
                   ` : `
@@ -651,20 +654,20 @@
 
               <div class="video-info-strip">
                 <div class="video-main-heading">
-                  <h2 class="video-title">${currentEp?.title || course.title}</h2>
+                  <h2 class="video-title">${escapeHTML(currentEp?.title || course.title)}</h2>
                   <div class="video-meta-tags">
-                    <span class="video-meta-pill duration-pill">⏱ ${currentEp?.duration || '15:00'}</span>
-                    <span class="video-meta-pill cat-pill">${course.categoryName}</span>
-                    <span class="video-meta-pill instructor-pill">讲师：${course.instructor}</span>
+                    <span class="video-meta-pill duration-pill">⏱ ${escapeHTML(currentEp?.duration || '15:00')}</span>
+                    <span class="video-meta-pill cat-pill">${escapeHTML(course.categoryName)}</span>
+                    <span class="video-meta-pill instructor-pill">讲师：${escapeHTML(course.instructor)}</span>
                   </div>
                 </div>
-                <p class="video-summary">${currentEp?.summary || course.description}</p>
+                <p class="video-summary">${escapeHTML(currentEp?.summary || course.description)}</p>
                 
                 ${currentEp?.keyPoints?.length ? `
                   <div class="video-keypoints-box">
                     <span class="keypoints-label">本节核心知识点：</span>
                     <div class="keypoints-tags">
-                      ${currentEp.keyPoints.map(kp => `<span class="keypoint-tag">${kp}</span>`).join('')}
+                      ${currentEp.keyPoints.map(kp => `<span class="keypoint-tag">${escapeHTML(kp)}</span>`).join('')}
                     </div>
                   </div>
                 ` : ''}
@@ -680,12 +683,12 @@
                 </div>
                 <div class="in-class-prompts">
                   ${(currentEp?.copilotPrompts || [
-                    `请结合《${course.title}》本节内容，通俗讲解其核心原理。`,
+                    `请结合《${escapeHTML(course.title)}》本节内容，通俗讲解其核心原理。`,
                     `本节知识点在实际生产项目中有什么典型应用和性能陷阱？`,
                     `能根据本节知识点为我出两道期末复习或面试高频题吗？`
                   ]).map(q => `
                     <button type="button" class="in-class-prompt-btn" data-ask-in-class="${encodeURIComponent(q)}">
-                      <span>${q}</span>
+                      <span>${escapeHTML(q)}</span>
                       <span class="chip-arrow">↗</span>
                     </button>
                   `).join('')}
@@ -708,12 +711,12 @@
                   const epDone = Boolean(epProg?.completed);
                   const isCurrent = ep.id === (currentEp?.id || course.episodes[0].id);
                   return `
-                    <button type="button" class="episode-item ${isCurrent ? 'is-active' : ''} ${epDone ? 'is-finished' : ''}" data-switch-episode="${ep.id}">
+                    <button type="button" class="episode-item ${isCurrent ? 'is-active' : ''} ${epDone ? 'is-finished' : ''}" data-switch-episode="${escapeHTML(ep.id)}">
                       <div class="ep-left">
                         <span class="ep-index">${idx + 1}</span>
                         <div class="ep-text">
-                          <strong class="ep-title">${ep.title}</strong>
-                          <span class="ep-meta">${ep.duration || '15:00'} · ${epDone ? '已学完' : '未学完'}</span>
+                          <strong class="ep-title">${escapeHTML(ep.title)}</strong>
+                          <span class="ep-meta">${escapeHTML(ep.duration || '15:00')} · ${epDone ? '已学完' : '未学完'}</span>
                         </div>
                       </div>
                       <div class="ep-status-icon">
@@ -893,6 +896,9 @@
     function mount() {
       const container = document.getElementById('spaceContent');
       if (!container) return;
+      mountController?.abort();
+      mountController = new AbortController();
+      const listenerOptions = { signal: mountController.signal };
 
       // Draw canvas if in algo-demo mode
       if (activeSource === 'algo-demo') {
@@ -907,6 +913,7 @@
           const currentEp = course?.episodes?.find(ep => ep.id === activeEpisodeId) || course?.episodes?.[0];
           const url = URL.createObjectURL(file);
           const localKey = activeCourseId + ':' + currentEp?.id;
+          if (localVideosMap[localKey]) URL.revokeObjectURL(localVideosMap[localKey].url);
           localVideosMap[localKey] = { url, name: file.name };
           activeSource = 'html5';
           if (toast) toast('已载入本地视频文件：' + file.name + '，立即为您播放！');
@@ -1032,7 +1039,7 @@
           }
           return;
         }
-      });
+      }, listenerOptions);
 
       // Search input
       container.addEventListener('input', e => {
@@ -1040,10 +1047,13 @@
           searchQuery = e.target.value;
           const grid = container.querySelector('.courses-grid');
           if (grid) {
-            grid.outerHTML = renderCatalog().match(/<div class="courses-grid">[\s\S]*?<\/div>\s*<\/div>/)?.[0] || '';
+            const template = document.createElement('template');
+            template.innerHTML = renderCatalog();
+            const nextGrid = template.content.querySelector('.courses-grid');
+            if (nextGrid) grid.replaceWith(nextGrid);
           }
         }
-      });
+      }, listenerOptions);
 
       // Submit add course form
       container.addEventListener('submit', e => {
@@ -1115,7 +1125,7 @@
           if (toast) toast('课程添加成功，已为您开启视频播放！');
           if (render) render();
         }
-      });
+      }, listenerOptions);
     }
 
     return {
