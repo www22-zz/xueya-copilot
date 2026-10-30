@@ -32,6 +32,9 @@
   const practiceUI=window.XueyaPracticeView?.createPracticeView({store:practiceStore,client:practiceClient,toast,navigate:hash=>{location.hash=hash;}});
   const analysisUI=window.XueyaAnalysis?.create({client:practiceClient,store:practiceStore,navigate:hash=>{location.hash=hash;},accountId:window.XueyaAccountId||'local'});
   titles.analysis='AI 学习分析';
+  titles.courses='课程学习';
+  const coursesUI=window.XueyaCourses?.create({state,store,toast,ask,render,navigate:hash=>{location.hash=hash;}});
+  renders.courses=()=>coursesUI?coursesUI.render():'<div class="courses-empty">课程模块加载中…</div>';
   renders.analysis=()=>'<div class="view-heading"><div><h1>从练习，看见下一步。</h1><p>AI 学习分析 · 基于你的真实记录</p></div></div><div id="analysisModule"></div>';
   const analysisLink=document.createElement('a');analysisLink.href='#space/analysis';analysisLink.dataset.view='analysis';analysisLink.textContent='学习分析';analysisLink.setAttribute('aria-label','AI 学习分析');document.querySelector('.space-nav').append(analysisLink);
   const workbench=window.XueyaPlatform?.available?window.XueyaWorkbench?.create({state,store,toast}):null;
@@ -48,6 +51,7 @@
     const thread=$('#chatThread');if(thread)thread.scrollTop=!sameSession||nearBottom?thread.scrollHeight:scrollTop;
     agentRuns?.refresh();
     if(state.view==='analysis')analysisUI?.mount($('#analysisModule'));
+    if(state.view==='courses')coursesUI?.mount();
   }
   let initialRoute=true;function route(){const parts=location.hash.replace(/^#/,'').split('/');if(parts[0]==='space'&&parts[1]==='library'&&parts[2]!=='manage'&&window.XueyaPlatform?.available)parts[1]='knowledge';const space=parts[0]==='space';$('#homePage').hidden=space;$('#spacePage').hidden=!space;document.body.classList.toggle('in-space',space);if(space){state.view=titles[parts[1]]?parts[1]:'overview';$$('[data-view]').forEach(a=>{a.classList.toggle('active',a.dataset.view===state.view);a.dataset.view===state.view?a.setAttribute('aria-current','page'):a.removeAttribute('aria-current');});render();document.title=`${titles[state.view]} · 学涯 Copilot`;if(!initialRoute){scrollTo({top:0,behavior:'instant'});$('#spaceContent').focus({preventScroll:true});}}else{document.title='学涯 Copilot — 让知识，真正连起来';if(['possibilities','evidence','rhythm'].includes(parts[0]))requestAnimationFrame(()=>document.getElementById(parts[0]).scrollIntoView());else if(!initialRoute)scrollTo({top:0,behavior:'instant'});}initialRoute=false;}
   function sourceById(id){return [...viewLearning.sources,...state.documents.flatMap(d=>d.chunks||[])].find(s=>s.id===id)||state.messages.flatMap(m=>m.sources||[]).find(s=>s.id===id)||(id?.startsWith('web-')?{id,title:'全网搜索网页',location:'互联网搜索',isWeb:true}:null);}
@@ -207,7 +211,8 @@
   }
 
   function upload(files){return libraryUI&&state.view==='knowledge'&&!workspace.versionUploadPending?libraryUI.uploadFiles(files):workspace.upload(files);}
-  function searchResults(query){const q=query.trim().toLowerCase();const items=Object.entries(titles).map(([view,title])=>({title,type:'页面',view}));state.documents.forEach(d=>items.push({title:d.name,type:'资料',document:d.id}));state.messages.forEach(m=>{if(m.role==='ai'&&m.text)items.push({title:(m.title||m.text).slice(0,40),type:'回答',view:'ask',query:m.title||''});});const found=items.filter(item=>!q||item.title.toLowerCase().includes(q)).slice(0,12);$('#searchResults').innerHTML=found.length?found.map(item=>`<button type="button" class="search-result" ${item.document?`data-search-document="${e(item.document)}"`:`data-search-view="${item.view}"`} data-query="${e(item.query||'')}">${icon(item.type==='资料'?'file':item.type==='卡片'?'spark':'arrow')} ${e(item.title)}<span>${item.type}</span></button>`).join(''):'<div class="empty-state"><p>没有找到结果。试试文件名、知识点或页面名称。</p></div>';icons();}
+  function searchResults(query){const q=query.trim().toLowerCase();const items=Object.entries(titles).map(([view,title])=>({title,type:'页面',view}));state.documents.forEach(d=>items.push({title:d.name,type:'资料',document:d.id}));
+    coursesUI?.getAllCourses?.().forEach(course=>items.push({title:course.title,type:'课程',view:'courses',query:course.title}));state.messages.forEach(m=>{if(m.role==='ai'&&m.text)items.push({title:(m.title||m.text).slice(0,40),type:'回答',view:'ask',query:m.title||''});});const found=items.filter(item=>!q||item.title.toLowerCase().includes(q)).slice(0,12);$('#searchResults').innerHTML=found.length?found.map(item=>`<button type="button" class="search-result" ${item.document?`data-search-document="${e(item.document)}"`:`data-search-view="${item.view}"`} data-query="${e(item.query||'')}">${icon(item.type==='资料'?'file':item.type==='卡片'?'spark':'arrow')} ${e(item.title)}<span>${item.type}</span></button>`).join(''):'<div class="empty-state"><p>没有找到结果。试试文件名、知识点或页面名称。</p></div>';icons();}
   function showDocument(id){const doc=state.documents.find(d=>d.id===id);if(!doc)return;const source=doc.chunks?.[0]||viewLearning.sources.find(s=>s.documentId===id);openSource(source||{id:doc.id,documentId:doc.id,title:doc.name,location:doc.status,quote:'',sample:false});}
   agentRuns=window.XueyaAgentRuns?.create({state,persist,render,toast});
   function mount(){
