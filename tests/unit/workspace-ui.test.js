@@ -8,6 +8,36 @@ const {createService,normalizeDocument}=require('../../frontend/js/services/work
 function storage(initial={}){const data=new Map(Object.entries(initial));return{getItem:key=>data.get(key)||null,setItem:(key,value)=>data.set(key,value),data};}
 function setup(initial={}){let counter=0;const disk=storage(initial),store=createStore({storage:disk,learning:L,id:()=>String(++counter)});return{disk,store};}
 
+test('course completion toggles once after repeated workspace mounts',()=>{
+  const vm=require('node:vm'),fs=require('node:fs');
+  const disk=storage(),container=new EventTarget();
+  const sandbox={localStorage:disk,AbortController,setTimeout,document:{getElementById:id=>id==='spaceContent'?container:null}};
+  vm.runInNewContext(fs.readFileSync(require.resolve('../../frontend/js/courses-workspace.js'),'utf8'),sandbox);
+  let ui;ui=sandbox.XueyaCourses.create({render(){ui.render();ui.mount();}});
+  ui.mount();ui.mount();
+  function click(selector,dataset){
+    const event=new Event('click');
+    Object.defineProperty(event,'target',{value:{closest:query=>query===selector?{dataset}:null}});
+    container.dispatchEvent(event);
+  }
+  click('[data-enter-course], [data-course-card-id]',{enterCourse:'cs-ds-algo'});
+  click('[data-toggle-ep-complete]',{toggleEpComplete:'ds-ep-1'});
+  assert.equal(JSON.parse(disk.getItem('xueya-video-progress-v1'))['cs-ds-algo'].episodes['ds-ep-1'].completed,true);
+  click('[data-toggle-ep-complete]',{toggleEpComplete:'ds-ep-1'});
+  assert.equal(JSON.parse(disk.getItem('xueya-video-progress-v1'))['cs-ds-algo'].episodes['ds-ep-1'].completed,false);
+});
+
+test('custom course titles, tags and attributes render as text',()=>{
+  const vm=require('node:vm'),fs=require('node:fs');
+  const malicious='<img src=x onerror=alert(1)>',disk=storage({'xueya-video-courses-v1':JSON.stringify([{id:'custom-1',title:malicious,category:'theory',categoryName:'custom',instructor:'" autofocus onfocus="alert(1)',tags:[malicious],description:malicious,episodes:[]}])});
+  const sandbox={localStorage:disk};
+  vm.runInNewContext(fs.readFileSync(require.resolve('../../frontend/js/courses-workspace.js'),'utf8'),sandbox);
+  const html=sandbox.XueyaCourses.create({}).render();
+  assert.doesNotMatch(html,/<img src=x/);
+  assert.match(html,/&lt;img src=x onerror=alert\(1\)&gt;/);
+  assert.match(html,/&quot; autofocus onfocus=&quot;alert\(1\)/);
+});
+
 test('conversation actions preserve messages, custom titles and course boundaries after reload',()=>{
   const {store,disk}=setup();
   store.state.messages.push({role:'user',text:'原始问题'},{role:'ai',text:'完整回答',sources:[]});store.persist();

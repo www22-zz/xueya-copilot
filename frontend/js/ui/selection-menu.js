@@ -169,9 +169,14 @@
     menuEl.hidden = true;
 
     menuEl.innerHTML = `
-      <button type="button" class="selection-tooltip-btn" data-action="copy" title="复制选中文本">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-        <span>复制</span>
+      <button type="button" class="selection-tooltip-btn selection-sidebar-btn" data-action="sidebar-ask" title="在侧边栏对所选内容提问">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path><line x1="9" y1="10" x2="15" y2="10"></line><line x1="12" y1="7" x2="12" y2="13"></line></svg>
+        <span>侧边提问</span>
+      </button>
+      <div class="selection-tooltip-divider"></div>
+      <button type="button" class="selection-tooltip-btn" data-action="followup" title="基于所选内容在下方追问">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 10 4 15 9 20"></polyline><path d="M20 4v7a4 4 0 0 1-4 4H4"></path></svg>
+        <span>追问</span>
       </button>
       <div class="selection-tooltip-divider"></div>
       <button type="button" class="selection-tooltip-btn" data-action="read" title="朗读选中文本 (mimo-v2.5-tts)">
@@ -179,9 +184,9 @@
         <span class="tts-label">朗读</span>
       </button>
       <div class="selection-tooltip-divider"></div>
-      <button type="button" class="selection-tooltip-btn" data-action="followup" title="基于所选内容进行追问">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 10 4 15 9 20"></polyline><path d="M20 4v7a4 4 0 0 1-4 4H4"></path></svg>
-        <span>追问</span>
+      <button type="button" class="selection-tooltip-btn" data-action="copy" title="复制选中文本">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+        <span>复制</span>
       </button>
     `;
 
@@ -329,6 +334,15 @@
       hideMenu();
     } else if (action === 'read') {
       window.XueyaTTS.speak(text);
+    } else if (action === 'sidebar-ask') {
+      const msgIndex = currentMessageEl?.dataset?.messageIndex !== undefined ? Number(currentMessageEl.dataset.messageIndex) : null;
+      window.dispatchEvent(new CustomEvent('xueya:sidebar-ask', {
+        detail: {
+          text,
+          messageIndex: Number.isInteger(msgIndex) ? msgIndex : null
+        }
+      }));
+      hideMenu();
     } else if (action === 'followup') {
       const msgIndex = currentMessageEl?.dataset?.messageIndex !== undefined ? Number(currentMessageEl.dataset.messageIndex) : null;
       window.dispatchEvent(new CustomEvent('xueya:followup-selection', {

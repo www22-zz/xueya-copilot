@@ -245,6 +245,74 @@ function createWorkspace(ctx){
     const dialog=document.createElement('dialog');dialog.id='workspaceDialog';dialog.className='source-dialog workspace-dialog';dialog.setAttribute('aria-labelledby','workspaceDialogTitle');dialog.innerHTML=`<div class="dialog-head"><h2 id="workspaceDialogTitle"></h2><button type="button" class="icon-button" data-close-dialog aria-label="关闭编辑面板">×</button></div><div id="workspaceDialogBody"></div>`;document.body.append(dialog);
     dialog.addEventListener('submit',async event=>{if(event.target.id!=='workspaceForm')return;event.preventDefault();if(!editorSubmit)return;const submit=event.submitter;if(submit)submit.disabled=true;try{const result=await editorSubmit(new FormData(event.target));if(result!==false)dialog.close();}catch(error){$('#editorError').textContent=error.message||'保存失败，请重试。';}finally{if(submit)submit.disabled=false;}});
     $('#courseSelect').addEventListener('change',event=>selectCourse(event.target.value));
+
+    globalThis.addEventListener('xueya:sidebar-ask', event => {
+      const { text, messageIndex } = event.detail || {};
+      if (!text) return;
+      state.sidebarAskOpen = true;
+      state.sidebarAskText = text;
+      state.sidebarAskIndex = messageIndex;
+      if (state.view !== 'ask') {
+        location.hash = 'space/ask';
+      } else {
+        render();
+      }
+      setTimeout(() => {
+        const inp = $('#sidebarAskInput');
+        if (inp) {
+          inp.focus();
+          inp.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 50);
+      toast('已开启侧边提问助手');
+    });
+
+    document.addEventListener('click', event => {
+      if (event.target.closest('[data-toggle-sidebar-ask]')) {
+        state.sidebarAskOpen = !state.sidebarAskOpen;
+        render();
+        return;
+      }
+      if (event.target.closest('[data-close-sidebar-ask]')) {
+        state.sidebarAskOpen = false;
+        render();
+        return;
+      }
+      if (event.target.closest('[data-sidebar-fill-composer]')) {
+        const custom = $('#sidebarAskInput')?.value?.trim();
+        const snippet = state.sidebarAskText ? (state.sidebarAskText.length > 60 ? state.sidebarAskText.slice(0, 60) + '…' : state.sidebarAskText) : '';
+        state.draft = '关于「' + snippet + '」：' + (custom || '');
+        render();
+        const inp = $('#chatInput');
+        if (inp) {
+          inp.focus();
+          try { inp.setSelectionRange(inp.value.length, inp.value.length); } catch {}
+          inp.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        toast('已带入主输入框');
+        return;
+      }
+    });
+
+    document.addEventListener('submit', event => {
+      if (event.target.id === 'sidebarAskForm') {
+        event.preventDefault();
+        const custom = $('#sidebarAskInput')?.value?.trim();
+        const snippet = state.sidebarAskText ? (state.sidebarAskText.length > 80 ? state.sidebarAskText.slice(0, 80) + '…' : state.sidebarAskText) : '';
+        const question = custom ? ('关于「' + snippet + '」：' + custom) : ('请详细讲解选中的知识点「' + snippet + '」的核心原理、应用场景与注意事项。');
+        state.sidebarAskDraft = '';
+        if (globalThis.XueyaAsk) {
+          globalThis.XueyaAsk(question);
+        }
+      }
+    });
+
+    document.addEventListener('input', event => {
+      if (event.target.id === 'sidebarAskInput') {
+        state.sidebarAskDraft = event.target.value;
+      }
+    });
+
     globalThis.addEventListener('xueya:followup-selection',event=>{
       const {text,messageIndex}=event.detail||{};
       if(!text)return;
