@@ -131,6 +131,7 @@ function createPracticeView({store,client,toast=()=>{},navigate=()=>{}}={}){
     ${(q.hints||[]).map((h,i)=>`<details class="practice-hints"><summary>提示 ${i+1}</summary><p>${e(h)}</p></details>`).join('')}${q.coreIdea?`<details class="practice-core"><summary>核心思路</summary><p>${e(q.coreIdea)}</p></details>`:''}
     ${q.references?`<details class="practice-evidence"><summary>题目来源与核对</summary>${q.references.map(ref=>`<p><a class="text-link" href="${globalThis.XueyaRich.safeURL(ref.url)}" target="_blank" rel="noopener noreferrer">${e(ref.label)}${q.year?' · '+q.year+'年 · 参考第'+q.originalNumber+'题':''} ↗</a></p>`).join('')}</details>`:''}${paperBlock(q)}${objective}${writtenBlock(q)}${q.type==='short'&&!q.parts&&!revealed?`<textarea class="form-field" data-short rows="4" placeholder="先回忆一下（临时草稿）">${e(shortDraft)}</textarea>`:''}
     ${['short','code'].includes(q.type)&&!revealed?button(q.type==='short'?'查看参考答案与得分点':'查看完整题解','reveal'):''}
+    ${['short','code'].includes(q.type)?`<section class="panel"><h3>AI 参考评阅</h3><p>不运行代码、不读取原卷PDF图；没有明确评分标准时只给点评。原自评独立保留。</p>${q.type==='code'?`<textarea data-fixed-ai-answer rows="5" maxlength="20000" aria-label="代码与思路" placeholder="粘贴你的代码与思路，仅作文本评阅">${e(ui.fixedAiDrafts?.[q.id]||'')}</textarea>`:''}${button('保存原答案并请求 AI 评阅','fixed-ai-review')}</section>`:''}
     ${revealed?`<section class="practice-answer">${attempt?`<p class="practice-result">${attempt.correct?'回答正确':'回答错误'} · 你的答案：${e(answerText(q,attempt.answer))}</p>`:''}${q.type==='short'&&!q.parts?`<p><strong>一句话核心答案：</strong>${e(q.answer)}</p><h3>关键得分点</h3><ul>${(q.keyPoints||[]).map(x=>'<li>'+e(x)+'</li>').join('')}</ul><h3>常见追问</h3><ul>${(q.followUps||[]).map(x=>'<li>'+e(x)+'</li>').join('')}</ul>`:['single','multiple','boolean','fill'].includes(q.type)?`<p>正确答案：<strong>${e(answerText(q,q.answer))}</strong></p>`:''}<p class="practice-explanation">${e(q.explanation)}</p>${q.paper?paperBlock(q,true):''}${['single','multiple','boolean','fill'].includes(q.type)?button('重新作答','re-answer'):''}${q.type==='fill'&&attempt&&!attempt.correct?button('此答案也正确','also-correct'):''}</section>`:''}
     ${q.evidenceQuote?`<details class="practice-evidence"><summary>${q.curated?'知识点依据 · '+e(q.origin?.label||'课程题库'):'资料依据 · AI生成，答案请核对'}</summary><p>${e(q.documentName)}${q.sourceLocation?' · '+e(q.sourceLocation):''} · 内容修订 ${e(q.sourceVersion)}</p><blockquote>${e(q.evidenceQuote)}</blockquote>${q.curated?'<p>教材摘录用于说明相关知识点，不代表教材收录了这道原题或完整题解。选编题的原题链接见上方。</p>':''}</details>`:''}${solutionBlock(q)}<div class="practice-actions">${statusActions(q)}${button('下一题','next')}</div>${noteBlock(q)}</article>`;
   }
@@ -166,6 +167,19 @@ function createPracticeView({store,client,toast=()=>{},navigate=()=>{}}={}){
     const q=current(),id=payload.id||q?.id;
     try{
       if(action==='select'){flushWritten();select(id);return;}
+      if(action==='fixed-ai-review'){
+        const draft=ui.writtenDrafts?.[q.id]||{},saved=progress(q.id);
+        const answer=q.parts?q.parts.map(p=>p.label+'\n'+((draft.answers||saved.writtenAnswers||{})[p.id]||'')).join('\n\n'):q.type==='code'?(root.querySelector('[data-fixed-ai-answer]')?.value||ui.fixedAiDrafts?.[q.id]||''):(root.querySelector('[data-short]')?.value||shortDraft);
+        if(!answer.trim()||q.parts&&!Object.values(draft.answers||saved.writtenAnswers||{}).some(a=>a.trim())){toast('请先保存完整作答；空答案不会发起评阅');return;}
+        if(!window.XueyaPlatform?.available){toast('本机服务未连接，原草稿继续保留');return;}
+        ui.fixedAiDrafts||={};ui.fixedAiDrafts[q.id]=answer;
+        ui.fixedAiRequests||={};const previous=ui.fixedAiRequests[q.id];
+        const request=previous?.answer===answer?previous:{answer,operationId:'fixed-assessment-'+crypto.randomUUID()};ui.fixedAiRequests[q.id]=request;store.persist();
+        flushWritten();
+        window.XueyaPlatform.spaceFetch('/api/learning/space/quiz/fixed-attempt',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({questionId:q.id,answer,operationId:request.operationId})})
+          .then(r=>r.json()).then(value=>{if(!value.ok)throw new Error(value.error);navigate('#space/practice/ai/'+value.attempt.questionId+'/'+value.attempt.id);})
+          .catch(error=>toast('未完成，原答案保留：'+error.message));return;
+      }
       if(action==='unit'){filters().tag=payload.unit||'';resetSelection();render();return;}
       if(action==='resume-generation'){client.resumeGeneration(id).then(()=>sync()).then(render).catch(error=>toast(error.message||'暂时无法继续生成'));return;}
       if(action==='cancel-generation'){client.cancelGeneration(id).then(()=>sync()).then(render).catch(error=>toast(error.message||'暂时无法停止'));return;}
@@ -194,7 +208,7 @@ function createPracticeView({store,client,toast=()=>{},navigate=()=>{}}={}){
       }
     }catch(error){toast(error.message||'操作未完成');}
   }
-  function handleInput(event){const el=event.target;if(el.dataset.written!==undefined||el.dataset.selfScore!==undefined){onWrittenInput(el);return true;}if(el.dataset.fill!==undefined){fillDraft=el.value;return true;}if(el.dataset.note!==undefined){onNoteInput(el.dataset.note,el.value);return true;}if(el.dataset.short!==undefined){shortDraft=el.value;return true;}if(el.dataset.filter!==undefined){flushWritten();flushNote();const f=filters();f[el.dataset.filter]=el.value;if(['subject','type'].includes(el.dataset.filter)&&f.tag&&!pool().some(q=>(!f.subject||q.subject===f.subject)&&(!f.type||q.type===f.type)&&(q.tags||[]).includes(f.tag)))f.tag='';resetSelection();render();return true;}return false;}
+  function handleInput(event){const el=event.target;if(el.dataset.fixedAiAnswer!==undefined){ui.fixedAiDrafts||={};if(current())ui.fixedAiDrafts[current().id]=el.value;store.persist();return true;}if(el.dataset.written!==undefined||el.dataset.selfScore!==undefined){onWrittenInput(el);return true;}if(el.dataset.fill!==undefined){fillDraft=el.value;return true;}if(el.dataset.note!==undefined){onNoteInput(el.dataset.note,el.value);return true;}if(el.dataset.short!==undefined){shortDraft=el.value;return true;}if(el.dataset.filter!==undefined){flushWritten();flushNote();const f=filters();f[el.dataset.filter]=el.value;if(['subject','type'].includes(el.dataset.filter)&&f.tag&&!pool().some(q=>(!f.subject||q.subject===f.subject)&&(!f.type||q.type===f.type)&&(q.tags||[]).includes(f.tag)))f.tag='';resetSelection();render();return true;}return false;}
   function bind(node){
     node.onclick=event=>{const el=event.target.closest('[data-action]');if(el&&node.contains(el)){event.preventDefault();event.stopPropagation();act(el.dataset.action,el.dataset);}};
     node.oninput=event=>{if(event.target.tagName!=='SELECT')handleInput(event);};

@@ -37,10 +37,20 @@ def external_link(url, title='用户补充学习资源'):
             'sourceType':'user-link','verification':'unverified'}
 
 
-def match_task(candidate):
+def match_task(candidate, courses=None):
     """Model suggestions cannot invent IDs. Ambiguous text remains self-study."""
     catalog=question_catalog()
     nested=candidate.get('resource') if isinstance(candidate.get('resource'),dict) else {}
+    course_id=candidate.get('courseId') or nested.get('courseId')
+    episode_id=candidate.get('episodeId') or nested.get('episodeId')
+    if course_id or episode_id:
+        course=next((c for c in (courses or []) if c['id']==course_id),None)
+        episode=next((e for e in course['episodes'] if e['id']==episode_id),None) if course else None
+        if episode:
+            return {'type':'course','courseId':course_id,'episodeId':episode_id,'title':episode['title'],
+                    'url':'#space/courses/'+quote(course_id,safe='')+'/'+quote(episode_id,safe=''),
+                    'matched':True,'verification':course.get('verification','unverified')}
+        return {'type':'self-study','matched':False,'reason':'课程章节不存在或不属于当前账号'}
     requested=candidate.get('questionId') or nested.get('questionId')
     if requested:
         resource=next((r for r in catalog if r['questionId']==requested),None)

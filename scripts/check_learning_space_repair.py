@@ -41,6 +41,15 @@ class Model:
         elif '评阅学生答案' in messages[0]['content']:
             payload=json.loads(messages[1]['content'])
             value={'feedback':'说明了互斥限制，适用条件还需补充。','rubricPoints':[{'id':r['id'],'earned':r['points']/2} for r in payload['rubric']]}
+        elif '局部细化' in messages[0]['content']:
+            selected=json.loads(messages[1]['content'])['selected']
+            value={'nodes':[{'id':'new-detail','label':'互斥条件','parentId':selected}]}
+        elif 'AI学习分析师' in messages[0]['content']:
+            snapshot=json.loads(messages[1]['content']);ref=snapshot['activitySources']['evidence'][0]['id']
+            value={'title':'多来源观察','summary':'只据实际记录，不能视为掌握。',
+                'findings':[{'kind':'pattern','title':'真实学习活动','detail':'读取课程、计划和作答快照。','questionIds':[],'evidenceIds':[ref]}],
+                'recommendations':[{'title':'补充闭卷回忆','reason':'继续积累验证依据。','questionIds':[],'evidenceIds':[ref]}],
+                'limitations':['受控样例，不能评价真实学习收益。']}
         else:
             value = {'title': '进程知识框架', 'nodes': [
                 {'id': 'root', 'label': '进程管理', 'parentId': None},
@@ -52,7 +61,7 @@ def main():
     OUT.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix='xueya-repair-browser-') as directory:
         model = Model()
-        app = create_app(Config(root=ROOT, data_dir=Path(directory), auto_import_demo=False,
+        app = create_app(Config(root=ROOT, data_dir=Path(directory), api_key='controlled', auto_import_demo=False,
                                 preserve_legacy_data=True), provider=model)
         sock = socket.socket(); sock.bind(('127.0.0.1', 0)); port = sock.getsockname()[1]
         server = uvicorn.Server(uvicorn.Config(app, log_level='error', timeout_graceful_shutdown=3))
@@ -210,6 +219,48 @@ def main():
                 page.goto(base+'/#space/review')
                 expect(page.locator(f'a[href^="#space/practice/ai/{objective_id}/"]')).to_be_visible()
                 page.screenshot(path=str(OUT/'chat-quiz-mobile.png'),full_page=True)
+                page.goto(base+'/#space/frameworks')
+                expect(page.locator('.kf-node-card').first).to_be_visible()
+                before=page.locator('.kf-node-card').count()
+                page.locator('[data-kf-ai]').first.click()
+                expect(page.locator('.kf-node-card')).to_have_count(before+1)
+                page.locator('[data-kf-undo]').click()
+                expect(page.locator('.kf-node-card')).to_have_count(before)
+                page.locator('[data-kf-filter-topic]').fill('不存在专题');page.locator('[data-kf-filter-topic]').press('Tab')
+                expect(page.locator('[data-kf-switch]')).to_have_count(0)
+                page.goto(base+'/#space/courses')
+                page.locator('[data-open-add-course]').click()
+                page.locator('#addCourseName').fill('本人课程闭环')
+                page.locator('#addCourseForm button[type=submit]').click()
+                expect(page.locator('.crumb-course')).to_have_text('本人课程闭环')
+                page.locator('[data-toggle-ep-complete]').click()
+                expect(page.locator('[data-toggle-ep-complete]')).to_contain_text('本节已学完')
+                page.reload();expect(page.locator('[data-enter-course]').last).to_be_visible()
+                page.locator('.course-card').filter(has_text='本人课程闭环').locator('[data-enter-course]').click()
+                expect(page.locator('[data-toggle-ep-complete]')).to_contain_text('本节已学完')
+                page.goto(base+'/#space/ask')
+                expect(page.locator('.learning-shortcuts')).to_contain_text('本人课程闭环')
+                page.locator('.learning-shortcuts a').filter(has_text='继续：').click()
+                expect(page.locator('.crumb-course')).to_have_text('本人课程闭环')
+                page.goto(base+'/#space/practice/hot100')
+                page.locator('.practice-row').first.click()
+                expect(page.locator('[data-fixed-ai-answer]')).to_be_visible()
+                page.locator('[data-fixed-ai-answer]').fill('我先用哈希表记录已访问元素，再检查当前元素的互补值。这里仅提交思路，不运行代码。')
+                page.get_by_role('button',name='保存原答案并请求 AI 评阅',exact=True).click()
+                expect(page.locator('[data-quiz-card] .quiz-evaluation')).to_contain_text('仅内容点评，不给总分')
+                page.goto(base+'/#space/analysis')
+                page.get_by_role('button',name='开始分析',exact=True).click()
+                expect(page.locator('.analysis-report h2')).to_have_text('多来源观察')
+                expect(page.locator('.analysis-report')).to_contain_text('小测原始作答')
+                (OUT/'analysis-controls.html').write_text(page.content(),encoding='utf-8')
+                print(json.dumps({'analysisSummaries':page.locator('#analysisModule summary').all_text_contents(),'errors':errors},ensure_ascii=True),flush=True)
+                page.get_by_text('周期回顾设置',exact=True).click()
+                page.locator('[data-schedule-external]').check()
+                page.get_by_role('button',name='保存设置与当前分析范围',exact=True).click()
+                expect(page.locator('.analysis-warning')).to_contain_text('按周期自动分析')
+                page.reload();page.get_by_text('周期回顾设置',exact=True).click()
+                expect(page.locator('[data-schedule-external]')).to_be_checked()
+                page.screenshot(path=str(OUT/'multi-source-analysis-mobile.png'),full_page=True)
                 assert not errors, errors
                 browser.close()
                 result={'navigation': 'passed', 'framework_history_and_generation': 'passed',
@@ -217,6 +268,9 @@ def main():
                                   'real_question_jump_and_adjustment':'passed',
                                   'chat_intake_job_refresh_and_framework':'passed',
                                   'chat_quiz_practice_and_evaluation_versions':'passed',
+                                  'private_courses_and_continue_learning':'passed','framework_expansion_undo_filter':'passed',
+                                  'multi_source_analysis_and_schedule_consent':'passed',
+                                  'fixed_hot100_subjective_assessment':'passed',
                                   'page_errors':errors,'controlled_model_calls':model.calls,'paid_calls':0}
                 (OUT/'result.json').write_text(json.dumps(result,ensure_ascii=False,indent=2),encoding='utf-8')
                 print(json.dumps(result))

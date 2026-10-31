@@ -53,7 +53,7 @@
         let draft='';try{draft=sessionStorage.getItem(draftKey(id))||'';}catch{}
         function draw(){
           if(!node.isConnected)return;
-          node.innerHTML=`<header><strong>${e(q.sourceType==='fixed'?'固定题库':'AI 生成题（未独立审校）')} · ${e(q.type==='short'?'主观题':'单选题')}</strong><h3>${e(q.subject)}</h3></header><p class="study-quiz-prompt">${e(q.prompt)}</p>
+          node.innerHTML=`<header><strong>${e(q.sourceType==='fixed-reference'?'固定题参考评阅':q.sourceType==='fixed'?'固定题库':'AI 生成题（未独立审校）')} · ${e(q.type==='short'?'主观题':'单选题')}</strong><h3>${e(q.subject)}</h3></header><p class="study-quiz-prompt">${e(q.prompt)}</p>${(q.limitations||[]).map(text=>`<p>${e(text)}</p>`).join('')}
             ${attempt?`<details><summary>本次原始答案（题目版本 ${e(attempt.questionRevision??'旧记录未保存')}）</summary><p>${e(attempt.questionSnapshotView?.prompt||'旧记录未保存完整题目快照')}</p><p>${e(q.type==='single'&&attempt.questionSnapshotView?.options?attempt.questionSnapshotView.options[attempt.answer]:attempt.answer)}</p></details>`:''}
             <form data-quiz-answer>${q.type==='single'?q.options.map((option,index)=>`<label class="study-quiz-option"><input type="radio" name="answer" value="${index}" ${draft===String(index)?'checked':''} required>${e(option)}</label>`).join(''):`<label>完整答案<textarea name="answer" rows="5" maxlength="20000" required>${e(draft)}</textarea></label>`}
               <button type="submit" class="button button-blue button-small">${attempt?'再次作答（新增一次作答）':'保存并提交作答'}</button></form>

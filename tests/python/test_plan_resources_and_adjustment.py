@@ -29,6 +29,33 @@ def test_only_real_resources_are_resolved_and_answers_do_not_enter_catalog(platf
     assert fake['days'][0]['tasks'][0]['resource']['matched'] is False
 
 
+def test_dependencies_are_topological_and_share_cross_subject_budget(platform):
+    service=StudySpaceService(platform)
+    request={'daysCount':3,'dailyMinutes':30,'restDays':[], 'tasks':[
+        {'key':'advanced','title':'高级概念','subject':'操作系统','minutes':30,'dependsOn':['base']},
+        {'key':'base','title':'先修概念','subject':'数据结构','minutes':45,'dependsOn':[]}]}
+    draft=service.create_plan_draft('alice',request)
+    assert draft['days'][0]['tasks'][0]['title']=='先修概念'
+    assert all(sum(t['minutes'] for t in d['tasks'])<=30 for d in draft['days'])
+    assert draft['days'][1]['tasks'][0]['title']=='先修概念'
+    assert draft['days'][1]['tasks'][1]['title']=='高级概念'
+    with pytest.raises(AppError,match='INVALID_TASK_DEPENDENCIES'):
+        service.create_plan_draft('alice',{**request,'tasks':[{'key':'cycle','title':'循环','minutes':20,'dependsOn':['cycle']}]})
+
+
+def test_competing_drafts_only_one_adoption_from_same_base(platform):
+    from concurrent.futures import ThreadPoolExecutor
+    service=StudySpaceService(platform)
+    value={'daysCount':1,'dailyMinutes':30,'restDays':[],'tasks':[{'title':'明确学习任务','minutes':30}]}
+    drafts=[service.create_plan_draft('alice',value),service.create_plan_draft('alice',value)]
+    def adopt(draft):
+        try:return service.adopt_plan('alice',draft['id'],1,True,'adopt-'+draft['id'])['id']
+        except AppError as error:return error.code
+    with ThreadPoolExecutor(max_workers=2) as pool:results=list(pool.map(adopt,drafts))
+    assert results.count('PLAN_CURRENT_CHANGED')==1
+    assert len([p for p in service.repo.all(service._scope('alice'),'plan') if p['status']=='active'])==1
+
+
 @pytest.mark.parametrize('url',['javascript:alert(1)','data:text/html,bad','http://127.0.0.1/a','https://example.com@127.0.0.1/a','https://user:pass@example.com','https://example.com\n/bad'])
 def test_external_resource_protocols_and_private_targets_are_rejected(url):
     with pytest.raises(AppError):external_link(url)

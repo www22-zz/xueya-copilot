@@ -167,3 +167,34 @@ def test_duplicate_batch_does_not_publish_fake_successful_question_cards(setup):
     assert len(model.calls)==2
     assert json.loads(model.calls[-1][1]['content'])['avoidPrompts']==['解释临界区互斥的含义。']
     assert not client.get('/api/learning/space/quiz/list').json()['questions']
+
+
+def test_fixed_subjective_bridge_keeps_original_rubric_and_one_attempt(setup):
+    from backend.xueya.practice_catalog import exam_bank
+    app,client,model,_=setup
+    q=next(q for q in exam_bank()['questions'] if q['type']=='short' and q.get('selfScoreMode')!='mastery')
+    value={'questionId':q['id'],'answer':'我按小问说明了资源分配、状态变化和必要条件。','operationId':'fixed-one','score':1000,'rubric':[{'id':'fake','points':1000}]}
+    first=client.post('/api/learning/space/quiz/fixed-attempt',json=value).json()['attempt']
+    assert client.post('/api/learning/space/quiz/fixed-attempt',json=value).json()['attempt']==first
+    stored=app.state.space_quiz.attempt('alice',first['id'])
+    assert stored['questionSnapshot']['originalQuestionId']==q['id']
+    assert [r['points'] for r in stored['questionSnapshot']['rubric']]==[p['points'] for p in q['parts']]
+    assert len(client.get('/api/learning/space/quiz/list').json()['attempts'])==1
+    job=asyncio.run(finish(app,first['evaluations'][0]['jobId']))
+    assert job['status']=='succeeded'
+    result=app.state.space_quiz.attempt('alice',first['id'])['effectiveEvaluation']['result']
+    assert result['maxScore']==sum(p['points'] for p in q['parts']) and result['score']!=1000
+
+
+def test_hot100_text_review_does_not_execute_code_or_invent_numeric_rubric(setup):
+    from backend.xueya.practice_bank import bank
+    app,client,model,_=setup
+    q=next(q for q in bank()['questions'] if q['type']=='code')
+    value={'questionId':q['id'],'answer':'print("example") # 只作为文本，不执行','operationId':'code-one'}
+    submitted=client.post('/api/learning/space/quiz/fixed-attempt',json=value).json()['attempt']
+    job=asyncio.run(finish(app,submitted['evaluations'][0]['jobId']))
+    assert job['status']=='succeeded'
+    attempt=app.state.space_quiz.attempt('alice',submitted['id'])
+    assert attempt['questionSnapshot']['rubric']==[]
+    assert 'score' not in attempt['effectiveEvaluation']['result']
+    assert '不运行代码' in attempt['questionSnapshot']['limitations'][0]

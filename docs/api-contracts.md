@@ -1,5 +1,31 @@
 # 模块接口约定
 
+## 2026-10-31 课程记录、多源报告与框架版本补充
+
+以下扩展继续使用可信会话、稳定 learningOwner、本机Host/同源及 bootstrap token，不相信客户端账号字段；不新建数据库。旧字段及兼容路径保留。
+
+| 方法/路径 | 请求、结果与约束 |
+| --- | --- |
+| GET `/api/learning/space/courses` | 平台目录+本人私人课，以及本人进度；原目录明确标记 legacy-unverified，不代表原站播放验收。 |
+| POST `/api/learning/space/courses/save` | `{course,expectedRevision,operationId}` → 私人课程。仅 custom- ID，可新建/更新本人课，不覆盖平台课；视频URL校验但不冒充内容核验。 |
+| POST `/api/learning/space/courses/delete` | `{courseId,expectedRevision,operationId}` → 软删除本人课程，历史事件/修订保留。 |
+| POST `/api/learning/space/courses/progress` | `{courseId,episodeId,completed?,seconds?,positionSource?,expectedRevision?,operationId}`。completed仅bool、手动确认；位置来源仅 html5-observed/user-position，不接受“官方iframe遥测”。完成与匹配的课程任务同事务同步，重复不新增事件。计划反向完成也更新课程；不应用到新的review实例。 |
+| GET `/api/learning/space/today` | 兼容新增 lastCourse，含账号内实际课程/章节续学链接与可获取的位置来源。 |
+| POST `/api/learning/space/quiz/fixed-attempt` | `{questionId,answer,operationId}` → Attempt；服务端读取原Hot100/408静态题与版本生成快照，主观评阅仍用共享版本链。无明确rubric仅反馈，原自评分开保留；不执行代码、不抓取PDF。忽略客户端score/rubric。 |
+| POST `/api/learning/space/framework/jobs` | generate `{subject,topic?,sessionId?,operationId}`；expand `{mode:expand,frameworkId,nodeId,expectedRevision,instruction,operationId}` → 持久job。扩展只在原revision应用新增概念分支，迟到冲突不覆盖人工编辑，不自动重发模型。 |
+| GET `/api/learning/space/framework/list` | 兼容增加 jobs；framework增加服务端revision。历史按学科/专题筛选不调用模型。 |
+| POST `/api/learning/space/framework/:id/patch` | 兼容增 expectedRevision、undo:true，撤销最近完整编辑/AI扩展，最多20步；不修改计划/课程/掌握度。冲突 FRAMEWORK_REVISION_CONFLICT。 |
+| GET `/api/practice/analysis/sources` | 本人会话元信息、调度设置与待分析候选；不跨账号取workspace。默认识别学习会话，可手动纳入/排除。 |
+| POST `/api/practice/analysis` | 原filters兼容增 includeConversations/Courses/Quizzes/Plans、excludedSessionIds、includedSessionIds。快照包含activitySources.counts/evidence/options/truncated，截止时固定；程序统计，模型引用questionIds/evidenceIds须在本快照内。无练习但有其他真实活动可分析，空记录拒绝。 |
+| POST `/api/practice/analysis/schedule` | `{enabled,periodDays:1..90,weekday:1..7,time,timezone,options?,expectedRevision,operationId,automaticExternalDispatch?,confirmedExternalDispatch?}`。外部自动默认关；首次开启须 confirmedExternalDispatch:true 并保存同意时间。周期/范围/停用持久化，设置冲突不覆盖。 |
+| POST `/api/practice/analysis/candidates/:id/submit` | `{confirmed:true}` 明确提交本人的固定候选快照，不读取新记录冒充旧快照。重复读取/重放返回原job，不重放unknown。 |
+
+新草稿记录 adoptionBase；竞争采用另一份草稿或原计划已变化时返回 PLAN_CURRENT_CHANGED（调整预览仍保留 REPLAN_SOURCE_CHANGED）。依赖任务key必须存在且无环，程序拓扑排序后按共享每日预算排程。
+
+调度只在本机进程运行时检查已初始化设置；未开启外部调用时不创建付费作业。开启后复用已有JobQueue/预算/许可/账本、一次尝试；同一证据快照去重，停机只合并一份实际窗口，历史报告不可变。failed/unknown不因下周/重启自动重发。默认外部关闭是本轮自动审批边界下的明确实现差异，不宣称满足“默认自动付费周报”。
+
+旧评阅缺题目快照的记录仍只读；没有批量改写历史评分。旧章节标题/作者/播放器真实核验及跨课程公共预置清单授权见交付说明，不能以目录ID合法代替内容验收。
+
 ## 2026-10-31 测试分支账号资料兼容扩展
 
 本节优先于下文“多个账号共用当前空间”的历史说明。登录 Cookie 决定服务端账号；请求体 accountId/userId、`X-Xueya-Account` 均不能选择资料 owner。新增账号使用独立的持久资料/工作区/任务作用域，不自动继承 `local-user` 下归属未知的旧资料。旧未登录单机兼容调用保留原空间；已配置登录后仍必须先登录。`GET /api/account/status` 增加 `dataOwner`（稳定资料 owner）及 `sharedSpace:false`；改名保留该 owner。
@@ -34,7 +60,7 @@
 
 `evaluations` 记录 source/status/createdAt/理由及可用的模型、时间、参考分/点评。有效结果按版本请求顺序取最新已完成或明确争议版本；迟到的早期 AI 结果不覆盖较新的人工修正。原评阅保留，失败、取消和未知结果不是错误/零分。旧形状评阅以 `legacy-assessment` 只读呈现，缺失题目版本保持 null，缺完整快照时不可复核；不把历史缺失补造成新模型评阅。
 
-原 `quiz/generate` 兼容同步题目生成；原 `quiz/grade` 的客观 `result` 保留，主观增加 queued/jobId 与 Attempt，后续用作业/Attempt 读取，不等待或伪造模型分数。新页面统一走上述持久路径。原 `/api/practice/bank/ops/state`、固定题 ID、原自评与笔记保留，尚未将其全部主观题与历史评分迁移到新版本链；新小测也尚未接入多源分析，详见交付限制。
+原 `quiz/generate` 兼容同步题目生成；原 `quiz/grade` 的客观 `result` 保留，主观增加 queued/jobId 与 Attempt，后续用作业/Attempt 读取，不等待或伪造模型分数。新页面统一走上述持久路径。原 `/api/practice/bank/ops/state`、固定题 ID、原自评与笔记保留；本页较新补充已增加固定主观题主动评阅入口及小测多源分析，但没有批量补造旧评分版本。
 
 ## 2026-10-28 朗读与联网搜索补充
 

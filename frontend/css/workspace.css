@@ -1606,3 +1606,11 @@ body.history-layout .learning-center-shell>.space-content{flex:1;min-height:0;di
 .learning-shortcuts>a{color:var(--blue);}.learning-shortcuts>small{color:var(--muted);}.shortcut-task-list{width:100%;max-height:110px;overflow:auto;}.shortcut-task-list label{display:flex;align-items:center;gap:8px;padding:4px 0;}
 @media(max-width:760px){.learning-center .learning-center-shell{grid-template-columns:1fr;padding:12px;gap:12px;}.learning-center .learning-center-nav{position:static;flex-direction:row;flex-wrap:wrap;padding:8px;}.learning-center-nav strong{width:100%;}.learning-center #spaceContent,.learning-center #activityBanner,.learning-center #storageNotice{grid-column:1;}.workspace-primary{gap:16px;padding:12px;}}
 @media(max-width:760px){.learning-center .learning-center-nav{grid-row:auto;}.plan-task-row,.plan-top-header,.kf-toolbar{flex-wrap:wrap;gap:12px;}.kf-actions{flex-wrap:wrap;}.task-actions-group{flex-wrap:wrap;}}
+.analysis-sidebar > details.panel { padding: 18px; margin-top: 16px; }
+.analysis-sidebar > details.panel > summary { cursor: pointer; font-weight: 650; }
+.analysis-sidebar > details.panel p { font-size: 13px; line-height: 1.7; color: var(--muted, #64748b); }
+.analysis-sidebar > details.panel label { display: flex; flex-direction: column; gap: 7px; margin: 14px 0; font-size: 13px; }
+.analysis-sidebar > details.panel label:has(input[type="checkbox"]) { flex-direction: row; align-items: flex-start; }
+.analysis-sidebar > details.panel input:not([type="checkbox"]) { width: 100%; min-width: 0; box-sizing: border-box; padding: 9px 10px; border: 1px solid var(--line, #cad5e2); border-radius: 9px; background: var(--surface, #fff); color: inherit; font: inherit; }
+.analysis-sidebar > details.panel input[type="checkbox"] { flex: 0 0 auto; margin-top: 3px; }
+.analysis-main .panel small { display: block; margin: 6px 0; color: var(--muted, #64748b); }

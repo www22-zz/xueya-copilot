@@ -106,8 +106,11 @@ def create_app(config: Config | None = None, *, provider=None, start_jobs=True):
         if platform:
             from .practice_analysis import PracticeAnalysis
             app.state.practice_analysis = PracticeAnalysis(platform, app.state.provider, config)
+            from .analysis_schedule import AnalysisSchedule
+            app.state.analysis_schedule=AnalysisSchedule(app.state.practice_analysis)
         if platform and start_jobs:
             platform.jobs.start()
+            app.state.analysis_schedule.start()
         async with AsyncExitStack() as resources:
             try:
                 if isinstance(app.state.provider, MimoProvider):
@@ -115,6 +118,7 @@ def create_app(config: Config | None = None, *, provider=None, start_jobs=True):
                 yield
             finally:
                 if platform:
+                    await app.state.analysis_schedule.stop()
                     await platform.close()
     app = FastAPI(title="学涯 Copilot API", version="2.0.0", lifespan=lifespan, docs_url=None, redoc_url=None)
     app.add_middleware(BudgetMiddleware, config=config)

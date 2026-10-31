@@ -52,7 +52,16 @@ class PracticeAnalysis:
             return self.p.jobs.get(row['id'], scope.user_id)
         return None
 
-    def submit(self, account, value, *, chat=False):
+    def capture(self, account, request, now=None, window_start=None):
+        from .analysis_sources import enrich, source_options
+        scope=self.scope(account)
+        generated=getattr(self,'generated_catalog',lambda account:[])(account)
+        snapshot=build_snapshot(bank()['questions']+generated,self.practice.events(scope),self.practice.state(account),request,now,window_start)
+        snapshot=enrich(self.p,account,snapshot,source_options(request))
+        snapshot['filters']=request
+        return snapshot
+
+    def submit(self, account, value, *, chat=False, captured=None):
         scope = self.scope(account)
         job_type = CHAT_JOB if chat else REPORT_JOB
         key = value.get('idempotencyKey')
@@ -63,11 +72,24 @@ class PracticeAnalysis:
             report = self.report(account, request['reportId'])
         else:
             request = filters(value)
+            from .analysis_sources import source_options
+            request.update(source_options(value))
         # Idempotency and the one-active-job rule share the same SQLite transaction.
         with self.p.db.transaction():
             existing = self.prior(scope, job_type, key, request)
             if existing:
                 return existing
+            snapshot_key=None
+            if not chat:
+                from .analysis_sources import content_fingerprint
+                snapshot=captured or self.capture(account,request)
+                require(snapshot['stats']['practicedQuestions']>0 or snapshot['hasNonPracticeActivity'],'ANALYSIS_NO_RECORDS')
+                snapshot_key=content_fingerprint(snapshot)
+                old=self.p.db.one("SELECT id FROM jobs WHERE user_id=? AND course_id=? AND type=? AND json_extract(input,'$.snapshotKey')=? ORDER BY created_at LIMIT 1",(scope.user_id,scope.course_id,REPORT_JOB,snapshot_key))
+                if old:
+                    prior_job=self.p.jobs.get(old['id'],scope.user_id)
+                    require(prior_job['status'] not in ACTIVE,'ANALYSIS_BUSY')
+                    return prior_job
             require(bool(self.config.api_key), 'AI_UNAVAILABLE')
             active = self.p.db.one("SELECT id FROM jobs WHERE user_id=? AND type IN (?,?) AND status IN ('queued','running','cancelling')",
                                    (scope.user_id, REPORT_JOB, CHAT_JOB))
@@ -76,10 +98,7 @@ class PracticeAnalysis:
                 args = {'request': request, 'snapshot': report['snapshot'], 'report': report['analysis'],
                         'conversation': report.get('conversation', [])[-6:]}
             else:
-                generated = getattr(self, 'generated_catalog', lambda account: [])(account)
-                snapshot = build_snapshot(bank()['questions'] + generated, self.practice.events(scope), self.practice.state(account), request)
-                require(snapshot['stats']['practicedQuestions'] > 0, 'ANALYSIS_NO_RECORDS')
-                args = {'request': request, 'snapshot': snapshot, 'reportId': 'analysis-' + str(uuid4())}
+                args = {'request': request, 'snapshot': snapshot, 'snapshotKey':snapshot_key,'reportId': 'analysis-' + str(uuid4())}
             return self.p.jobs.submit(scope.user_id, {'type': job_type, 'courseId': scope.course_id, 'input': args,
                                                       'resource': 'api', 'maxAttempts': 1, 'idempotencyKey': key})
 

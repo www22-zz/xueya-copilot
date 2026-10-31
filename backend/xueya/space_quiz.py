@@ -1,7 +1,7 @@
 """One private Question/Attempt/Evaluation service for chat and practice views."""
 import copy
 import re
-from .common import AppError, digest, identifier, require, utc_now
+from .common import AppError, digest, dumps, identifier, require, utc_now
 from .rag_api import borrowed_api_permit
 from .study_space_service import StudySpaceService, generate_id
 
@@ -150,6 +150,36 @@ class SpaceQuiz:
             self.p.repo.put(scope,'attempt',attempt['id'],attempt,0)
             return self.public_attempt(attempt)
         return self.receipt(scope,value.get('operationId'),value,save)
+
+    def submit_fixed(self,account,value):
+        """Bridge fixed subjective questions to the same immutable assessment chain.
+
+        Old self scores remain self scores. No client rubric or claimed score is
+        accepted, no code is executed, and an unseen original PDF is not inferred.
+        """
+        from .practice_bank import bank,question as fixed_question
+        from .practice_catalog import exam_bank,exam_question
+        original_id=identifier(value.get('questionId'))
+        fixed=fixed_question(original_id) or exam_question(original_id)
+        require(fixed and fixed['type'] in ('short','code'),'SUBJECTIVE_QUESTION_REQUIRED')
+        version=exam_bank()['version'] if fixed.get('bankSource')=='exam408' else bank()['version']
+        question_id='fixed-'+digest([original_id,version])[:40]
+        scope=self.scope(account)
+        with self.p.db.transaction():
+            if not self.p.repo.read(scope,'question',question_id):
+                rubric=[]
+                if fixed.get('selfScoreMode')!='mastery':
+                    rubric=[{'id':p['id'],'description':p['label']+'：'+p['reference'],'points':p['points']} for p in fixed.get('parts',[])]
+                reference=fixed.get('explanation','')+'\n'+str(fixed.get('answer',''))
+                if fixed.get('solutions'):reference+='\n'+dumps(fixed['solutions'])
+                question={'id':question_id,'type':'short','subject':fixed.get('subject','计算机基础'),
+                    'prompt':fixed['title']+'\n'+fixed.get('prompt','')+'\n'+'\n'.join(p['label'] for p in fixed.get('parts',[])),
+                    'explanation':reference,'rubric':rubric,'sourceType':'fixed-reference','originalQuestionId':original_id,
+                    'sourceRevision':version,'createdAt':utc_now(),
+                    'limitations':['AI仅使用保存的文字题干和参考，不运行代码，也没有读取嵌入原卷PDF的图或完整条件。参考点评不能冒充官方阅卷。']}
+                self.p.repo.put(scope,'question',question_id,question,0)
+            row=self.question(account,question_id)
+            return self.submit_attempt(account,{'questionId':question_id,'questionRevision':row['revision'],'answer':value.get('answer'),'operationId':value.get('operationId')})
 
     def review(self,account,attempt_id,value,*,manual=False):
         scope=self.scope(account)

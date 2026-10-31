@@ -1,0 +1,605 @@
+[
+  {
+    "id": "cs-ds-algo",
+    "title": "数据结构与高频算法精析（清华大学公开课）",
+    "category": "theory",
+    "categoryName": "核心理论 / 408",
+    "level": "进阶必修",
+    "badge": "408 核心 · 清华名课",
+    "instructor": "清华大学计算机系 · 邓俊辉团队",
+    "duration": "12 课时 · 约 4.5 小时",
+    "bvid": "BV1b7411N798",
+    "coverGradient": "linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)",
+    "coverIcon": "tree",
+    "description": "全网经典清华数据结构公开课：围绕线性表、树与二叉树、图论、散列表及动态规划，剖析核心底层原理与大厂面试高频算法。",
+    "tags": [
+      "二叉树",
+      "红黑树",
+      "图算法",
+      "动态规划",
+      "复杂度分析"
+    ],
+    "episodes": [
+      {
+        "id": "ds-ep-1",
+        "title": "第 01 讲：绪论与大 O 渐近复杂度分析",
+        "duration": "18:30",
+        "bvid": "BV1b7411N798",
+        "bpage": 1,
+        "videoUrl": "",
+        "summary": "深入理解时间复杂度与空间复杂度，区分最坏情况、平均情况与均摊复杂度。",
+        "keyPoints": [
+          "大 O 表示法",
+          "对数阶 O(log n)",
+          "空间换时间权衡"
+        ],
+        "copilotPrompts": [
+          "二叉搜索树查找的时间复杂度为什么是 O(log n)？",
+          "什么是均摊时间复杂度，动态数组扩容时是如何计算的？",
+          "在什么情况下算法的空间复杂度会成为主要瓶颈？"
+        ]
+      },
+      {
+        "id": "ds-ep-2",
+        "title": "第 02 讲：树与二叉树：遍历、AVL 平衡树与红黑树",
+        "duration": "24:15",
+        "bvid": "BV1b7411N798",
+        "bpage": 4,
+        "videoUrl": "",
+        "summary": "剖析二叉搜索树的中序遍历特性，AVL 树失衡四种旋转（LL/RR/LR/RL），以及红黑树五大性质。",
+        "keyPoints": [
+          "二叉搜索树",
+          "AVL 单双旋",
+          "红黑树染色与旋转"
+        ],
+        "copilotPrompts": [
+          "平衡二叉树在失衡时，LL 与 LR 旋转的具体步骤是什么？",
+          "红黑树相比 AVL 树为什么在插入和删除频繁的场景更具优势？",
+          "如何在不使用递归的情况下手写二叉树的前序和中序遍历？"
+        ]
+      },
+      {
+        "id": "ds-ep-3",
+        "title": "第 03 讲：图论实战：邻接表、BFS/DFS 与拓扑排序",
+        "duration": "22:40",
+        "bvid": "BV1b7411N798",
+        "bpage": 6,
+        "videoUrl": "",
+        "summary": "图的表示方式对比，广度优先与深度优先搜索的底层队列/栈应用，有向无环图（DAG）检测与拓扑排序。",
+        "keyPoints": [
+          "邻接矩阵与邻接表",
+          "BFS 最短路",
+          "DAG 环检测与拓扑排序"
+        ],
+        "copilotPrompts": [
+          "如何利用拓扑排序判断一个有向图是否存在循环依赖？",
+          "Dijkstra 最短路径算法为什么不能处理包含负权边的图？",
+          "广度优先搜索（BFS）为什么能保证无权图中的最短路径？"
+        ]
+      },
+      {
+        "id": "ds-ep-4",
+        "title": "第 04 讲：动态规划进阶：状态定义与转移方程推导",
+        "duration": "26:50",
+        "bvid": "BV1b7411N798",
+        "bpage": 11,
+        "videoUrl": "",
+        "summary": "从斐波那契到 0-1 背包、完全背包，掌握重叠子问题、最优子结构与状态压缩技巧。",
+        "keyPoints": [
+          "重叠子问题",
+          "最优子结构",
+          "滚动数组空间压缩"
+        ],
+        "copilotPrompts": [
+          "动态规划与贪心算法的核心区别是什么？",
+          "0-1 背包问题中，为什么一维数组优化时内层循环必须逆序遍历？",
+          "如何系统化推导最长公共子序列（LCS）的状态转移方程？"
+        ]
+      }
+    ],
+    "platform": true,
+    "sourceType": "platform",
+    "verification": "legacy-unverified"
+  },
+  {
+    "id": "cs-arch-sys",
+    "title": "计算机组成原理与体系结构深度精析（哈工大公开课）",
+    "category": "theory",
+    "categoryName": "核心理论 / 408",
+    "level": "进阶必修",
+    "badge": "408 核心 · 硬件底座",
+    "instructor": "哈尔滨工业大学 · 刘宏伟团队",
+    "duration": "12 课时 · 约 5.0 小时",
+    "bvid": "BV1WW411Q7G5",
+    "coverGradient": "linear-gradient(135deg, #1e293b 0%, #475569 100%)",
+    "coverIcon": "cpu",
+    "description": "国家级精品课程哈工大计组公开课：深入冯·诺依曼架构、机器级数据表示、主存与 Cache 映射、指令系统与寻址、CPU 流水线冒险以及总线与中断系统。",
+    "tags": [
+      "冯诺依曼",
+      "补码与浮点",
+      "Cache映射",
+      "指令系统",
+      "流水线冒险",
+      "中断与DMA"
+    ],
+    "platform": true,
+    "episodes": [
+      {
+        "id": "arch-ep-1",
+        "title": "第 01 讲：计算机系统概述：冯·诺依曼架构与性能度量",
+        "duration": "22:10",
+        "bvid": "BV1WW411Q7G5",
+        "bpage": 1,
+        "videoUrl": "",
+        "summary": "冯·诺依曼计算机五大组成部分，存储程序概念，主频、CPI、MIPS 与 FLOPS 性能度量指标。",
+        "keyPoints": [
+          "冯诺依曼体系",
+          "存储程序工作方式",
+          "CPI与MIPS计算"
+        ],
+        "copilotPrompts": [
+          "冯·诺依曼体系结构的核心特点是什么，指令与数据在存储器中是如何区分的？",
+          "CPI（Cycles Per Instruction）和 MIPS 指标在评估 CPU 性能时有哪些局限性？",
+          "计算机中的字长（Word Length）是如何影响寻址范围和计算精度的？"
+        ]
+      },
+      {
+        "id": "arch-ep-2",
+        "title": "第 02 讲：数据的机器级表示：定点数、浮点数与 IEEE 754 标准",
+        "duration": "26:40",
+        "bvid": "BV1WW411Q7G5",
+        "bpage": 8,
+        "videoUrl": "",
+        "summary": "原码、反码、补码与移码变换，溢出判跳逻辑（双符号位法），IEEE 754 单双精度浮点数规格化与阶码偏置。",
+        "keyPoints": [
+          "补码算术加减法",
+          "双符号位溢出判断",
+          "IEEE 754 浮点标准与特殊值"
+        ],
+        "copilotPrompts": [
+          "为什么计算机底层的定点整数普遍采用补码表示而不是原码？",
+          "IEEE 754 单精度浮点数中，阶码为什么采用移码（偏置常数 127）表示？",
+          "浮点数的非规格化数（Subnormal Numbers）是为了解决什么计算精度问题？"
+        ]
+      },
+      {
+        "id": "arch-ep-3",
+        "title": "第 03 讲：存储系统与 Cache 映射：直接、全相联与组相联",
+        "duration": "28:15",
+        "bvid": "BV1WW411Q7G5",
+        "bpage": 24,
+        "videoUrl": "",
+        "summary": "SRAM 与 DRAM 原理对比，主存芯片扩展（位扩展与字扩展），Cache-主存地址映射机制与命中率计算，写直达与写回策略。",
+        "keyPoints": [
+          "Cache 三种映射方式",
+          "Tag 标记位计算",
+          "写分配与非写分配"
+        ],
+        "copilotPrompts": [
+          "组相联映射相比全相联和直接映射，是如何在硬件冲突与开销间取得平衡的？",
+          "已知主存容量、Cache 容量和块大小，如何准确计算主存地址中的 Tag、Index 与 Offset 位数？",
+          "Cache 的写回策略（Write Back）为什么必须配合 Dirty Bit（脏位）使用？"
+        ]
+      },
+      {
+        "id": "arch-ep-4",
+        "title": "第 04 讲：指令系统与寻址方式：CISC 与 RISC 架构对比",
+        "duration": "24:30",
+        "bvid": "BV1WW411Q7G5",
+        "bpage": 36,
+        "videoUrl": "",
+        "summary": "指令字格式与扩展操作码设计，立即寻址、直接寻址、寄存器寻址、基址与变址寻址，CISC 与 RISC 指令集哲学。",
+        "keyPoints": [
+          "扩展操作码设计",
+          "基址寻址 vs 变址寻址",
+          "RISC 加载/存储架构"
+        ],
+        "copilotPrompts": [
+          "变址寻址和基址寻址在硬件实现和面向的编程场景上有何根本区别？",
+          "采用扩展操作码技术时，如何设计满足短指令与长指令共存的二叉树前缀编码？",
+          "为什么现代高性能 CPU（如 x86）在内部会将复杂 CISC 指令译码为微操作（uOPs）执行？"
+        ]
+      },
+      {
+        "id": "arch-ep-5",
+        "title": "第 05 讲：中央处理器与指令流水线：数据通路与流水线冒险",
+        "duration": "29:50",
+        "bvid": "BV1WW411Q7G5",
+        "bpage": 48,
+        "videoUrl": "",
+        "summary": "单周期与多周期 CPU 数据通路设计，经典五级流水线（IF/ID/EX/MEM/WB），结构冒险、数据冒险（RAW/WAR/WAW）及分支预测处理。",
+        "keyPoints": [
+          "五级指令流水线",
+          "写后读（RAW）数据相关",
+          "数据旁路转发与分支预测"
+        ],
+        "copilotPrompts": [
+          "流水线中的结构冒险、数据冒险和控制冒险分别是如何产生的？",
+          "旁路转发技术（Forwarding / Bypassing）是如何在无需暂停流水线的情况下解决 RAW 冒险的？",
+          "为什么深入的分支预测失败会导致现代超标量 CPU 产生巨大的性能惩罚？"
+        ]
+      },
+      {
+        "id": "arch-ep-6",
+        "title": "第 06 讲：总线系统与 I/O 中断：程序中断与 DMA 数据传送",
+        "duration": "23:45",
+        "bvid": "BV1WW411Q7G5",
+        "bpage": 60,
+        "videoUrl": "",
+        "summary": "总线仲裁方式（链式查询、计数器定时查询、独立请求），程序查询、中断请求响应与中断屏蔽字，DMA 控制器与主存直接高速数据交换。",
+        "keyPoints": [
+          "中断响应周期与硬件隐指令",
+          "多重中断与屏蔽字",
+          "DMA 周期挪用与总线控制权"
+        ],
+        "copilotPrompts": [
+          "CPU 响应外部中断必须满足哪些先决条件，中断服务程序入口地址是如何获取的？",
+          "多重中断系统中，中断优先级是如何通过硬件屏蔽字进行动态调整的？",
+          "DMA 控制方式与中断控制方式在数据传输开销上有何本质不同？"
+        ]
+      }
+    ],
+    "sourceType": "platform",
+    "verification": "legacy-unverified"
+  },
+  {
+    "id": "cs-os-kernel",
+    "title": "操作系统深度剖析：进程、内存与 Linux 内核（哈工大公开课）",
+    "category": "theory",
+    "categoryName": "核心理论 / 408",
+    "level": "进阶必修",
+    "badge": "计算机底座 · 哈工大名课",
+    "instructor": "哈尔滨工业大学 · 李治军团队",
+    "duration": "10 课时 · 约 4.0 小时",
+    "bvid": "BV1d4411v7UX",
+    "coverGradient": "linear-gradient(135deg, #0f172a 0%, #334155 100%)",
+    "coverIcon": "layers",
+    "description": "哈工大经典操作系统公开课：直击进程与线程模型、CPU 上下文切换、虚拟内存分页置换、以及 Linux 0.11 内核源码。",
+    "tags": [
+      "进程线程",
+      "虚拟内存",
+      "死锁预防",
+      "系统调用",
+      "Linux 内核"
+    ],
+    "episodes": [
+      {
+        "id": "os-ep-1",
+        "title": "第 01 讲：进程与线程模型：状态变迁与上下文切换",
+        "duration": "20:10",
+        "bvid": "BV1d4411v7UX",
+        "bpage": 1,
+        "videoUrl": "",
+        "summary": "PCB 进程控制块结构，用户态与内核态切换，进程调度器运作机制与时间片轮转。",
+        "keyPoints": [
+          "PCB 与 TCB",
+          "上下文切换开销",
+          "用户态内核态转换"
+        ],
+        "copilotPrompts": [
+          "为什么线程上下文切换的开销远小于进程上下文切换？",
+          "系统调用发生时，CPU 寄存器和堆栈是如何保存与恢复的？",
+          "Linux 默认的完全公平调度器（CFS）底层是基于什么数据结构实现的？"
+        ]
+      },
+      {
+        "id": "os-ep-2",
+        "title": "第 02 讲：虚拟内存与分页管理：TLB 与缺页中断",
+        "duration": "25:15",
+        "bvid": "BV1d4411v7UX",
+        "bpage": 6,
+        "videoUrl": "",
+        "summary": "多级页表设计原理、MMU 地址翻译流程、快表（TLB）加速与 LRU 页面置换算法。",
+        "keyPoints": [
+          "多级页表",
+          "MMU 与 TLB",
+          "缺页异常与写时复制 (COW)"
+        ],
+        "copilotPrompts": [
+          "为什么 64 位操作系统普遍采用多级页表而不是单级大页表？",
+          "fork() 进程时写时复制（Copy-On-Write）底层是如何通过页表权限实现的？",
+          "TLB 缓存未命中（TLB Miss）时硬件和内核各做了哪些工作？"
+        ]
+      },
+      {
+        "id": "os-ep-3",
+        "title": "第 03 讲：并发互斥、条件变量与死锁预防策略",
+        "duration": "21:30",
+        "bvid": "BV1d4411v7UX",
+        "bpage": 10,
+        "videoUrl": "",
+        "summary": "互斥锁、自旋锁、读写锁性能对比，死锁产生的四大必要条件与银行家算法实测。",
+        "keyPoints": [
+          "互斥锁 vs 自旋锁",
+          "死锁四大必要条件",
+          "锁排序与活锁检测"
+        ],
+        "copilotPrompts": [
+          "在什么场景下应该使用自旋锁而不是互斥锁？",
+          "银行家算法是如何在分配资源前判断系统是否处于安全状态的？",
+          "如何通过静态锁排序彻底规避并发程序中的循环等待死锁？"
+        ]
+      }
+    ],
+    "platform": true,
+    "sourceType": "platform",
+    "verification": "legacy-unverified"
+  },
+  {
+    "id": "cs-network-http",
+    "title": "计算机网络原理：透视 HTTP/TCP/IP 协议栈（王道408考研微课）",
+    "category": "theory",
+    "categoryName": "核心理论 / 408",
+    "level": "体系精讲",
+    "badge": "通信基石 · 王道精讲",
+    "instructor": "计算机网络教研组",
+    "duration": "8 课时 · 约 3.2 小时",
+    "bvid": "BV1c4411d7jb",
+    "coverGradient": "linear-gradient(135deg, #047857 0%, #10b981 100%)",
+    "coverIcon": "link",
+    "description": "彻底搞懂 TCP 三次握手与四次挥手、滑动窗口拥塞控制、DNS 解析流程与 HTTP/2/3 演进。",
+    "tags": [
+      "TCP/IP",
+      "三次握手",
+      "拥塞控制",
+      "HTTP/3 QUIC",
+      "DNS解析"
+    ],
+    "episodes": [
+      {
+        "id": "net-ep-1",
+        "title": "第 01 讲：TCP 核心机制：三次握手与四次挥手全解析",
+        "duration": "19:45",
+        "bvid": "BV1c4411d7jb",
+        "bpage": 45,
+        "videoUrl": "",
+        "summary": "SYN、ACK、FIN 标志位详解，为什么不是两次握手，TIME_WAIT 状态（2MSL）的必要性。",
+        "keyPoints": [
+          "序号与确认号",
+          "为什么不能两次握手",
+          "TIME_WAIT 与 SO_REUSEADDR"
+        ],
+        "copilotPrompts": [
+          "为什么 TCP 建立连接需要三次握手，而关闭连接需要四次挥手？",
+          "TIME_WAIT 状态为什么要等待 2MSL 时间才彻底释放？",
+          "当网络上出现大量 CLOSE_WAIT 状态的连接时，通常是什么原因？"
+        ]
+      },
+      {
+        "id": "net-ep-2",
+        "title": "第 02 讲：TCP 可靠传输：滑动窗口、重传与拥塞控制",
+        "duration": "23:10",
+        "bvid": "BV1c4411d7jb",
+        "bpage": 48,
+        "videoUrl": "",
+        "summary": "流量控制（滑动窗口）与拥塞控制（慢启动、拥塞避免、快重传、快恢复）协同运作。",
+        "keyPoints": [
+          "滑动窗口机制",
+          "慢启动门限",
+          "快重传与 SACK"
+        ],
+        "copilotPrompts": [
+          "TCP 流量控制与拥塞控制有什么根本区别？",
+          "快重传机制触发的条件是什么，为什么收到 3 个重复 ACK 就要重传？",
+          "现代 BBR 拥塞控制算法相比传统基于丢包的 Cubic 有何优势？"
+        ]
+      },
+      {
+        "id": "net-ep-3",
+        "title": "第 03 讲：HTTP 演进：从 HTTP/1.1、HTTP/2 到 HTTP/3 QUIC",
+        "duration": "24:00",
+        "bvid": "BV1c4411d7jb",
+        "bpage": 55,
+        "videoUrl": "",
+        "summary": "HTTP/1.1 管道化限制、HTTP/2 二进制分帧与头部压缩（HPACK）、HTTP/3 基于 UDP 的 QUIC 协议。",
+        "keyPoints": [
+          "头部阻塞 (HOL)",
+          "二进制分帧",
+          "QUIC 0-RTT 握手"
+        ],
+        "copilotPrompts": [
+          "HTTP/2 解决了应用层队头阻塞，为什么依然存在 TCP 层队头阻塞？",
+          "HTTP/3 的 QUIC 协议是如何在 UDP 基础上保证数据可靠传输的？",
+          "HTTPS 的 TLS 1.3 握手相比 TLS 1.2 是如何减少往返时间（RTT）的？"
+        ]
+      }
+    ],
+    "platform": true,
+    "sourceType": "platform",
+    "verification": "legacy-unverified"
+  },
+  {
+    "id": "cs-prog-fullstack",
+    "title": "现代 TypeScript 与前端工程架构实战精讲",
+    "category": "programming",
+    "categoryName": "编程语言与全栈",
+    "level": "实战进阶",
+    "badge": "高频全栈 · 源码精读",
+    "instructor": "资深全栈研发专家",
+    "duration": "8 课时 · 约 3.5 小时",
+    "bvid": "BV14Z4y1u7vy",
+    "coverGradient": "linear-gradient(135deg, #4338ca 0%, #6366f1 100%)",
+    "coverIcon": "spark",
+    "description": "掌握 JS 引擎事件循环、闭包与原型链、TypeScript 类型体操、组件状态管理与现代化前端工程。",
+    "tags": [
+      "TypeScript",
+      "事件循环",
+      "Promise",
+      "闭包",
+      "微任务"
+    ],
+    "episodes": [
+      {
+        "id": "ts-ep-1",
+        "title": "第 01 讲：JS 运行时底层：事件循环、宏任务与微任务",
+        "duration": "19:20",
+        "bvid": "BV14Z4y1u7vy",
+        "bpage": 1,
+        "videoUrl": "",
+        "summary": "V8 引擎调用栈、任务队列、Promise 微任务与 DOM 渲染时机全流程追踪。",
+        "keyPoints": [
+          "调用栈与执行上下文",
+          "宏任务 vs 微任务",
+          "async/await 转换本质"
+        ],
+        "copilotPrompts": [
+          "请通俗解释浏览器事件循环中宏任务与微任务的执行次序。",
+          "Promise 中的 then 回调与 setImmediate/setTimeout 执行优先级是什么？",
+          "为什么在微任务中执行无限循环会导致页面彻底冻结？"
+        ]
+      },
+      {
+        "id": "ts-ep-2",
+        "title": "第 02 讲：TypeScript 高级类型体操与泛型推导",
+        "duration": "25:40",
+        "bvid": "BV14Z4y1u7vy",
+        "bpage": 8,
+        "videoUrl": "",
+        "summary": "条件类型 infer 关键字、分布式条件类型、模板字面量类型与手写 DeepPartial。",
+        "keyPoints": [
+          "infer 模式匹配",
+          "分布式条件类型",
+          "索引访问与映射类型"
+        ],
+        "copilotPrompts": [
+          "TypeScript 中的 infer 关键字在类型推断中是如何工作的？",
+          "分布式条件类型在联合类型上的展开规则是什么？",
+          "如何手写一个递归将对象所有属性变为可选的 DeepPartial 类型？"
+        ]
+      }
+    ],
+    "platform": true,
+    "sourceType": "platform",
+    "verification": "legacy-unverified"
+  },
+  {
+    "id": "cs-sys-database",
+    "title": "MySQL 索引优化与底层存储引擎深度解析",
+    "category": "architecture",
+    "categoryName": "系统架构与数据库",
+    "level": "核心架构",
+    "badge": "数据库调优 · 大厂必问",
+    "instructor": "知名数据库架构专家",
+    "duration": "8 课时 · 约 3.0 小时",
+    "bvid": "BV12b411K7Zu",
+    "coverGradient": "linear-gradient(135deg, #c2410c 0%, #ea580c 100%)",
+    "coverIcon": "target",
+    "description": "深入 InnoDB 存储引擎、B+ 树索引结构、事务 ACID、MVCC 隔离机制与慢 SQL 调优方法论。",
+    "tags": [
+      "MySQL",
+      "InnoDB",
+      "B+树",
+      "MVCC",
+      "索引覆盖",
+      "死锁排查"
+    ],
+    "episodes": [
+      {
+        "id": "db-ep-1",
+        "title": "第 01 讲：InnoDB 架构与 B+ 树索引底层设计",
+        "duration": "22:15",
+        "bvid": "BV12b411K7Zu",
+        "bpage": 1,
+        "videoUrl": "",
+        "summary": "为什么 MySQL 选择 B+ 树而不是哈希表、平衡二叉树或 B 树？聚簇索引与二级索引回表。",
+        "keyPoints": [
+          "B+ 树结构",
+          "聚簇索引 vs 二级索引",
+          "覆盖索引与最左匹配原则"
+        ],
+        "copilotPrompts": [
+          "为什么 MySQL 索引底层选择 B+ 树而不是红黑树或普通 B 树？",
+          "什么是覆盖索引，它是如何避免二级索引“回表”查询开销的？",
+          "最左前缀匹配原则在联合索引中的底层原理是什么？"
+        ]
+      },
+      {
+        "id": "db-ep-2",
+        "title": "第 02 讲：事务隔离与 MVCC：多版本并发控制原理",
+        "duration": "26:00",
+        "bvid": "BV12b411K7Zu",
+        "bpage": 14,
+        "videoUrl": "",
+        "summary": "ReadView 生成机制、隐藏列（trx_id, roll_pointer）、Undo Log 版本链与可重复读实现。",
+        "keyPoints": [
+          "ReadView 规则",
+          "Undo Log 版本链",
+          "快照读 vs 当前读"
+        ],
+        "copilotPrompts": [
+          "InnoDB 在“可重复读（RR）”隔离级别下是如何借助 MVCC 解决不可重复读的？",
+          "快照读（Snapshot Read）和当前读（Current Read）有什么本质区别？",
+          "间隙锁（Gap Lock）和临键锁（Next-Key Lock）是如何在当前读下避免幻读的？"
+        ]
+      }
+    ],
+    "platform": true,
+    "sourceType": "platform",
+    "verification": "legacy-unverified"
+  },
+  {
+    "id": "cs-ai-agent",
+    "title": "大语言模型与 Agent 智能体架构实战精析",
+    "category": "ai-agent",
+    "categoryName": "AI 与智能体前沿",
+    "level": "前沿实战",
+    "badge": "前沿热点 · 智能体设计",
+    "instructor": "AI 平台核心研发团队",
+    "duration": "8 课时 · 约 3.6 小时",
+    "bvid": "BV12b421p7eK",
+    "coverGradient": "linear-gradient(135deg, #701a75 0%, #a21caf 100%)",
+    "coverIcon": "spark",
+    "description": "拆解 LLM Prompt 工程、RAG 向量检索增强、ReAct 规划推理模式及 MCP 工具协议规范。",
+    "tags": [
+      "LLM",
+      "RAG 检索",
+      "Agent 智能体",
+      "ReAct",
+      "MCP协议",
+      "Function Calling"
+    ],
+    "episodes": [
+      {
+        "id": "ai-ep-1",
+        "title": "第 01 讲：RAG 检索增强架构：文本切分、嵌入与重排",
+        "duration": "21:40",
+        "bvid": "BV12b421p7eK",
+        "bpage": 1,
+        "videoUrl": "",
+        "summary": "Chunking 切分策略、Embedding 向量表征、ANN 向量索引与 Rerank 重排精细化召回。",
+        "keyPoints": [
+          "Chunking 策略",
+          "向量余弦相似度",
+          "混合检索 (Hybrid Search) 与 Rerank"
+        ],
+        "copilotPrompts": [
+          "在构建 RAG 知识库时，如何确定最佳的文档分块大小（Chunk Size）与重叠（Overlap）？",
+          "向量检索结合 BM25 关键词检索的混合检索（Hybrid Search）相比单一向量检索有何优势？",
+          "RAG 中的幻觉问题（Hallucination）通常可以通过哪些校验流程进行缓解？"
+        ]
+      },
+      {
+        "id": "ai-ep-2",
+        "title": "第 02 讲：Agent 规划与工具调用：ReAct 模式与 MCP 协议",
+        "duration": "27:10",
+        "bvid": "BV12b421p7eK",
+        "bpage": 3,
+        "videoUrl": "",
+        "summary": "Thought-Action-Observation 闭环、结构化输出、异步工具执行与 Model Context Protocol (MCP)。",
+        "keyPoints": [
+          "ReAct 循环",
+          "MCP 协议规范",
+          "多 Agent 协同与任务反思"
+        ],
+        "copilotPrompts": [
+          "ReAct 智能体循环中，Thought、Action 与 Observation 是如何交替推进任务的？",
+          "Model Context Protocol（MCP）协议相较于传统的函数调用（Function Calling）解决了什么标准化痛点？",
+          "当 Agent 遇到工具调用失败时，应如何设计自反思（Self-Reflection）与重试纠错机制？"
+        ]
+      }
+    ],
+    "platform": true,
+    "sourceType": "platform",
+    "verification": "legacy-unverified"
+  }
+]

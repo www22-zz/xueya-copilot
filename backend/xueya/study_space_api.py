@@ -19,8 +19,10 @@ def install_study_space(app):
         async with previous(host):
             from .space_planning import ConversationPlanning
             from .space_quiz import SpaceQuiz
+            from .framework_jobs import FrameworkJobs
             host.state.conversation_planning=ConversationPlanning(host)
             host.state.space_quiz=SpaceQuiz(host)
+            host.state.framework_jobs=FrameworkJobs(host)
             yield
     app.router.lifespan_context=lifespan
 
@@ -47,6 +49,30 @@ def install_study_space(app):
         return srv
 
     # --- Today's Tasks & Continue Learning ---
+    @router.get('/courses')
+    async def courses(request: Request):
+        authorize(request)
+        from .course_records import CourseRecords
+        return success(**CourseRecords(app.state.platform).listing(account_id(request)))
+
+    @router.post('/courses/save')
+    async def save_course(request: Request):
+        authorize(request)
+        from .course_records import CourseRecords
+        return success(**CourseRecords(app.state.platform).save_course(account_id(request),await json_body(request,262144)))
+
+    @router.post('/courses/progress')
+    async def course_progress(request: Request):
+        authorize(request)
+        from .course_records import CourseRecords
+        return success(**CourseRecords(app.state.platform).record(account_id(request),await json_body(request,16384)))
+
+    @router.post('/courses/delete')
+    async def delete_course(request: Request):
+        authorize(request)
+        from .course_records import CourseRecords
+        return success(**CourseRecords(app.state.platform).delete_course(account_id(request),await json_body(request,16384)))
+
     @router.post('/chat/plan')
     async def chat_plan(request: Request):
         authorize(request)
@@ -160,6 +186,11 @@ def install_study_space(app):
         return success(syncedTasks=count)
 
     # --- Knowledge Framework Endpoints ---
+    @router.post('/framework/jobs')
+    async def framework_job(request: Request):
+        authorize(request)
+        return success(job=app.state.framework_jobs.submit(account_id(request),await json_body(request,16384)))
+
     @router.post("/framework/generate")
     async def generate_framework(request: Request):
         authorize(request)
@@ -173,7 +204,8 @@ def install_study_space(app):
     async def list_frameworks(request: Request):
         authorize(request)
         fws = service().list_frameworks(account_id(request))
-        return success(frameworks=fws)
+        jobs=[j for j in app.state.platform.jobs.list(service()._scope(account_id(request)).user_id) if j['type']=='space-framework']
+        return success(frameworks=fws,jobs=jobs[:20])
 
     @router.get("/framework/{framework_id}")
     async def get_framework(request: Request, framework_id: str):
@@ -196,6 +228,10 @@ def install_study_space(app):
         return success(deleted=ok)
 
     # --- Interactive Chat Quiz Endpoints ---
+    @router.post('/quiz/fixed-attempt')
+    async def fixed_subjective(request: Request):
+        authorize(request)
+        return success(attempt=app.state.space_quiz.submit_fixed(account_id(request),await json_body(request,32768)))
     @router.post('/chat/quiz')
     async def chat_quiz(request: Request):
         authorize(request)

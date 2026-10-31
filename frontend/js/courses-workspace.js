@@ -11,6 +11,14 @@
 
   const STORAGE_KEY = 'xueya-video-courses-v1';
   const PROGRESS_KEY = 'xueya-video-progress-v1';
+  let serverData=null,serverOwner=null,serverLoading=false;
+  const online=()=>typeof window!=='undefined'&&window.XueyaPlatform?.available;
+  const serverCurrent=()=>serverData&&serverOwner===getAccountId();
+  const operation=()=> 'course-'+(globalThis.crypto?.randomUUID?.()||Date.now()+'-'+Math.random().toString(36).slice(2));
+  async function api(path,data){
+    const response=await window.XueyaPlatform.spaceFetch('/api/learning/space/courses'+path,data?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)}:{});
+    const value=await response.json();if(!value.ok)throw new Error(value.error||'COURSE_NOT_SAVED');return value;
+  }
 
   // Built-in curated Computer Science courses with Bilibili authoritative lectures & online fallback
   const BUILTIN_COURSES = [
@@ -477,6 +485,7 @@
   }
 
   function getCustomCourses() {
+    if(serverCurrent())return serverData.courses.filter(c=>!c.platform);
     try {
       const key = getCustomStorageKey();
       let raw = localStorage.getItem(key);
@@ -499,6 +508,7 @@
   }
 
   function getProgress() {
+    if(serverCurrent())return serverData.progress;
     try {
       const key = getProgressStorageKey();
       let raw = localStorage.getItem(key);
@@ -543,8 +553,9 @@
     const localVideosMap = {}; // key: "courseId:epId" -> { url, name }
 
     function getAllCourses() {
+      if(serverCurrent())return serverData.courses;
       const custom = getCustomCourses();
-      return [...BUILTIN_COURSES, ...custom];
+      return [...BUILTIN_COURSES.map(c=>({...c,platform:true,verification:'legacy-unverified'})), ...custom];
     }
 
     function getFilteredCourses() {
@@ -710,7 +721,7 @@
       const localVideo = localVideosMap[localKey];
       const hasLocalVideo = Boolean(localVideo?.url);
       const videoSrc = localVideo?.url || currentEp?.videoUrl || '';
-      const bvid = currentEp?.bvid || course.bvid || 'BV1b7411N798';
+      const bvid = currentEp?.bvid || course.bvid || '';
       const bpage = currentEp?.bpage || 1;
 
       return `
@@ -734,8 +745,8 @@
           <!-- Multi-source Switcher Bar -->
           <div class="player-source-selector">
             <div class="source-pills">
-              <button type="button" class="source-pill ${activeSource === 'bilibili' ? 'active' : ''}" data-switch-source="bilibili" title="国内高速秒播，官方公开课全屏超清">
-                📺 名校权威公开课 (B站超清)
+              <button type="button" class="source-pill ${activeSource === 'bilibili' ? 'active' : ''}" data-switch-source="bilibili" title="原平台播放器提供播放，可能需要登录或受地区限制" ${bvid?'':'disabled'}>
+                📺 B站原站播放器
               </button>
               <button type="button" class="source-pill ${activeSource === 'html5' ? 'active' : ''}" data-switch-source="html5" title="播放电脑上的本地视频或直链">
                 🎬 本地视频 / HTML5 播放器
@@ -756,7 +767,7 @@
           <div class="player-main-layout">
             <div class="player-left-stage">
               <div class="video-screen-container">
-                ${activeSource === 'bilibili' ? `
+                ${activeSource === 'bilibili' && bvid ? `
                   <iframe id="csBilibiliPlayer" class="cs-bilibili-iframe" src="https://player.bilibili.com/player.html?bvid=${encodeURIComponent(bvid)}&page=${encodeURIComponent(bpage)}&high_quality=1&danmaku=0&autoplay=0" scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true" sandbox="allow-top-navigation allow-same-origin allow-forms allow-scripts"></iframe>
                 ` : activeSource === 'html5' ? `
                   ${videoSrc ? `
@@ -1019,11 +1030,16 @@
 
     function renderView() {
       const all = getAllCourses();
+      const route=typeof location!=='undefined'?location.hash.split('/'):[];
+      if(route[2]&&all.some(c=>c.id===decodeURIComponent(route[2]))){activeCourseId=decodeURIComponent(route[2]);activeEpisodeId=decodeURIComponent(route[3]||'')||all.find(c=>c.id===activeCourseId).episodes[0]?.id;}
       let activeCourse = null;
       if (activeCourseId) {
         activeCourse = all.find(c => c.id === activeCourseId);
       }
-      return (activeCourse ? renderPlayer(activeCourse) : renderCatalog()) + renderAddModal();
+      const restore=online()?'<p class="panel">课程与手动完成记录保存在当前账号。<button type="button" class="button button-small button-outline" data-import-local-courses>导入本账号的本机旧记录</button></p>':'';
+      const privateControl=activeCourse&&!activeCourse.platform&&online()?`<button type="button" class="button button-small button-outline" data-delete-private-course="${escapeHTML(activeCourse.id)}">删除本人私人课程</button>`:'';
+      const status=activeCourse?`<p class="panel">${activeCourse.platform?'平台课程':'本人私人课程'} · ${activeCourse.verification==='verified-metadata'?'原站元信息已核对；播放能力以播放器为准':'原站标题、作者和分集尚未核验'}。完成状态是手动确认，不表示掌握。官方嵌入播放器不提供本站可读的真实进度。</p>`:'';
+      return restore+status+privateControl+(activeCourse ? renderPlayer(activeCourse) : renderCatalog()) + renderAddModal();
     }
 
     function mount() {
@@ -1032,6 +1048,60 @@
       mountController?.abort();
       mountController = new AbortController();
       const listenerOptions = { signal: mountController.signal };
+      const player=document.getElementById('csVideoPlayer');
+      if(player&&online()&&serverCurrent()){
+        const courseId=activeCourseId,episodeId=activeEpisodeId,owner=getAccountId();let savingPosition=false,lastPosition=Date.now();
+        player.addEventListener('loadedmetadata',()=>{const prior=getProgress()[courseId]?.episodes?.[episodeId];if(prior?.seconds&&Number.isFinite(player.duration))player.currentTime=Math.min(prior.seconds,Math.max(0,player.duration-1));},{once:true,signal:mountController.signal});
+        const savePosition=async()=>{
+          if(savingPosition||owner!==getAccountId()||!Number.isFinite(player.currentTime))return;savingPosition=true;
+          try{const prior=getProgress()[courseId]?.episodes?.[episodeId];const value=await api('/progress',{courseId,episodeId,seconds:Math.round(player.currentTime),positionSource:'html5-observed',expectedRevision:prior?.revision||0,operationId:operation()});
+            if(owner!==getAccountId()||!serverCurrent())return;const c=serverData.progress[courseId]||={episodes:{}};c.episodes[episodeId]=value.progress;c.lastEpisodeId=episodeId;
+          }catch(error){toast?.('续播位置未保存：'+error.message);}finally{savingPosition=false;lastPosition=Date.now();}
+        };
+        player.addEventListener('pause',savePosition,listenerOptions);player.addEventListener('ended',savePosition,listenerOptions);
+        player.addEventListener('timeupdate',()=>{if(Date.now()-lastPosition>15000)savePosition();},listenerOptions);
+      }
+      container.addEventListener('click',async event=>{
+        const importButton=event.target.closest('[data-import-local-courses]');
+        const deleteButton=event.target.closest('[data-delete-private-course]');
+        if(!importButton&&!deleteButton)return;
+        const owner=getAccountId();
+        try{
+          if(deleteButton){
+            const course=getAllCourses().find(c=>c.id===deleteButton.dataset.deletePrivateCourse);
+            if(!confirm('删除本人私人课程？历史完成事件与备份继续保留。'))return;
+            await api('/delete',{courseId:course.id,expectedRevision:course.revision,operationId:operation()});
+            activeCourseId=null;activeEpisodeId=null;if(typeof location!=='undefined')location.hash='#space/courses';
+          }else{
+            if(owner==='local'){toast?.('匿名旧记录保持在本机；请先登录并确认数据归属后导入。');return;}
+            if(!confirm('仅导入当前账号键下的本机课程与进度，不包含匿名缓存；服务器已有记录优先。'))return;
+            importButton.disabled=true;
+            const localCourses=JSON.parse(localStorage.getItem(getCustomStorageKey())||'[]');
+            const localProgress=JSON.parse(localStorage.getItem(getProgressStorageKey())||'{}');
+            for(const course of localCourses){if(!getAllCourses().some(c=>c.id===course.id))await api('/save',{course,expectedRevision:0,operationId:'import-'+owner+'-'+course.id});}
+            const fresh=await api('');
+            for(const [courseId,record] of Object.entries(localProgress))for(const [episodeId,ep] of Object.entries(record.episodes||{})){
+              if(fresh.progress[courseId]?.episodes?.[episodeId]||!fresh.courses.some(c=>c.id===courseId&&c.episodes.some(e=>e.id===episodeId)))continue;
+              await api('/progress',{courseId,episodeId,completed:!!ep.completed,seconds:Math.max(0,Number(ep.seconds)||0),positionSource:'user-position',expectedRevision:0,operationId:'import-'+owner+'-'+courseId+'-'+episodeId});
+            }
+          }
+          const data=await api('');if(owner!==getAccountId())return;serverData=data;serverOwner=owner;toast?.('已保存，旧本机缓存继续保留');render?.();
+        }catch(error){toast?.('操作未完成：'+error.message);if(importButton)importButton.disabled=false;}
+      },listenerOptions);
+      if(online()&&!serverLoading&&!serverCurrent()){
+        serverLoading=true;const owner=getAccountId();
+        api('').then(data=>{if(owner!==getAccountId())return;serverData=data;serverOwner=owner;if(render)render();})
+          .catch(error=>toast?.('服务端课程未读取：'+error.message)).finally(()=>{serverLoading=false;});
+      }
+      if(typeof window!=='undefined'&&!mount._routeListener){
+        mount._routeListener=true;window.addEventListener('hashchange',()=>{
+          if(!location.hash.startsWith('#space/courses'))serverData=null;
+        });
+      }
+      const route=typeof location!=='undefined'?location.hash.split('/'):[];
+      if(route[2]&&getAllCourses().some(c=>c.id===decodeURIComponent(route[2]))){
+        activeCourseId=decodeURIComponent(route[2]);activeEpisodeId=decodeURIComponent(route[3]||'')||getAllCourses().find(c=>c.id===activeCourseId).episodes[0]?.id;
+      }
 
       // Draw canvas if in algo-demo mode
       if (activeSource === 'algo-demo') {
@@ -1122,9 +1192,17 @@
           const epId = toggleBtn.dataset.toggleEpComplete;
           if (activeCourseId && epId) {
             const currentProg = getProgress()[activeCourseId]?.episodes?.[epId]?.completed;
-            saveProgress(activeCourseId, epId, 0, !currentProg);
-            if (toast) toast(!currentProg ? '已标记为学完！' : '已重置学习状态');
-            if (render) render();
+            if(online()){
+              toggleBtn.disabled=true;
+              const courseId=activeCourseId,owner=getAccountId(),prior=getProgress()[courseId]?.episodes?.[epId];
+              api('/progress',{courseId,episodeId:epId,completed:!currentProg,expectedRevision:prior?.revision||0,operationId:operation()})
+                .then(value=>{if(owner!==getAccountId())return;const c=serverData.progress[courseId]||={episodes:{}};c.episodes[epId]=value.progress;c.lastEpisodeId=epId;toast?.('完成状态与计划已保存');if(render)render();})
+                .catch(error=>{toast?.('未保存：'+error.message);serverData=null;if(render)render();});
+            }else{
+              saveProgress(activeCourseId, epId, 0, !currentProg);
+              if (toast) toast(!currentProg ? '已标记为学完！' : '已重置学习状态');
+              if (render) render();
+            }
           }
           return;
         }
@@ -1189,7 +1267,7 @@
       }, listenerOptions);
 
       // Submit add course form
-      container.addEventListener('submit', e => {
+      container.addEventListener('submit', async e => {
         if (e.target.id === 'addCourseForm') {
           e.preventDefault();
           const name = document.getElementById('addCourseName')?.value?.trim();
@@ -1203,7 +1281,7 @@
           if (!name) return;
 
           // Parse BV id if user pasted a bilibili URL or BV id
-          let bvid = 'BV1b7411N798';
+          let bvid = '';
           const bvMatch = rawUrl.match(/(BV[a-zA-Z0-9]+)/i);
           if (bvMatch) {
             bvid = bvMatch[1];
@@ -1248,9 +1326,14 @@
             ]
           };
 
-          const customList = getCustomCourses();
-          customList.unshift(newCourse);
-          saveCustomCourses(customList);
+          if(online()){
+            const owner=getAccountId();
+            try{const saved=await api('/save',{course:newCourse,expectedRevision:0,operationId:operation()});
+              if(owner!==getAccountId())return;serverData.courses.push(saved.course);
+            }catch(error){toast?.('课程未保存：'+error.message);return;}
+          }else{
+            const customList = getCustomCourses();customList.unshift(newCourse);saveCustomCourses(customList);
+          }
           isAddModalOpen = false;
           activeCourseId = newCourse.id;
           activeEpisodeId = newCourse.episodes[0].id;

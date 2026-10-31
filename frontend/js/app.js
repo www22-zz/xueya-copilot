@@ -63,6 +63,11 @@
     node.innerHTML='<a href="#space/analysis/plans" data-open-my-plan>我的计划</a><a href="#space/courses">继续学习课程</a><a href="#space/review">复习错题</a>';
     $('#spaceContent').prepend(node);
     try{
+      if(view==='ask'){
+        const summary=await window.XueyaPlatform.spaceFetch('/api/learning/space/today').then(r=>r.json());
+        if(!node.isConnected||state.view!==view)return;
+        if(summary.lastCourse){const link=node.querySelector('a[href="#space/courses"]');link.href=summary.lastCourse.url;link.textContent='继续：'+summary.lastCourse.title;}
+      }
       if(Date.now()-planSnapshotAt>5000){
         planRequest ||= window.XueyaPlatform.spaceFetch('/api/learning/space/plan/active').then(r=>r.json()).then(data=>{planSnapshot=data.plan;planSnapshotAt=Date.now();}).finally(()=>{planRequest=null;});
         await planRequest;
@@ -117,7 +122,7 @@
     try{const scope=JSON.parse(localStorage.getItem((window.XueyaDataKey||((key)=>key))('xueya-c-learning:'+state.courseId+':scope:'+state.sessionId)));if(Array.isArray(scope))request.documentIds=scope;else if(state.selectedDocuments.length)request.documentIds=[...state.selectedDocuments];}catch{}
     const ai={id:crypto.randomUUID(),role:'ai',text:'',reasoning:'',sources:[],engine:'正在回答',title:clean,createdAt:new Date().toISOString()};
     const controller=new AbortController();activeChat=controller;
-    state.draft='';state.followupIndex=null;state.pending=true;const userMessage={id:crypto.randomUUID(),role:'user',text:clean};const batch=workspace.takeAttachments(userMessage);state.messages.push(userMessage,ai);persist();
+    state.draft='';state.followupIndex=null;state.pending=true;const userMessage={id:crypto.randomUUID(),role:'user',text:clean,createdAt:new Date().toISOString()};const batch=workspace.takeAttachments(userMessage);state.messages.push(userMessage,ai);persist();
     if(state.view!=='ask')location.hash='space/ask';else render();
     const thinkStart=Date.now();
     let thinkingDuration=null,userScrolledUp=false,isProgrammaticScroll=false,scrollRafId=null;
