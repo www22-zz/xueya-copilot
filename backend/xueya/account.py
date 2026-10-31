@@ -9,6 +9,7 @@ import time
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 from .common import require
+from .account_scope import account_owner
 
 KEY = 'local-account-v1'
 COOKIE = 'xueya_session'
@@ -95,7 +96,8 @@ def install_account(app):
         account = app.state.account
         row = account.record()
         return JSONResponse({'ok': True, 'configured': bool(row), 'authenticated': account.authorized(request),
-                             'username': (account.current(request) or {}).get('username'), 'sharedSpace': True}, headers={'Cache-Control': 'no-store'})
+                             'username': (account.current(request) or {}).get('username'), 'sharedSpace': False,
+                             'dataOwner': account_owner(account.current(request)) if account.current(request) and account.authorized(request) else None}, headers={'Cache-Control': 'no-store'})
 
     @router.post('/api/account/setup')
     async def setup(request: Request):
@@ -187,6 +189,7 @@ def install_account(app):
             require(isinstance(current, str) and len(current) <= 256, 'LOGIN_INVALID')
             derived = await asyncio.to_thread(account.derive, current, row['salt'])
             require(secrets.compare_digest(derived, row['hash']), 'LOGIN_INVALID')
+            row['dataOwner'] = account_owner(row)
             if 'username' in value:
                 username = value['username']
                 existing, _ = account.find(username)

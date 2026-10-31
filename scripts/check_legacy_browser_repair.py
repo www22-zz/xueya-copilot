@@ -20,7 +20,8 @@ def main():
     env = os.environ.copy()
     for key in ('MIMO_API_KEY', 'RAG_OCR_API_KEY', 'RAG_EMBEDDING_API_KEY', 'RAG_RERANK_API_KEY', 'TAVILY_API_KEY'):
         env[key] = ''
-    env['CHROME_PATH'] = 'C:/Program Files/Google/Chrome/Application/chrome.exe'
+    from .browser_runtime import browser_path
+    env['CHROME_PATH'] = browser_path()
     code = "const M=require('module'),resolve=M._resolveFilename;M._resolveFilename=function(name,...args){return resolve.call(this,name==='playwright'?process.argv[1]:name,...args)};require(process.argv[2]);"
     raise SystemExit(subprocess.run(['node', '-e', code, str(runtime), str(ROOT / 'tests/e2e' / (test + '.js'))], cwd=ROOT, env=env).returncode)
 

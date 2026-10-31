@@ -26,18 +26,22 @@ def wav(seconds=1, rate=8000):
     return data.getvalue()
 
 
-def test_shared_account_also_protects_g5_and_preserves_course_data(media_client):
+def test_account_protects_g5_and_preserves_unassigned_legacy_course_data(media_client):
     c = media_client
     credentials = {'username': 'g5-shared-test', 'password': 'controlled-g5-password'}
     assert c.post('/api/account/setup', json=credentials, headers=c.h).status_code == 200
     before = call(c, 'workspace')
-    assert any(d['id'] == 'g5-doc' for d in before['documents'])
+    # AI-space privacy policy: setup cannot claim unknown shared legacy files.
+    # Preserve them in the compatibility scope, and keep them out of the account.
+    assert not any(d['id'] == 'g5-doc' for d in before['documents'])
+    assert c.p.document(c.p.scope(), 'g5-doc')['name'] == '队列.md'
     assert c.post('/api/account/logout', json={}, headers=c.h).status_code == 200
     for path in ('workspace', 'result?id=missing', 'audio?id=missing&part=missing', 'export?id=missing'):
         assert c.get('/api/learning/media-workspace/'+path, headers=c.h).status_code == 401
     assert c.post('/api/learning/media-workspace/upload?name=private.wav', headers=c.h, content=wav()).status_code == 401
     assert c.post('/api/account/login', json=credentials).status_code == 200
     assert call(c, 'workspace')['documents'] == before['documents']
+    assert c.p.document(c.p.scope(), 'g5-doc')['name'] == '队列.md'
     assert c.calls == []
 
 

@@ -19,7 +19,7 @@ class MediaWorkspace:
         self.h, self.p = host, host.p
         self.p.jobs.register('media-segment-prepare', self.prepare)
         self.p.jobs.register('media-segment-api', self.execute)
-        for course in self.p.repo.courses(self.p.user_id):
+        for course in self.p.repo.courses(self.p.scope_user_id):
             if course['archived']:
                 continue
             for row in self.h.repo.all(course['id']):
@@ -67,7 +67,7 @@ class MediaWorkspace:
         return row
 
     def enqueue(self, course, key, run, resource='api', prepare=False):
-        job = self.p.jobs.submit(self.p.user_id, {'type': 'media-segment-prepare' if prepare else 'media-segment-api',
+        job = self.p.jobs.submit(self.p.scope_user_id, {'type': 'media-segment-prepare' if prepare else 'media-segment-api',
             'courseId': course, 'resource': resource, 'maxAttempts': 1,
             'idempotencyKey': key+':'+str(run.get('step', 0)), 'input': {'runId': key, 'step': run.get('step', 0)}})
         run['jobId'] = job['id']; run['jobIds'] = run.get('jobIds', [])+[job['id']]
@@ -364,7 +364,7 @@ class MediaWorkspace:
                 elif operation == 'cancel':
                     row = await self.get(course, value.get('id'), 'media-run')
                     require(row['content']['status'] in ('queued', 'running'), 'MEDIA_RUN_NOT_CANCELLABLE')
-                    job = self.p.jobs.cancel(row['content']['jobId'], self.p.user_id)
+                    job = self.p.jobs.cancel(row['content']['jobId'], self.p.scope_user_id)
                     c = {**row['content'], 'status': 'cancelled' if job['attempts'] == 0 else 'unknown', 'error': 'CANCELLED_CHECK_PROVIDER_OUTCOME'}
                     result = self.save(course, row['id'], 'media-run', c)
                 elif operation in ('transcript/save', 'video/save'):

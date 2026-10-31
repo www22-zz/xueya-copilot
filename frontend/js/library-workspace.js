@@ -77,7 +77,7 @@
       function saveDraft(f) {
         if (f.dataset.libForm !== 'text') return;
         try {
-          localStorage.setItem('xueya-library-draft:' + course, JSON.stringify(Object.fromEntries(new FormData(f))));
+          localStorage.setItem((window.XueyaDataKey||((key)=>key))('xueya-library-draft:' + course), JSON.stringify(Object.fromEntries(new FormData(f))));
         } catch {
           toast('草稿未保存，请复制重要文字');
         }
@@ -114,7 +114,7 @@
         root.innerHTML = `<div class="library-catalog-heading"><h2>已上传资料 <small>${catalog.documents.filter(d=>!d.archived).length} 份</small></h2>${btn('刷新','reload')}</div><div id="libraryImportStatus" role="status" aria-live="polite"></div><div class="c-fields" ${catalog.documents.length?'':'hidden'}><label class="form-field">章节筛选<select id="libraryChapter"><option value="">全部在用资料</option>${[...new Set([...(p.chapters||[]),...catalog.documents.map(d=>d.chapter).filter(Boolean)])].map(c=>`<option value="${e(c)}">${e(c)}</option>`).join('')}<option value="__archived">已归档资料</option></select></label><label class="form-field">在资料正文中查找<input id="libraryFind" type="search" placeholder="标题、章节或正文关键词"></label></div><div id="libraryRows"></div><details class="library-secondary-tools"><summary>其他资料工具</summary><details><summary>其他导入方式</summary><div class="library-import-grid"><details><summary>粘贴课堂文字</summary>${form('text',input('资料标题','title')+chapter()+area('正文（最多 1MB）','text'),'导入文字')}</details><details><summary>公开网页链接</summary>${form('url',input('公开网址','url','','url')+input('显示标题（可空）','title')+chapter()+'<p>仅抓取公开正文，不读取登录凭据。每次刷新保留新的正文快照。</p><label><input type="checkbox" name="confirmed" required>确认读取此公开网址并保存快照</label>','导入网页')}</details><details><summary>图片、录音或视频原件</summary>${form('media','<label class="form-field">选择媒体<input name="file" type="file" accept="image/png,image/jpeg,image/webp,audio/wav,audio/mpeg,video/mp4,video/webm" required></label><p>保存原件无需识别服务；录音 7MB、图片 8MB、视频 50MB 以内。图片和语音可直接加入问答；录音与视频工具在设置的“服务与数据”中。</p>','保存媒体原件')}</details></div></details><details><summary>课程目标与章节目录</summary>${form('profile',input('课程描述','description',p.description||'')+area('学习目标','goals',p.goals||'')+area('先修要求','prerequisites',p.prerequisites||'')+area('考试范围','examScope',p.examScope||'')+area('章节或课次（每行一项）','chapters',(p.chapters||[]).join('\n')),'确认保存课程设置')}</details><details><summary>媒体原件与位置关联</summary><h3>媒体与人工位置关联</h3><p>只记录实际页码和片段时间；人工关联不代表模型已经理解媒体内容。</p>${catalog.media.map(m=>`<article class="c-item"><strong>${e(m.name||m.kind)}</strong><p>${e(m.kind)} · v${m.revision}${m.durationMs?' · '+(m.durationMs/1000).toFixed(1)+' 秒':''}</p>${btn('打开原件','media',m.id)}${btn('关联讲义位置','link',m.id)}</article>`).join('')||'<p>还没有媒体原件。</p>'}<div>${catalog.links.map(l=>`<p>已确认关联：${e(catalog.documents.find(d=>d.id===l.documentId)?.name||l.documentId)} v${l.documentVersion} · ${e(JSON.stringify(l.location))} ${btn('回到媒体片段','linked-media',l.mediaId,`data-start="${l.location.startMs||0}"`)}</p>`).join('')}</div></details></details>`;
         rows();
         try {
-          const d = JSON.parse(localStorage.getItem('xueya-library-draft:' + course) || 'null');
+          const d = JSON.parse(localStorage.getItem((window.XueyaDataKey||((key)=>key))('xueya-library-draft:' + course)) || 'null');
           if (d) for (const[k, v] of Object.entries(d)) {
             const field = root.querySelector(`[data-lib-form=text] [name="${k}"]`);
             if (field) field.value = v;
@@ -231,7 +231,7 @@
             const result = await api(kind, value);
             await poll(result.job, signal);
             delete f.dataset.operation;
-            if (kind === 'text') localStorage.removeItem('xueya-library-draft:' + course);
+            if (kind === 'text') localStorage.removeItem((window.XueyaDataKey||((key)=>key))('xueya-library-draft:' + course));
             if (reader?.open) reader.close();
           } else if (kind === 'files') {
             const files = inputFiles || values.getAll('files');
@@ -361,7 +361,7 @@
             if (reader?.open) reader.close();
             state.selectedDocuments = [id];
             try {
-              localStorage.setItem('xueya-c-learning:' + state.courseId + ':scope:' + state.sessionId, JSON.stringify([id]));
+              localStorage.setItem((window.XueyaDataKey||((key)=>key))('xueya-c-learning:' + state.courseId + ':scope:' + state.sessionId), JSON.stringify([id]));
             } catch {}
             store.persist();
             location.hash = 'space/ask';

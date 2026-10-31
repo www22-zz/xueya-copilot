@@ -212,7 +212,7 @@ class LearningPages:
                     q = service.questions.edit_question(row['content'], value['patch'], sources)
                 else:
                     q = service.questions.review_question(row['content'], {'expectedVersion': value['expectedVersion'],
-                        'approved': value['approved'], 'reviewer': self.p.user_id, 'reason': value.get('reason', '')}, sources)
+                        'approved': value['approved'], 'reviewer': self.p.scope_user_id, 'reason': value.get('reason', '')}, sources)
                 with self.p.db.transaction():
                     stored = await self.commit(course, row['id'], 'question-draft', q, value)
                     current = self.p.repo.read(scope, 'question', q['id'], include_deleted=True)
@@ -250,7 +250,7 @@ class LearningPages:
                 if path == 'graph/extract':
                     graph = (await service.concepts.extract({'courseId': course, 'sources': sources, 'existing': current['content']}))['graph']
                 elif path == 'graph/correct':
-                    graph = service.concepts.correct(current['content'], {**value, 'reviewer': self.p.user_id}, sources)
+                    graph = service.concepts.correct(current['content'], {**value, 'reviewer': self.p.scope_user_id}, sources)
                 else:
                     graph = validate_graph(value.get('graph', {}), sources)
                     require(graph['courseId'] == course, 'COURSE_MISMATCH')

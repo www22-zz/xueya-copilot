@@ -23,7 +23,7 @@ class ContentWorkspace:
     def __init__(self, host):
         self.h, self.p = host, host.p
         self.p.jobs.register("learning-template", self.execute)
-        for course in self.p.repo.courses(self.p.user_id):
+        for course in self.p.repo.courses(self.p.scope_user_id):
             if course["archived"]:
                 continue
             scope = self.p.scope(course["id"])
@@ -91,7 +91,7 @@ class ContentWorkspace:
                    "evidenceVersion": pack["version"], "status": "queued", "createdAt": now_iso(), "configurationIdentity": self.configuration_identity()}
             with self.p.db.transaction():
                 self.save_run(course, run_id, run)
-                job = self.p.jobs.submit(self.p.user_id, {"type": "learning-template", "courseId": course, "resource": "api" if self.h.service(course).model else "cpu", "maxAttempts": 1,
+                job = self.p.jobs.submit(self.p.scope_user_id, {"type": "learning-template", "courseId": course, "resource": "api" if self.h.service(course).model else "cpu", "maxAttempts": 1,
                     "idempotencyKey": run_id, "input": {"runId": run_id}})
                 run["jobId"] = job["id"]
                 self.save_run(course, run_id, run)
@@ -261,7 +261,7 @@ class ContentWorkspace:
             if operation == "cancel":
                 row = await self.h.repo.get(course, value.get("id"))
                 require(row and row["kind"] == "template-run", "RUN_NOT_FOUND")
-                result = self.p.jobs.cancel(row["content"]["jobId"], self.p.user_id)
+                result = self.p.jobs.cancel(row["content"]["jobId"], self.p.scope_user_id)
                 if row["content"]["status"] == "queued":
                     await self.operational(course, row["id"], "template-run", {**row["content"], "status": "cancelled"})
                 return result

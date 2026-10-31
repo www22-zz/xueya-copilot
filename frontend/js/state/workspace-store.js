@@ -4,10 +4,12 @@
 const KEY='xueya-copilot-workspace-v3',LEGACY='xueya-copilot-state-v2';
 const fields=['documents','documentCount','messages','sessions','sessionId','courseId','libraryTags','mediaResults','feedback'];
 const clone=value=>JSON.parse(JSON.stringify(value));
-function createStore({storage,learning:L,id=()=>globalThis.crypto.randomUUID(),now=()=>new Date().toISOString()}={}){
+function createStore({storage,learning:L,accountId=globalThis.XueyaDataOwner||'',id=()=>globalThis.crypto.randomUUID(),now=()=>new Date().toISOString()}={}){
+  const scoped=key=>accountId?key+':'+accountId:key;
+  const KEY=scoped('xueya-copilot-workspace-v3'),LEGACY=scoped('xueya-copilot-state-v2');
   let error='';
   function read(key){try{const value=JSON.parse(storage.getItem(key)||'null');return value&&typeof value==='object'&&!Array.isArray(value)?value:null;}catch{return null;}}
-  const workspace=read(KEY),legacy=read(LEGACY),old=read('xueya-copilot-state-v1');
+  const workspace=read(KEY),legacy=read(LEGACY),old=read(scoped('xueya-copilot-state-v1'));
   // Erase retired payloads in raw compatibility keys and historical restore copies,
   // preserving documents and conversations rather than deleting entire workspaces.
   function scrub(value){
@@ -18,11 +20,11 @@ function createStore({storage,learning:L,id=()=>globalThis.crypto.randomUUID(),n
     for(const k of ['data','workspace','previous'])if(out[k]&&typeof out[k]==='object')out[k]=scrub(out[k]);
     return out;
   }
-  const legacyKeys=['xueya-copilot-state-v1',LEGACY,KEY,'xueya-platform-pending-v1'];
-  for(let i=0;i<(storage.length||0);i++){const k=storage.key(i);if(k?.startsWith('xueya-platform-before-restore-'))legacyKeys.push(k);}
+  const legacyKeys=[scoped('xueya-copilot-state-v1'),LEGACY,KEY,scoped('xueya-platform-pending-v1')];
+  for(let i=0;i<(storage.length||0);i++){const k=storage.key(i);if(!accountId&&k?.startsWith('xueya-platform-before-restore-'))legacyKeys.push(k);}
   // Keep the original private payload before the current UI hides retired fields.
   // This archive is never fed back into the active learning modules.
-  const archiveKey='xueya-retained-learning-v1',retainedArchive=read(archiveKey)||{version:1,keys:{}};
+  const archiveKey=scoped('xueya-retained-learning-v1'),retainedArchive=read(archiveKey)||{version:1,keys:{}};
   retainedArchive.keys=retainedArchive.keys||{};
   for(const k of legacyKeys){const v=read(k);if(v){const clean=scrub(v);if(JSON.stringify(clean)!==JSON.stringify(v)&&!retainedArchive.keys[k]){
     retainedArchive.keys[k]=v;

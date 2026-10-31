@@ -171,31 +171,43 @@ class Agent:
             return prepare_sources(supplied), None
         scope = self.platform.scope(value.get('courseId') or 'course-default')
         stored = self.current_library(scope)
-        if stored or self.platform.repo.all(scope, 'document') or self.platform.repo.get_workspace(self.platform.user_id) or scope.course_id != 'course-default':
+        if stored or self.platform.repo.all(scope, 'document') or self.platform.repo.get_workspace(self.platform.scope_user_id) or scope.course_id != 'course-default' or scope.user_id != self.platform.user_id:
             ids = {s['id'] for s in supplied}
             supplied = [s for s in stored if s['id'] in ids] + [s for s in supplied if s.get('isWeb') or s['id'].startswith('web-')]
         return prepare_sources(supplied), scope
 
+    def source_row(self, scope, source_id):
+        from .rag_scope_adapter import ScopeAdapter
+        adapter = ScopeAdapter(self.platform, scope.user_id)
+        try:
+            origin, original = adapter.resolve_source(source_id, scope.course_id)
+        except AppError:
+            return scope, None
+        return origin, self.platform.repo.read(origin, 'source', original)
+
     def current_library(self, scope):
+        from .rag_scope_adapter import ScopeAdapter
         documents = {d['id']: d for d in self.platform.repo.all(scope, 'document')}
-        return [s for s in self.platform.repo.all(scope, 'source')
+        result = [s for s in self.platform.repo.all(scope, 'source')
                 if (not self.rag or self.rag.reviewed(documents.get(s.get('documentId'), {})))
                 if not any(documents.get(s.get('documentId'), {}).get(flag) for flag in ('archived', 'deleted', 'superseded'))]
+        if self.rag and scope.user_id != self.platform.user_id:
+            result += [s for s in ScopeAdapter(self.platform, scope.user_id).sources(self.rag, scope.course_id)
+                       if s['id'] not in {x['id'] for x in result}]
+        return result
 
     def source_details(self, scope, source_ids):
-        """Resolve final citations from the host, including hits absent in the browser."""
+        from .rag_scope_adapter import ScopeAdapter
         details = []
         for source_id in dict.fromkeys(source_ids):
-            row = self.platform.repo.read(scope, 'source', source_id)
+            origin, row = self.source_row(scope, source_id)
             if not row:
                 continue
             source = {**row['value'], 'id': source_id, 'version': row['version'], 'courseId': scope.course_id}
             if self.rag and source.get('documentRevision') is not None:
-                source = {**self.rag.read(scope, source_id), 'courseId': scope.course_id}
-            source.setdefault('title', '课程资料')
-            source.setdefault('location', '原文片段')
-            details.append({k: source[k] for k in ('id', 'title', 'quote', 'location', 'documentId', 'documentRevision',
-                           'fileHash', 'textHash', 'start', 'end', 'page', 'blockId', 'version', 'courseId') if k in source})
+                source = {**ScopeAdapter(self.platform, scope.user_id).read(self.rag, source_id, scope.course_id), 'courseId': scope.course_id}
+            source.setdefault('title', '课程资料'); source.setdefault('location', '原文片段')
+            details.append(source)
         return details
 
     def evidence_snapshot(self, scope, sources):
@@ -204,11 +216,10 @@ class Agent:
         rows = []
         for source in sources:
             if source.get('isWeb') or source['id'].startswith('web-'):
-                rows.append([source['id'], 'web', source.get('quote')])
-                continue
-            row = self.platform.repo.read(scope, 'source', source['id'])
-            document = self.platform.repo.read(scope, 'document', row['value']['documentId']) if row and row['value'].get('documentId') else None
-            rows.append([source['id'], row, document])
+                rows.append([source['id'], 'web', source.get('quote')]); continue
+            origin, row = self.source_row(scope, source['id'])
+            document = self.platform.repo.read(origin, 'document', row['value']['documentId']) if row and row['value'].get('documentId') else None
+            rows.append([origin.wire(), source['id'], row, document])
         return digest(rows, canonical=True)
 
     def evidence_current(self, scope, sources, snapshot=None):
@@ -217,13 +228,18 @@ class Agent:
         for source in sources:
             if source.get('isWeb') or source['id'].startswith('web-'):
                 continue
-            row = self.platform.repo.read(scope, 'source', source['id'])
+            origin, row = self.source_row(scope, source['id'])
             if row and row['value'].get('documentId'):
-                doc = self.platform.repo.read(scope, 'document', row['value']['documentId'])
+                doc = self.platform.repo.read(origin, 'document', row['value']['documentId'])
                 if doc and self.rag and not self.rag.reviewed(doc['value']):
                     return False
                 if doc and any(doc['value'].get(flag) for flag in ('archived', 'deleted', 'superseded')):
                     return False
+                if self.rag and row['value'].get('documentRevision') is not None:
+                    try:
+                        self.rag.read(origin, row['id'])
+                    except AppError:
+                        return False
             if not row or not row['value'].get('quote', '').startswith(source['quote']):
                 return False
         return snapshot is None or snapshot == self.evidence_snapshot(scope, sources)
@@ -289,7 +305,7 @@ class Agent:
         require(bool(sources), "NO_SOURCES")
         snapshot = self.evidence_snapshot(scope, sources)
         # The initial sample-only compatibility path has no server source rows.
-        authoritative = self.platform and (self.current_library(scope) or self.platform.repo.all(scope, 'document') or self.platform.repo.get_workspace(self.platform.user_id) or scope.course_id != 'course-default')
+        authoritative = self.platform and (self.current_library(scope) or self.platform.repo.all(scope, 'document') or self.platform.repo.get_workspace(self.platform.scope_user_id) or scope.course_id != 'course-default' or scope.user_id != self.platform.user_id)
         messages = build_messages(request, sources)
         if stream:
             content, announced = "", False
@@ -322,10 +338,10 @@ class Agent:
         context = normalize_context(value.get("context"), request["sources"])
         scope, run_id, version, done = None, None, None, False
         if self.platform:
-            ws = self.platform.repo.get_workspace(self.platform.user_id)
+            ws = self.platform.repo.get_workspace(self.platform.scope_user_id)
             scope = self.platform.scope(value.get('courseId') or (ws['data']['activeId'] if ws else 'course-default'))
             library = [] if identity else self.current_library(scope)
-            if ws or library or self.platform.repo.all(scope, 'document') or scope.course_id != 'course-default':
+            if ws or library or self.platform.repo.all(scope, 'document') or scope.course_id != 'course-default' or scope.user_id != self.platform.user_id:
                 course = next((c for c in ws['data']['courses'] if c['id'] == scope.course_id), None) if ws else None
                 course_data = course['data'] if course else {}
                 selected = (value.get("context") or {}).get("library", request["sources"])
@@ -488,6 +504,12 @@ class Agent:
                    'verification': 'server-config', 'answerStatus': 'answered'}
             return
         intent, trace = L.route_task(request["question"], request["mode"]), []
+        if stored and intent == 'quiz':
+            from .rag_scope_adapter import is_platform_source
+            for source in context['library']:
+                origin, row = self.source_row(scope, source['id'])
+                doc = self.platform.repo.read(origin, 'document', row['value']['documentId']) if row and row['value'].get('documentId') else None
+                require(not is_platform_source(source, origin, doc['value'] if doc else None), 'RAG_USE_CASE_FORBIDDEN')
         tool_calls = []
         study = intent in ("plan", "review")
         query = request["question"]
@@ -583,7 +605,7 @@ class Agent:
                 try:
                     documents = set()
                     for source in calculated['sources']:
-                        documents.add(self.rag.read(scope, source['id'])['documentId'])
+                        documents.add(self.source_details(scope, [source['id']])[0]['documentId'])
                     require(len(documents) == 1, 'CALCULATION_SCOPE_AMBIGUOUS')
                     require(self.evidence_current(scope, calculated['sources']), 'STALE_EVIDENCE')
                 except AppError:
@@ -748,6 +770,12 @@ class Agent:
     async def practice(self, task, value):
         sources, scope = self.authoritative_sources(value)
         require(bool(sources), "NO_SOURCES")
+        if scope:
+            from .rag_scope_adapter import is_platform_source
+            for source in sources:
+                origin, row = self.source_row(scope, source['id'])
+                doc = self.platform.repo.read(origin, 'document', row['value']['documentId']) if row and row['value'].get('documentId') else None
+                require(not is_platform_source(source, origin, doc['value'] if doc else None), 'RAG_USE_CASE_FORBIDDEN')
         topic = str(value.get("focus") or value.get("topic") or "").strip()[:200]
         try:
             count = max(1, min(8, int(value.get("count") or 5)))

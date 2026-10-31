@@ -1,5 +1,15 @@
 # 模块接口约定
 
+## 2026-10-31 测试分支账号资料兼容扩展
+
+本节优先于下文“多个账号共用当前空间”的历史说明。登录 Cookie 决定服务端账号；请求体 accountId/userId、`X-Xueya-Account` 均不能选择资料 owner。新增账号使用独立的持久资料/工作区/任务作用域，不自动继承 `local-user` 下归属未知的旧资料。旧未登录单机兼容调用保留原空间；已配置登录后仍必须先登录。`GET /api/account/status` 增加 `dataOwner`（稳定资料 owner）及 `sharedSpace:false`；改名保留该 owner。
+
+浏览器可附 `X-Xueya-Owner` 作为会话新鲜度条件；与当前 Cookie 的 owner 不符时返回 HTTP 409 / `ACCOUNT_CHANGED`，不执行请求。该字段不能用于授权。新客户端按 dataOwner 分隔浏览器工作区/同步队列，未知旧键需显式迁移，不能自动复制给各账号。
+
+上传、目录、原件、修订、实体、工作区、作业/事件、旧学习接口和 HTTP MCP 出口均沿用原路径/业务字段，但仅能访问本人作用域。公共预置源为管理员明确标记/哈希核对的旧资料，通过问答适配器聚合，不公开其他旧文件。公共 `id` 为稳定 `pub-…` 别名，服务端解析回原 Scope 验证；不会信任客户端 `scopeOrigin`。旧 citation 验证继续核对 documentRevision、fileHash、textHash、位置和 version。
+
+公开平台来源使用 `id/title/location/documentId/version/isPlatform` 等元信息，不含 quote；私人来源合法旧 quote 契约保留。JSON/SSE 对工具预览、claims、解析产物与历史输出统一投影。存在受保护来源时正文在最终核验后以兼容 content/done 发布；失败不发布分片原文，不把 verbatim-only 平台摘录伪装成成功回答。旧非问答生成接口不得使用受保护 RAG（`RAG_USE_CASE_FORBIDDEN`）。本节不更改 B 的解析/检索/索引/证据校验协议，也不声明完成了真实服务质量验收。
+
 ## 2026-10-28 朗读与联网搜索补充
 
 `POST /api/tts` 使用本机 Host、同源校验及 `X-Xueya-Token`（从 `/api/platform/bootstrap` 获取）。请求为 `{text:string, voice?:string, courseId?:string}`；默认声音 `mimo_default`、课程 `course-default`，清理 Markdown 后最多朗读1000字。成功返回 `{ok:true,audio:"data:audio/wav;base64,...",model:string}`；未配置或合成失败返回 `{ok:false,error:string,fallback:true}`，客户端可使用浏览器朗读。非法输入及鉴权错误沿用公共错误响应。

@@ -56,7 +56,7 @@ def main():
             assert server.started
             base = f'http://127.0.0.1:{port}'
             with sync_playwright() as pw:
-                browser = pw.chromium.launch(executable_path='C:/Program Files/Google/Chrome/Application/chrome.exe', headless=True)
+                browser = pw.chromium.launch(executable_path=__import__('scripts.browser_runtime', fromlist=['browser_path']).browser_path(), headless=True)
                 context = browser.new_context(viewport={'width': 1400, 'height': 950})
                 context.route('**/*', lambda route: route.continue_() if route.request.url.startswith(base) else route.abort())
                 reply = context.request.post(base+'/api/account/register', data={

@@ -100,7 +100,7 @@
     }
     async function play(index, sequence=false) {
       stop();const row=activeRun,part=row?.content.items[index];if(!part)return;
-      const marker=()=>{try{localStorage.setItem('xueya-g5-position:'+course+':'+row.id,JSON.stringify({index,at:Date.now(),masteryUpdated:false}));}catch{}};marker();
+      const marker=()=>{try{localStorage.setItem((window.XueyaDataKey||((key)=>key))('xueya-g5-position:'+course+':'+row.id),JSON.stringify({index,at:Date.now(),masteryUpdated:false}));}catch{}};marker();
       const status=document.querySelector('#g5PlayStatus');
       if(part.kind==='pause'){status.textContent='请闭卷回忆，留白 '+part.pauseSeconds+' 秒。';timer=setTimeout(()=>{if(sequence)void play(index+1,true).catch(err=>toast(err.message));},part.pauseSeconds*1000);return;}
       player.hidden=false;document.querySelector('#g5VideoPlayer').hidden=true;player.src=url(await blob('audio?'+new URLSearchParams({id:row.id,part:part.id})));status.textContent='第 '+(index+1)+' 段：'+(part.text||'原始录音片段');
@@ -125,7 +125,7 @@
         if(action==='resume'){const row=data.runs.find(s=>s.id===id);confirmation(row.content.mode,row,true);}
         if(action==='cancel')await api('cancel',{id});
         if(action==='play')await play(Number(id));
-        if(action==='play-all'){const previous=JSON.parse(localStorage.getItem('xueya-g5-position:'+course+':'+activeRun.id)||'{}');await play(Number.isInteger(previous.index)?previous.index:0,true);}
+        if(action==='play-all'){const previous=JSON.parse(localStorage.getItem((window.XueyaDataKey||((key)=>key))('xueya-g5-position:'+course+':'+activeRun.id))||'{}');await play(Number.isInteger(previous.index)?previous.index:0,true);}
         if(action==='seek')await seek(Number(id));
         if(action==='export'){const file=await blob('export?id='+encodeURIComponent(id)),a=document.createElement('a');a.href=url(file);a.download='学涯复习音频.zip';a.click();}
         if(action==='import'){const row=await api('result?id='+encodeURIComponent(id));if(!row.content.items.every(p=>p.reviewed))throw Error('请先逐段核对并保存转写。');const result=await api('transcript/import',{id,revision:row.revision,confirmed:true,operationId:uid()});await waitJob(result.job);await api('transcript/link',{id,revision:row.revision,documentId:result.documentId,confirmed:true});toast('转写已导入资料，并关联到真实原件片段。');}

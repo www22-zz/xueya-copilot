@@ -105,7 +105,7 @@
     const request={courseId:state.courseId,question:clean,mode:state.mode,sources,history,previousSources,previousAnswerKind,learning:{questions:[],records:[]},webSearch:Boolean(state.webSearch)};
     const courseDocuments=state.documents.filter(d=>d.remote&&!d.superseded&&!d.archived).map(d=>d.id);
     if(courseDocuments.length)request.documentIds=state.selectedDocuments.length?[...state.selectedDocuments]:courseDocuments;
-    try{const scope=JSON.parse(localStorage.getItem('xueya-c-learning:'+state.courseId+':scope:'+state.sessionId));if(Array.isArray(scope))request.documentIds=scope;else if(state.selectedDocuments.length)request.documentIds=[...state.selectedDocuments];}catch{}
+    try{const scope=JSON.parse(localStorage.getItem((window.XueyaDataKey||((key)=>key))('xueya-c-learning:'+state.courseId+':scope:'+state.sessionId)));if(Array.isArray(scope))request.documentIds=scope;else if(state.selectedDocuments.length)request.documentIds=[...state.selectedDocuments];}catch{}
     const ai={id:crypto.randomUUID(),role:'ai',text:'',reasoning:'',sources:[],engine:'正在回答',title:clean,createdAt:new Date().toISOString()};
     const controller=new AbortController();activeChat=controller;
     state.draft='';state.followupIndex=null;state.pending=true;const userMessage={id:crypto.randomUUID(),role:'user',text:clean};const batch=workspace.takeAttachments(userMessage);state.messages.push(userMessage,ai);persist();

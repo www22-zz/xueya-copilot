@@ -27,10 +27,8 @@ class Platform:
             self.repo.ensure_course(self.user_id, {"id": "course-default", "name": "数据结构"})
         if recover:
             self.db.execute("UPDATE invocations SET status='unknown' WHERE status='pending'")
-            for course in self.repo.courses(self.user_id):
-                if course["archived"]:
-                    continue
-                scope = self.scope(course["id"])
+            for course in self.db.all('SELECT user_id,id FROM courses WHERE archived=0'):
+                scope = Scope(user_id=course['user_id'], course_id=course['id'])
                 for run in self.repo.all(scope, "run"):
                     if run.get("status") == "running":
                         self.repo.put(scope, "run", run["id"], {**run, "status": "interrupted", "recoveredAt": utc_now()})
@@ -49,8 +47,13 @@ class Platform:
                 mark_done(self.db, cleanup(self.db, self.repo), auto=True)
             purge_retired_learning(self.db)
 
+    @property
+    def scope_user_id(self):
+        from .account_scope import owner_context
+        return owner_context.get() or self.user_id
+
     def scope(self, course_id="course-default"):
-        scope = Scope(user_id=self.user_id, course_id=course_id)
+        scope = Scope(user_id=self.scope_user_id, course_id=course_id)
         self.repo.require_course(scope)
         return scope
 
@@ -70,7 +73,7 @@ class Platform:
         prior = self.db.one("SELECT * FROM jobs WHERE user_id=? AND course_id=? AND type='parse-document' AND idempotency_key=?", (scope.user_id, scope.course_id, key))
         if prior:
             require(json.loads(prior["input"]).get("requestHash") == value_hash, "IDEMPOTENCY_CONFLICT")
-            return self.jobs.get(prior["id"], self.user_id)
+            return self.jobs.get(prior["id"], scope.user_id)
         file = self.files.put(buffer)
         document_id = "doc-"+str(uuid4())
         with self.db.transaction():
@@ -81,7 +84,7 @@ class Platform:
                     if source.get("documentId") == previous["id"]:
                         self.repo.put(scope, "source", source["id"], source, deleted=True)
             self.repo.put(scope, "document", document_id, {"id": document_id, "name": name, "kind": kind, "fileHash": file["hash"], "size": file["size"], "status": "等待解析", "chunks": [], "tags": [], "meta": "后台处理中", "originalAvailable": True, "remote": True}, 0)
-            return self.jobs.submit(self.user_id, {"type": "parse-document", "courseId": scope.course_id, "input": {"documentId": document_id, "requestHash": value_hash}, "idempotencyKey": key, "resource": "cpu"})
+            return self.jobs.submit(scope.user_id, {"type": "parse-document", "courseId": scope.course_id, "input": {"documentId": document_id, "requestHash": value_hash}, "idempotencyKey": key, "resource": "cpu"})
 
     async def parse_job(self, scope, args, *, progress, checkpoint, commit):
         doc = self.document(scope, args["documentId"])

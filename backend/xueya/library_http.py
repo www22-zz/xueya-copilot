@@ -106,7 +106,7 @@ def install_library(app):
             rows = [d for d in p.repo.all(scope, 'document') if not d.get('superseded')]
             media = [{'id': r['content']['id'], 'revision': r['revision'], 'durationMs': r['content'].get('durationMs') or (r['content']['endMs']-r['content'].get('startMs', 0) if 'endMs' in r['content'] else None), **{k: r['content'][k] for k in ('kind', 'mime', 'name') if k in r['content']}} for r in app.state.learning.repo.all(scope.course_id) if r.get('kind') == 'media']
             links = [r for r in p.repo.all(scope, 'artifact') if r.get('kind') == 'library-media-link']
-            return success(documents=rows, profile=library.profile(scope), media=media, links=links, courses=p.repo.courses(p.user_id))
+            return success(documents=rows, profile=library.profile(scope), media=media, links=links, courses=p.repo.courses(p.scope_user_id))
         if operation == 'profile' and post:
             allowed = ('description', 'goals', 'prerequisites', 'examScope')
             profile = {k: value.get(k, '') for k in allowed}
@@ -121,7 +121,7 @@ def install_library(app):
         if operation == 'url' and post:
             require(value.get('confirmed') is True, 'CONFIRMATION_REQUIRED')
             require(isinstance(value.get('url'), str) and len(value['url']) <= 2048, 'INVALID_PUBLIC_URL')
-            return success(job=p.jobs.submit(p.user_id, {'type': 'library-web-import', 'courseId': scope.course_id, 'resource': 'cpu', 'maxAttempts': 1,
+            return success(job=p.jobs.submit(p.scope_user_id, {'type': 'library-web-import', 'courseId': scope.course_id, 'resource': 'cpu', 'maxAttempts': 1,
                 'idempotencyKey': identifier(value.get('idempotencyKey')), 'input': {k: value[k] for k in ('url', 'title', 'chapter', 'previousDocumentId', 'idempotencyKey') if k in value}}))
         if operation == 'organize' and post:
             require(value.get('confirmed') is True, 'CONFIRMATION_REQUIRED')

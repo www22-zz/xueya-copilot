@@ -19,7 +19,7 @@ class SearchWorkspace:
     def __init__(self, host):
         self.h, self.p = host, host.p
         self.p.jobs.register("search-answer", self.execute)
-        for course in self.p.repo.courses(self.p.user_id):
+        for course in self.p.repo.courses(self.p.scope_user_id):
             if course["archived"]:
                 continue
             for row in self.h.repo.all(course["id"]):
@@ -241,7 +241,7 @@ class SearchWorkspace:
                "configurationIdentity": self.configuration_identity()}
         with self.p.db.transaction():
             self.store(course, key, "search-run", run)
-            job = self.p.jobs.submit(self.p.user_id, {"type": "search-answer", "courseId": course, "idempotencyKey": key,
+            job = self.p.jobs.submit(self.p.scope_user_id, {"type": "search-answer", "courseId": course, "idempotencyKey": key,
                 "resource": "api" if calls else "cpu", "maxAttempts": 1, "input": {"runId": key}})
             run["jobId"] = job["id"]
             self.store(course, key, "search-run", run)
@@ -253,7 +253,7 @@ class SearchWorkspace:
         require(row and row["kind"] == "search-run" and row["content"]["status"] == "queued", "RUN_NOT_RESUMABLE")
         run = clone(row["content"])
         service = self.h.service(course)
-        job = self.p.jobs.get(run["jobId"], self.p.user_id)
+        job = self.p.jobs.get(run["jobId"], self.p.scope_user_id)
         require(job["attempts"] == 1 and (not run["maxApiCalls"] or job["resource"] == "api"), "NOT_SENT")
         run["status"] = "running"
         self.store(course, row["id"], "search-run", run)
@@ -330,7 +330,7 @@ class SearchWorkspace:
             if operation == "cancel":
                 row = await self.h.repo.get(course, value.get("id"))
                 require(row and row["kind"] == "search-run", "RUN_NOT_FOUND")
-                result = self.p.jobs.cancel(row["content"]["jobId"], self.p.user_id)
+                result = self.p.jobs.cancel(row["content"]["jobId"], self.p.scope_user_id)
                 if row["content"]["status"] == "queued":
                     self.store(course, row["id"], "search-run", {**row["content"], "status": "cancelled"})
                 return result

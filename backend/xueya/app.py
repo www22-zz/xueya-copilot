@@ -123,6 +123,8 @@ def create_app(config: Config | None = None, *, provider=None, start_jobs=True):
     app.state.stop_token = None
     app.state.request_stop = None
     app.state.account = None
+    from .account_scope import AccountBoundaryMiddleware
+    app.add_middleware(AccountBoundaryMiddleware, host=app)
 
     @app.middleware("http")
     async def same_origin(request, call_next):
@@ -272,7 +274,7 @@ def create_app(config: Config | None = None, *, provider=None, start_jobs=True):
     async def internal_platform_route(request, path):
         p = app.state.platform
         require(p is not None, "NOT_FOUND")
-        repo, db, user_id, method = p.repo, p.db, p.user_id, request.method
+        repo, db, user_id, method = p.repo, p.db, p.scope_user_id, request.method
         if path == "/bootstrap" and method == "GET":
             return success(token=app.state.token, schemaVersion="1.0", workspace=repo.get_workspace(user_id), courses=repo.courses(user_id), jobs=p.jobs.list(user_id), resources=p.resources.stats())
         require(secrets.compare_digest(request.headers.get("x-xueya-token", ""), app.state.token), "AUTH_REQUIRED")

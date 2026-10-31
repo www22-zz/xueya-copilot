@@ -1,5 +1,29 @@
 # 学涯 Copilot 最终交付说明
 
+## 2026-10-31 本机接续：账号资料边界
+
+当前开发/交付分支仅为 `codex/test-learning-space-20261031`。实际根目录经 `git rev-parse --show-toplevel` 确认为 `D:/web/xueya-copilot-github`，origin 与团队仓库一致；开始时工作区干净，fetch 后跟踪指定远程测试分支并 fast-forward 核对，无 main 修改、合并或强推。以下为本机结果；下一节是上轮修复记录。
+
+环境：本机 `.venv/Scripts/python.exe` 为 Python 3.12.7，Node 24.22.1，Python Playwright 已安装，实际浏览器为 Edge（通过安装位置探测，不沿用上一台 Chrome 路径）。本机已有 `.env` 和约 67 MB SQLite 私人数据库；没有据此假定教材、178 条向量或旧验收日志已经同步，也没有运行正式数据迁移/索引或重启私人服务。现有配置仅核对到聊天密钥非空；Tavily/OCR/Embedding/Rerank 密钥未配置。用户另外提供的 env 含缺失的 RAG 配置，已有共同配置无冲突；本轮保留现有 `.env`，未复制、覆盖或打印密钥。真实服务均未验收。
+
+本轮已实现并完成相应用例的本机验证：
+
+- HTTP/持久作业按服务端登录账号绑定资料 owner；以 ContextVar 隔离请求/作业上下文，保留共享 `Platform.user_id=local-user`。三种上传入口、资料管理、知识库、旧学习接口、通用实体、工作区、任务、MCP 与问答的读取/写入使用相同身份。学习服务缓存和幂等键包含 owner，重启恢复也逐 owner 处理。
+- 公共范围只包含原兼容空间内明确标记/哈希可核对的平台文件，未证明归属的旧资料留在原空间，不自动分配给第一个注册者或其他账号。公共来源使用由 owner/course/source 构成的稳定 opaque ID，读取/验证回到原 Scope，保留原文/修订/哈希校验。账号私人检索和公共聚合共享最终证据字节/数量预算，未改 RAG 切分、向量或回答审核算法。
+- JSON 与 SSE 出口统一处理来源、证据、原始解析产物、序列化工具预览和旧作业/历史投影。平台正文不作为 `quote`/chunks/全文返回；不能用旧出题接口消费受保护资料。存在受保护来源时，SSE 正文等待最终核验再发布兼容 content/done，防止把分片原文先发出；保留核验后的完整自然正文。平台 verbatim-only 摘录不能作为成功 AI 回答发布。私人资料的合法旧读取/原件/版本功能保留。
+- 浏览器工作区、同步队列、草稿、资料筛选与媒体续读位置按账号分键，保留匿名旧键且不自动导入到新账号。登录切换/跨标签页变化刷新页面；旧页面携带的 owner 新鲜度标记与 Cookie 不符时返回 `ACCOUNT_CHANGED`，防止迟到保存写入另一账号。该标记不授予身份，Cookie 仍为权限依据。
+
+验证与失败记录（隔离数据库/根目录，显式空真实服务密钥，默认 httpx transport 阻断未模拟外网；真实付费调用 0）：
+
+- `python -m scripts.check_isolated pytest -q -p no:cacheprovider --basetemp=test-results/full-local-02`：**786 通过，150.29 秒**，包含 `tests/python` 与 `tests_python`。首轮为 778 通过/6 失败：修复 JSON 字符串误投影、旧引用缺失 course 上下文和兼容检索行为后重跑；旧 G5 用例按新归属规则验证“原文件仍保留且不自动分配”，未删除登录保护/数据保留断言。最后账号新鲜度小改另跑定向验证，不冒充再次全量。
+- `node scripts/test.js --frontend`：**48 通过**，含新账号工作区/未知旧数据保留用例。`pip check` 无损坏依赖；`python -m scripts.check_isolated module backend.xueya.mcp_server --check`：官方 SDK **5 工具/2 命中**。
+- `python -m scripts.check_isolated module scripts.check_learning_space_repair`：本机 Edge 的导航/框架编辑恢复/计划生成采用完成/手机布局通过；受控模型 2 次，付费 0。
+- `python -m scripts.check_isolated module scripts.check_private_library_browser`：同一浏览器 A/B 切换、私人上传、猜原件 ID 拒绝、原账号刷新恢复、匿名旧缓存保留通过，无页面运行错误，4 组桌面/手机及深浅主题截图位于忽略目录 `test-results/private-library/`。尺寸切换后的截图稳定时无横向溢出，未为一次切换瞬态修改产品布局。
+- 新增 `test_private_library_boundary.py` 的 9 项业务检查覆盖三条上传链、A/B 搜索/任务/历史/原文/导出、公共别名/来源失效、改名重启保留、上下文并发、SSE 分片和用途门禁。受控通过不代表真实模型质量、所有历史无来源文本的安全认证或跨机器数据已迁移。
+- Windows sandbox 下临时目录/解析与 MCP 子进程曾无法正常执行；最终结果来自获准的隔离测试命令。没有通过删测试或排除目录获得全绿。保留的旧 `tests/e2e/browser.js` 本机运行仍停在已移除的首页“记得牢固”页签；其业务断言未删除，旧脚本适配仍待继续，不能计通过。
+
+状态：P0 的上述账号资料路径和公开出口用例**已实现且本机受控验证**；真实服务、正式数据归属迁移及穷尽历史出口审计**未验证**。P1 统一学习记录/资源、统一规划与聊天小测闭环、评阅版本链，以及 P2 多源分析/自动补报、框架补齐、官方课程核验，仍按下一节顺序继续，不能将本轮权限修复表述为整份方案已完成。
+
 ## 学习空间方案对齐与实现修复
 
 状态核对日期：2026-10-31。以下是上轮代码修复的记录；本次仅更新文档，没有新增功能或重新运行测试。下方更早日期的验收记录只代表当时版本，不能覆盖本节的未完成项。

@@ -39,15 +39,15 @@ class KnowledgeBase:
         course_id = 'kb-' + digest(key)[:32]
         content = {'kind': 'knowledge-base-profile', 'name': name.strip(), 'description': description}
         with self.p.db.transaction():
-            existing = next((c for c in self.p.repo.courses(self.p.user_id) if c['id'] == course_id), None)
+            existing = next((c for c in self.p.repo.courses(self.p.scope_user_id) if c['id'] == course_id), None)
             if existing:
                 require(not existing['archived'], 'COURSE_ARCHIVED')
                 old = self.p.repo.read(self.p.scope(course_id), 'artifact', 'knowledge-base-profile')
                 require(old and old['value'] == content, 'IDEMPOTENCY_CONFLICT')
                 return existing
-            self.p.repo.ensure_course(self.p.user_id, {'id': course_id, 'name': name.strip()})
+            self.p.repo.ensure_course(self.p.scope_user_id, {'id': course_id, 'name': name.strip()})
             self.p.repo.put(self.p.scope(course_id), 'artifact', 'knowledge-base-profile', content, 0)
-        return next(c for c in self.p.repo.courses(self.p.user_id) if c['id'] == course_id)
+        return next(c for c in self.p.repo.courses(self.p.scope_user_id) if c['id'] == course_id)
 
     def upload(self, scope, buffer, name, chapter, key, *, review=False):
         require(isinstance(name, str) and not name.startswith('~$'), 'TEMPORARY_FILE_FORBIDDEN')
@@ -175,7 +175,7 @@ def install_knowledge_base(app):
             return success(**uploaded, practiceGeneration=generated)
         value = await json_body(request) if post else {}
         if operation == 'bases' and not post:
-            return success(bases=[c for c in kb.p.repo.courses(kb.p.user_id) if not c['archived']])
+            return success(bases=[c for c in kb.p.repo.courses(kb.p.scope_user_id) if not c['archived']])
         if operation == 'create' and post:
             return success(base=kb.create(value))
         scope = kb.p.scope(value.get('courseId') or q.get('courseId') or 'course-default')

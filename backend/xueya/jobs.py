@@ -107,6 +107,8 @@ class JobQueue:
         heartbeat = asyncio.create_task(self._heartbeat(job_id, asyncio.current_task()))
         try:
             scope = Scope(user_id=row["user_id"], course_id=row["course_id"])
+            from .account_scope import owner_context
+            owner_token = owner_context.set(scope.user_id)
             self.repo.require_course(scope)
             async with asyncio.timeout(self.timeout):
                 result = await self.handlers[row["type"]](scope, json.loads(row["input"]), progress=lambda v: self.update(job_id, "progress", v), checkpoint=lambda v: self.update(job_id, "checkpoint", v), commit=lambda fn: self.commit(job_id, fn))
@@ -133,6 +135,8 @@ class JobQueue:
             finally:
                 # stop() may cancel again while a cancelled job is draining its heartbeat.
                 self.active.pop(job_id, None)
+                if "owner_token" in locals():
+                    owner_context.reset(owner_token)
                 active_job.reset(job_context)
                 release()
 

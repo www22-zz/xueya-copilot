@@ -8,6 +8,18 @@ const {createService,normalizeDocument}=require('../../frontend/js/services/work
 function storage(initial={}){const data=new Map(Object.entries(initial));return{getItem:key=>data.get(key)||null,setItem:(key,value)=>data.set(key,value),data};}
 function setup(initial={}){let counter=0;const disk=storage(initial),store=createStore({storage:disk,learning:L,id:()=>String(++counter)});return{disk,store};}
 
+test('account workspaces preserve unknown legacy data without sharing conversations',()=>{
+  const orphan=JSON.stringify({version:3,activeId:'course-default',courses:[{id:'course-default',name:'旧空间',data:{messages:[{role:'user',text:'unknown legacy private'}]}}]});
+  const disk=storage({[KEY]:orphan});
+  let counter=0;const create=accountId=>createStore({storage:disk,learning:L,accountId,id:()=>String(++counter)});
+  const alice=create('owner-alice');assert.equal(alice.state.messages.length,0);
+  alice.state.messages.push({id:'private-message',role:'user',text:'alice private'});assert.ok(alice.persist());
+  const bob=create('owner-bob');assert.equal(bob.state.messages.length,0);assert.ok(bob.persist());
+  assert.equal(create('owner-alice').state.messages[0].text,'alice private');
+  assert.equal(disk.getItem(KEY),orphan);
+  assert.ok(!disk.getItem(KEY+':owner-bob').includes('alice private'));
+});
+
 test('course completion toggles once after repeated workspace mounts',()=>{
   const vm=require('node:vm'),fs=require('node:fs');
   const disk=storage(),container=new EventTarget();

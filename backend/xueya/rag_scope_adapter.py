@@ -111,34 +111,64 @@ def public_sources_projection(sources: Any) -> List[Dict[str, Any]]:
 
 
 def public_api_projector(platform, course_id="course-default"):
-    """Resolve protected identities on the server before projecting an HTTP payload.
-
-    Model/tool adapters may omit fileHash or isPlatform; those omissions must not
-    allow a protected source to leak through chat, entity lists or workspace sync.
-    Stored evidence and model inputs are untouched.
-    """
+    """Resolve server-owned identity across courses; never trust DTO flags."""
     if platform is None:
-        return lambda value:value
-    scope = platform.scope(course_id)
-    documents = {d['id']:d for d in platform.repo.all(scope, 'document')}
-    protected_documents = {key for key,doc in documents.items() if is_platform_document(doc, scope)}
-    sources = {s['id']:s for s in platform.repo.all(scope, 'source')}
-    protected_sources = {key for key,source in sources.items()
-                         if source.get('documentId') in protected_documents or is_platform_source(source, scope)}
-
-    def project(item):
+        return lambda value: value
+    owner = platform.scope_user_id
+    docs, sources, quotes, hashes = {}, {}, set(), set()
+    for user in dict.fromkeys((owner, platform.user_id)):
+        for course in platform.repo.courses(user):
+            scope = Scope(user_id=user, course_id=course['id'])
+            protected = {d['id']: d for d in platform.repo.all(scope, 'document') if is_platform_document(d, scope)}
+            docs.update(protected)
+            hashes.update(d.get('fileHash') for d in protected.values() if d.get('fileHash'))
+            for source in platform.repo.all(scope, 'source'):
+                if source.get('documentId') in protected or is_platform_source(source, scope):
+                    sources[source['id']] = source
+                    sources[ScopeAdapter.public_id(scope, source['id'])] = source
+                    if source.get('quote'):
+                        quotes.add(source['quote'])
+    def project(item, field=None):
         if isinstance(item, list):
-            return [project(child) for child in item]
+            return [project(child, field) for child in item]
+        if isinstance(item, str):
+            # Old tool preview/checkpoint and content events may serialize JSON.
+            try:
+                nested = json.loads(item) if field in ('text', 'content', 'preview', 'checkpoint') and item.lstrip().startswith(('{', '[')) else None
+            except (ValueError, TypeError):
+                nested = None
+            if isinstance(nested, (list, dict)):
+                return json.dumps(project(nested), ensure_ascii=False)
+            for quote in quotes:
+                if quote in item:
+                    item = item.replace(quote, '[平台资料正文受保护]')
+            return item
         if not isinstance(item, dict):
             return item
-        key = item.get('id')
-        if isinstance(key, str) and (key in protected_sources or ('quote' in item and is_platform_source(item))):
-            original = sources.get(key, {})
-            return public_source_projection({**original, **item}, True)
-        if isinstance(key, str) and key in protected_documents:
-            return {**{field:item[field] for field in ('id','name','title','version','status','archived','superseded','createdAt','updatedAt') if field in item},
-                    'isPlatform':True, 'protected':True}
-        return {name:project(child) for name,child in item.items()}
+        # Verbatim-only compatibility answers are valid for user-owned sources,
+        # but cannot export a protected platform passage as a successful answer.
+        if (item.get('verification') in ('verbatim-only', 'original-excerpts')
+                and isinstance(item.get('sources'), list)
+                and any(isinstance(key, str) and key in sources for key in item['sources'])):
+            item = {**item, 'answer': '这次 AI 回答未能完成，请稍后重新提问。',
+                    'answerStatus': 'unavailable', 'verification': 'not-generated',
+                    'reason': 'PROTECTED_VERBATIM_OUTPUT'}
+        key = item.get('id') or item.get('sourceId')
+        if isinstance(key, str) and key in sources or is_platform_source(item) and 'quote' in item:
+            return public_source_projection({**sources.get(key, {}), **item}, True)
+        if (isinstance(key, str) and key in docs
+                or isinstance(item.get('fileHash'), str) and item['fileHash'] in hashes
+                or isinstance(item.get('sourceFileHash'), str) and item['sourceFileHash'] in hashes):
+            return {**{field: item[field] for field in ('ok', 'id', 'name', 'title', 'version', 'status', 'archived', 'createdAt', 'updatedAt') if field in item},
+                    'isPlatform': True, 'protected': True, **({'chunks': []} if 'chunks' in item else {})}
+        # Evidence-only artifacts do not carry a source id on the outer object.
+        if isinstance(item.get('documentId'), str) and item['documentId'] in docs and any(k in item for k in ('blocks', 'pages', 'chunks', 'text', 'quote')):
+            return {'documentId': item['documentId'], 'protected': True}
+        # Truncated serialized tool previews cannot be parsed safely; the tool's
+        # structured data and status remain available. No raw evidence preview.
+        return {name: project(child, name) for name, child in item.items()
+                if not sources or name != 'claims' and (name != 'preview' or not isinstance(child, str))}
+    project.has_protected_sources = bool(sources)
     return project
 
 
@@ -205,125 +235,106 @@ def sanitize_event(event: Dict[str, Any]) -> Dict[str, Any]:
 
 
 class ScopeAdapter:
-    """Manages Public preset scope + Current account private scope with budget constraints."""
-
-    def __init__(self, platform, current_user_id: Optional[str] = None):
+    """Authorized aggregation around B's unchanged read/search/validate ports."""
+    def __init__(self, platform, current_user_id=None):
         self.p = platform
-        self.current_user_id = current_user_id or getattr(platform, "user_id", "local-user")
-        self.public_scope = Scope(user_id="local-user", course_id="course-default")
+        self.current_user_id = current_user_id or platform.scope_user_id
+        self.public_scope = Scope(user_id=platform.user_id, course_id="course-default")
 
-    def private_scope(self, course_id: str = "course-default") -> Scope:
-        # User's own scope
-        return Scope(user_id=self.current_user_id, course_id=course_id)
+    def private_scope(self, course_id="course-default"):
+        scope = Scope(user_id=self.current_user_id, course_id=course_id)
+        self.p.repo.require_course(scope)
+        return scope
 
-    async def search(
-        self,
-        rag: RagService,
-        course_id: str,
-        query: str,
-        *,
-        history: Tuple = (),
-        new_topic: bool = False,
-        document_ids: Optional[List[str]] = None,
-        section: Optional[str] = None,
-        mode: str = "hybrid",
-        budget: int = 2000,
-        limit: int = 6
-    ) -> Dict[str, Any]:
-        """Perform combined search across public and private scopes within the single global budget."""
-        require(type(budget) is int and 32 <= budget <= 16000 and type(limit) is int and 1 <= limit <= 20, "INVALID_BUDGET")
+    @staticmethod
+    def public_id(scope, source_id):
+        return 'pub-' + hashlib.sha256(json.dumps([scope.user_id, scope.course_id, source_id]).encode()).hexdigest()[:48]
 
-        # If user is local-user on course-default, standard search
-        user_scope = self.private_scope(course_id)
-        if user_scope.user_id == self.public_scope.user_id and user_scope.course_id == self.public_scope.course_id:
-            res = await rag.search(
-                user_scope, query, history=history, new_topic=new_topic,
-                document_ids=document_ids, section=section, mode=mode, budget=budget, limit=limit
-            )
-            # Mark platform status
-            for s in res.get("sources", []):
-                s["isPlatform"] = is_platform_source(s, user_scope)
-                s["scopeOrigin"] = {"user_id": user_scope.user_id, "course_id": user_scope.course_id}
-            return res
+    def public_documents(self, course_id):
+        scope = Scope(user_id=self.p.user_id, course_id=course_id)
+        if not any(c['id'] == course_id and not c['archived'] for c in self.p.repo.courses(scope.user_id)):
+            return scope, []
+        return scope, [d for d in self.p.repo.all(scope, 'document') if is_platform_document(d, scope)
+                       and not any(d.get(k) for k in ('archived', 'deleted', 'superseded'))]
 
-        # Otherwise, search both scopes concurrently
-        # Allocate half budget/limit to each as initial candidates, then re-rank and trim to global budget
-        cand_limit = min(limit, 6)
-        cand_budget = min(budget, 4000)
+    def tagged(self, source, scope, public=False):
+        return {**source, 'id': self.public_id(scope, source['id']) if public else source['id'],
+                'isPlatform': public or is_platform_source(source, scope),
+                'scopeOrigin': {'user_id': scope.user_id, 'course_id': scope.course_id}}
 
-        # 1. Search public
-        public_res = await rag.search(
-            self.public_scope, query, history=history, new_topic=new_topic,
-            section=section, mode=mode, budget=cand_budget, limit=cand_limit
-        )
+    def sources(self, rag, course_id, document_ids=None, section=None):
+        private = self.private_scope(course_id)
+        result = list(rag.sources(private, document_ids=document_ids, section=section))
+        if private.user_id == self.p.user_id:
+            return result
+        public, documents = self.public_documents(course_id)
+        ids = [d['id'] for d in documents if document_ids is None or d['id'] in document_ids]
+        if ids:
+            result += [self.tagged(s, public, True) for s in rag.sources(public, document_ids=ids, section=section)]
+        return result
 
-        # 2. Search private (if course exists)
-        private_res = {"sources": [], "warnings": []}
-        try:
-            self.p.repo.require_course(user_scope)
-            private_res = await rag.search(
-                user_scope, query, history=history, new_topic=new_topic,
-                document_ids=document_ids, section=section, mode=mode, budget=cand_budget, limit=cand_limit
-            )
-        except Exception:
-            pass
+    def resolve_source(self, source_id, course_id):
+        private = self.private_scope(course_id)
+        row = self.p.repo.read(private, 'source', source_id)
+        if row:
+            return private, source_id
+        public, documents = self.public_documents(course_id)
+        allowed = {d['id'] for d in documents}
+        if allowed:
+            for source in self.p.repo.all(public, 'source'):
+                if source.get('documentId') in allowed and self.public_id(public, source['id']) == source_id:
+                    return public, source['id']
+        require(False, 'SOURCE_NOT_FOUND')
 
-        # Tag origins
-        for s in public_res.get("sources", []):
-            s["isPlatform"] = True
-            s["scopeOrigin"] = {"user_id": self.public_scope.user_id, "course_id": self.public_scope.course_id}
+    def read(self, rag, source_id, course_id):
+        scope, original = self.resolve_source(source_id, course_id)
+        source = rag.read(scope, original)
+        return self.tagged(source, scope, original != source_id)
 
-        for s in private_res.get("sources", []):
-            s["isPlatform"] = False
-            s["scopeOrigin"] = {"user_id": user_scope.user_id, "course_id": user_scope.course_id}
+    async def search(self, rag, course_id, query, *, history=(), new_topic=False,
+                     document_ids=None, section=None, mode="hybrid", budget=2000, limit=6):
+        require(type(budget) is int and 32 <= budget <= 16000 and type(limit) is int and 1 <= limit <= 20, 'INVALID_BUDGET')
+        private = self.private_scope(course_id)
+        if private.user_id == self.p.user_id:
+            return await rag.search(private, query, history=history, new_topic=new_topic,
+                document_ids=document_ids, section=section, mode=mode, budget=budget, limit=limit)
+        results = []
+        scopes = [(private, document_ids, False)]
+        if private.user_id != self.p.user_id:
+            public, documents = self.public_documents(course_id)
+            ids = [d['id'] for d in documents if document_ids is None or d['id'] in document_ids]
+            if ids:
+                scopes.append((public, ids, True))
+        for scope, ids, public in scopes:
+            result = await rag.search(scope, query, history=history, new_topic=new_topic,
+                document_ids=ids, section=section, mode=mode, budget=budget, limit=limit)
+            results.append({**result, 'sources': [self.tagged(s, scope, public) for s in result['sources']]})
+        sources, seen, used = [], set(), 0
+        for result in results:
+            for source in result['sources']:
+                size = len(source.get('quote', '').encode('utf-8'))
+                if source['id'] in seen or used + size > budget or len(sources) >= limit:
+                    continue
+                # Re-read after all external awaits, including private hits.
+                try:
+                    self.validate_citation(rag, source)
+                except AppError:
+                    continue
+                sources.append(source); seen.add(source['id']); used += size
+        return {'sources': sources, 'warnings': list(dict.fromkeys(w for r in results for w in r.get('warnings', []))),
+                'status': 'conflict' if any(r.get('status') == 'conflict' for r in results) else 'evidence_found' if sources else 'insufficient',
+                'supportChecked': False}
 
-        # Merge results, deduplicate by id, respect total limit & budget
-        combined_sources: List[Dict[str, Any]] = []
-        seen_ids = set()
-        total_bytes = 0
-
-        # Alternate or prioritize best hits
-        pool = []
-        # Pair up: private sources first (personal user notes are specific), followed by public
-        p_sources = private_res.get("sources", [])
-        pub_sources = public_res.get("sources", [])
-
-        idx = 0
-        while idx < max(len(p_sources), len(pub_sources)):
-            if idx < len(p_sources):
-                pool.append(p_sources[idx])
-            if idx < len(pub_sources):
-                pool.append(pub_sources[idx])
-            idx += 1
-
-        for s in pool:
-            if s["id"] in seen_ids:
-                continue
-            quote_bytes = len(s.get("quote", "").encode("utf-8"))
-            if total_bytes + quote_bytes > budget:
-                continue
-            seen_ids.add(s["id"])
-            combined_sources.append(s)
-            total_bytes += quote_bytes
-            if len(combined_sources) >= limit:
-                break
-
-        warnings = list(dict.fromkeys(public_res.get("warnings", []) + private_res.get("warnings", [])))
-        return {
-            "sources": combined_sources,
-            "warnings": warnings,
-            "status": "conflict" if ("conflict" in (public_res.get("status"), private_res.get("status"))) else "evidence_found" if combined_sources else "insufficient",
-            "supportChecked": False
-        }
-
-    def validate_citation(self, rag: RagService, citation: Dict[str, Any]) -> bool:
-        """Validate citation back against its origin scope."""
-        require(isinstance(citation, dict), "INVALID_CITATION")
-        origin = citation.get("scopeOrigin")
-        if origin and isinstance(origin, dict) and origin.get("user_id") and origin.get("course_id"):
-            target_scope = Scope(user_id=origin["user_id"], course_id=origin["course_id"])
-        else:
-            # Fallback to current scope
-            target_scope = self.private_scope(citation.get("courseId", "course-default"))
-        require(target_scope.user_id in (self.current_user_id, self.public_scope.user_id), "SOURCE_SCOPE_FORBIDDEN")
-        return rag.validate(target_scope, citation)
+    def validate_citation(self, rag, citation, course_id=None):
+        require(isinstance(citation, dict), 'INVALID_CITATION')
+        origin = citation.get('scopeOrigin') or {}
+        require(origin.get('user_id', self.current_user_id) in (self.current_user_id, self.p.user_id), 'SOURCE_SCOPE_FORBIDDEN')
+        course = course_id or citation.get('courseId') or origin.get('course_id') or 'course-default'
+        require(not origin.get('course_id') or origin['course_id'] == course, 'SOURCE_SCOPE_FORBIDDEN')
+        scope, source_id = self.resolve_source(citation.get('id') or citation.get('sourceId'), course)
+        if origin:
+            require(origin == {'user_id': scope.user_id, 'course_id': scope.course_id}, 'SOURCE_SCOPE_FORBIDDEN')
+        restored = {**citation, 'id': source_id}
+        if 'sourceId' in restored:
+            restored['sourceId'] = source_id
+        return rag.validate(scope, restored)
