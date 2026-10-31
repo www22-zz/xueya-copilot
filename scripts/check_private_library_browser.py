@@ -10,6 +10,7 @@ import uvicorn
 from playwright.sync_api import sync_playwright, expect
 from backend.xueya.app import create_app
 from backend.xueya.config import Config
+from backend.xueya.common import Scope
 from .browser_runtime import browser_path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -28,6 +29,15 @@ def main():
                 time.sleep(.05)
             assert server.started
             base=f'http://127.0.0.1:{port}'
+            public_scope=Scope(user_id=app.state.platform.user_id,course_id='preset-stack-queue')
+            app.state.platform.repo.ensure_course(public_scope.user_id,{'id':public_scope.course_id,'name':'栈与队列公共教材'})
+            material=ROOT/'materials/stack-queue/栈与队列知识库.md'
+            public_job=app.state.rag.upload(public_scope,material.read_bytes(),material.name,'browser-approved-preset')
+            for _ in range(300):
+                public_job=app.state.platform.jobs.get(public_job['id'],public_scope.user_id)
+                if public_job['status'] in ('succeeded','failed','unknown'):break
+                time.sleep(.05)
+            assert public_job['status']=='succeeded',public_job
             with sync_playwright() as pw:
                 browser=pw.chromium.launch(executable_path=browser_path(),headless=True)
                 context=browser.new_context(viewport={'width':1400,'height':950})
@@ -69,6 +79,38 @@ def main():
                 bob_headers={'X-Xueya-Token':context.request.get(base+'/api/platform/bootstrap').json()['token']}
                 denied=context.request.get(base+'/api/platform/documents/original?documentId='+job['result']['documentId'],headers=bob_headers)
                 assert denied.status>=400
+                evidence=context.request.post(base+'/api/platform/rag/search',headers=bob_headers,data={
+                    'query':'循环队列 front rear','mode':'lexical','budget':3000,'limit':6}).json()['evidence']
+                assert evidence['sources'] and all(s['originCourseId']==public_scope.course_id and 'quote' not in s for s in evidence['sources'])
+                # Seed a clearly labelled saved UI fixture using the actual HTTP
+                # source DTO. This checks quote-free citations, not model quality.
+                public_message={'id':'public-citation-ui','role':'ai','text':'来源界面验证（非AI生成）。','sources':[evidence['sources'][0]]}
+                bob_value=json.loads(json.dumps(value))
+                bob_data=bob_value['courses'][0]['data']
+                bob_data.update(messages=[public_message],sessions=[{'id':'bob-public-session','title':'公共来源界面验证','messages':[public_message]}],sessionId='bob-public-session')
+                current=context.request.get(base+'/api/platform/workspace',headers=bob_headers).json()['workspace']
+                saved=context.request.put(base+'/api/platform/workspace',headers=bob_headers,data={'workspace':bob_value,'expectedVersion':current['version'] if current else 0})
+                assert saved.ok,saved.text()
+                # Use the visible restore workflow, which retains the browser
+                # backup, rather than discard a pending browser save silently.
+                page.goto(base+'/#space/ask')
+                page.locator('button[data-open-settings]:visible').first.click()
+                page.locator('[data-settings-tab=services]').click()
+                page.locator('#platformData').click()
+                with page.expect_navigation(wait_until='load'):
+                    page.locator('#platformRestore').click()
+                page.goto(base+'/#space/ask')
+                expect(page.locator('.citation-chip')).to_contain_text('栈与队列公共教材')
+                page.locator('.citation-chip').click()
+                expect(page.locator('#sourceDialog')).to_be_visible()
+                expect(page.locator('.source-location')).to_contain_text('栈与队列公共教材')
+                expect(page.locator('#readerPassage')).to_contain_text('平台预置资料仅供 AI 回答参考')
+                expect(page.locator('#sourceDialog .eyebrow')).to_have_text('公共资料来源')
+                expect(page.locator('#readerSearch')).to_have_count(0)
+                expect(page.get_by_role('button',name='下载原件',exact=True)).to_have_count(0)
+                expect(page.get_by_role('button',name='导出正文',exact=True)).to_have_count(0)
+                page.screenshot(path=str(output/'public-origin-metadata.png'),full_page=True,animations='disabled')
+                page.get_by_role('button',name='关闭原文',exact=True).click()
                 assert context.request.post(base+'/api/account/logout',headers=bob_headers,data={}).ok
                 login('alice');page.reload();page.goto(base+'/#space/ask')
                 expect(page.locator('#chatThread')).to_contain_text('ALICE_PRIVATE_CHAT_9204')
@@ -85,7 +127,8 @@ def main():
                 assert not errors,errors
                 browser.close()
                 result={'account_switch':'passed','private_upload':'passed','guessed_original':'denied','refresh_restore':'passed',
-                        'legacy_browser_preserved':True,'original_cache_isolation':'passed','page_errors':errors,'paid_calls':0,'screenshots':4}
+                        'legacy_browser_preserved':True,'original_cache_isolation':'passed','cross_course_public_metadata':'passed',
+                        'page_errors':errors,'paid_calls':0,'screenshots':5}
                 (output/'result.json').write_text(json.dumps(result,ensure_ascii=False,indent=2),encoding='utf-8')
                 print(json.dumps(result,ensure_ascii=False))
         finally:

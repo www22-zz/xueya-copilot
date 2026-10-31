@@ -194,7 +194,17 @@ def platform_registry(platform, scope, *, context=None, reference=False, rag=Non
                 origin, original = adapter.resolve_source(source['id'], scope.course_id)
                 row = repo.read(origin, 'source', original)
                 if row:
-                    result.append({**row['value'], **source})
+                    stored=row['value']
+                    selected=source.get('quote',stored.get('quote',''))
+                    require(isinstance(selected,str) and selected in stored.get('quote',''),'STALE_EVIDENCE')
+                    value={**stored,'version':row['version'],**source}
+                    if stored.get('documentRevision') is not None:
+                        # Legacy normalized context bounds quote to 1500 chars
+                        # and omits citation metadata. Restore the stored version
+                        # and the exact selected span before the final validation.
+                        offset=stored['quote'].find(selected)
+                        value.update(start=stored['start']+offset,end=stored['start']+offset+len(selected))
+                    result.append(value)
             except AppError:
                 continue
         return result
@@ -218,7 +228,19 @@ def platform_registry(platform, scope, *, context=None, reference=False, rag=Non
         found = await adapter.search(rag, scope.course_id, a['query'], document_ids=documents if context is not None else None, limit=6, budget=9000)
         hits = [ids[s['id']] for s in found['sources'] if s['id'] in ids]
         hits += [s for s in retrieve(a['query'], available) if s['id'] not in {h['id'] for h in hits}]
-        return {'sources': hits[:a.get('limit', 4)], 'warnings': found['warnings']}
+        current=[]
+        for source in hits:
+            try:
+                origin,original=adapter.resolve_source(source['id'],scope.course_id)
+                if source.get('documentRevision') is not None:
+                    adapter.validate_citation(rag,source,scope.course_id)
+                else:
+                    row=repo.read(origin,'source',original)
+                    require(row and row['value'].get('quote','').startswith(source.get('quote','')), 'STALE_EVIDENCE')
+            except AppError:
+                continue
+            current.append(source)
+        return {'sources': current[:a.get('limit', 4)], 'warnings': found['warnings']}
 
     registry.add("search_materials", obj({"query": string(4000), "limit": {"type": "integer", "minimum": 1, "maximum": 6}}, ["query"]), search)
     registry.add("read_source", obj({"sourceId": ID}, ["sourceId"]), read)

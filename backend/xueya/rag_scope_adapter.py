@@ -19,7 +19,8 @@ from .common import AppError, Scope, require
 from .rag_service import RagService
 
 
-# Preset file hashes from materials/ manifest
+# Exact six-file cross-course allowlist approved by the user on 2026-10-31.
+# Flags/filenames alone retain only their existing same-course permissions.
 KNOWN_PLATFORM_HASHES = frozenset({
     "7a36da9a2a222b39d22c13a720f587f7f2d21073dbfbcccc9b2769c222d0652a",
     "7fbd8a0444096282daf0b2d68904aa89c70144e1525134db0979be31ed9bfd29",
@@ -92,6 +93,9 @@ def public_source_projection(source: Dict[str, Any], is_platform: Optional[bool]
         res["version"] = source["version"]
     if source.get("documentRevision") is not None:
         res["documentRevision"] = source["documentRevision"]
+    for field in ('originCourseId', 'originCourseName'):
+        if platform_flag and isinstance(source.get(field), str):
+            res[field] = source[field]
     if source.get("url"):
         res["url"] = source["url"]
     if source.get("isWeb"):
@@ -125,8 +129,9 @@ def public_api_projector(platform, course_id="course-default"):
             hashes.update(d.get('fileHash') for d in protected.values() if d.get('fileHash'))
             for source in platform.repo.all(scope, 'source'):
                 if source.get('documentId') in protected or is_platform_source(source, scope):
-                    sources[source['id']] = source
-                    sources[ScopeAdapter.public_id(scope, source['id'])] = source
+                    stored={**source,'originCourseId':scope.course_id,'originCourseName':course['name']}
+                    sources[source['id']] = stored
+                    sources[ScopeAdapter.public_id(scope, source['id'])] = stored
                     if source.get('quote'):
                         quotes.add(source['quote'])
     def project(item, field=None):
@@ -157,7 +162,12 @@ def public_api_projector(platform, course_id="course-default"):
                     'reason': 'PROTECTED_VERBATIM_OUTPUT'}
         key = item.get('id') or item.get('sourceId')
         if isinstance(key, str) and key in sources or is_platform_source(item) and 'quote' in item:
-            return public_source_projection({**sources.get(key, {}), **item}, True)
+            stored=sources.get(key,{}) if isinstance(key,str) else {}
+            merged={**stored, **item}
+            # Display origin is server-owned too; a historical/client DTO cannot
+            # relabel a known source as belonging to a different course.
+            merged.update({name:stored[name] for name in ('originCourseId','originCourseName') if name in stored})
+            return public_source_projection(merged, True)
         if (isinstance(key, str) and key in docs
                 or isinstance(item.get('fileHash'), str) and item['fileHash'] in hashes
                 or isinstance(item.get('sourceFileHash'), str) and item['sourceFileHash'] in hashes):
@@ -259,33 +269,71 @@ class ScopeAdapter:
         return scope, [d for d in self.p.repo.all(scope, 'document') if is_platform_document(d, scope)
                        and not any(d.get(k) for k in ('archived', 'deleted', 'superseded'))]
 
+    def public_libraries(self, course_id):
+        """Same-course compatibility plus exactly six approved cross-course files.
+
+        Only the trusted legacy public owner is enumerated. Account uploads,
+        sourceFileHash claims, isPlatform flags and filenames cannot expand the
+        cross-course set. Never rewrite the original document/source scope.
+        """
+        courses=sorted(self.p.repo.courses(self.p.user_id),key=lambda c:(c['id']!=course_id,c['id']))
+        libraries=[]
+        for course in courses:
+            if course['archived']:
+                continue
+            scope,documents=self.public_documents(course['id'])
+            if course['id']!=course_id:
+                documents=[d for d in documents if d.get('fileHash') in KNOWN_PLATFORM_HASHES]
+            if documents:
+                libraries.append((scope,documents))
+        return libraries
+
+    @staticmethod
+    def evidence_key(source):
+        # Identical confirmed content imported into two legacy courses counts as
+        # one hit; different revisions/text hashes remain independently checked.
+        if source.get('isPlatform') and source.get('fileHash') in KNOWN_PLATFORM_HASHES:
+            return ('preset',source['fileHash'],source.get('textHash'),source.get('page'),
+                    source.get('start'),source.get('end'),source.get('quote'))
+        return ('source',source['id'])
+
     def tagged(self, source, scope, public=False):
-        return {**source, 'id': self.public_id(scope, source['id']) if public else source['id'],
+        result={**source, 'id': self.public_id(scope, source['id']) if public else source['id'],
                 'isPlatform': public or is_platform_source(source, scope),
                 'scopeOrigin': {'user_id': scope.user_id, 'course_id': scope.course_id}}
+        if public:
+            course=next(c for c in self.p.repo.courses(scope.user_id) if c['id']==scope.course_id)
+            result.update(originCourseId=scope.course_id,originCourseName=course['name'])
+        return result
 
     def sources(self, rag, course_id, document_ids=None, section=None):
         private = self.private_scope(course_id)
         result = list(rag.sources(private, document_ids=document_ids, section=section))
         if private.user_id == self.p.user_id:
             return result
-        public, documents = self.public_documents(course_id)
-        ids = [d['id'] for d in documents if document_ids is None or d['id'] in document_ids]
-        if ids:
-            result += [self.tagged(s, public, True) for s in rag.sources(public, document_ids=ids, section=section)]
-        return result
+        for public,documents in self.public_libraries(course_id):
+            ids = [d['id'] for d in documents if document_ids is None or d['id'] in document_ids]
+            if ids:
+                result += [self.tagged(s, public, True) for s in rag.sources(public, document_ids=ids, section=section)]
+        seen=set()
+        unique=[]
+        for source in result:
+            key=self.evidence_key(source)
+            if key not in seen:
+                seen.add(key);unique.append(source)
+        return unique
 
     def resolve_source(self, source_id, course_id):
         private = self.private_scope(course_id)
         row = self.p.repo.read(private, 'source', source_id)
         if row:
             return private, source_id
-        public, documents = self.public_documents(course_id)
-        allowed = {d['id'] for d in documents}
-        if allowed:
-            for source in self.p.repo.all(public, 'source'):
-                if source.get('documentId') in allowed and self.public_id(public, source['id']) == source_id:
-                    return public, source['id']
+        for public,documents in self.public_libraries(course_id):
+            allowed = {d['id'] for d in documents}
+            if allowed:
+                for source in self.p.repo.all(public, 'source'):
+                    if source.get('documentId') in allowed and self.public_id(public, source['id']) == source_id:
+                        return public, source['id']
         require(False, 'SOURCE_NOT_FOUND')
 
     def read(self, rag, source_id, course_id):
@@ -304,10 +352,10 @@ class ScopeAdapter:
         results = []
         scopes = [(private, document_ids, False)]
         if private.user_id != self.p.user_id:
-            public, documents = self.public_documents(course_id)
-            ids = [d['id'] for d in documents if document_ids is None or d['id'] in document_ids]
-            if ids:
-                scopes.append((public, ids, True))
+            for public,documents in self.public_libraries(course_id):
+                ids = [d['id'] for d in documents if document_ids is None or d['id'] in document_ids]
+                if ids:
+                    scopes.append((public, ids, True))
         for scope, ids, public in scopes:
             result = await rag.search(scope, query, history=history, new_topic=new_topic,
                 document_ids=ids, section=section, mode=mode, budget=budget, limit=limit)
@@ -316,14 +364,15 @@ class ScopeAdapter:
         for result in results:
             for source in result['sources']:
                 size = len(source.get('quote', '').encode('utf-8'))
-                if source['id'] in seen or used + size > budget or len(sources) >= limit:
+                key=self.evidence_key(source)
+                if key in seen or used + size > budget or len(sources) >= limit:
                     continue
                 # Re-read after all external awaits, including private hits.
                 try:
-                    self.validate_citation(rag, source)
+                    self.validate_citation(rag, source, course_id)
                 except AppError:
                     continue
-                sources.append(source); seen.add(source['id']); used += size
+                sources.append(source); seen.add(key); used += size
         from .rag_search import conflicts
         opposing=conflicts(sources)
         return {'schemaVersion':'rag-1','scope':private.wire(),'query':query,'rewrittenQuery':results[0].get('rewrittenQuery',query),
@@ -337,8 +386,10 @@ class ScopeAdapter:
         origin = citation.get('scopeOrigin') or {}
         require(origin.get('user_id', self.current_user_id) in (self.current_user_id, self.p.user_id), 'SOURCE_SCOPE_FORBIDDEN')
         course = course_id or citation.get('courseId') or origin.get('course_id') or 'course-default'
-        require(not origin.get('course_id') or origin['course_id'] == course, 'SOURCE_SCOPE_FORBIDDEN')
         scope, source_id = self.resolve_source(citation.get('id') or citation.get('sourceId'), course)
+        # The opaque public alias may resolve to an approved original course.
+        # Private citations retain the strict requested-course boundary.
+        require(scope.user_id==self.p.user_id or not origin.get('course_id') or origin['course_id']==course,'SOURCE_SCOPE_FORBIDDEN')
         if origin:
             require(origin == {'user_id': scope.user_id, 'course_id': scope.course_id}, 'SOURCE_SCOPE_FORBIDDEN')
         restored = {**citation, 'id': source_id}

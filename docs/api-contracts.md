@@ -1,5 +1,15 @@
 # 模块接口约定
 
+## 2026-10-31 六份预置教材跨课程问答（已批准）
+
+用户明确批准仅[六份完整SHA256清单](contracts/public-preset-scope-map.md)。现有 `rag/search`、`knowledge/search`、问答内部来源及MCP `search_materials/read_source` 复用同一ScopeAdapter：本人当前课程+同课程原有公共兼容范围+其他预置课程中实际fileHash命中该清单的材料。仅枚举可信预置owner，不遍历其他账号私人库；文件名、isPlatform/sample、sourceFileHash声明均不能扩大跨课程范围。匿名旧单机调用维持原兼容范围。
+
+公开来源仍无quote，兼容增加服务端 `originCourseId/originCourseName`；它们描述实际原课程，不能相信客户端重标。`pub-…`别名绑定owner/course/source；同内容跨课程副本合并重复命中，各副本旧别名仍独立回原Scope核验。不同textHash/位置/正文不合并。documentIds/section过滤及原总字节预算、条数上限继续生效。
+
+`rag/validate`/检索末次检查按**请求课程**解析允许范围，再回实际原Scope执行原文档修订、fileHash、textHash、block/page、version及片段起止核验；不能用citation自报courseId将非清单材料升级为跨课程公共。停用/删除/撤回确认/哈希变化或等待期间权限变化均失效。MCP旧文本回退在返回前再次核验；旧归一化上下文缺失的版本号和截短位置从已存来源还原后校验，不关闭版本或原文断言。
+
+公共来源读取仍只返元信息；raw source ID、原文/导出及其他账号任务/历史权限不扩大。未做正式库迁移、资料复制或新索引；本轮结果来自隔离实际MD解析及受控回归，不代表本机五份PPT/真实向量已全部联调。
+
 ## 2026-10-31 课程记录、多源报告与框架版本补充
 
 以下扩展继续使用可信会话、稳定 learningOwner、本机Host/同源及 bootstrap token，不相信客户端账号字段；不新建数据库。旧字段及兼容路径保留。
