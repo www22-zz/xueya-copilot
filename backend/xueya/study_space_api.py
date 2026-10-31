@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import re
 import secrets
+from contextlib import asynccontextmanager
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 from .common import require
@@ -12,6 +13,16 @@ from .study_space_service import StudySpaceService
 def install_study_space(app):
     from .app import json_body, success
     router = APIRouter(prefix="/api/learning/space")
+    previous=app.router.lifespan_context
+    @asynccontextmanager
+    async def lifespan(host):
+        async with previous(host):
+            from .space_planning import ConversationPlanning
+            from .space_quiz import SpaceQuiz
+            host.state.conversation_planning=ConversationPlanning(host)
+            host.state.space_quiz=SpaceQuiz(host)
+            yield
+    app.router.lifespan_context=lifespan
 
     def authorize(request: Request):
         require(bool(re.fullmatch(r"(?:127\.0\.0\.1|localhost|\[::1\])(?::\d+)?", request.headers.get("host", ""))),
@@ -25,7 +36,7 @@ def install_study_space(app):
         if account is not None and account.record():
             require(account.authorized(request), "AUTH_REQUIRED")
             record = account.current(request)
-            return (record or {}).get("username") or "local"
+            return (record or {}).get('learningOwner') or (record or {}).get("username") or "local"
         return "local"
 
     def service() -> StudySpaceService:
@@ -36,6 +47,26 @@ def install_study_space(app):
         return srv
 
     # --- Today's Tasks & Continue Learning ---
+    @router.post('/chat/plan')
+    async def chat_plan(request: Request):
+        authorize(request)
+        value=await json_body(request,524288)
+        return success(**app.state.conversation_planning.intake(account_id(request),value))
+
+    @router.get('/jobs/{job_id}')
+    async def plan_job(request: Request, job_id: str):
+        authorize(request)
+        job=app.state.platform.jobs.get(job_id,service()._scope(account_id(request)).user_id)
+        require(job is not None,'JOB_NOT_FOUND')
+        return success(job=job)
+
+    @router.post('/jobs/{job_id}/cancel')
+    async def cancel_plan_job(request: Request,job_id: str):
+        authorize(request)
+        job=app.state.platform.jobs.get(job_id,service()._scope(account_id(request)).user_id)
+        require(job is not None,'JOB_NOT_FOUND')
+        return success(job=app.state.platform.jobs.cancel(job['id'],service()._scope(account_id(request)).user_id))
+
     @router.get("/today")
     async def get_today(request: Request):
         authorize(request)
@@ -51,7 +82,13 @@ def install_study_space(app):
     @router.get("/plan/list")
     async def list_plans(request: Request):
         authorize(request)
-        return success(**service().list_plans(account_id(request)))
+        return success(**service().list_plans(account_id(request)),jobs=app.state.conversation_planning.listing(account_id(request)))
+
+    @router.post('/plan/generate')
+    async def generate_plan_job(request: Request):
+        authorize(request)
+        data=await json_body(request,16384)
+        return success(job=app.state.conversation_planning.submit(account_id(request),data))
 
     @router.get("/plan/{plan_id}")
     async def get_plan(request: Request, plan_id: str):
@@ -75,8 +112,20 @@ def install_study_space(app):
         expected_revision = data.get("expectedRevision", 1)
         require(type(expected_revision) is int, "INVALID_REVISION")
         confirmed = data.get("confirmed")
-        plan = service().adopt_plan(account_id(request), plan_id, expected_revision, confirmed)
+        plan = service().adopt_plan(account_id(request), plan_id, expected_revision, confirmed, data.get('operationId'))
         return success(plan=plan)
+
+    @router.post('/plan/adjust-preview')
+    async def adjust_plan(request: Request):
+        authorize(request)
+        data=await json_body(request,16384)
+        return success(plan=service().adjust_plan_draft(account_id(request),data))
+
+    @router.post('/plan/task/link')
+    async def link_task(request: Request):
+        authorize(request)
+        data=await json_body(request,16384)
+        return success(**service().attach_task_link(account_id(request),data))
 
     @router.post("/plan/task/toggle")
     async def toggle_task(request: Request):
@@ -85,7 +134,8 @@ def install_study_space(app):
         plan_id = data.get("planId")
         task_id = data.get("taskId")
         completed = data.get("completed")
-        res = service().toggle_task(account_id(request), plan_id, task_id, completed)
+        res = service().toggle_task(account_id(request), plan_id, task_id, completed,
+                                    expected_revision=data.get('expectedRevision'),operation_id=data.get('operationId'))
         return success(**res)
 
     @router.post("/plan/task/delay")
@@ -95,7 +145,8 @@ def install_study_space(app):
         plan_id = data.get("planId")
         task_id = data.get("taskId")
         new_date = data.get("newDate")
-        res = service().delay_task(account_id(request), plan_id, task_id, new_date)
+        res = service().delay_task(account_id(request), plan_id, task_id, new_date,
+                                   expected_revision=data.get('expectedRevision'),operation_id=data.get('operationId'))
         return success(**res)
 
     @router.post("/plan/sync-course")
@@ -145,6 +196,46 @@ def install_study_space(app):
         return success(deleted=ok)
 
     # --- Interactive Chat Quiz Endpoints ---
+    @router.post('/chat/quiz')
+    async def chat_quiz(request: Request):
+        authorize(request)
+        data=await json_body(request,65536)
+        return success(**app.state.space_quiz.chat(account_id(request),data))
+    @router.get('/quiz/list')
+    async def quiz_list(request: Request):
+        authorize(request)
+        return success(**app.state.space_quiz.listing(account_id(request)))
+
+    @router.post('/quiz/jobs')
+    async def quiz_generation_job(request: Request):
+        authorize(request)
+        data=await json_body(request,16384)
+        return success(job=app.state.space_quiz.submit_generation(account_id(request),data))
+
+    @router.get('/quiz/question/{question_id}')
+    async def quiz_question(request: Request,question_id: str):
+        authorize(request)
+        question=app.state.space_quiz.question(account_id(request),question_id)
+        return success(question={**service().public_question(question),'revision':question['revision']})
+
+    @router.post('/quiz/attempts')
+    async def quiz_attempt(request: Request):
+        authorize(request)
+        data=await json_body(request,32768)
+        return success(attempt=app.state.space_quiz.submit_attempt(account_id(request),data))
+
+    @router.get('/quiz/attempts/{attempt_id}')
+    async def quiz_attempt_read(request: Request,attempt_id: str):
+        authorize(request)
+        return success(attempt=app.state.space_quiz.public_attempt(app.state.space_quiz.attempt(account_id(request),attempt_id)))
+
+    @router.post('/quiz/attempts/{attempt_id}/{action}')
+    async def quiz_review(request: Request,attempt_id: str,action: str):
+        authorize(request)
+        require(action in ('review','correct'),'NOT_FOUND')
+        data=await json_body(request,16384)
+        return success(attempt=app.state.space_quiz.review(account_id(request),attempt_id,data,manual=action=='correct'))
+
     @router.post("/quiz/generate")
     async def generate_quiz(request: Request):
         authorize(request)
@@ -168,11 +259,10 @@ def install_study_space(app):
         row = service().repo.read(scope, "question", question_id)
         require(row is not None, "QUESTION_NOT_FOUND")
         raw_q = row["value"]
-        result = await service().evaluate_model_answer(account_id(request), app.state.provider, raw_q, user_answer) if raw_q["type"] == "short" else service().grade_submission(raw_q, user_answer)
-        attempt_id = "attempt-" + secrets.token_hex(12)
-        service().repo.put(scope, "attempt", attempt_id, {"id": attempt_id, "questionId":question_id,"questionSnapshot":raw_q,"answer":user_answer,"evaluation":result}, expected_version=0)
-
-        return success(result=result)
+        attempt=app.state.space_quiz.submit_attempt(account_id(request),{'questionId':question_id,'questionRevision':row['version'],
+            'answer':user_answer,'operationId':data.get('operationId') or 'legacy-'+secrets.token_hex(16)})
+        result=attempt.get('effectiveEvaluation',{}).get('result') or {'status':'queued','jobId':attempt['evaluations'][-1].get('jobId')}
+        return success(result=result,attempt=attempt)
 
     count = len(app.router.routes)
     app.include_router(router)

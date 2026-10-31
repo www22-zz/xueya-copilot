@@ -11,7 +11,8 @@ const esc=s=>e(s);
 function createPracticeView({store,client,toast=()=>{},navigate=()=>{}}={}){
   let root=null,view='practice',revealed=false,attempt=null,choice=null,shortDraft='',fillDraft='',noteTimer=null,noteTarget=null;
   let loading=true,loadError='',saving=new Set(),noteErrors=new Set(),syncing=false,initialized=false,pendingRender=false;
-  let entry='hub',writtenTimer=null,writtenTarget=null;
+  let entry='hub',writtenTimer=null,writtenTarget=null,requestedQuestionId=null;
+  function applyRequestedQuestion(){if(requestedQuestionId&&bank().some(q=>q.id===requestedQuestionId)){position().selected=requestedQuestionId;position().completed=false;ui.selectedQuestionId=requestedQuestionId;requestedQuestionId=null;}}
   const ui=store.state.ui;
   const button=(label,action,attrs='',style='button-outline')=>`<button type="button" class="button button-small ${style}" data-action="${action}" ${attrs}>${label}</button>`;
   const bank=()=>client.bank()||[];
@@ -145,6 +146,7 @@ function createPracticeView({store,client,toast=()=>{},navigate=()=>{}}={}){
     root.innerHTML=`<div class="practice-module ${view==='review'?'practice-review':''} ${ui.detailFullscreen&&current()?'is-fullscreen':''}">${toolbar()}${loading?'<p role="status">正在加载题库…</p>':loadError?`<p role="alert">${e(loadError)}</p>`:''}<div class="practice-split"><section class="practice-list-pane">${listRows()}</section><section class="practice-detail-pane">${detail()}</section></div></div>`;
     root.querySelector('.practice-list-pane').scrollTop=position().scroll||0;
     root.querySelector('.practice-detail-pane').scrollTop=detailScroll;
+    if(view==='review'&&globalThis.XueyaStudyQuiz){const section=document.createElement('section');section.className='study-quiz-card panel';root.append(section);globalThis.XueyaStudyQuiz.review(section);}
     root.querySelectorAll('details').forEach((el,i)=>{el.open=Boolean(openDetails[i]);});
     if(focusSelector){const input=root.querySelector(focusSelector);input?.focus({preventScroll:true});if(selection!=null&&typeof input?.setSelectionRange==='function')try{input.setSelectionRange(selection,selectionEnd);}catch{}}
   }
@@ -213,7 +215,7 @@ function createPracticeView({store,client,toast=()=>{},navigate=()=>{}}={}){
     if(initialized)return;initialized=true;
     try{await store.ready;await client.initialize();if(client.loaded)store.applyServer(client.state());await sync();}
     catch(error){loadError=error.code==='WORKSPACE_BANK_OUTDATED'?'当前后台尚未加载新版练习题库，请重启本机服务后刷新页面。':'题库暂不可用，请启动本机服务后重试。';}
-    finally{loading=false;render();}
+    finally{loading=false;applyRequestedQuestion();render();}
     window.addEventListener('online',()=>sync().then(render));
     window.addEventListener('focus',()=>sync().then(render));
     window.addEventListener('pagehide',()=>{flushWritten();flushNote();savePosition();});
@@ -223,10 +225,10 @@ function createPracticeView({store,client,toast=()=>{},navigate=()=>{}}={}){
     const switched=root!==node||view!==nextView;
     if(switched){flushWritten();flushNote();clearTransient();}root=node;view=nextView;
     entry=nextView==='review'?'practice':params.page==='materials'?'materials':params.category?'practice':'hub';
-    const category=params.category;
+    const category=params.category;requestedQuestionId=params.questionId||null;
     if(category&&category!==ui.category){ui.category=category;clearTransient();}
     if(switched)ui.detailFullscreen=false;
-    ensureSelected();bind(node);render();store.persist();
+    ensureSelected();applyRequestedQuestion();bind(node);render();store.persist();
     if(initialized&&!loading)sync().then(render);
   }
   return {initialize,beforeRender(){flushWritten();flushNote();savePosition();},afterRender(){},mountPractice(node,params={}){mount(node,'practice',params);},mountReview(node,params={}){mount(node,'review',params);},handleAction:act,handleInput,flushNote};

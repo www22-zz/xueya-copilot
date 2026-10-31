@@ -162,6 +162,8 @@ def test_rename_and_restart_preserve_private_owner_and_legacy_rows(library):
     headers=login(client,'alice',True);job=upload(app,client,headers)
     legacy_before=app.state.platform.repo.all(app.state.platform.scope(), 'document')
     assert client.post('/api/account/password', headers=headers, json={'currentPassword':PASSWORD,'password':PASSWORD,'username':'renamed'}).status_code==200
+    # Renaming cannot release a namespace still used by private histories.
+    assert client.post('/api/account/register',json={'username':'alice','password':PASSWORD,'confirmPassword':PASSWORD}).json()['error']=='USERNAME_TAKEN'
     assert job['result']['documentId'] in client.get('/api/platform/documents',headers=headers).text
     assert app.state.platform.repo.all(app.state.platform.scope(), 'document') == legacy_before
     with TestClient(create_app(config, start_jobs=False),base_url='http://127.0.0.1') as restarted:

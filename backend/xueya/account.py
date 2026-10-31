@@ -76,6 +76,9 @@ def install_account(app):
     from .app import json_body, error_response
     router = APIRouter()
 
+    def reservation(username):
+        return 'reserved-account-name:'+hashlib.sha256(username.encode()).hexdigest()
+
     def origin(request):
         require(bool(re.fullmatch(r'(?:127\.0\.0\.1|localhost|\[::1\])(?::\d+)?', request.headers.get('host', ''))), 'ORIGIN_FORBIDDEN')
         supplied = request.headers.get('origin')
@@ -128,6 +131,7 @@ def install_account(app):
         async with account.lock:
             existing, key = account.find(username)
             require(existing is None, 'USERNAME_TAKEN')
+            require(account.platform.db.one('SELECT value FROM meta WHERE key=?',(reservation(username),)) is None,'USERNAME_TAKEN')
             if not account.record():
                 key = KEY
             salt = secrets.token_hex(16)
@@ -192,9 +196,14 @@ def install_account(app):
             row['dataOwner'] = account_owner(row)
             if 'username' in value:
                 username = value['username']
+                require(isinstance(username, str) and bool(re.fullmatch(r'[a-zA-Z0-9_.-]{3,40}', username)), 'INVALID_USERNAME')
                 existing, _ = account.find(username)
                 require(existing is None or username == row['username'], 'USERNAME_TAKEN')
-                require(isinstance(username, str) and bool(re.fullmatch(r'[a-zA-Z0-9_.-]{3,40}', username)), 'INVALID_USERNAME')
+                reserved=account.platform.db.one('SELECT value FROM meta WHERE key=?',(reservation(username),))
+                require(reserved is None or reserved['value']==row['dataOwner'],'USERNAME_TAKEN')
+                account.platform.db.execute('INSERT INTO meta(key,value) VALUES(?,?) ON CONFLICT(key) DO NOTHING',
+                                            (reservation(row['username']),row['dataOwner']))
+                row.setdefault('learningOwner',row['username'])
                 row['username'] = username
             row['salt'] = secrets.token_hex(16)
             row['hash'] = await asyncio.to_thread(account.derive, secret, row['salt'])

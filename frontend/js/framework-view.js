@@ -112,7 +112,7 @@
           <div class="kf-toolbar">
             <div class="kf-title-area">
               <h2>${currentFramework ? e(currentFramework.title) : '知识框架导图'}</h2>
-              <p>概念与知识点结构关系图 · 独立于日程任务</p>
+              <p>概念与知识点结构关系图 · 独立于日程任务</p>${currentFramework?.planId?'<a href="#space/analysis/plans">查看关联计划</a>':''}
             </div>
             <div class="kf-actions">
               <select id="kfSubjectSelect" class="filter-select">
@@ -226,9 +226,10 @@
       });
     }
 
-    async function mount(targetNode) {
-      generation++;container = targetNode;loading=false;
-      await loadList();
+    async function mount(targetNode,frameworkId) {
+      const stamp=++generation;container = targetNode;loading=false;
+      await loadList();if(stamp!==generation)return;
+      if(frameworkId){const target=frameworksList.find(f=>f.id===frameworkId);if(target)currentFramework=target;else toast('关联框架不存在或已删除');}
       render();
     }
 

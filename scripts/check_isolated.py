@@ -36,6 +36,22 @@ def isolate():
         return await asynchronous(self, request)
     httpx.HTTPTransport.handle_request = guarded
     httpx.AsyncHTTPTransport.handle_async_request = guarded_async
+    # The search adapter uses urllib; blank credentials alone must not be the
+    # last line of defence if a fixture accidentally re-enables a service.
+    import urllib.request
+    from urllib.parse import urlsplit
+    original_open = urllib.request.urlopen
+    def guarded_open(url, *args, **kwargs):
+        address = url.full_url if isinstance(url, urllib.request.Request) else str(url)
+        host = urlsplit(address).hostname
+        try:
+            local = ipaddress.ip_address(host).is_loopback
+        except ValueError:
+            local = host == 'localhost'
+        if not local:
+            raise AssertionError('UNMOCKED_EXTERNAL_HTTP_BLOCKED')
+        return original_open(url, *args, **kwargs)
+    urllib.request.urlopen = guarded_open
 
 
 def main():

@@ -10,6 +10,32 @@
 
 公开平台来源使用 `id/title/location/documentId/version/isPlatform` 等元信息，不含 quote；私人来源合法旧 quote 契约保留。JSON/SSE 对工具预览、claims、解析产物与历史输出统一投影。存在受保护来源时正文在最终核验后以兼容 content/done 发布；失败不发布分片原文，不把 verbatim-only 平台摘录伪装成成功回答。旧非问答生成接口不得使用受保护 RAG（`RAG_USE_CASE_FORBIDDEN`）。本节不更改 B 的解析/检索/索引/证据校验协议，也不声明完成了真实服务质量验收。
 
+## 2026-10-31 测试分支规划与小测闭环
+
+以下路径前缀均为 `/api/learning/space/`，沿用本机 Host、同源、Cookie 和 `X-Xueya-Token`。账号从会话解析；改名保留既有学习 namespace，不能通过改名或注册已保留的旧用户名接管历史记录。生成/评阅复用主平台 JobQueue、预算、并发与调用账本，每个付费作业一次尝试；GET/恢复不重新提交模型。
+
+| 方法/路径 | 请求与结果 |
+| --- | --- |
+| POST `chat/plan` | `{question,sessionId,operationId,history?,useDefaults?}` → `handled:false`，或 `status:collecting/conditions/missing/answer`，或 `status:queued/jobId`。规划概念解释不创建作业；缺项补问与用户选择默认分开。 |
+| POST `plan/generate` | `{goal,daysCount,dailyMinutes,restDays?,subjects?,title?,operationId}` → `{job}`。与聊天走同一种持久生成，实际完成后保存草稿和独立框架；`result` 为 `{planId,frameworkId,sessionId}`。 |
+| GET `jobs/:id`；POST `jobs/:id/cancel` | 仅本人学习空间作业；复用真实 queued/running/succeeded/failed/cancelled/unknown。没有自动付费 retry 接口。 |
+| GET `plan/list`、`plan/:id`、`plan/active` | 既有 plan DTO 兼容增加 `jobs`、`generationStatus`、`frameworkId`、`sessionId`、条件来源和 `completedHistory`。`framework-pending` 部分草稿可核对但不可采用。 |
+| POST `plan/adopt` | `{planId,expectedRevision,confirmed:true,operationId?}`。新客户端必带 operationId；相同回执重放，不同请求复用 ID 冲突。事务中只留一个当前计划。 |
+| POST `plan/adjust-preview` | `{planId,expectedRevision,dailyMinutes?,endDate?,startDate?,restDays?,operationId?}` → 新 `plan` 草稿与 `changePreview`；不调用模型，不直接替换当前计划。采用时再次核对来源计划 revision，变化返回 `REPLAN_SOURCE_CHANGED`。 |
+| POST `plan/task/toggle`、`plan/task/delay` | 旧字段兼容，新客户端加 `expectedRevision/operationId`。任务变更、事件及回执同一事务；重复完成不重复记事件，延期仍校验每日总预算/休息日/截止日期。 |
+| POST `plan/task/link` | `{planId,taskId,url,title?,expectedRevision,operationId}` → `{plan,resource}`。仅 http/https，无任意 HTML；用户提供、未做网站内容或可用性核验。 |
+| POST `chat/quiz` | `{question,sessionId,operationId}` → `handled:false`，或固定题 `questionIds`，或生成 `jobId`。主动命令才触发；唯一适合的固定单选优先，否则按主题生成，不能调用受保护 RAG。 |
+| POST `quiz/jobs` | `{subject,type:single/short,count?:1..5,sessionId?,operationId}` → `{job}`；全部题目结构通过后才发布，重复题干不作为成功题卡。 |
+| GET `quiz/list`、`quiz/question/:id` | 本人题目白名单视图/作答/作业；未作答题不含答案、rubric、解释。问题含服务器 revision；来源区分 fixed / ai-generated。 |
+| POST `quiz/attempts` | `{questionId,questionRevision,answer,operationId}` → `{attempt}`。原题/答案/rubric 快照由服务端保存；客观判定在服务端，主观原答案先保存再入评阅作业。客户端 score/correct 不作为评分依据。 |
+| GET `quiz/attempts/:id` | `{attempt}`，含原答案、题目版本、原题白名单快照、evaluations 与 effectiveEvaluation。queued 作业取消/失败后读取会对齐真实状态，不产生零分。 |
+| POST `quiz/attempts/:id/review` | `{expectedRevision,reason,operationId}` → 同一 attempt 的新评阅版本；客观仍按服务器答案复核，主观沿用原作答与标准调用模型，不新增 Attempt。 |
+| POST `quiz/attempts/:id/correct` | 同上，加 `correct:boolean`（客观）或 `score:number`（有 rubric 的主观）或 `disputed:true`。无 rubric 不接受凭空总分；人工来源不会伪装成 AI。 |
+
+`evaluations` 记录 source/status/createdAt/理由及可用的模型、时间、参考分/点评。有效结果按版本请求顺序取最新已完成或明确争议版本；迟到的早期 AI 结果不覆盖较新的人工修正。原评阅保留，失败、取消和未知结果不是错误/零分。旧形状评阅以 `legacy-assessment` 只读呈现，缺失题目版本保持 null，缺完整快照时不可复核；不把历史缺失补造成新模型评阅。
+
+原 `quiz/generate` 兼容同步题目生成；原 `quiz/grade` 的客观 `result` 保留，主观增加 queued/jobId 与 Attempt，后续用作业/Attempt 读取，不等待或伪造模型分数。新页面统一走上述持久路径。原 `/api/practice/bank/ops/state`、固定题 ID、原自评与笔记保留，尚未将其全部主观题与历史评分迁移到新版本链；新小测也尚未接入多源分析，详见交付限制。
+
 ## 2026-10-28 朗读与联网搜索补充
 
 `POST /api/tts` 使用本机 Host、同源校验及 `X-Xueya-Token`（从 `/api/platform/bootstrap` 获取）。请求为 `{text:string, voice?:string, courseId?:string}`；默认声音 `mimo_default`、课程 `course-default`，清理 Markdown 后最多朗读1000字。成功返回 `{ok:true,audio:"data:audio/wav;base64,...",model:string}`；未配置或合成失败返回 `{ok:false,error:string,fallback:true}`，客户端可使用浏览器朗读。非法输入及鉴权错误沿用公共错误响应。

@@ -9,6 +9,13 @@
   const icon=name=>`<span data-icon="${name}"></span>`;
   let storage;try{storage=window.localStorage;}catch{storage={getItem(){return null;},setItem(){throw new Error('STORAGE_UNAVAILABLE');}};}
   const store=window.XueyaWorkspaceStore.createStore({storage,learning:L}),state=store.state;
+  window.addEventListener('xueya:quiz-attempt',event=>{
+    const {messageId,questionId,attemptId}=event.detail;
+    for(const message of [...state.messages,...state.sessions.flatMap(session=>session.messages)]){
+      if(message.id===messageId&&message.artifacts?.quiz){message.artifacts.quiz.attemptIds||={};message.artifacts.quiz.attemptIds[questionId]=attemptId;}
+    }
+    persist();
+  });
   let agentRuns;
   window.XueyaPlatform?.attach({store,state,toast,render});
   const viewLearning=Object.create(L);
@@ -69,7 +76,7 @@
         const list=document.createElement('div');list.className='shortcut-task-list';
         list.innerHTML=tasks.map(t=>`<label><input type="checkbox" data-shortcut-task="${e(t.id)}" ${t.completed?'checked':''}>${e(t.title)} <small>${e(t.minutes)}分钟${t.date<today?' · 已逾期':''}</small></label>`).join('');
         node.append(list);
-        list.onchange=async event=>{const input=event.target.closest('[data-shortcut-task]');if(!input)return;input.disabled=true;try{await window.XueyaPlatform.spaceFetch('/api/learning/space/plan/task/toggle',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({planId:planSnapshot.id,taskId:input.dataset.shortcutTask,completed:input.checked})});planSnapshotAt=0;toast('已同步到我的计划');}catch(error){input.checked=!input.checked;toast(error.message);}finally{input.disabled=false;}};
+        list.onchange=async event=>{const input=event.target.closest('[data-shortcut-task]');if(!input)return;input.disabled=true;try{const response=await window.XueyaPlatform.spaceFetch('/api/learning/space/plan/task/toggle',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({planId:planSnapshot.id,taskId:input.dataset.shortcutTask,completed:input.checked,expectedRevision:planSnapshot.revision,operationId:'shortcut-'+input.dataset.shortcutTask+'-'+planSnapshot.revision+'-'+input.checked})});const value=await response.json();planSnapshot=value.plan;planSnapshotAt=Date.now();toast('已同步到我的计划');}catch(error){input.checked=!input.checked;toast(error.message);}finally{input.disabled=false;}};
       }else node.insertAdjacentHTML('beforeend',`<small>${view==='ask'?'今天暂未安排计划任务':'没有到期的计划复习任务'}</small>`);
     }catch(error){if(node.isConnected)node.insertAdjacentHTML('beforeend',`<small>计划暂未读取：${e(error.message)}</small>`);}
   }
@@ -79,13 +86,15 @@
     practiceUI?.beforeRender();
     const prior=$('#chatThread'),sameSession=prior?.dataset.sessionId===state.sessionId,scrollTop=prior?.scrollTop||0,nearBottom=!prior||prior.scrollHeight-prior.scrollTop-prior.clientHeight<90;
     const pool=currentQuestions();if(state.quizIndex>=pool.length)state.quizIndex=0;
-    workspace.beforeRender();$('#spaceContent').innerHTML=renders[state.view]();$('#documentCount').textContent=window.XueyaWorkspaceAppearance.isOriginal()?state.documents.filter(d=>!d.superseded).length:Number.isInteger(state.documentCount)?state.documentCount:window.XueyaPlatform?.available?'…':state.documents.filter(d=>!d.superseded&&!d.archived).length;icons();workspace.afterRender();workbench?.prepare();libraryUI?.mount();workbench?.mount();experience?.mount();mediaUI?.mount();historyLayout?.mount();knowledgeUI?.mount();if(!window.XueyaWorkspaceAppearance.isOriginal())knowledgeUI?.refreshCount();const practiceModule=$('#practiceModule');if(practiceModule){if(state.view==='review')practiceUI?.mountReview(practiceModule);else practiceUI?.mountPractice(practiceModule,{page:location.hash.split('/')[2],category:({foundation:'basic',interview:'interview',legacy:'legacy',hot100:'hot100',exam408:'exam408'})[location.hash.split('/')[2]]});}
+    workspace.beforeRender();$('#spaceContent').innerHTML=renders[state.view]();$('#documentCount').textContent=window.XueyaWorkspaceAppearance.isOriginal()?state.documents.filter(d=>!d.superseded).length:Number.isInteger(state.documentCount)?state.documentCount:window.XueyaPlatform?.available?'…':state.documents.filter(d=>!d.superseded&&!d.archived).length;icons();workspace.afterRender();workbench?.prepare();libraryUI?.mount();workbench?.mount();experience?.mount();mediaUI?.mount();historyLayout?.mount();knowledgeUI?.mount();if(!window.XueyaWorkspaceAppearance.isOriginal())knowledgeUI?.refreshCount();const practiceModule=$('#practiceModule');if(practiceModule){if(state.view==='practice'&&location.hash.split('/')[2]==='ai')window.XueyaStudyQuiz?.directory(practiceModule,location.hash.split('/')[3],location.hash.split('/')[4]);else if(state.view==='review')practiceUI?.mountReview(practiceModule);else practiceUI?.mountPractice(practiceModule,{page:location.hash.split('/')[2],questionId:decodeURIComponent(location.hash.split('/')[3]||''),category:({foundation:'basic',interview:'interview',legacy:'legacy',hot100:'hot100',exam408:'exam408'})[location.hash.split('/')[2]]});}
     const thread=$('#chatThread');if(thread)thread.scrollTop=!sameSession||nearBottom?thread.scrollHeight:scrollTop;
     agentRuns?.refresh();
     if(state.view==='analysis')analysisUI?.mount($('#analysisModule'));
     if(state.view==='courses')coursesUI?.mount();
-    if(state.view==='frameworks'){frameworkUI ||= window.XueyaFramework.create({toast,navigate:hash=>{location.hash=hash;}});frameworkUI.mount($('#frameworkHistory'));}
+    if(state.view==='frameworks'){frameworkUI ||= window.XueyaFramework.create({toast,navigate:hash=>{location.hash=hash;}});frameworkUI.mount($('#frameworkHistory'),location.hash.split('/')[2]);}
     mountLearningShortcuts();
+    window.XueyaStudyChat?.recover(state,persist,render);
+    window.XueyaStudyQuiz?.mount($('#chatThread'));window.XueyaStudyQuiz?.recover(state,persist,render);
   }
   let initialRoute=true;function route(){const parts=location.hash.replace(/^#/,'').split('/');if(parts[0]==='space'&&parts[1]==='library'&&parts[2]!=='manage'&&window.XueyaPlatform?.available)parts[1]='knowledge';const space=parts[0]==='space';$('#homePage').hidden=space;$('#spacePage').hidden=!space;document.body.classList.toggle('in-space',space);if(space){state.view=parts[1]==='overview'?'ask':titles[parts[1]]?parts[1]:'ask';$$('[data-view]').forEach(a=>{a.classList.toggle('active',a.dataset.view===state.view);a.dataset.view===state.view?a.setAttribute('aria-current','page'):a.removeAttribute('aria-current');});render();document.title=`${titles[state.view]} · 学涯 Copilot`;if(!initialRoute){scrollTo({top:0,behavior:'instant'});$('#spaceContent').focus({preventScroll:true});}}else{document.title='学涯 Copilot — 让知识，真正连起来';if(['possibilities','evidence','rhythm'].includes(parts[0]))requestAnimationFrame(()=>document.getElementById(parts[0]).scrollIntoView());else if(!initialRoute)scrollTo({top:0,behavior:'instant'});}initialRoute=false;}
   function sourceById(id){return [...viewLearning.sources,...state.documents.flatMap(d=>d.chunks||[])].find(s=>s.id===id)||state.messages.flatMap(m=>m.sources||[]).find(s=>s.id===id)||(id?.startsWith('web-')?{id,title:'全网搜索网页',location:'互联网搜索',isWeb:true}:null);}
@@ -142,7 +151,9 @@
     }
     try{
       const stream=batch.length?((input,options)=>workspace.imageChat(input,options,batch)):chatService.stream.bind(chatService);
-      const result=await stream(request,{workflow:true,signal:controller.signal,onUpdate(update){
+      const planning=!batch.length&&window.XueyaPlatform?.available?await window.XueyaStudyChat?.handle({question:clean,history:request.history,sessionId:state.sessionId,operationId:userMessage.id},{signal:controller.signal,onReference(reference){ai.artifacts={studyPlanning:reference};persist();}}):null;
+      const quiz=!planning&&!batch.length&&window.XueyaPlatform?.available?await window.XueyaStudyQuiz?.tryChat({question:clean,sessionId:state.sessionId,operationId:userMessage.id},{signal:controller.signal,onReference(reference){ai.artifacts={quiz:reference};persist();}}):null;
+      const result=planning||quiz||await stream(request,{workflow:true,signal:controller.signal,onUpdate(update){
         if(typeof update.answer==='string')ai.text=update.answer;
         if(update.progress)ai.progress=update.progress;
         if(typeof update.reasoning==='string')ai.reasoning=update.reasoning;

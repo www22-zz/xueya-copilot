@@ -12,6 +12,7 @@ from __future__ import annotations
 import copy
 import hashlib
 import json
+import time
 from typing import Any, Dict, List, Optional, Tuple
 
 from .common import AppError, Scope, require
@@ -138,7 +139,8 @@ def public_api_projector(platform, course_id="course-default"):
             except (ValueError, TypeError):
                 nested = None
             if isinstance(nested, (list, dict)):
-                return json.dumps(project(nested), ensure_ascii=False)
+                cleaned=project(nested)
+                return item if cleaned==nested else json.dumps(cleaned, ensure_ascii=False)
             for quote in quotes:
                 if quote in item:
                     item = item.replace(quote, '[平台资料正文受保护]')
@@ -294,6 +296,7 @@ class ScopeAdapter:
     async def search(self, rag, course_id, query, *, history=(), new_topic=False,
                      document_ids=None, section=None, mode="hybrid", budget=2000, limit=6):
         require(type(budget) is int and 32 <= budget <= 16000 and type(limit) is int and 1 <= limit <= 20, 'INVALID_BUDGET')
+        started=time.perf_counter()
         private = self.private_scope(course_id)
         if private.user_id == self.p.user_id:
             return await rag.search(private, query, history=history, new_topic=new_topic,
@@ -321,9 +324,13 @@ class ScopeAdapter:
                 except AppError:
                     continue
                 sources.append(source); seen.add(source['id']); used += size
-        return {'sources': sources, 'warnings': list(dict.fromkeys(w for r in results for w in r.get('warnings', []))),
-                'status': 'conflict' if any(r.get('status') == 'conflict' for r in results) else 'evidence_found' if sources else 'insufficient',
-                'supportChecked': False}
+        from .rag_search import conflicts
+        opposing=conflicts(sources)
+        return {'schemaVersion':'rag-1','scope':private.wire(),'query':query,'rewrittenQuery':results[0].get('rewrittenQuery',query),
+                'sources': sources, 'warnings': list(dict.fromkeys(w for r in results for w in r.get('warnings', []))),
+                'status': 'conflict' if opposing or any(r.get('status') == 'conflict' for r in results) else 'evidence_found' if sources else 'insufficient',
+                'conflicts':opposing,'budget':{'unit':'utf8Bytes','limit':budget,'used':used},
+                'elapsedMs':round((time.perf_counter()-started)*1000,3),'supportChecked': False}
 
     def validate_citation(self, rag, citation, course_id=None):
         require(isinstance(citation, dict), 'INVALID_CITATION')

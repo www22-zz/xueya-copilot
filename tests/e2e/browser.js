@@ -44,8 +44,8 @@ const outputDirectory=path.join(root,'test-results/browser');
     await expandLegacyRecords(page);
     await page.goto(base+'/');
     assert.equal(await page.locator('.hero h1').innerText(),'资料，读得懂。\n知识，用得上。');
-    await page.getByRole('tab',{name:'记得牢固'}).click();
-    assert.match(await page.locator('#demoContent').innerText(),/练习/);
+    await page.getByRole('tab',{name:'练得扎实'}).click();
+    assert.match(await page.locator('#demoPanel').innerText(),/练习/);
     await page.getByRole('link',{name:'进入学习空间',exact:true}).click();
     await page.locator('#spacePage').waitFor({state:'visible'});
 

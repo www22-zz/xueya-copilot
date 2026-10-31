@@ -28,10 +28,19 @@ class Model:
 
     async def generate(self, messages, **kwargs):
         self.calls += 1
+        await asyncio.sleep(.2)
         if '拆解可执行任务' in messages[0]['content']:
+            from backend.xueya.practice_catalog import exam_bank
+            question=next(q for q in exam_bank()['questions'] if q['subject']=='操作系统')
             value = {'explanation': '先理解进程状态，再完成回忆练习。', 'tasks': [
                 {'title': '理解进程状态转换', 'subject': '操作系统', 'minutes': 30},
-                {'title': '回忆线程与进程区别', 'subject': '操作系统', 'minutes': 30}]}
+                {'title': '练习：'+question['title'], 'subject': '操作系统', 'minutes': 30, 'questionId':question['id'], 'phase':'巩固'}]}
+        elif '生成一道可独立解答的练习' in messages[0]['content']:
+            kind=json.loads(messages[1]['content'])['type']
+            value={'prompt':'解释临界区互斥的含义。','rubric':[{'id':'one','description':'互斥约束和适用条件','points':4}],'explanation':'同一时刻仅一个进程访问临界资源。'} if kind=='short' else {'prompt':'临界区互斥要求什么？','options':['同时访问','互斥访问'],'answer':1,'explanation':'同一时刻仅一个进程进入相关临界区。'}
+        elif '评阅学生答案' in messages[0]['content']:
+            payload=json.loads(messages[1]['content'])
+            value={'feedback':'说明了互斥限制，适用条件还需补充。','rubricPoints':[{'id':r['id'],'earned':r['points']/2} for r in payload['rubric']]}
         else:
             value = {'title': '进程知识框架', 'nodes': [
                 {'id': 'root', 'label': '进程管理', 'parentId': None},
@@ -79,7 +88,12 @@ def main():
                 assert model.calls == 0, 'Opening history must not generate content'
                 page.locator('[data-kf-generate]').click()
                 expect(page.locator('.kf-node-card').first).to_contain_text('进程管理')
-                page.on('dialog', lambda dialog: dialog.accept('用户补充概念') if dialog.type=='prompt' else dialog.accept())
+                def accept_dialog(dialog):
+                    if dialog.type!='prompt':dialog.accept();return
+                    if '添加学习资源链接' in dialog.message:dialog.accept('https://docs.python.org/3/tutorial/')
+                    elif '输入修正参考分' in dialog.message:dialog.accept('3')
+                    else:dialog.accept('用户补充概念')
+                page.on('dialog',accept_dialog)
                 page.locator('[data-kf-add-child]').first.click()
                 expect(page.locator('.kf-node-card')).to_have_count(3)
                 page.locator('.kf-node-card').last.drag_to(page.locator('.kf-node-card').nth(1))
@@ -110,17 +124,102 @@ def main():
                 page.goto(base+'/#space/ask')
                 expect(page.locator('.learning-shortcuts')).to_contain_text('今日任务')
                 expect(page.locator('[data-shortcut-task]').first).to_be_checked()
+                page.locator('[data-shortcut-task]').last.check()
+                page.locator('[data-shortcut-task]').last.uncheck()
                 page.locator('[data-open-my-plan]').click()
                 expect(page.locator('[data-toggle-task]').first).to_be_visible()
                 for view in ('courses','practice','review','analysis'):
                     page.locator(f'.learning-center-nav a[data-view={view}]').click()
                     expect(page.locator(f'.learning-center-nav a[data-view={view}]')).to_have_attribute('aria-current','page')
                     assert page.evaluate('document.documentElement.scrollWidth <= innerWidth + 2')
+                page.locator('[data-tab-switch=plan]').click()
+                resource=page.locator('.plan-task-row a[href^="#space/practice/exam408/"]').first
+                href=resource.get_attribute('href');assert href
+                question_id=href.rsplit('/',1)[-1]
+                from backend.xueya.practice_catalog import exam_bank
+                expected_question=next(q for q in exam_bank()['questions'] if q['id']==question_id)
+                resource.click();expect(page.locator('.practice-detail h2')).to_have_text(expected_question['title'])
+                page.reload();expect(page.locator('.practice-detail h2')).to_have_text(expected_question['title'])
+                page.goto(base+'/#space/analysis');page.locator('[data-tab-switch=plan]').click()
+                page.locator('[data-task-link]').first.click()
+                expect(page.locator('.plan-task-row')).to_contain_text(['用户链接，未核验',''])
+                page.locator('[data-adjust-plan]').click();page.locator('[name=dailyMinutes]').fill('15')
+                page.locator('#createPlanForm button[type=submit]').click()
+                expect(page.locator('[data-adopt-draft]')).to_be_visible()
+                page.locator('.plan-draft-preview summary').click()
+                expect(page.locator('.plan-draft-preview')).to_contain_text('保留已完成 1 项')
+                expect(page.locator('.plan-stat-bar')).to_contain_text('每日预算：60 分钟')
+                page.locator('[data-adopt-draft]').click()
+                expect(page.locator('.plan-stat-bar')).to_contain_text('每日预算：15 分钟')
+                expect(page.locator('.plan-stat-bar')).to_contain_text('保留历史完成 1 项')
+                page.reload();page.locator('[data-tab-switch=plan]').click()
+                expect(page.locator('.plan-stat-bar')).to_contain_text('保留历史完成 1 项')
+                # Chat intake must reuse known conditions. Refresh an actual
+                # queued job; recovery may read it but cannot resubmit models.
+                page.goto(base+'/#space/ask')
+                page.locator('#chatInput').fill('帮我规划操作系统，每天45分钟')
+                page.get_by_role('button',name='发送问题',exact=True).click()
+                expect(page.locator('.ai-message').last).to_contain_text('还需要期限或持续天数')
+                assert model.calls==3
+                page.locator('[data-plan-defaults]').last.click()
+                page.wait_for_function("JSON.parse(localStorage.getItem(window.XueyaDataKey('xueya-copilot-workspace-v3'))).courses.some(c=>c.data.messages.some(m=>m.artifacts?.studyPlanning?.status==='queued'))")
+                page.reload()
+                card=page.locator('[data-study-plan]').filter(has=page.get_by_role('link',name='查看草稿与采用')).last
+                expect(card).to_be_visible()
+                chat_plan_id=card.get_attribute('data-study-plan');assert chat_plan_id
+                expect(page.locator('.ai-message').last).to_contain_text('计划草稿已保存')
+                assert model.calls==5, 'Refresh must not restart the two generation calls'
+                card.get_by_role('link',name='打开关联知识框架').click()
+                expect(page.locator('.kf-node-card').first).to_contain_text('进程管理')
+                page.get_by_role('link',name='查看关联计划').click()
+                expect(page.locator(f'[data-adopt-draft="{chat_plan_id}"]')).to_be_visible()
+                assert model.calls==5
+                page.goto(base+'/#space/ask')
+                page.locator('#chatInput').fill('请生成一道操作系统主观题')
+                page.get_by_role('button',name='发送问题',exact=True).click()
+                short=page.locator('[data-quiz-card]').last
+                expect(short.locator('textarea[name=answer]')).to_be_visible()
+                short.locator('textarea[name=answer]').fill('同一时刻最多一个进程进入相关临界区。')
+                short.get_by_role('button',name='保存并提交作答',exact=True).click()
+                expect(short.locator('.quiz-evaluation')).to_contain_text('2 / 4')
+                short.locator('[data-quiz-review]').click()
+                expect(short.locator('.quiz-evaluation')).to_have_count(2)
+                expect(short.locator('.quiz-evaluation').last).to_contain_text('graded')
+                short.locator('[data-quiz-correct]').click()
+                expect(short.locator('.quiz-evaluation')).to_have_count(3)
+                expect(short.locator('.quiz-evaluation').last).to_contain_text('人工修正')
+                expect(short.locator('.quiz-evaluation').last).to_contain_text('3 / 4')
+                attempt_id=short.get_attribute('data-attempt-id');question_id=short.get_attribute('data-quiz-card')
+                short.get_by_role('link',name='在练习打开同一次作答').click()
+                expect(page.locator('[data-quiz-card]')).to_have_attribute('data-attempt-id',attempt_id)
+                expect(page.locator('.quiz-evaluation')).to_have_count(3)
+                page.reload();expect(page.locator('.quiz-evaluation')).to_have_count(3)
+                assert model.calls==8,'Review must not create another attempt or replay on refresh'
+                page.goto(base+'/#space/ask')
+                restored=page.locator(f'[data-quiz-card="{question_id}"]')
+                expect(restored).to_have_attribute('data-attempt-id',attempt_id)
+                page.locator('#chatInput').fill('请生成一道操作系统单选题')
+                page.get_by_role('button',name='发送问题',exact=True).click()
+                objective=page.locator('[data-quiz-card]').last
+                expect(objective.locator('input[type=radio]')).to_have_count(2)
+                objective.locator('input[value="0"]').check()
+                objective.get_by_role('button',name='保存并提交作答',exact=True).click()
+                expect(objective.locator('.quiz-evaluation')).to_contain_text('判定错误')
+                assert model.calls==9,'Objective scoring must not call the model'
+                objective_id=objective.get_attribute('data-quiz-card')
+                page.goto(base+'/#space/review')
+                expect(page.locator(f'a[href^="#space/practice/ai/{objective_id}/"]')).to_be_visible()
+                page.screenshot(path=str(OUT/'chat-quiz-mobile.png'),full_page=True)
                 assert not errors, errors
                 browser.close()
-                print(json.dumps({'navigation': 'passed', 'framework_history_and_generation': 'passed',
+                result={'navigation': 'passed', 'framework_history_and_generation': 'passed',
                                   'plan_create_adopt_complete': 'passed', 'mobile': 'passed',
-                                  'page_errors':errors,'controlled_model_calls':model.calls,'paid_calls':0}))
+                                  'real_question_jump_and_adjustment':'passed',
+                                  'chat_intake_job_refresh_and_framework':'passed',
+                                  'chat_quiz_practice_and_evaluation_versions':'passed',
+                                  'page_errors':errors,'controlled_model_calls':model.calls,'paid_calls':0}
+                (OUT/'result.json').write_text(json.dumps(result,ensure_ascii=False,indent=2),encoding='utf-8')
+                print(json.dumps(result))
         finally:
             server.should_exit=True;thread.join(10);sock.close()
 

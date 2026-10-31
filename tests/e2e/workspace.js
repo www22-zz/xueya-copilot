@@ -26,7 +26,7 @@ const root=path.resolve(__dirname,'../..'),output=path.join(root,'test-results/w
     const phase=name=>console.log('A browser:',name);
 
     phase('documents, originals, metadata and versions');
-    await nav('library');
+    await nav('library/manage');
     const text='拓扑排序每轮选择入度为零的顶点。更新入度，移除出边。\n'.repeat(35);
     await page.locator('#fileInput').setInputFiles({name:'课程原文.md',mimeType:'text/markdown',buffer:Buffer.from(text)});
     const row=()=>page.locator('.document-row').filter({hasText:'课程原文.md'}).filter({has:page.locator('[data-version-document]')}).first();

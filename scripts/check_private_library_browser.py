@@ -53,6 +53,7 @@ def main():
                 assert job['status']=='succeeded',job
                 page.goto(base+'/#space/ask');expect(page.locator('#chatThread')).to_contain_text('ALICE_PRIVATE_CHAT_9204')
                 alice_owner=page.evaluate('window.XueyaDataOwner');assert alice_owner
+                page.evaluate("async()=>{const cache=XueyaFileCache.createCache();await cache.put('same-local-key',new Blob(['ALICE_CACHE_PRIVATE_7092']));}")
                 # An unassigned old browser workspace must remain preserved, and
                 # must not be adopted by another signed-in account on this PC.
                 page.evaluate("localStorage.setItem('xueya-copilot-workspace-v3',JSON.stringify({legacy:'UNASSIGNED_BROWSER_9361'}))")
@@ -62,6 +63,7 @@ def main():
                 assert 'ALICE_PRIVATE_CHAT_9204' not in page.locator('body').inner_text()
                 assert 'UNASSIGNED_BROWSER_9361' not in page.locator('body').inner_text()
                 assert page.evaluate('window.XueyaDataOwner')!=alice_owner
+                assert page.evaluate("async()=>Boolean(await XueyaFileCache.createCache().get('same-local-key'))") is False
                 page.goto(base+'/#space/knowledge');page.get_by_role('button',name='查看资料',exact=True).click()
                 expect(page.locator('body')).not_to_contain_text('Alice-private.md')
                 bob_headers={'X-Xueya-Token':context.request.get(base+'/api/platform/bootstrap').json()['token']}
@@ -71,17 +73,19 @@ def main():
                 login('alice');page.reload();page.goto(base+'/#space/ask')
                 expect(page.locator('#chatThread')).to_contain_text('ALICE_PRIVATE_CHAT_9204')
                 page.reload();expect(page.locator('#chatThread')).to_contain_text('ALICE_PRIVATE_CHAT_9204')
+                assert page.evaluate("async()=>(await XueyaFileCache.createCache().get('same-local-key')).text()")=='ALICE_CACHE_PRIVATE_7092'
                 for theme in ('light','dark'):
                     for width,height in ((1400,950),(390,844)):
                         page.set_viewport_size({'width':width,'height':height})
                         page.evaluate('(theme)=>{document.documentElement.dataset.theme=theme}',theme)
-                        page.screenshot(path=str(output/f'{theme}-{width}.png'),full_page=True)
+                        page.screenshot(path=str(output/f'{theme}-{width}.png'),full_page=True,animations='disabled')
+                        page.wait_for_function('document.documentElement.scrollWidth <= innerWidth+1',timeout=5000)
                         assert page.evaluate('document.documentElement.scrollWidth <= innerWidth+1'), page.evaluate("[...document.querySelectorAll('body *')].filter(e=>e.getBoundingClientRect().right>innerWidth+1&&getComputedStyle(e).position!=='fixed').map(e=>({tag:e.tagName,cls:e.className,width:e.getBoundingClientRect().width,right:e.getBoundingClientRect().right})).slice(0,12)")
                 assert page.evaluate("localStorage.getItem('xueya-copilot-workspace-v3')")==json.dumps({'legacy':'UNASSIGNED_BROWSER_9361'},separators=(',',':'))
                 assert not errors,errors
                 browser.close()
                 result={'account_switch':'passed','private_upload':'passed','guessed_original':'denied','refresh_restore':'passed',
-                        'legacy_browser_preserved':True,'page_errors':errors,'paid_calls':0,'screenshots':4}
+                        'legacy_browser_preserved':True,'original_cache_isolation':'passed','page_errors':errors,'paid_calls':0,'screenshots':4}
                 (output/'result.json').write_text(json.dumps(result,ensure_ascii=False,indent=2),encoding='utf-8')
                 print(json.dumps(result,ensure_ascii=False))
         finally:

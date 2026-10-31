@@ -12,6 +12,8 @@
     let history = [];
     let loading = false;
     let showCreateModal = false;
+    let adjusting = false;
+    let jobs=[],pollTimer;
 
     async function loadPlans() {
       const stamp=generation;
@@ -24,12 +26,11 @@
         if (data.ok) {
           activePlan = data.active;
           drafts = data.drafts || [];
-          history = data.history || [];
+          history = data.history || [];jobs=data.jobs||[];
         }
       } catch (error) { toast(error.message || '学习操作未完成'); }
       finally {
-        loading = false;
-        if(stamp===generation)render();
+        if(stamp===generation){loading=false;render();clearTimeout(pollTimer);if(jobs.some(job=>['queued','running','cancelling'].includes(job.status)))pollTimer=setTimeout(loadPlans,500);}
       }
     }
 
@@ -38,14 +39,14 @@
         loading = true;
         render();
         const headers = { 'Content-Type': 'application/json' };
-        const res = await window.XueyaPlatform.spaceFetch('/api/learning/space/plan/draft', {
+        const res = await window.XueyaPlatform.spaceFetch('/api/learning/space/plan/generate', {
           method: 'POST',
           headers,
-          body: JSON.stringify(formData)
+          body: JSON.stringify({...formData,operationId:crypto.randomUUID()})
         });
         const data = await res.json();
         if (data.ok) {
-          toast('计划草稿已生成，请核对排程后点击采用！');
+          toast('已提交后台生成作业，完成后核对草稿和知识框架，再明确采用。');
           showCreateModal = false;
           await loadPlans();
         } else {
@@ -68,7 +69,7 @@
         const res = await window.XueyaPlatform.spaceFetch('/api/learning/space/plan/adopt', {
           method: 'POST',
           headers,
-          body: JSON.stringify({ planId, expectedRevision, confirmed: true })
+          body: JSON.stringify({ planId, expectedRevision, confirmed: true, operationId:'adopt-'+planId+'-'+expectedRevision })
         });
         const data = await res.json();
         if (data.ok) {
@@ -91,7 +92,7 @@
         const res = await window.XueyaPlatform.spaceFetch('/api/learning/space/plan/task/toggle', {
           method: 'POST',
           headers,
-          body: JSON.stringify({ planId, taskId, completed: !currentStatus })
+          body: JSON.stringify({ planId, taskId, completed: !currentStatus, expectedRevision:activePlan.revision, operationId:'complete-'+taskId+'-'+activePlan.revision+'-'+!currentStatus })
         });
         const data = await res.json();
         if (data.ok) {
@@ -109,7 +110,7 @@
         const res = await window.XueyaPlatform.spaceFetch('/api/learning/space/plan/task/delay', {
           method: 'POST',
           headers,
-          body: JSON.stringify({ planId, taskId, newDate: newDate.trim() })
+          body: JSON.stringify({ planId, taskId, newDate: newDate.trim(),expectedRevision:activePlan.revision,operationId:'delay-'+taskId+'-'+activePlan.revision+'-'+newDate.trim() })
         });
         const data = await res.json();
         if (data.ok) {
@@ -119,6 +120,34 @@
           toast('顺延失败：' + (data.error === 'CANNOT_DELAY_TO_REST_DAY' ? '目标日期为设定休息日' : '超出计划周期范围'));
         }
       } catch (error) { toast(error.message || '学习操作未完成'); }
+    }
+
+    async function previewAdjustment(formData) {
+      try {
+        loading=true;
+        const response=await window.XueyaPlatform.spaceFetch('/api/learning/space/plan/adjust-preview',{
+          method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({planId:activePlan.id,expectedRevision:activePlan.revision,operationId:crypto.randomUUID(),
+            dailyMinutes:formData.dailyMinutes,endDate:formData.endDate,restDays:formData.restDays})});
+        const data=await response.json();if(!data.ok)throw Error(data.error);
+        showCreateModal=false;adjusting=false;await loadPlans();toast('调整草稿已保存，查看差异后采用生效。');
+      } catch(error){toast(error.message);}
+      finally{loading=false;render();}
+    }
+    async function addTaskLink(taskId) {
+      const url=prompt('添加学习资源链接（仅 http/https，显示为用户提供、未核验）：');if(!url)return;
+      try {
+        const response=await window.XueyaPlatform.spaceFetch('/api/learning/space/plan/task/link',{
+          method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({planId:activePlan.id,taskId,url,
+            expectedRevision:activePlan.revision,operationId:crypto.randomUUID()})});
+        const data=await response.json();if(!data.ok)throw Error(data.error);
+        await loadPlans();toast('资源链接已保存');
+      } catch(error){toast(error.message);}
+    }
+    function resourceLinks(task) {
+      const links=[...(task.resource?.url?[task.resource]:[]),...(task.links||[])];
+      return links.filter(link=>/^(#space\/|https?:\/\/)/.test(link.url||'')).map(link=>
+        `<a class="button button-outline button-small" href="${e(link.url)}" ${link.type==='external'?'target="_blank" rel="noopener noreferrer"':''}>${e(link.title||'打开题目')}${link.type==='external'?'（用户链接，未核验）':''}</a>`).join('');
     }
 
     function render() {
@@ -134,6 +163,7 @@
           allTasks.push(...(d.tasks || []));
         }
       }
+      allTasks.push(...(activePlan?.completedHistory||[]));
       const doneCount = allTasks.filter(t => t.completed).length;
       const progressPercent = allTasks.length ? Math.round((doneCount / allTasks.length) * 100) : 0;
 
@@ -144,22 +174,25 @@
               <h2>${activePlan ? e(activePlan.title) : '我的学习计划'}</h2>
               <p>${activePlan ? e(activePlan.goal) + ' · 周期：' + e(activePlan.startDate) + ' 至 ' + e(activePlan.endDate) : '制定并执行个性化计算机考研与核心课程复习计划'}</p>
             </div>
+            ${activePlan?'<button type="button" class="button button-outline button-small" data-adjust-plan>调整每日时间与日期</button>':''}
             <button type="button" class="button button-blue button-small" data-open-create-plan>
               ＋ 制定新计划
             </button>
           </div>
 
+          ${jobs.some(job=>['queued','running','cancelling','unknown','failed'].includes(job.status))?`<div class="panel" role="status">${jobs.filter(job=>['queued','running','cancelling','unknown','failed'].includes(job.status)).map(job=>`<p>计划生成：${e(job.status)} ${e(job.progress?.label||'')} ${['unknown','failed'].includes(job.status)?'结果待核对，不会自动付费重试。':''}</p>`).join('')}</div>`:''}
           ${activePlan ? `
             <div class="plan-stats-panel panel">
               <div class="plan-stat-bar">
                 <span>总完成进度：<strong>${doneCount} / ${allTasks.length} 项任务</strong> (${progressPercent}%)</span>
-                <span>每日预算：${e(activePlan.dailyMinutes)} 分钟</span>
+                <span>每日预算：${e(activePlan.dailyMinutes)} 分钟 · 保留历史完成 ${(activePlan.completedHistory||[]).length} 项</span>
               </div>
               <div class="plan-progress-track">
                 <div class="plan-progress-fill" style="width: ${progressPercent}%;"></div>
               </div>
             </div>
 
+            ${activePlan.completedHistory?.length?`<details class="panel"><summary>此前完成记录 (${activePlan.completedHistory.length})</summary>${activePlan.completedHistory.map(t=>`<p>${e(t.date||t.originalDate)} · ${e(t.title)} · 已完成${resourceLinks(t)}</p>`).join('')}</details>`:''}
             <div class="plan-days-list">
               ${(activePlan.days || []).map(day => `
                 <div class="plan-day-card panel ${day.isRestDay ? 'is-rest-day' : ''}">
@@ -175,7 +208,7 @@
                           <span class="task-title-text">${e(t.title)}</span>
                         </label>
                         <div class="task-actions-group">
-                          <span class="task-minutes">${e(t.minutes)} 分钟</span>
+                          <span class="task-minutes">${e(t.phase||'学习')} · ${e(t.minutes)} 分钟</span>${resourceLinks(t)}<button type="button" class="button button-outline button-small" data-task-link="${e(t.id)}">添加链接</button>
                           ${t.delayCount > 0 ? `<span class="task-delay-tag">已顺延 ${t.delayCount} 次</span>` : ''}
                           ${!t.completed ? `<button type="button" class="button button-outline button-small" data-delay-task="${e(t.id)}">顺延</button>` : ''}
                         </div>
@@ -200,12 +233,13 @@
                   <div>
                     <strong>${e(d.title)}</strong> - <small>${e(d.goal)} · ${d.daysCount}天</small>
                     <details class="plan-draft-preview"><summary>查看说明与每日安排</summary>
-                      <p>${e(d.explanation)}</p>
-                      ${(d.days||[]).map(day=>`<p><strong>${e(day.date)}</strong> · ${day.isRestDay?'休息日':e(day.budgetMinutes)+' 分钟'}<br>${(day.tasks||[]).map(t=>e(t.title)+'（'+e(t.minutes)+' 分钟）').join('<br>')||'无任务'}</p>`).join('')}
+                      <p>${e(d.explanation)}</p>${d.frameworkId?`<a href="#space/frameworks/${e(d.frameworkId)}">打开关联知识框架</a>`:d.generationStatus?'<p>知识框架生成尚未完成，本草稿暂不可采用。</p>':''}
+                      ${d.changePreview?`<p>调整预览：每日 ${e(d.changePreview.dailyMinutes.before)} → ${e(d.changePreview.dailyMinutes.after)} 分钟；截止 ${e(d.changePreview.endDate.before)} → ${e(d.changePreview.endDate.after)}；保留已完成 ${d.changePreview.retainedCompleted} 项。采用前原计划继续执行。</p>`:''}
+                      ${(d.days||[]).map(day=>`<p><strong>${e(day.date)}</strong> · ${day.isRestDay?'休息日':e(day.budgetMinutes)+' 分钟'}<br>${(day.tasks||[]).map(t=>e(t.title)+'（'+e(t.minutes)+' 分钟）'+resourceLinks(t)).join('<br>')||'无任务'}</p>`).join('')}
                       ${d.remaining?.length?`<p>时间不足，另有 ${d.remaining.length} 项任务尚未排入。请增加天数或每日时间后重新生成。</p>`:''}
                     </details>
                   </div>
-                  <button type="button" class="button button-blue button-small" data-adopt-draft="${e(d.id)}" data-rev="${d.revision}">
+                  <button type="button" class="button button-blue button-small" data-adopt-draft="${e(d.id)}" data-rev="${d.revision}" ${d.generationStatus&&d.generationStatus!=='completed'?'disabled':''}>
                     采用此计划
                   </button>
                 </div>
@@ -218,7 +252,7 @@
               <h3>历史计划 (${history.length})</h3>
               ${history.map(h => `
                 <div class="history-plan-row">
-                  <span>${e(h.title)} (${e(h.startDate)} ~ ${e(h.endDate)})</span>
+                  <details><summary>${e(h.title)} (${e(h.startDate)} ~ ${e(h.endDate)})</summary>${[...(h.completedHistory||[]),...(h.days||[]).flatMap(day=>(day.tasks||[]).map(t=>({...t,date:day.date})))].map(t=>`<p>${e(t.date||t.originalDate)} · ${e(t.title)} · ${t.completed?'已完成':'未完成'}${resourceLinks(t)}</p>`).join('')}</details>
                   <span class="history-badge">已归档</span>
                 </div>
               `).join('')}
@@ -229,23 +263,21 @@
         ${showCreateModal ? `
           <div class="modal-backdrop">
             <div class="modal-card panel">
-              <h3>制定新学习计划</h3>
+              <h3>${adjusting?'调整当前计划（先预览）':'制定新学习计划'}</h3>
               <form id="createPlanForm">
                 <label class="form-field">计划名称
-                  <input name="title" required value="计算机考研基础强化计划">
+                  <input name="title" required value="${e(adjusting?activePlan.title:'计算机考研基础强化计划')}" ${adjusting?'readonly':''}>
                 </label>
                 <label class="form-field">学习目标
-                  <textarea name="goal" rows="2" required>完成408数据结构、计组、操作系统与网络系统复习</textarea>
+                  <textarea name="goal" rows="2" required ${adjusting?'readonly':''}>${e(adjusting?activePlan.goal:'完成408数据结构、计组、操作系统与网络系统复习')}</textarea>
                 </label>
                 <div class="form-row" style="display:flex;gap:12px;">
                   <label class="form-field" style="flex:1;">每日可用时间 (分钟)
-                    <input type="number" name="dailyMinutes" min="15" max="360" value="60" required>
+                    <input type="number" name="dailyMinutes" min="15" max="480" value="${adjusting?activePlan.dailyMinutes:60}" required>
                   </label>
-                  <label class="form-field" style="flex:1;">持续天数
-                    <input type="number" name="daysCount" min="1" max="366" value="14" required>
-                  </label>
+                  ${adjusting?`<label class="form-field" style="flex:1;">新的截止日期<input type="date" name="endDate" value="${e(activePlan.endDate)}" required></label>`:`<label class="form-field" style="flex:1;">持续天数<input type="number" name="daysCount" min="1" max="366" value="14" required></label>`}
                 </div>
-                <fieldset><legend>休息日</legend>${['一','二','三','四','五','六','日'].map((name,i)=>`<label><input type="checkbox" name="restDays" value="${i+1}" ${i===6?'checked':''}>周${name} </label>`).join('')}</fieldset>
+                <fieldset><legend>休息日</legend>${['一','二','三','四','五','六','日'].map((name,i)=>`<label><input type="checkbox" name="restDays" value="${i+1}" ${(adjusting?activePlan.restDays:[7]).includes(i+1)?'checked':''}>周${name} </label>`).join('')}</fieldset>
                 <div class="modal-actions" style="display:flex;gap:12px;margin-top:16px;">
                   <button type="button" class="button button-outline" data-close-create-modal>取消</button>
                   <button type="submit" class="button button-blue">生成排程草稿</button>
@@ -260,8 +292,10 @@
     }
 
     function bindEvents() {
+      container.querySelector('[data-adjust-plan]')?.addEventListener('click',()=>{adjusting=true;showCreateModal=true;render();});
+      container.querySelectorAll('[data-task-link]').forEach(button=>button.onclick=()=>addTaskLink(button.dataset.taskLink));
       container.querySelector('[data-open-create-plan]')?.addEventListener('click', () => {
-        showCreateModal = true;
+        adjusting=false;showCreateModal = true;
         render();
       });
 
@@ -273,11 +307,11 @@
       container.querySelector('#createPlanForm')?.addEventListener('submit', (ev) => {
         ev.preventDefault();
         const fd = new FormData(ev.target);
-        createDraft({
+        (adjusting?previewAdjustment:createDraft)({
           title: fd.get('title'),
           goal: fd.get('goal'),
           dailyMinutes: Number(fd.get('dailyMinutes')),
-          daysCount: Number(fd.get('daysCount')),
+          daysCount: Number(fd.get('daysCount')),endDate:fd.get('endDate'),
           restDays: fd.getAll('restDays').map(Number)
         });
       });
@@ -310,7 +344,7 @@
       await loadPlans();
     }
 
-    return { mount, loadPlans, unmount(){generation++;container=null;} };
+    return { mount, loadPlans, unmount(){generation++;clearTimeout(pollTimer);container=null;} };
   }
 
   root.XueyaPlan = { create: createPlanUI };

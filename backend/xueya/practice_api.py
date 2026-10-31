@@ -27,7 +27,7 @@ def install_practice(app):
         if account is not None and account.record():
             require(account.authorized(request), 'AUTH_REQUIRED')
             record = account.current(request)
-            return (record or {}).get('username') or 'local'
+            return (record or {}).get('learningOwner') or (record or {}).get('username') or 'local'
         return 'local'
 
     def store() -> PracticeState:
