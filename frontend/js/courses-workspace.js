@@ -92,6 +92,114 @@
       ]
     },
     {
+      id: 'cs-arch-sys',
+      title: '计算机组成原理与体系结构深度精析（哈工大公开课）',
+      category: 'theory',
+      categoryName: '核心理论 / 408',
+      level: '进阶必修',
+      badge: '408 核心 · 硬件底座',
+      instructor: '哈尔滨工业大学 · 刘宏伟团队',
+      duration: '12 课时 · 约 5.0 小时',
+      bvid: 'BV1WW411Q7G5',
+      coverGradient: 'linear-gradient(135deg, #1e293b 0%, #475569 100%)',
+      coverIcon: 'cpu',
+      description: '国家级精品课程哈工大计组公开课：深入冯·诺依曼架构、机器级数据表示、主存与 Cache 映射、指令系统与寻址、CPU 流水线冒险以及总线与中断系统。',
+      tags: ['冯诺依曼', '补码与浮点', 'Cache映射', '指令系统', '流水线冒险', '中断与DMA'],
+      platform: true,
+      episodes: [
+        {
+          id: 'arch-ep-1',
+          title: '第 01 讲：计算机系统概述：冯·诺依曼架构与性能度量',
+          duration: '22:10',
+          bvid: 'BV1WW411Q7G5',
+          bpage: 1,
+          videoUrl: '',
+          summary: '冯·诺依曼计算机五大组成部分，存储程序概念，主频、CPI、MIPS 与 FLOPS 性能度量指标。',
+          keyPoints: ['冯诺依曼体系', '存储程序工作方式', 'CPI与MIPS计算'],
+          copilotPrompts: [
+            '冯·诺依曼体系结构的核心特点是什么，指令与数据在存储器中是如何区分的？',
+            'CPI（Cycles Per Instruction）和 MIPS 指标在评估 CPU 性能时有哪些局限性？',
+            '计算机中的字长（Word Length）是如何影响寻址范围和计算精度的？'
+          ]
+        },
+        {
+          id: 'arch-ep-2',
+          title: '第 02 讲：数据的机器级表示：定点数、浮点数与 IEEE 754 标准',
+          duration: '26:40',
+          bvid: 'BV1WW411Q7G5',
+          bpage: 8,
+          videoUrl: '',
+          summary: '原码、反码、补码与移码变换，溢出判跳逻辑（双符号位法），IEEE 754 单双精度浮点数规格化与阶码偏置。',
+          keyPoints: ['补码算术加减法', '双符号位溢出判断', 'IEEE 754 浮点标准与特殊值'],
+          copilotPrompts: [
+            '为什么计算机底层的定点整数普遍采用补码表示而不是原码？',
+            'IEEE 754 单精度浮点数中，阶码为什么采用移码（偏置常数 127）表示？',
+            '浮点数的非规格化数（Subnormal Numbers）是为了解决什么计算精度问题？'
+          ]
+        },
+        {
+          id: 'arch-ep-3',
+          title: '第 03 讲：存储系统与 Cache 映射：直接、全相联与组相联',
+          duration: '28:15',
+          bvid: 'BV1WW411Q7G5',
+          bpage: 24,
+          videoUrl: '',
+          summary: 'SRAM 与 DRAM 原理对比，主存芯片扩展（位扩展与字扩展），Cache-主存地址映射机制与命中率计算，写直达与写回策略。',
+          keyPoints: ['Cache 三种映射方式', 'Tag 标记位计算', '写分配与非写分配'],
+          copilotPrompts: [
+            '组相联映射相比全相联和直接映射，是如何在硬件冲突与开销间取得平衡的？',
+            '已知主存容量、Cache 容量和块大小，如何准确计算主存地址中的 Tag、Index 与 Offset 位数？',
+            'Cache 的写回策略（Write Back）为什么必须配合 Dirty Bit（脏位）使用？'
+          ]
+        },
+        {
+          id: 'arch-ep-4',
+          title: '第 04 讲：指令系统与寻址方式：CISC 与 RISC 架构对比',
+          duration: '24:30',
+          bvid: 'BV1WW411Q7G5',
+          bpage: 36,
+          videoUrl: '',
+          summary: '指令字格式与扩展操作码设计，立即寻址、直接寻址、寄存器寻址、基址与变址寻址，CISC 与 RISC 指令集哲学。',
+          keyPoints: ['扩展操作码设计', '基址寻址 vs 变址寻址', 'RISC 加载/存储架构'],
+          copilotPrompts: [
+            '变址寻址和基址寻址在硬件实现和面向的编程场景上有何根本区别？',
+            '采用扩展操作码技术时，如何设计满足短指令与长指令共存的二叉树前缀编码？',
+            '为什么现代高性能 CPU（如 x86）在内部会将复杂 CISC 指令译码为微操作（uOPs）执行？'
+          ]
+        },
+        {
+          id: 'arch-ep-5',
+          title: '第 05 讲：中央处理器与指令流水线：数据通路与流水线冒险',
+          duration: '29:50',
+          bvid: 'BV1WW411Q7G5',
+          bpage: 48,
+          videoUrl: '',
+          summary: '单周期与多周期 CPU 数据通路设计，经典五级流水线（IF/ID/EX/MEM/WB），结构冒险、数据冒险（RAW/WAR/WAW）及分支预测处理。',
+          keyPoints: ['五级指令流水线', '写后读（RAW）数据相关', '数据旁路转发与分支预测'],
+          copilotPrompts: [
+            '流水线中的结构冒险、数据冒险和控制冒险分别是如何产生的？',
+            '旁路转发技术（Forwarding / Bypassing）是如何在无需暂停流水线的情况下解决 RAW 冒险的？',
+            '为什么深入的分支预测失败会导致现代超标量 CPU 产生巨大的性能惩罚？'
+          ]
+        },
+        {
+          id: 'arch-ep-6',
+          title: '第 06 讲：总线系统与 I/O 中断：程序中断与 DMA 数据传送',
+          duration: '23:45',
+          bvid: 'BV1WW411Q7G5',
+          bpage: 60,
+          videoUrl: '',
+          summary: '总线仲裁方式（链式查询、计数器定时查询、独立请求），程序查询、中断请求响应与中断屏蔽字，DMA 控制器与主存直接高速数据交换。',
+          keyPoints: ['中断响应周期与硬件隐指令', '多重中断与屏蔽字', 'DMA 周期挪用与总线控制权'],
+          copilotPrompts: [
+            'CPU 响应外部中断必须满足哪些先决条件，中断服务程序入口地址是如何获取的？',
+            '多重中断系统中，中断优先级是如何通过硬件屏蔽字进行动态调整的？',
+            'DMA 控制方式与中断控制方式在数据传输开销上有何本质不同？'
+          ]
+        }
+      ]
+    },
+    {
       id: 'cs-os-kernel',
       title: '操作系统深度剖析：进程、内存与 Linux 内核（哈工大公开课）',
       category: 'theory',
@@ -358,12 +466,27 @@
     }
   ];
 
+  function getAccountId() {
+    return (typeof window !== 'undefined' && window.XueyaAccountId) || 'local';
+  }
+  function getCustomStorageKey() {
+    return getAccountId() === 'local' ? STORAGE_KEY : STORAGE_KEY + ':' + getAccountId();
+  }
+  function getProgressStorageKey() {
+    return getAccountId() === 'local' ? PROGRESS_KEY : PROGRESS_KEY + ':' + getAccountId();
+  }
+
   function getCustomCourses() {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
+      const key = getCustomStorageKey();
+      let raw = localStorage.getItem(key);
+      if (!raw && getAccountId() === 'local') {
+        raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) localStorage.setItem(key, raw);
+      }
       if (!raw) return [];
       const parsed = JSON.parse(raw);
-      return Array.isArray(parsed) ? parsed : [];
+      return Array.isArray(parsed) ? parsed.map(c => ({ ...c, platform: false })) : [];
     } catch {
       return [];
     }
@@ -371,13 +494,18 @@
 
   function saveCustomCourses(courses) {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(courses));
+      localStorage.setItem(getCustomStorageKey(), JSON.stringify(courses));
     } catch {}
   }
 
   function getProgress() {
     try {
-      const raw = localStorage.getItem(PROGRESS_KEY);
+      const key = getProgressStorageKey();
+      let raw = localStorage.getItem(key);
+      if (!raw && getAccountId() === 'local') {
+        raw = localStorage.getItem(PROGRESS_KEY);
+        if (raw) localStorage.setItem(key, raw);
+      }
       if (!raw) return {};
       return JSON.parse(raw) || {};
     } catch {
@@ -395,7 +523,12 @@
         updatedAt: new Date().toISOString()
       };
       all[courseId].lastEpisodeId = epId;
-      localStorage.setItem(PROGRESS_KEY, JSON.stringify(all));
+      localStorage.setItem(getProgressStorageKey(), JSON.stringify(all));
+
+      // Synchronize with active study plan and any event listeners
+      window.dispatchEvent(new CustomEvent('xueya:course-completed', {
+        detail: { courseId, episodeId: epId, completed: Boolean(completed), updatedAt: new Date().toISOString() }
+      }));
     } catch {}
   }
 

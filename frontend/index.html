@@ -61,6 +61,8 @@
   <script src="js/account.js" defer></script>
   <script src="js/chat-history-layout.js" defer></script>
   <script src="js/courses-workspace.js" defer></script>
+  <script src="js/plan-view.js" defer></script>
+  <script src="js/framework-view.js" defer></script>
   <script src="js/app.js" defer></script>
 </head>
 <body>
@@ -120,10 +122,13 @@
     <div id="spacePage" hidden>
       <div class="workspace-main">
       <div class="space-top section-width"><div class="course-context"><span class="course-symbol" data-icon="tree"></span><div><label class="sr-only" for="courseSelect">当前课程</label><select id="courseSelect" aria-label="当前课程"><option value="course-default">数据结构</option></select><small id="courseLabel">我的课程空间</small></div></div><div class="space-top-right"><span class="engine-status" id="engineStatus">正在连接</span><button id="searchTrigger" class="icon-button" type="button" aria-label="搜索资料与操作"><span data-icon="search"></span></button><button type="button" class="subtle-button" data-manage-courses>管理课程</button><button type="button" class="subtle-button" data-export-workspace>导出记录</button><span class="profile-avatar" aria-label="本地学习空间">学</span></div></div>
-      <nav class="space-nav section-width" aria-label="学习空间导航"><a href="#space/overview" data-view="overview">学习概览</a><a href="#space/ask" data-view="ask">问答</a><a href="#space/knowledge" data-view="knowledge">课程资料 <span id="documentCount">…</span></a><a href="#space/practice" data-view="practice">练习</a><a href="#space/review" data-view="review">复习</a><a href="#space/courses" data-view="courses">课程学习</a></nav>
+      <nav class="workspace-primary section-width" aria-label="学习空间主导航"><a href="#space/ask" data-area="assistant">AI 助手</a><a href="#space/courses" data-area="center">学习中心</a><details class="assistant-tools"><summary>AI 助手工具</summary><a href="#space/knowledge">个人参考资料 <span id="documentCount">…</span></a><a href="#space/frameworks">知识框架历史</a></details></nav>
+      <div class="learning-center-shell">
+      <nav class="space-nav learning-center-nav" aria-label="学习中心"><strong>学习中心</strong><a href="#space/courses" data-view="courses">课程学习</a><a href="#space/practice" data-view="practice">练习</a><a href="#space/review" data-view="review">复习</a><a href="#space/analysis" data-view="analysis">学习分析</a></nav>
       <div id="activityBanner" class="activity-banner section-width" role="status" hidden><span id="activityLabel"></span><button type="button" class="button button-outline button-small" data-stop-practice>停止等待</button></div>
       <div id="storageNotice" class="storage-notice section-width" role="alert" hidden><span>本次修改尚未保存。请先导出记录，避免关闭页面后丢失。</span><button type="button" class="button button-outline button-small" data-export-workspace>导出记录</button></div>
       <div class="space-content section-width" id="spaceContent" tabindex="-1"></div>
+      </div>
       <footer class="space-footer section-width" style="display:none!important;"><span><span class="mini-dot"></span> 浏览器保留副本</span><div class="workspace-footer-actions"><div id="workspaceServicesSlot"></div></div></footer>
       </div>
     </div>

@@ -237,12 +237,14 @@ def create_app(config: Config | None = None, *, provider=None, start_jobs=True):
                 return {"ok": False, "error": code}
         normalize_request(value)
         iterator = agent.workflow(value) if task.startswith("agent") else agent.direct(value, stream=task.endswith("stream"))
+        from .rag_scope_adapter import public_api_projector
+        public = public_api_projector(app.state.platform, value.get('courseId') or 'course-default')
         if task.endswith("stream"):
             async def events():
                 try:
                     async with aclosing(iterator):
                         async for event in iterator:
-                            yield "data: "+dumps(event)+"\n\n"
+                            yield "data: "+dumps(public(event))+"\n\n"
                 except Exception as error:
                     code = ai_error_code(error, ('NO_SOURCES', 'EMPTY_QUESTION', 'AI_INVALID_RESPONSE'))
                     yield "data: "+dumps({"type": "error", "error": code})+"\n\n"
@@ -252,7 +254,7 @@ def create_app(config: Config | None = None, *, provider=None, start_jobs=True):
             async with aclosing(iterator):
                 async for event in iterator:
                     if event["type"] == "done":
-                        return {k: v for k, v in event.items() if k != "type"}
+                        return public({k: v for k, v in event.items() if k != "type"})
             raise AppError("AGENT_INCOMPLETE")
         try:
             return await connected_work(request, run())
@@ -261,6 +263,13 @@ def create_app(config: Config | None = None, *, provider=None, start_jobs=True):
             return {"ok": False, "error": code, "engine": "local-fallback"}
 
     async def platform_route(request, path):
+        result = await internal_platform_route(request, path)
+        if isinstance(result, dict):
+            from .rag_scope_adapter import public_api_value
+            return public_api_value(app.state.platform, result, request.query_params.get('courseId') or 'course-default')
+        return result
+
+    async def internal_platform_route(request, path):
         p = app.state.platform
         require(p is not None, "NOT_FOUND")
         repo, db, user_id, method = p.repo, p.db, p.user_id, request.method
@@ -308,6 +317,10 @@ def create_app(config: Config | None = None, *, provider=None, start_jobs=True):
             return success(documents=repo.all(scope(), "document"))
         if path == "/documents/original" and method == "GET":
             doc = p.document(scope(), query.get("documentId"))
+            from .rag_scope_adapter import is_platform_document
+            if is_platform_document(doc, scope()):
+                from fastapi.responses import JSONResponse
+                return JSONResponse({"ok": False, "error": "FORBIDDEN_PLATFORM_DOCUMENT"}, status_code=403)
             return Response(p.files.read(doc.get("fileHash")), media_type="application/octet-stream", headers={"Content-Disposition": "attachment; filename*=UTF-8''"+quote(doc["name"], safe="")})
         if path == "/documents/update" and method == "POST":
             require(type(value.get("version")) is int and value["version"] > 0, "INVALID_VERSION")
@@ -374,7 +387,8 @@ def create_app(config: Config | None = None, *, provider=None, start_jobs=True):
                 limit = int(query.get("limit", "20"))
             except ValueError as error:
                 raise AppError("INVALID_LIMIT") from error
-            return success(**repo.list(scope(), query.get("kind"), query.get("cursor"), limit))
+            from .rag_scope_adapter import public_api_value
+            return success(**public_api_value(p,repo.list(scope(), query.get("kind"), query.get("cursor"), limit),course_id))
         if path == "/audit" and method == "GET":
             return success(audits=[json.loads(r["data"]) for r in db.all("SELECT data FROM audits WHERE user_id=? AND course_id=? ORDER BY at DESC LIMIT 100", (user_id, scope().course_id))])
         if path == "/invocations" and method == "GET":
@@ -414,4 +428,6 @@ def create_app(config: Config | None = None, *, provider=None, start_jobs=True):
         install_account(app)
         from .practice_api import install_practice
         install_practice(app)
+        from .study_space_api import install_study_space
+        install_study_space(app)
     return app

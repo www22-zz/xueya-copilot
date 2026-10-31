@@ -10,7 +10,7 @@ window.XueyaExperience={create({state}){
   const settings=services.querySelector('[data-more-settings]');
   for(const selector of ['[data-manage-courses]','[data-export-workspace]','#platformData','#workbenchSettings','#workbenchTasks','#engineStatus']){const element=document.querySelector(selector);if(element&&element.parentElement!==settings)settings.append(element);}
   const nav=document.querySelector('.space-nav'),header=document.querySelector('.site-header');
-  if(nav&&header&&nav.parentElement!==header)header.insertBefore(nav,header.firstChild);
+  if(nav&&header&&!nav.classList.contains('learning-center-nav')&&nav.parentElement!==header)header.insertBefore(nav,header.firstChild);
   window.XueyaPreferences?.mount();
   if(!observed){observed=true;new MutationObserver(()=>{if(scheduled)return;scheduled=true;queueMicrotask(()=>{scheduled=false;mount();});}).observe(top,{childList:true,subtree:true});}
  }

@@ -13,7 +13,7 @@
     AI_TRUNCATED:'AI 回复未完整生成，本次没有保存报告。',JOB_TIMEOUT:'AI 服务未在规定时间内完成，请核对调用结果。',AI_RUN_TIMEOUT:'本次分析超过运行时限，请核对调用结果。',AI_COST_BUDGET_EXCEEDED:'本次分析超出已设置的调用预算。',AI_PRICING_REQUIRED:'服务尚未配置预算所需的模型价格。'};
 
   function create({client,store,navigate,accountId='local'}={}){
-    let node=null,timer=null,reports=[],report=null,job=null,available=true,loading=false,submitting=false,message='',draft='',selection={days:7,category:'all',includeNotes:true};
+    let node=null,timer=null,reports=[],report=null,job=null,available=true,loading=false,submitting=false,message='',draft='',selection={days:7,category:'all',includeNotes:true},activeTab='report',planUI=null,frameworkUI=null;
     let generation=0,pending=null;
     const pendingKey='xueya-analysis-submission:'+accountId;
     try{pending=JSON.parse(sessionStorage.getItem(pendingKey)||'null');}catch{}
@@ -43,7 +43,24 @@
     function render(){
       if(!node?.isConnected)return;
       const working=busy();
-      node.innerHTML=`<div class="analysis-layout"><aside class="analysis-sidebar"><section class="panel analysis-controls"><span class="analysis-kicker">按自己的节奏回顾</span><h2>分析范围</h2><label>时间<select data-analysis-filter="days" ${working?'disabled':''}>${[[7,'最近 7 天'],[30,'最近 30 天'],[0,'全部历史']].map(([v,t])=>`<option value="${v}" ${selection.days===v?'selected':''}>${t}</option>`).join('')}</select></label><label>题库<select data-analysis-filter="category" ${working?'disabled':''}>${Object.entries(categoryNames).map(([v,t])=>`<option value="${v}" ${selection.category===v?'selected':''}>${t}</option>`).join('')}</select></label><label class="analysis-note-choice"><input type="checkbox" data-analysis-filter="includeNotes" ${selection.includeNotes?'checked':''} ${working?'disabled':''}>结合题目随手记</label><p class="analysis-meta">选定范围的题目信息、练习记录${selection.includeNotes?'和已保存的随手记摘录':''}将发送给已配置的 AI 服务。</p>${button(submitting?'正在提交…':active(job)?'正在分析…':'开始分析','generate',working||!available?'disabled':'',true)}${!available?'<p class="analysis-warning">AI 服务尚未配置；配置完成后重新加载即可开始。</p>':''}</section>
+      const tabsBar = `<div class="analysis-tabs-bar" role="tablist" style="display:flex;gap:12px;margin-bottom:16px;">
+        <button type="button" class="button button-small ${activeTab==='report'?'button-blue':'button-outline'}" data-tab-switch="report">AI 学习分析报告</button>
+        <button type="button" class="button button-small ${activeTab==='plan'?'button-blue':'button-outline'}" data-tab-switch="plan">我的学习计划</button>
+      </div>`;
+      if(activeTab==='plan'){
+        if(node.querySelector('#planSubmodule'))return;
+        node.innerHTML = tabsBar + '<div id="planSubmodule"></div>';
+        if(!planUI && window.XueyaPlan) planUI = window.XueyaPlan.create({toast:window.toast, navigate});
+        planUI?.mount(node.querySelector('#planSubmodule'));
+        return;
+      }
+      if(activeTab==='framework'){
+        node.innerHTML = tabsBar + '<div id="frameworkSubmodule"></div>';
+        if(!frameworkUI && window.XueyaFramework) frameworkUI = window.XueyaFramework.create({toast:window.toast, navigate});
+        frameworkUI?.mount(node.querySelector('#frameworkSubmodule'));
+        return;
+      }
+      node.innerHTML = tabsBar + `<div class="analysis-layout"><aside class="analysis-sidebar"><section class="panel analysis-controls"><span class="analysis-kicker">按自己的节奏回顾</span><h2>分析范围</h2><label>时间<select data-analysis-filter="days" ${working?'disabled':''}>${[[7,'最近 7 天'],[30,'最近 30 天'],[0,'全部历史']].map(([v,t])=>`<option value="${v}" ${selection.days===v?'selected':''}>${t}</option>`).join('')}</select></label><label>题库<select data-analysis-filter="category" ${working?'disabled':''}>${Object.entries(categoryNames).map(([v,t])=>`<option value="${v}" ${selection.category===v?'selected':''}>${t}</option>`).join('')}</select></label><label class="analysis-note-choice"><input type="checkbox" data-analysis-filter="includeNotes" ${selection.includeNotes?'checked':''} ${working?'disabled':''}>结合题目随手记</label><p class="analysis-meta">选定范围的题目信息、练习记录${selection.includeNotes?'和已保存的随手记摘录':''}将发送给已配置的 AI 服务。</p>${button(submitting?'正在提交…':active(job)?'正在分析…':'开始分析','generate',working||!available?'disabled':'',true)}${!available?'<p class="analysis-warning">AI 服务尚未配置；配置完成后重新加载即可开始。</p>':''}</section>
         <section class="analysis-history"><h3>历史报告</h3>${reports.length?reports.map(item=>`<button type="button" class="analysis-history-item ${item.id===report?.id?'selected':''}" data-analysis-action="history" data-id="${escape(item.id)}"><strong>${escape(item.title)}</strong><span>${escape(range(item.filters))}</span><small>${escape(date(item.createdAt))}</small></button>`).join(''):'<p class="analysis-meta">生成后自动保存，随时回来查看。</p>'}${button('重新加载','reload',loading?'disabled':'')}</section></aside>
         <div class="analysis-main"><div class="analysis-status" role="status" aria-live="polite">${loading?'正在读取分析记录…':active(job)?escape(job.progress?.label||'任务已提交，AI 正在准备分析；离开页面后仍会继续。'):''}</div>${message?`<p class="analysis-warning" role="alert">${escape(message)}</p>`:''}${pending&&!active(job)?`<div class="analysis-warning"><p>上一次提交尚未收到明确回执。可以核对原任务，不会重复提交新的调用。</p>${button('核对原任务','recover',submitting?'disabled':'')}</div>`:''}${reportHTML()}</div></div>`;
     }
@@ -120,13 +137,14 @@
       navigate('#space/practice/'+category);
     }
     return {
-      unmount(){generation++;clearTimeout(timer);node=null;loading=false;submitting=false;},
+      unmount(){planUI?.unmount?.();frameworkUI?.unmount?.();generation++;clearTimeout(timer);node=null;loading=false;submitting=false;},
       mount(target){
+        if(location.hash.split('/')[2]==='plans')activeTab='plan';
         node=target;render();
         node.onchange=event=>{const key=event.target.dataset.analysisFilter;if(!key)return;selection[key]=key==='days'?Number(event.target.value):key==='includeNotes'?event.target.checked:event.target.value;render();};
         node.oninput=event=>{if(event.target.id==='analysisQuestion')draft=event.target.value;};
         node.onsubmit=event=>{if(!event.target.matches('[data-analysis-chat]'))return;event.preventDefault();event.stopPropagation();submit(false,true);};
-        node.onclick=event=>{const el=event.target.closest('[data-analysis-action]');if(!el)return;event.preventDefault();event.stopPropagation();
+        node.onclick=event=>{const tab=event.target.closest('[data-tab-switch]');if(tab){event.preventDefault();activeTab=tab.dataset.tabSwitch;planUI?.unmount?.();frameworkUI?.unmount?.();render();return;}const el=event.target.closest('[data-analysis-action]');if(!el)return;event.preventDefault();event.stopPropagation();
           const action=el.dataset.analysisAction;
           if(action==='generate')submit();else if(action==='recover')submit(true);else if(action==='reload')load();
           else if(action==='practice')goPractice(el.dataset.id);

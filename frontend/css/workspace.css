@@ -1538,3 +1538,58 @@ html[data-theme="dark"] .sidebar-ask-textarea {
   border-color: #334155;
   color: #f1f5f9;
 }
+
+/* --- Study Plan & Knowledge Framework Styles --- */
+.study-plan-container { display: flex; flex-direction: column; gap: 16px; margin-top: 12px; }
+.plan-top-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+.plan-top-header h2 { font-size: 20px; font-weight: 600; margin: 0 0 4px; }
+.plan-top-header p { font-size: 13px; color: var(--text-secondary, #64748b); margin: 0; }
+.plan-stat-bar { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 8px; }
+.plan-progress-track { height: 8px; background: rgba(0,0,0,0.06); border-radius: 4px; overflow: hidden; }
+.plan-progress-fill { height: 100%; background: var(--blue, #2563eb); border-radius: 4px; transition: width .3s ease; }
+.plan-days-list { display: flex; flex-direction: column; gap: 12px; }
+.plan-day-card { border-radius: 12px; padding: 14px 18px; border: 1px solid var(--line, #e2e8f0); }
+.plan-day-card.is-rest-day { opacity: 0.75; background: rgba(0,0,0,0.02); }
+.plan-day-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-weight: 500; font-size: 14px; }
+.plan-day-tasks { display: flex; flex-direction: column; gap: 8px; }
+.plan-task-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; border-radius: 8px; background: rgba(0,0,0,0.02); }
+.plan-task-row.is-done .task-title-text { text-decoration: line-through; opacity: 0.6; }
+.task-checkbox-label { display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 13.5px; }
+.task-actions-group { display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--text-secondary, #64748b); }
+.task-delay-tag { color: #d97706; background: #fef3c7; padding: 2px 6px; border-radius: 4px; font-size: 11px; }
+
+/* Knowledge Framework */
+.kf-workspace { padding: 16px 20px; border-radius: 14px; margin-top: 12px; }
+.kf-toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.kf-title-area h2 { font-size: 18px; font-weight: 600; margin: 0 0 4px; }
+.kf-title-area p { font-size: 12px; color: var(--text-secondary, #64748b); margin: 0; }
+.kf-actions { display: flex; align-items: center; gap: 10px; }
+.kf-history-strip { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid var(--line, #e2e8f0); }
+.kf-tree-level { list-style: none; padding-left: 24px; margin: 8px 0; border-left: 2px dashed rgba(0,0,0,0.1); }
+.kf-node-card { padding: 10px 14px; border-radius: 8px; border: 1px solid var(--line, #e2e8f0); margin: 6px 0; background: var(--panel-bg, #fff); }
+.kf-level-0 { border-left: 4px solid var(--blue, #2563eb); font-size: 15px; }
+.kf-level-1 { border-left: 4px solid #10b981; font-size: 14px; }
+.kf-level-2 { border-left: 4px solid #8b5cf6; font-size: 13px; }
+.kf-node-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+.kf-node-desc { font-size: 12px; color: var(--text-secondary, #64748b); margin: 0 0 6px; }
+.kf-node-actions { display: flex; gap: 6px; }
+
+/* Primary areas and the learning center's four internal entries. */
+.workspace-primary{display:flex;align-items:center;gap:24px;padding:14px 0;border-bottom:1px solid var(--line);}
+.workspace-primary>a{font-weight:600;padding:8px 0;}.workspace-primary>a[aria-current="page"]{color:var(--blue,#2563eb);}
+.assistant-tools{margin-left:auto;position:relative;font-size:13px;}.assistant-tools a{display:block;padding:8px;}
+.learning-center-shell{min-width:0;}.learning-center-nav[hidden]{display:none!important;}
+.learning-center .learning-center-shell{display:grid;grid-template-columns:180px minmax(0,1fr);gap:24px;max-width:1480px;margin:auto;padding:24px;}
+.learning-center .learning-center-nav{display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;gap:8px;margin:0;padding:16px 12px;border:1px solid var(--line);border-radius:14px;height:fit-content;position:sticky;top:88px;}
+.learning-center-nav strong{padding:8px 12px;font-size:13px;color:var(--muted,#64748b);}.learning-center-nav a{padding:12px;border-radius:8px;}.learning-center-nav a.active{background:var(--blue-soft,#eff6ff);color:var(--blue,#2563eb);}
+.learning-center #spaceContent{margin:0;width:100%;max-width:none;padding:0;grid-column:2;min-width:0;}.learning-center #activityBanner,.learning-center #storageNotice{grid-column:2;}
+body.history-layout .workspace-main>.workspace-primary{flex-shrink:0;}
+body.history-layout .learning-center-shell{flex:1;min-height:0;display:flex;flex-direction:column;}
+body.history-layout .learning-center-shell>.space-content{flex:1;min-height:0;display:flex;flex-direction:column;padding-block:6px 4px;}
+.learning-center .learning-center-nav{grid-column:1;grid-row:1 / span 3;}
+.learning-center-nav a.active::after{display:none;}
+.assistant-tools[open]{z-index:130;background:var(--white,#fff);border-radius:12px;padding:8px;}
+.learning-shortcuts{display:flex;flex-wrap:wrap;flex-shrink:0;align-items:center;gap:8px 16px;padding:10px 14px;margin-bottom:12px;border:1px solid var(--line);border-radius:12px;font-size:12px;background:var(--white,#fff);}
+.learning-shortcuts>a{color:var(--blue);}.learning-shortcuts>small{color:var(--muted);}.shortcut-task-list{width:100%;max-height:110px;overflow:auto;}.shortcut-task-list label{display:flex;align-items:center;gap:8px;padding:4px 0;}
+@media(max-width:760px){.learning-center .learning-center-shell{grid-template-columns:1fr;padding:12px;gap:12px;}.learning-center .learning-center-nav{position:static;flex-direction:row;flex-wrap:wrap;padding:8px;}.learning-center-nav strong{width:100%;}.learning-center #spaceContent,.learning-center #activityBanner,.learning-center #storageNotice{grid-column:1;}.workspace-primary{gap:16px;padding:12px;}}
+@media(max-width:760px){.learning-center .learning-center-nav{grid-row:auto;}.plan-task-row,.plan-top-header,.kf-toolbar{flex-wrap:wrap;gap:12px;}.kf-actions{flex-wrap:wrap;}.task-actions-group{flex-wrap:wrap;}}

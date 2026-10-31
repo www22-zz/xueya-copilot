@@ -65,6 +65,13 @@ function attach(ctx){
   window.addEventListener('xueya:workspace-save',changed);if(enabled&&localStorage.getItem(PENDING))void flush().catch(()=>{});
 }
 window.XueyaPlatform={
+  async spaceFetch(path,options={}){
+    if(!bootstrap)throw Object.assign(new Error('服务未连接，请刷新页面重试。'),{code:'SERVICE_UNAVAILABLE'});
+    if(!path.startsWith('/api/learning/space/'))throw new Error('无效的学习空间接口');
+    const response=await fetch(path,{...options,headers:{...options.headers,'X-Xueya-Token':token}});
+    if(!response.ok){let data;try{data=await response.clone().json();}catch{}throw Object.assign(new Error(data?.error||'学习操作未完成'),{code:data?.error});}
+    return response;
+  },
   async ragRequest(path,body,{signal}={}){await ensureCourse(body.courseId);return request('/rag/'+path,{method:'POST',body,signal});},
   async learningRequest(path,{courseId='course-default',method='GET',body,signal,headers={}}={}){
     if(!bootstrap)throw Object.assign(new Error('请先启动本地服务，再刷新页面使用学习功能。'),{code:'SERVICE_UNAVAILABLE'});
