@@ -5,9 +5,16 @@
 下面代码块可直接复制给负责实现的 Agent。完整规格是 `docs/architecture/ai-learning-space.md`；本提示词不替代其中的细节、接口约束和验收表。
 
 ```text
-请在 C:\Users\12638\Desktop\web 实现已经确认的「AI 学习空间」方案。主规格为 docs/architecture/ai-learning-space.md，请完整阅读，尤其第3.5—3.9节的新RAG事实、产品接入差异和安全测试要求。不要重新从头问已经在文档中明确的产品选择，也不要只给计划或原型后停止。
+请在 C:\Users\12638\Desktop\web 的 codex/test-learning-space-20261031 测试分支上，继续实现已经确认的「AI 学习空间」方案。主规格为 docs/architecture/ai-learning-space.md，请完整阅读，尤其第3.5—3.9节的新RAG事实、产品接入差异和安全测试要求。不要重新从头问已经在文档中明确的产品选择，也不要只给计划或原型后停止。
 
-先读 AGENTS.md、README.md、docs/delivery/FINAL-DELIVERY.md、docs/api-contracts.md、docs/contracts/learning-services.md、docs/contracts/mineru-qwen.md、materials/stack-queue/README.md，再核对源码。规格更新时main为b651dd9，已经包含队友RAG更新60481a2、PR #21和课程/侧栏整合。使用最新main建立codex/任务分支，保留他人未提交改动；如果这两份文档尚未进入远端main，将它们作为规格输入携带到实现分支，不擅自合并整个其他分支或回退代码。
+先读 AGENTS.md、README.md、docs/delivery/FINAL-DELIVERY.md、docs/api-contracts.md、docs/contracts/learning-services.md、docs/contracts/mineru-qwen.md、materials/stack-queue/README.md，再核对源码。规格更新时main为b651dd9，已经包含队友RAG更新60481a2、PR #21和课程/侧栏整合。本轮用户明确指定在现有测试分支 codex/test-learning-space-20261031 上继续完善，此要求优先于 AGENTS.md 中一般性的“从最新 main 建立任务分支”约定。不要从 main 重新开分支，不要切换到 main 修改、提交或推送，不要向 main 合并，也不要强推。该测试分支已包含修复提交 917a4ef；保留其代码、文档和回归测试，不擅自合并其他分支或回退代码。
+
+分支操作要求：
+- 开始先执行 git status --short、git branch --show-current、git fetch origin，检查工作区与远程状态。不得直接覆盖、清理或丢弃未提交改动。
+- 若当前不是目标分支：工作区干净时切换到该分支；本地尚无分支时跟踪 origin/codex/test-learning-space-20261031。工作区不干净且无法安全切换时，先说明具体冲突，不要 reset --hard、clean 或强制切换。
+- 若当前已经是目标分支且工作区干净，用 git pull --ff-only origin codex/test-learning-space-20261031 更新；发生分叉时先核对并沟通，不自动重置、变基或合并 main。
+- 后续功能、修复、文档和测试提交都保留在 codex/test-learning-space-20261031。仅向 origin 的同名测试分支进行普通推送；不要创建、更新或合并指向 main 的 PR。
+- 本轮没有修改 main 的授权。若确实需要引入 main 的变化或改动 main，先说明原因，等待用户明确授权。
 
 用户已经检查过新版RAG。复用backend/xueya/rag_service.py、rag_search.py、agent.py、fast_qa.py、rag_fallback.py及backend/agent/answer_policy.py、evidence.py等现有链路，不重写召回、切分、索引、正文/证据审核，不另建RAG服务。要完成的是新产品的用途路由、账号/资源策略、内部证据到公开来源的投影和其他模块接线。
 
