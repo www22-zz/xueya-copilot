@@ -5,9 +5,13 @@
 下面代码块可直接复制给负责实现的 Agent。完整规格是 `docs/architecture/ai-learning-space.md`；本提示词不替代其中的细节、接口约束和验收表。
 
 ```text
-请在 C:\Users\12638\Desktop\web 的 codex/test-learning-space-20261031 测试分支上，继续实现已经确认的「AI 学习空间」方案。主规格为 docs/architecture/ai-learning-space.md，请完整阅读，尤其第3.5—3.9节的新RAG事实、产品接入差异和安全测试要求。不要重新从头问已经在文档中明确的产品选择，也不要只给计划或原型后停止。
+请在当前电脑实际检出的 xueya-copilot 仓库根目录的 codex/test-learning-space-20261031 测试分支上，继续实现已经确认的「AI 学习空间」方案。主规格为 docs/architecture/ai-learning-space.md，请完整阅读，尤其第3.5—3.9节的新RAG事实、产品接入差异和安全测试要求。不要重新从头问已经在文档中明确的产品选择，也不要只给计划或原型后停止。
 
 先读 AGENTS.md、README.md、docs/delivery/FINAL-DELIVERY.md、docs/api-contracts.md、docs/contracts/learning-services.md、docs/contracts/mineru-qwen.md、materials/stack-queue/README.md，再核对源码。规格更新时main为b651dd9，已经包含队友RAG更新60481a2、PR #21和课程/侧栏整合。本轮用户明确指定在现有测试分支 codex/test-learning-space-20261031 上继续完善，此要求优先于 AGENTS.md 中一般性的“从最新 main 建立任务分支”约定。不要从 main 重新开分支，不要切换到 main 修改、提交或推送，不要向 main 合并，也不要强推。该测试分支已包含修复提交 917a4ef；保留其代码、文档和回归测试，不擅自合并其他分支或回退代码。
+
+跨电脑接续要求：
+- 不沿用上一台电脑的绝对路径。先用 git rev-parse --show-toplevel 确认当前仓库根目录，以实际路径解析文档和脚本。核对 origin 为 https://github.com/www22-zz/xueya-copilot.git；若尚未克隆，在用户指定的工作目录克隆该仓库并检出目标测试分支，不猜测旧路径。
+- Git 不包含上一台电脑的 .env、私人数据库、向量缓存和备份。先检查本机实际配置与数据，缺失时明确说明，不声称旧数据已同步；不自行重建付费索引或填入真实密钥。已有测试结果属于上一环境，在本机按依赖与实际路径重新验证；浏览器验证中的 Chrome 路径应探测或配置，不能照搬旧 Windows 路径。
 
 分支操作要求：
 - 开始先执行 git status --short、git branch --show-current、git fetch origin，检查工作区与远程状态。不得直接覆盖、清理或丢弃未提交改动。
@@ -34,7 +38,7 @@
 
 技术约束：Python统一主程序backend/xueya/server.py，学习领域backend/agent，复用主平台SQLite/Repository/JobQueue/预算/并发/模型账本；前端HTML/CSS/JS。所有AI走外部API，不引入本地模型、GPU/CUDA、Node后端或第二数据库。新路由/DTO兼容扩展，保留原HTTP/SSE契约和所有有效回归。
 
-本机.env已有服务配置，不要输出、提交、覆盖模板或把真实密钥放进测试/文档；不要擅自导入、归档、替换私人资料或付费重建向量。没有额外明确预算授权，不调用真实付费API。注意配置会通过setdefault读取.env：测试进程必须显式置空真实MIMO/RAG/TAVILY等密钥，使用临时root/data_dir和mock transport，并阻断未模拟的外部HTTP；不能仅删除环境变量。不要为测试启动或修改用户正在使用的私人服务。
+当前电脑是否已有 .env 和服务配置需要先检查，不假定已随 Git 同步；不要输出、提交密钥，不覆盖已有配置，也不要把真实密钥放进测试/文档；不要擅自导入、归档、替换私人资料或付费重建向量。没有额外明确预算授权，不调用真实付费API。注意配置会通过setdefault读取.env：测试进程必须显式置空真实MIMO/RAG/TAVILY等密钥，使用临时root/data_dir和mock transport，并阻断未模拟的外部HTTP；不能仅删除环境变量。不要为测试启动或修改用户正在使用的私人服务。
 
 按规格第13节逐阶段实施，每阶段做适当验证并持续进展，最终满足第14节全部验收。运行完整python -m pytest -q（包括tests/python与tests_python）、原前端和适用浏览器检查，保留新版RAG回归。实际视频另验官方播放；受控模型测试不冒充真实模型质量。测试失败先定位，既有失败用未改基线复现并如实记录，不删除测试或排除用例来报全绿。
 
