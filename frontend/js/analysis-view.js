@@ -42,24 +42,200 @@
       }).join('')}</div>`;
     }
     function reportHTML(){
-      if(!report)return `<section class="analysis-empty"><span class="analysis-kicker">从练习记录，看见下一步</span><h2>哪里需要再练一次？</h2><p>AI 会结合你的实际作答与自评，分析薄弱点、进步和接下来的练习重点。</p><p>选择时间和题库，开始第一份分析。完成几道练习后，建议会更具体。</p><a class="button button-outline button-small" href="#space/practice">先去练习</a></section>`;
+      if(!report)return `<section class="analysis-empty p-8 text-center bg-surface-container-lowest/80 rounded-2xl border border-outline-variant/30 flex flex-col items-center gap-3"><div class="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center"><span class="material-symbols-outlined text-[24px]">insights</span></div><span class="text-xs font-semibold text-primary uppercase tracking-wider">从练习记录，看见下一步</span><h2 class="text-xl font-bold text-on-surface">哪里需要再练一次？</h2><p class="text-xs text-on-surface-variant max-w-md">AI 会结合你的实际作答与自评，分析薄弱点、进步和接下来的练习重点。选择时间和题库，开始第一份诊断分析。</p><a class="px-4 py-2 rounded-xl bg-primary text-on-primary text-xs font-semibold hover:bg-primary-container transition-all" href="#space/practice">先去练习</a></section>`;
       const {analysis:a,snapshot:s}=report,stats=s.stats;
       const accuracy=stats.attempts?Math.round(stats.correct/stats.attempts*100)+'%':'暂无作答';
-      const statItems=[['客观题作答',stats.attempts+' 次'],['客观题正确率',accuracy],['练习覆盖',stats.practicedQuestions+' / '+stats.bankQuestions+' 题'],['自评操作',stats.selfAssessments+' 次']];
-      return `<article class="analysis-report"><header><span class="analysis-kicker">${escape(range(report.filters))}</span><h2>${escape(a.title)}</h2><p class="analysis-meta">记录截至 ${escape(date(report.cutoff))} · ${escape(report.model)}</p>${store.state.serverSeq>report.serverSeq?'<p class="analysis-updated">已有新的练习记录；这份报告保留生成时的分析，你可以重新生成。</p>':''}</header>
-        <dl class="analysis-stats">${statItems.map(([label,value])=>`<div><dt>${label}</dt><dd>${value}</dd></div>`).join('')}</dl>
-        <p class="analysis-summary">${escape(a.summary)}</p>
-        <section class="analysis-findings" aria-label="分析发现">${a.findings.map(f=>`<section class="analysis-finding"><span class="analysis-tag">${kindNames[f.kind]}</span><h3>${escape(f.title)}</h3><p>${escape(f.detail)}</p>${questionButtons(f.questionIds,s)}</section>`).join('')}</section>
-        <section class="analysis-next"><h3>接下来，练得更有方向</h3>${a.recommendations.map((item,i)=>`<section class="analysis-recommendation"><span class="analysis-step">${i+1}</span><div><h4>${escape(item.title)}</h4><p>${escape(item.reason)}</p>${questionButtons(item.questionIds,s)}</div></section>`).join('')}</section>
-        <details class="analysis-limits"><summary>本次分析的依据与限制</summary><p>所选范围内答对 ${stats.correct} 次，共作答 ${stats.attempts} 次。当前错题 ${stats.currentWrong} 道，自评已掌握 ${stats.selfReportedMastered} 道。</p>${s.previousPeriod?`<p>前一等长时间段：作答 ${s.previousPeriod.attempts} 次，答对 ${s.previousPeriod.correct} 次。题目和难度可能不同。</p>`:''}<ul>${[...a.limitations,...s.limitations].map(line=>`<li>${escape(line)}</li>`).join('')}</ul></details>
-        ${sourceHTML(s)}<section class="analysis-conversation"><h3>继续问问这份分析</h3><p class="analysis-meta">追问使用这份报告截止时的记录；每次发送调用一次 AI。</p><div class="analysis-messages">${report.conversation.map(row=>`<div class="analysis-message ${row.role==='user'?'from-user':''}"><strong>${row.role==='user'?'你':'AI'}</strong><p>${escape(row.content)}</p></div>`).join('')}</div><form data-analysis-chat><label for="analysisQuestion">你的问题</label><textarea id="analysisQuestion" name="question" rows="3" maxlength="1000" placeholder="例如：为什么建议我先巩固这个知识点？" ${busy()?'disabled':''}>${escape(draft)}</textarea><button class="button button-blue button-small" ${busy()||!available?'disabled':''}>发送追问</button></form></section></article>`;
+      const coveragePercent=stats.bankQuestions>0?Math.min(100, Math.round((stats.practicedQuestions/stats.bankQuestions)*100)):0;
+
+      return `<article class="analysis-report flex flex-col gap-6">
+        <!-- 1. Report Meta Badge & Header (Stitch Screen 6) -->
+        <div class="bg-surface-container-lowest/90 backdrop-blur-xl rounded-2xl p-6 lg:p-7 border border-outline-variant/30 shadow-sm flex flex-col gap-5 relative overflow-hidden">
+          <div class="absolute -top-24 -right-24 w-80 h-80 bg-primary/10 rounded-full blur-3xl pointer-events-none"></div>
+          
+          <div class="flex flex-wrap items-center justify-between gap-3 relative z-10">
+            <div class="flex flex-wrap items-center gap-2">
+              <div class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container text-xs text-on-surface-variant">
+                <span class="material-symbols-outlined text-[15px] text-primary">calendar_today</span>
+                <span>${escape(range(report.filters))}</span>
+              </div>
+              <div class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-secondary-fixed text-on-secondary-fixed text-xs font-medium">
+                <span class="material-symbols-outlined text-[15px]">schedule</span>
+                <span>记录截至 ${escape(date(report.cutoff))}</span>
+              </div>
+            </div>
+            <div class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-tertiary-fixed text-on-tertiary-fixed text-xs font-semibold">
+              <span class="material-symbols-outlined text-[14px]">psychology</span>
+              <span>学涯 MiMo 智能体诊断引擎</span>
+            </div>
+          </div>
+
+          <div class="flex flex-col gap-2 relative z-10">
+            <div class="flex items-start gap-3">
+              <span class="material-symbols-outlined text-tertiary text-[28px] mt-0.5 shrink-0">insights</span>
+              <h2 class="font-headline-lg text-xl sm:text-2xl text-on-surface font-bold leading-snug">
+                ${escape(a.title)}
+              </h2>
+            </div>
+            <p class="text-xs text-on-surface-variant pl-10">
+              通过智能分析比对所选周期做题轨迹、AI 提问频度与记忆曲线遗忘衰减模型。
+            </p>
+          </div>
+
+          <!-- 2. Four Mini Metric Cards (Stitch Screen 6) -->
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-3 relative z-10 pt-1">
+            <!-- Metric 1: 客观题作答 -->
+            <div class="bg-surface-container-low rounded-xl p-3.5 flex flex-col justify-between border border-outline-variant/20">
+              <div class="flex items-center justify-between">
+                <span class="text-xs text-on-surface-variant font-medium">客观题作答</span>
+                <span class="w-2 h-2 rounded-full ${stats.attempts>0?'bg-secondary':'bg-error animate-ping'}"></span>
+              </div>
+              <div class="my-2 flex items-baseline gap-1">
+                <span class="text-2xl font-bold text-on-surface tracking-tight">${stats.attempts}</span>
+                <span class="text-xs text-on-surface-variant">次</span>
+              </div>
+              <span class="text-[11px] ${stats.attempts>0?'text-secondary':'text-error'} font-medium">
+                ${stats.attempts>0?'已记录样本':'样本偏低，建议练习'}
+              </span>
+            </div>
+
+            <!-- Metric 2: 客观题正确率 -->
+            <div class="bg-surface-container-low rounded-xl p-3.5 flex flex-col justify-between border border-outline-variant/20">
+              <div class="flex items-center justify-between">
+                <span class="text-xs text-on-surface-variant font-medium">客观题正确率</span>
+                <span class="material-symbols-outlined text-outline text-[18px]">show_chart</span>
+              </div>
+              <div class="my-2">
+                <span class="text-2xl font-bold text-primary tracking-tight">${accuracy}</span>
+              </div>
+              <span class="text-[11px] text-on-surface-variant">
+                ${stats.attempts?'根据答卷计算':'等待新增答卷计算'}
+              </span>
+            </div>
+
+            <!-- Metric 3: 练习覆盖率 -->
+            <div class="bg-surface-container-low rounded-xl p-3.5 flex flex-col justify-between border border-outline-variant/20">
+              <div class="flex items-center justify-between">
+                <span class="text-xs text-on-surface-variant font-medium">练习覆盖率</span>
+                <span class="font-code-sm text-xs text-primary font-bold">${coveragePercent}%</span>
+              </div>
+              <div class="my-2 flex items-center justify-between">
+                <div class="flex items-baseline gap-1">
+                  <span class="text-2xl font-bold text-on-surface tracking-tight">${stats.practicedQuestions}</span>
+                  <span class="text-xs text-on-surface-variant">/ ${stats.bankQuestions} 题</span>
+                </div>
+                <svg class="w-7 h-7 text-primary -rotate-90" viewBox="0 0 36 36">
+                  <circle class="text-surface-container-high" cx="18" cy="18" fill="none" r="14" stroke="currentColor" stroke-width="3"></circle>
+                  <circle class="text-primary" cx="18" cy="18" fill="none" r="14" stroke="currentColor" stroke-dasharray="87.96" stroke-dashoffset="${87.96 * (1 - coveragePercent / 100)}" stroke-linecap="round" stroke-width="3.5"></circle>
+                </svg>
+              </div>
+              <span class="text-[11px] text-on-surface-variant">当前题库总量 ${stats.bankQuestions} 题</span>
+            </div>
+
+            <!-- Metric 4: 深度自评操作 -->
+            <div class="bg-surface-container-low rounded-xl p-3.5 flex flex-col justify-between border border-outline-variant/20">
+              <div class="flex items-center justify-between">
+                <span class="text-xs text-on-surface-variant font-medium">深度自评记录</span>
+                <span class="material-symbols-outlined text-secondary text-[18px]">rate_review</span>
+              </div>
+              <div class="my-2 flex items-baseline gap-1">
+                <span class="text-2xl font-bold text-secondary tracking-tight">${stats.selfAssessments}</span>
+                <span class="text-xs text-on-surface-variant">次操作</span>
+              </div>
+              <span class="text-[11px] text-secondary font-medium">思维自查活跃</span>
+            </div>
+          </div>
+
+          <!-- 3. AI Natural Language Diagnostic Narrative (Stitch Screen 6) -->
+          <div class="bg-surface-container-low/70 p-5 rounded-xl border border-outline-variant/20 flex flex-col gap-3">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-tertiary text-[20px]">auto_stories</span>
+                <h3 class="font-headline-md text-sm text-on-surface font-bold">MiMo 综合诊断剖析</h3>
+              </div>
+              <span class="text-xs text-outline">模型分析完成</span>
+            </div>
+            <p class="text-sm text-on-surface leading-relaxed">${escape(a.summary)}</p>
+          </div>
+
+          <!-- Findings -->
+          ${a.findings.length ? `
+            <div class="flex flex-col gap-3">
+              <span class="text-xs font-semibold text-outline tracking-wider uppercase">认知关键发现</span>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                ${a.findings.map(f=>`
+                  <div class="p-4 rounded-xl bg-surface-container-low border border-outline-variant/20 flex flex-col gap-2">
+                    <span class="px-2 py-0.5 rounded-full bg-primary/10 text-primary font-semibold text-[11px] w-fit">${kindNames[f.kind]||'诊断发现'}</span>
+                    <h4 class="text-sm font-bold text-on-surface">${escape(f.title)}</h4>
+                    <p class="text-xs text-on-surface-variant leading-relaxed">${escape(f.detail)}</p>
+                    ${questionButtons(f.questionIds,s)}
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          ` : ''}
+
+          <!-- 4. Next Action Path (Stitch Screen 6) -->
+          ${a.recommendations.length ? `
+            <div class="flex flex-col gap-3">
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary text-[20px]">route</span>
+                <h3 class="text-sm text-on-surface font-bold">智能推荐的下一步行动路径</h3>
+              </div>
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                ${a.recommendations.map((item,i)=>`
+                  <div class="p-4 rounded-xl bg-surface-container-low border border-outline-variant/20 flex flex-col justify-between gap-3">
+                    <div class="flex flex-col gap-1.5">
+                      <span class="text-[11px] font-bold text-primary font-code-sm">STEP 0${i+1}</span>
+                      <h4 class="text-sm font-bold text-on-surface">${escape(item.title)}</h4>
+                      <p class="text-xs text-on-surface-variant leading-relaxed">${escape(item.reason)}</p>
+                    </div>
+                    ${questionButtons(item.questionIds,s)}
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          ` : ''}
+
+          <details class="text-xs text-on-surface-variant border-t border-outline-variant/20 pt-3">
+            <summary class="cursor-pointer font-medium hover:text-primary">本次分析的依据与限制</summary>
+            <p class="mt-2">所选范围内答对 ${stats.correct} 次，共作答 ${stats.attempts} 次。当前错题 ${stats.currentWrong} 道，自评已掌握 ${stats.selfReportedMastered} 道。</p>
+            <ul class="list-disc pl-4 mt-1">${[...a.limitations,...s.limitations].map(line=>`<li>${escape(line)}</li>`).join('')}</ul>
+          </details>
+
+          ${sourceHTML(s)}
+
+          <!-- Interactive Chat with Analysis -->
+          <section class="border-t border-outline-variant/20 pt-4 flex flex-col gap-3">
+            <h3 class="text-sm font-bold text-on-surface flex items-center gap-2">
+              <span class="material-symbols-outlined text-[18px] text-primary">forum</span>
+              继续问问这份分析报告
+            </h3>
+            <div class="flex flex-col gap-2 max-h-60 overflow-y-auto">
+              ${report.conversation.map(row=>`
+                <div class="p-3 rounded-xl text-xs ${row.role==='user'?'bg-primary-fixed/50 text-on-surface ml-8':'bg-surface-container-low text-on-surface mr-8'}">
+                  <strong>${row.role==='user'?'你':'AI'}</strong>: ${escape(row.content)}
+                </div>
+              `).join('')}
+            </div>
+            <form data-analysis-chat class="flex gap-2">
+              <input type="text" id="analysisQuestion" name="question" maxlength="1000" placeholder="例如：为什么建议我先巩固这个知识点？" ${busy()?'disabled':''} class="flex-1 px-3 py-2 rounded-xl bg-surface-container-low text-xs border border-outline-variant/30 outline-none focus:border-primary" value="${escape(draft)}">
+              <button class="px-4 py-2 rounded-xl bg-primary text-on-primary text-xs font-semibold hover:bg-primary-container disabled:opacity-50" ${busy()||!available?'disabled':''}>发送</button>
+            </form>
+          </section>
+        </div>
+      </article>`;
     }
+
     function render(){
       if(!node?.isConnected)return;
       const working=busy();
-      const tabsBar = `<div class="analysis-tabs-bar" role="tablist" style="display:flex;gap:12px;margin-bottom:16px;">
-        <button type="button" class="button button-small ${activeTab==='report'?'button-blue':'button-outline'}" data-tab-switch="report">AI 学习分析报告</button>
-        <button type="button" class="button button-small ${activeTab==='plan'?'button-blue':'button-outline'}" data-tab-switch="plan">我的学习计划</button>
+      const tabsBar = `<div class="flex items-center bg-surface-container-low p-1 rounded-full border border-outline-variant/30 w-fit mb-6" role="tablist">
+        <button type="button" class="px-4 py-1.5 rounded-full text-xs font-semibold transition-all ${activeTab==='report'?'bg-surface-container-lowest text-primary shadow-sm':'text-on-surface-variant hover:text-on-surface'}" data-tab-switch="report">
+          <span class="material-symbols-outlined text-[15px] mr-1 align-middle">analytics</span>AI 学习分析报告
+        </button>
+        <button type="button" class="px-4 py-1.5 rounded-full text-xs font-semibold transition-all ${activeTab==='plan'?'bg-surface-container-lowest text-primary shadow-sm':'text-on-surface-variant hover:text-on-surface'}" data-tab-switch="plan">
+          <span class="material-symbols-outlined text-[15px] mr-1 align-middle">event_note</span>我的学习计划
+        </button>
       </div>`;
       if(activeTab==='plan'){
         if(node.querySelector('#planSubmodule'))return;
@@ -74,11 +250,72 @@
         frameworkUI?.mount(node.querySelector('#frameworkSubmodule'));
         return;
       }
-      node.innerHTML = tabsBar + `<div class="analysis-layout"><aside class="analysis-sidebar"><section class="panel analysis-controls"><span class="analysis-kicker">按自己的节奏回顾</span><h2>分析范围</h2><label>时间<select data-analysis-filter="days" ${working?'disabled':''}>${[[7,'最近 7 天'],[30,'最近 30 天'],[0,'全部历史']].map(([v,t])=>`<option value="${v}" ${selection.days===v?'selected':''}>${t}</option>`).join('')}</select></label><label>题库<select data-analysis-filter="category" ${working?'disabled':''}>${Object.entries(categoryNames).map(([v,t])=>`<option value="${v}" ${selection.category===v?'selected':''}>${t}</option>`).join('')}</select></label><label class="analysis-note-choice"><input type="checkbox" data-analysis-filter="includeNotes" ${selection.includeNotes?'checked':''} ${working?'disabled':''}>结合题目随手记</label><p class="analysis-meta">选定范围的题目信息、练习记录${selection.includeNotes?'和已保存的随手记摘录':''}将发送给已配置的 AI 服务。</p>${button(submitting?'正在提交…':active(job)?'正在分析…':'开始分析','generate',working||!available?'disabled':'',true)}${!available?'<p class="analysis-warning">AI 服务尚未配置；配置完成后重新加载即可开始。</p>':''}</section>
-        <section class="analysis-history"><h3>历史报告</h3>${reports.length?reports.map(item=>`<button type="button" class="analysis-history-item ${item.id===report?.id?'selected':''}" data-analysis-action="history" data-id="${escape(item.id)}"><strong>${escape(item.title)}</strong><span>${escape(range(item.filters))}</span><small>${escape(date(item.createdAt))}</small></button>`).join(''):'<p class="analysis-meta">生成后自动保存，随时回来查看。</p>'}${button('重新加载','reload',loading?'disabled':'')}</section></aside>
-        <div class="analysis-main"><div class="analysis-status" role="status" aria-live="polite">${loading?'正在读取分析记录…':active(job)?escape(job.progress?.label||'任务已提交，AI 正在准备分析；离开页面后仍会继续。'):''}</div>${message?`<p class="analysis-warning" role="alert">${escape(message)}</p>`:''}${pending&&!active(job)?`<div class="analysis-warning"><p>上一次提交尚未收到明确回执。可以核对原任务，不会重复提交新的调用。</p>${button('核对原任务','recover',submitting?'disabled':'')}</div>`:''}${reportHTML()}</div></div>`;
-      node.querySelector('.analysis-sidebar')?.insertAdjacentHTML('beforeend',sourceControls()+scheduleControls());
+      node.innerHTML = tabsBar + `<div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        <!-- Left Filter Sidebar (Col 4) -->
+        <aside class="lg:col-span-4 flex flex-col gap-4">
+          <section class="bg-surface-container-lowest/85 backdrop-blur-xl rounded-2xl p-5 border border-outline-variant/30 shadow-sm flex flex-col gap-3">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary text-[18px]">tune</span>
+                <span class="text-sm font-bold text-on-surface">分析范围设定</span>
+              </div>
+              <span class="text-[10px] px-2 py-0.5 rounded-full bg-surface-container text-outline">自定义</span>
+            </div>
+            <label class="flex flex-col gap-1 text-xs text-on-surface-variant">
+              <span>时间跨度</span>
+              <select data-analysis-filter="days" ${working?'disabled':''} class="px-3 py-2 rounded-xl bg-surface-container-low text-xs border border-outline-variant/30 outline-none text-on-surface">
+                ${[[7,'最近 7 天'],[30,'最近 30 天'],[0,'全部历史']].map(([v,t])=>`<option value="${v}" ${selection.days===v?'selected':''}>${t}</option>`).join('')}
+              </select>
+            </label>
+            <label class="flex flex-col gap-1 text-xs text-on-surface-variant">
+              <span>题库与知识范围</span>
+              <select data-analysis-filter="category" ${working?'disabled':''} class="px-3 py-2 rounded-xl bg-surface-container-low text-xs border border-outline-variant/30 outline-none text-on-surface">
+                ${Object.entries(categoryNames).map(([v,t])=>`<option value="${v}" ${selection.category===v?'selected':''}>${t}</option>`).join('')}
+              </select>
+            </label>
+            <label class="flex items-center gap-2 text-xs text-on-surface p-2 rounded-lg bg-surface-container-low/70 cursor-pointer">
+              <input type="checkbox" data-analysis-filter="includeNotes" ${selection.includeNotes?'checked':''} ${working?'disabled':''} class="rounded text-primary">
+              <span>结合题目随手记与草稿批注</span>
+            </label>
+            <button type="button" class="w-full py-2.5 rounded-xl bg-primary text-on-primary font-semibold text-xs flex items-center justify-center gap-1.5 shadow-sm hover:bg-primary-container disabled:opacity-50 transition-all" data-analysis-action="generate" ${working||!available?'disabled':''}>
+              <span class="material-symbols-outlined text-[16px]">bolt</span>
+              <span>${submitting?'正在提交…':active(job)?'正在分析…':'开始智能深度分析'}</span>
+            </button>
+            ${!available?'<p class="text-[11px] text-error">AI 服务尚未配置；配置完成后重新加载即可开始。</p>':''}
+          </section>
+
+          <section class="bg-surface-container-lowest/85 backdrop-blur-xl rounded-2xl p-5 border border-outline-variant/30 shadow-sm flex flex-col gap-3">
+            <div class="flex items-center justify-between">
+              <span class="text-sm font-bold text-on-surface">历史诊断归档</span>
+              <button type="button" class="text-xs text-primary hover:underline" data-analysis-action="reload" ${loading?'disabled':''}>刷新</button>
+            </div>
+            <div class="flex flex-col gap-2 max-h-60 overflow-y-auto">
+              ${reports.length?reports.map(item=>`
+                <button type="button" class="p-3 rounded-xl text-left transition-all border border-outline-variant/20 flex flex-col gap-1 ${item.id===report?.id?'bg-primary-fixed/40 border-primary':'bg-surface-container-low hover:bg-surface-container'}" data-analysis-action="history" data-id="${escape(item.id)}">
+                  <strong class="text-xs font-semibold text-on-surface truncate">${escape(item.title)}</strong>
+                  <div class="flex items-center justify-between text-[10px] text-on-surface-variant">
+                    <span>${escape(range(item.filters))}</span>
+                    <span class="font-code-sm">${escape(date(item.createdAt))}</span>
+                  </div>
+                </button>
+              `).join(''):'<p class="text-xs text-outline">生成后自动保存，随时回来查看。</p>'}
+            </div>
+          </section>
+        </aside>
+
+        <!-- Right Main Canvas (Col 8) -->
+        <main class="lg:col-span-8 flex flex-col gap-4">
+          <div class="analysis-status text-xs text-on-surface-variant" role="status" aria-live="polite">
+            ${loading?'正在读取分析记录…':active(job)?escape(job.progress?.label||'任务已提交，AI 正在准备分析；离开页面后仍会继续。'):''}
+          </div>
+          ${message?`<div class="p-3 rounded-xl bg-error-container/40 text-error text-xs" role="alert">${escape(message)}</div>`:''}
+          ${pending&&!active(job)?`<div class="p-3 rounded-xl bg-secondary-fixed/50 text-xs flex items-center justify-between"><span>上一次提交尚未收到明确回执。</span>${button('核对原任务','recover',submitting?'disabled':'')}</div>`:''}
+          ${reportHTML()}
+        </main>
+      </div>`;
+      node.querySelector('aside')?.insertAdjacentHTML('beforeend',sourceControls()+scheduleControls());
     }
+
     async function openReport(id){
       const version=generation;
       const result=await client.analysisReport(id);

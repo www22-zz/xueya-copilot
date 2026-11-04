@@ -4,7 +4,12 @@
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#fafbfe">
   <meta name="description" content="读懂课程资料，用固定题库刷题、巩固错题、随手记重点。学涯 Copilot，让每一次学习都有依据。">
   <title>学涯 Copilot — 让知识，真正连起来</title>
-  <link rel="icon" href="assets/mark.svg" type="image/svg+xml"><link rel="stylesheet" href="css/styles.css">
+  <link rel="icon" href="assets/mark.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
   <link rel="stylesheet" href="css/workbench.css"><link rel="stylesheet" href="css/workspace.css"><link rel="stylesheet" href="css/learning.css">
   <link rel="stylesheet" href="css/experience.css"><link rel="stylesheet" href="css/preferences.css"><link rel="stylesheet" href="css/theme-surfaces.css">
   <link rel="stylesheet" href="css/composer-input.css">
@@ -16,6 +21,78 @@
   <link rel="stylesheet" href="css/analysis.css">
   <link rel="stylesheet" href="css/ui-feedback.css">
   <link rel="stylesheet" href="css/courses.css">
+  <link rel="stylesheet" href="css/stitch-theme.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "primary": "#3525cd",
+            "primary-container": "#4f46e5",
+            "on-primary": "#ffffff",
+            "on-primary-container": "#dad7ff",
+            "primary-fixed": "#e2dfff",
+            "primary-fixed-dim": "#c3c0ff",
+            "secondary": "#0058be",
+            "secondary-container": "#2170e4",
+            "on-secondary": "#ffffff",
+            "on-secondary-container": "#fefcff",
+            "secondary-fixed": "#d8e2ff",
+            "secondary-fixed-dim": "#adc6ff",
+            "tertiary": "#571ac0",
+            "tertiary-container": "#6f3dd9",
+            "on-tertiary": "#ffffff",
+            "tertiary-fixed": "#e9ddff",
+            "tertiary-fixed-dim": "#d0bcff",
+            "background": "#faf8ff",
+            "on-background": "#131b2e",
+            "surface": "#faf8ff",
+            "surface-bright": "#faf8ff",
+            "surface-dim": "#d2d9f4",
+            "surface-container-lowest": "#ffffff",
+            "surface-container-low": "#f2f3ff",
+            "surface-container": "#eaedff",
+            "surface-container-high": "#e2e7ff",
+            "surface-container-highest": "#dae2fd",
+            "inverse-surface": "#283044",
+            "inverse-on-surface": "#eef0ff",
+            "inverse-primary": "#c3c0ff",
+            "on-surface": "#131b2e",
+            "on-surface-variant": "#464555",
+            "outline": "#777587",
+            "outline-variant": "#c7c4d8",
+            "error": "#ba1a1a",
+            "error-container": "#ffdad6"
+          },
+          fontFamily: {
+            "display-lg": ["Plus Jakarta Sans", "Inter", "sans-serif"],
+            "headline-lg": ["Plus Jakarta Sans", "Inter", "sans-serif"],
+            "headline-md": ["Plus Jakarta Sans", "Inter", "sans-serif"],
+            "headline-sm": ["Plus Jakarta Sans", "Inter", "sans-serif"],
+            "body-lg": ["Inter", "sans-serif"],
+            "body-md": ["Inter", "sans-serif"],
+            "body-sm": ["Inter", "sans-serif"],
+            "label-md": ["Inter", "sans-serif"],
+            "label-sm": ["Inter", "sans-serif"],
+            "code-sm": ["JetBrains Mono", "monospace"]
+          },
+          fontSize: {
+            "headline-lg": ["28px", { lineHeight: "36px", letterSpacing: "-0.02em", fontWeight: "700" }],
+            "headline-md": ["20px", { lineHeight: "28px", letterSpacing: "-0.01em", fontWeight: "600" }],
+            "headline-sm": ["16px", { lineHeight: "24px", fontWeight: "600" }],
+            "display-lg": ["36px", { lineHeight: "44px", letterSpacing: "-0.025em", fontWeight: "700" }],
+            "body-lg": ["16px", { lineHeight: "26px", fontWeight: "400" }],
+            "body-md": ["14px", { lineHeight: "22px", fontWeight: "400" }],
+            "body-sm": ["13px", { lineHeight: "18px", fontWeight: "400" }],
+            "label-md": ["12px", { lineHeight: "16px", letterSpacing: "0.04em", fontWeight: "600" }],
+            "label-sm": ["11px", { lineHeight: "14px", fontWeight: "500" }],
+            "code-sm": ["13px", { lineHeight: "20px", fontWeight: "400" }]
+          }
+        }
+      }
+    };</script>
   <script src="js/workspace-appearance.js" defer></script>
   <script src="js/pointer-original.js" defer></script>
   <script src="../shared/contracts/index.js" defer></script>
@@ -65,15 +142,11 @@
   <script src="js/courses-workspace.js" defer></script>
   <script src="js/plan-view.js" defer></script>
   <script src="js/framework-view.js" defer></script>
+  <script src="js/overview-view.js" defer></script>
   <script src="js/app.js" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#main">跳到主要内容</a>
-  <header class="site-header">
-    <a href="#home" class="brand" aria-label="学涯 Copilot 首页" title="回到首页"><img src="assets/mark.svg" alt="" width="32" height="32"><strong>学涯<span>Copilot</span></strong></a>
-    <nav class="site-nav" aria-label="网站导航"><a href="#possibilities">读懂你的资料</a><a href="#evidence">回到答案的出处</a><a href="#rhythm">把理解练扎实</a></nav>
-    <a class="button button-dark header-cta" href="#space/overview">进入学习空间 <span data-icon="arrow"></span></a>
-  </header>
   <main id="main">
     <div id="homePage">
       <section class="hero section-width">
@@ -121,18 +194,209 @@
       <section class="closing-section section-width reveal"><span class="closing-star">✳</span><span class="eyebrow">YOUR NEXT CHAPTER</span><h2>下一次豁然开朗，<br>从这里开始。</h2><a class="button button-blue" href="#space/overview">进入我的学习空间 <span data-icon="arrow"></span></a><p>无需注册 · 浏览器副本与可选本机持久化</p></section>
       <footer class="site-footer section-width"><a class="brand" href="#home"><img src="assets/mark.svg" alt="" width="28" height="28"><strong>学涯<span>Copilot</span></strong></a><span>让知识，真正连起来。</span><small>© 2026 学涯 Copilot</small><a href="#space/knowledge">开始整理资料 <span data-icon="arrow"></span></a></footer>
     </div>
-    <div id="spacePage" hidden>
-      <div class="workspace-main">
-      <div class="space-top section-width"><div class="course-context"><span class="course-symbol" data-icon="tree"></span><div><label class="sr-only" for="courseSelect">当前课程</label><select id="courseSelect" aria-label="当前课程"><option value="course-default">数据结构</option></select><small id="courseLabel">我的课程空间</small></div></div><div class="space-top-right"><span class="engine-status" id="engineStatus">正在连接</span><button id="searchTrigger" class="icon-button" type="button" aria-label="搜索资料与操作"><span data-icon="search"></span></button><button type="button" class="subtle-button" data-manage-courses>管理课程</button><button type="button" class="subtle-button" data-export-workspace>导出记录</button><span class="profile-avatar" aria-label="本地学习空间">学</span></div></div>
-      <nav class="workspace-primary section-width" aria-label="学习空间主导航"><a href="#space/ask" data-area="assistant">AI 助手</a><a href="#space/courses" data-area="center">学习中心</a><details class="assistant-tools"><summary>AI 助手工具</summary><a href="#space/knowledge">个人参考资料 <span id="documentCount">…</span></a><a href="#space/frameworks">知识框架历史</a></details></nav>
-      <div class="learning-center-shell">
-      <nav class="space-nav learning-center-nav" aria-label="学习中心"><strong>学习中心</strong><a href="#space/courses" data-view="courses">课程学习</a><a href="#space/practice" data-view="practice">练习</a><a href="#space/review" data-view="review">复习</a><a href="#space/analysis" data-view="analysis">学习分析</a></nav>
-      <div id="activityBanner" class="activity-banner section-width" role="status" hidden><span id="activityLabel"></span><button type="button" class="button button-outline button-small" data-stop-practice>停止等待</button></div>
-      <div id="storageNotice" class="storage-notice section-width" role="alert" hidden><span>本次修改尚未保存。请先导出记录，避免关闭页面后丢失。</span><button type="button" class="button button-outline button-small" data-export-workspace>导出记录</button></div>
-      <div class="space-content section-width" id="spaceContent" tabindex="-1"></div>
+    <div id="spacePage" hidden class="stitch-ambient-bg relative min-h-screen">
+      <!-- Stitch Ambient Background Glows -->
+      <div class="pointer-events-none fixed inset-0 z-0 overflow-hidden">
+        <div class="absolute -top-36 left-1/4 h-[520px] w-[640px] rounded-full bg-primary-fixed/30 blur-3xl"></div>
+        <div class="absolute top-20 right-10 h-[480px] w-[540px] rounded-full bg-tertiary-fixed/25 blur-3xl"></div>
+        <div class="absolute top-1/2 left-10 h-[380px] w-[420px] rounded-full bg-secondary-fixed/20 blur-3xl"></div>
       </div>
-      <footer class="space-footer section-width" style="display:none!important;"><span><span class="mini-dot"></span> 浏览器保留副本</span><div class="workspace-footer-actions"><div id="workspaceServicesSlot"></div></div></footer>
+
+      <!-- Stitch Global Fixed Header -->
+      <header class="stitch-topbar">
+        <div class="h-16 w-full px-4 sm:px-6 flex items-center justify-between gap-4">
+          <!-- Left: Brand & Mobile Sidebar Toggle -->
+          <div class="flex items-center gap-3 min-w-[200px]">
+            <button id="stitchSidebarToggle" class="w-9 h-9 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors lg:hidden" type="button" aria-label="切换侧栏">
+              <span class="material-symbols-outlined text-[20px]">menu</span>
+            </button>
+            <a href="#space/overview" class="flex items-center gap-2.5">
+              <img src="assets/mark.svg" alt="学涯 Copilot" width="28" height="28" class="h-7 w-auto object-contain">
+              <div class="flex flex-col">
+                <div class="flex items-center gap-1.5">
+                  <span class="font-headline-sm text-sm text-on-surface font-semibold tracking-tight">学涯 Copilot</span>
+                  <span class="font-label-sm text-[10px] bg-primary-fixed text-primary px-1.5 py-0.2 rounded-full font-semibold">M3</span>
+                </div>
+                <span class="font-label-sm text-[11px] text-on-surface-variant leading-none">Study Workspace</span>
+              </div>
+            </a>
+          </div>
+
+          <!-- Center: Mode Switcher & Global Search Trigger -->
+          <div class="flex items-center gap-3 flex-1 justify-center max-w-2xl">
+            <!-- Mode Switcher -->
+            <nav class="workspace-primary hidden md:flex items-center bg-surface-container-low px-1 py-1 rounded-full p-1 border border-outline-variant/30" aria-label="学习空间主模式">
+              <a href="#space/ask" data-area="assistant" data-view="ask" class="px-3.5 py-1.5 rounded-full font-label-md text-xs text-on-surface-variant hover:text-on-surface transition-all flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-[15px]">auto_awesome</span>
+                <span>AI 伴学助手</span>
+              </a>
+              <a href="#space/courses" data-area="center" data-view="courses" class="px-3.5 py-1.5 rounded-full font-label-md text-xs text-on-surface-variant hover:text-on-surface transition-all flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-[15px]">school</span>
+                <span>学习中心</span>
+              </a>
+            </nav>
+
+            <!-- Global Search Pill -->
+            <button id="searchTrigger" class="hidden sm:flex items-center bg-surface-container-low hover:bg-surface-container px-3.5 py-1.5 rounded-full w-64 text-on-surface-variant transition-colors border border-outline-variant/30 text-left" type="button" aria-label="全局搜索资料与操作">
+              <span class="material-symbols-outlined text-[16px] mr-2 text-outline">search</span>
+              <span class="font-body-sm text-xs flex-1 text-on-surface-variant truncate">搜索资料、笔记与操作…</span>
+              <kbd class="font-code-sm text-[10px] bg-surface-container-lowest text-on-surface-variant px-1.5 py-0.5 rounded shadow-sm border border-outline-variant/30">⌘K</kbd>
+            </button>
+          </div>
+
+          <!-- Right: Course Selector, Status, Profile & Controls -->
+          <div class="flex items-center gap-2 sm:gap-3 justify-end min-w-[200px]">
+            <!-- Course Context Select -->
+            <div class="course-context flex items-center gap-1.5 bg-surface-container-low px-2.5 py-1 rounded-xl border border-outline-variant/30">
+              <span class="material-symbols-outlined text-[18px] text-primary" data-icon="tree">school</span>
+              <div class="flex flex-col">
+                <label class="sr-only" for="courseSelect">当前课程</label>
+                <select id="courseSelect" aria-label="当前课程" class="bg-transparent text-xs font-semibold text-on-surface border-0 outline-none cursor-pointer pr-1">
+                  <option value="course-default">数据结构</option>
+                </select>
+                <small id="courseLabel" class="text-[10px] text-on-surface-variant leading-none">我的课程空间</small>
+              </div>
+            </div>
+
+            <!-- Engine Sync Status -->
+            <div class="hidden xl:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-container-low text-on-surface-variant text-[11px] border border-outline-variant/30">
+              <span class="w-2 h-2 rounded-full bg-secondary animate-pulse"></span>
+              <span id="engineStatus" class="engine-status">本地就绪</span>
+            </div>
+
+            <!-- Settings & Quick Actions -->
+            <div class="flex items-center gap-1">
+              <button type="button" class="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-manage-courses title="管理课程" aria-label="管理课程">
+                <span class="material-symbols-outlined text-[18px]">library_books</span>
+              </button>
+              <button type="button" class="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-export-workspace title="导出记录" aria-label="导出记录">
+                <span class="material-symbols-outlined text-[18px]">file_download</span>
+              </button>
+              <button type="button" class="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-open-settings title="系统设置" aria-label="系统设置">
+                <span class="material-symbols-outlined text-[18px]">settings</span>
+              </button>
+            </div>
+
+            <div class="h-5 w-px bg-surface-container-high hidden sm:block"></div>
+
+            <!-- User Profile Pill -->
+            <div class="flex items-center gap-2 pl-1 cursor-pointer" data-open-settings title="用户档案与偏好">
+              <div class="profile-avatar w-8 h-8 rounded-full bg-gradient-to-tr from-primary to-primary-container text-on-primary font-bold text-xs flex items-center justify-center shadow-sm ring-2 ring-primary-fixed">
+                学
+              </div>
+              <div class="hidden 2xl:flex flex-col text-left">
+                <span class="font-label-md text-xs font-semibold text-on-surface leading-tight">Linus C.</span>
+                <span class="font-label-sm text-[10px] text-primary font-medium leading-tight">CS 专业 · 大三</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Stitch Global Left Sidebar -->
+      <aside id="stitchSidebar" class="stitch-sidebar flex flex-col justify-between py-4">
+        <div class="flex flex-col gap-4 px-3">
+          <!-- Sidebar Section 1: Core Modules -->
+          <div class="flex flex-col gap-1">
+            <div class="flex items-center justify-between px-3 py-1">
+              <span class="sidebar-section-title font-label-sm text-[11px] text-outline font-semibold tracking-wider uppercase">学习中心核心模块</span>
+              <button id="stitchSidebarCollapseBtn" class="text-on-surface-variant hover:text-on-surface transition-colors hidden lg:block" title="折叠/展开侧栏" type="button">
+                <span class="material-symbols-outlined text-[16px]">dock_to_right</span>
+              </button>
+            </div>
+            <nav class="space-nav learning-center-nav flex flex-col gap-1" aria-label="学习中心导航">
+              <a href="#space/overview" data-view="overview" class="sidebar-nav-item flex items-center gap-3 px-3 py-2 rounded-xl text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all text-sm font-medium">
+                <span class="material-symbols-outlined text-[19px]">dashboard</span>
+                <span class="sidebar-text">工作台概览</span>
+              </a>
+              <a href="#space/courses" data-view="courses" class="sidebar-nav-item flex items-center gap-3 px-3 py-2 rounded-xl text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all text-sm font-medium">
+                <span class="material-symbols-outlined text-[19px]">play_lesson</span>
+                <span class="sidebar-text">课程学习</span>
+              </a>
+              <a href="#space/practice" data-view="practice" class="sidebar-nav-item flex items-center gap-3 px-3 py-2 rounded-xl text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all text-sm font-medium">
+                <span class="material-symbols-outlined text-[19px]">quiz</span>
+                <span class="sidebar-text">专项练习</span>
+              </a>
+              <a href="#space/review" data-view="review" class="sidebar-nav-item flex items-center gap-3 px-3 py-2 rounded-xl text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all text-sm font-medium">
+                <span class="material-symbols-outlined text-[19px]">edit_note</span>
+                <span class="sidebar-text">错题复习</span>
+              </a>
+              <a href="#space/analysis" data-view="analysis" class="sidebar-nav-item flex items-center gap-3 px-3 py-2 rounded-xl text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all text-sm font-medium">
+                <span class="material-symbols-outlined text-[19px]">insights</span>
+                <span class="sidebar-text">学情分析</span>
+              </a>
+              <a href="#space/ask" data-view="ask" class="sidebar-nav-item flex items-center gap-3 px-3 py-2 rounded-xl text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all text-sm font-medium">
+                <span class="material-symbols-outlined text-[19px]">forum</span>
+                <span class="sidebar-text">AI 助手问答</span>
+              </a>
+            </nav>
+          </div>
+
+          <!-- Sidebar Section 2: Tools & Knowledge -->
+          <div class="flex flex-col gap-1 border-t border-outline-variant/20 pt-3">
+            <div class="px-3 py-1">
+              <span class="sidebar-section-title font-label-sm text-[11px] text-outline font-semibold tracking-wider uppercase">学习资料与框架</span>
+            </div>
+            <nav class="flex flex-col gap-1">
+              <a href="#space/knowledge" data-view="knowledge" class="sidebar-nav-item flex items-center justify-between px-3 py-2 rounded-xl text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all text-sm font-medium">
+                <div class="flex items-center gap-3 min-w-0">
+                  <span class="material-symbols-outlined text-[19px]">folder</span>
+                  <span class="sidebar-text truncate">个人参考资料</span>
+                </div>
+                <span id="documentCount" class="font-code-sm text-[11px] px-1.5 py-0.2 rounded bg-surface-container-high text-on-surface-variant">…</span>
+              </a>
+              <a href="#space/frameworks" data-view="frameworks" class="sidebar-nav-item flex items-center gap-3 px-3 py-2 rounded-xl text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all text-sm font-medium">
+                <span class="material-symbols-outlined text-[19px]">account_tree</span>
+                <span class="sidebar-text">知识框架历史</span>
+              </a>
+            </nav>
+          </div>
+
+          <!-- Sidebar Section 3: Recent AI Sessions -->
+          <div class="flex flex-col gap-1 border-t border-outline-variant/20 pt-3">
+            <div class="flex items-center justify-between px-3 py-1">
+              <span class="sidebar-section-title font-label-sm text-[11px] text-outline font-semibold tracking-wider uppercase">近期 AI 答疑</span>
+              <div class="flex items-center gap-1">
+                <button type="button" class="text-on-surface-variant hover:text-primary transition-colors p-1 rounded" data-toggle-session-search title="搜索历史对话" aria-label="搜索历史对话">
+                  <span class="material-symbols-outlined text-[16px]">search</span>
+                </button>
+                <button type="button" class="text-on-surface-variant hover:text-primary transition-colors p-1 rounded" data-new-session title="开启新对话" aria-label="开启新对话">
+                  <span class="material-symbols-outlined text-[16px]">add</span>
+                </button>
+              </div>
+            </div>
+            <div id="stitchSessionSearchBox" class="px-2 py-1" hidden>
+              <input class="w-full px-2.5 py-1 text-xs bg-surface-container-low border border-outline-variant/40 rounded-lg outline-none focus:border-primary text-on-surface placeholder:text-outline" id="sessionSearch" aria-label="搜索历史对话" placeholder="搜索标题与内容…">
+            </div>
+            <div id="stitchRecentSessions" class="session-list flex flex-col gap-0.5 overflow-y-auto max-h-[calc(100vh-380px)]"></div>
+          </div>
+        </div>
+
+        <!-- Sidebar Bottom Footer -->
+        <div class="px-3 pt-3 border-t border-outline-variant/20 flex flex-col gap-1">
+          <button type="button" class="sidebar-nav-item flex items-center gap-3 px-3 py-2 rounded-xl text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all text-sm font-medium w-full text-left" data-open-settings>
+            <span class="material-symbols-outlined text-[19px]">settings</span>
+            <span class="sidebar-text">系统设置</span>
+          </button>
+        </div>
+      </aside>
+
+      <!-- Stitch Main View Container -->
+      <div class="stitch-main-content relative z-10">
+        <div class="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div id="activityBanner" class="activity-banner mb-4" role="status" hidden>
+            <span id="activityLabel"></span>
+            <button type="button" class="button button-outline button-small" data-stop-practice>停止等待</button>
+          </div>
+          <div id="storageNotice" class="storage-notice mb-4" role="alert" hidden>
+            <span>本次修改尚未保存。请先导出记录，避免关闭页面后丢失。</span>
+            <button type="button" class="button button-outline button-small" data-export-workspace>导出记录</button>
+          </div>
+          <!-- Space Content Slot -->
+          <div class="space-content" id="spaceContent" tabindex="-1"></div>
+        </div>
       </div>
+      <footer class="space-footer" style="display:none!important;"><div id="workspaceServicesSlot"></div></footer>
     </div>
   </main>
   <dialog id="sourceDialog" class="source-dialog" aria-label="资料原文"><div class="dialog-head"><span class="eyebrow">回到原文</span><button type="button" class="icon-button" data-close-dialog aria-label="关闭原文"><span data-icon="close"></span></button></div><div id="sourceContent"></div><div class="source-dialog-footer"><button class="button button-blue" type="button" id="sourceSave"><span data-icon="bookmark"></span> 保存为知识卡片</button></div></dialog>

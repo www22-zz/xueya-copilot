@@ -32,7 +32,8 @@
   });
   const workspace=window.XueyaWorkspace.createWorkspace({state,L:viewLearning,store,e,icon,persist,toast,render,sourceById,allSources,libraryService:window.XueyaLibrary});
   const {titles,renders,documentRows,currentQuestions}=workspace.enhance(window.XueyaViews.createViews({state,L:viewLearning,e,icon,sourceById}));
-  titles.ask='AI 助手';titles.overview='AI 助手';titles.knowledge='个人参考资料';renders.knowledge=()=>'';
+  titles.ask='AI 助手';titles.overview='工作台概览';titles.knowledge='个人参考资料';renders.knowledge=()=>'';
+  renders.overview=()=>window.XueyaOverview?window.XueyaOverview.render({state,store}):'';
   renders.practice=()=>'<div id="practiceModule"></div>';
   const chatService=window.XueyaChat.createChatService();
   const experience=window.XueyaExperience?.create({state});
@@ -58,7 +59,7 @@
   let frameworkUI; titles.frameworks='知识框架历史';renders.frameworks=()=>'<div id="frameworkHistory"></div>';
   let planSnapshot=null,planSnapshotAt=0,planRequest=null;
   async function mountLearningShortcuts(){
-    if(!['ask','review'].includes(state.view)||!window.XueyaPlatform?.available)return;
+    if(state.view!=='review'||!window.XueyaPlatform?.available)return;
     const view=state.view,node=document.createElement('aside');node.className='learning-shortcuts';
     node.innerHTML='<a href="#space/analysis/plans" data-open-my-plan>我的计划</a><a href="#space/courses">继续学习课程</a><a href="#space/review">复习错题</a>';
     $('#spaceContent').prepend(node);
@@ -82,7 +83,7 @@
         list.innerHTML=tasks.map(t=>`<label><input type="checkbox" data-shortcut-task="${e(t.id)}" ${t.completed?'checked':''}>${e(t.title)} <small>${e(t.minutes)}分钟${t.date<today?' · 已逾期':''}</small></label>`).join('');
         node.append(list);
         list.onchange=async event=>{const input=event.target.closest('[data-shortcut-task]');if(!input)return;input.disabled=true;try{const response=await window.XueyaPlatform.spaceFetch('/api/learning/space/plan/task/toggle',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({planId:planSnapshot.id,taskId:input.dataset.shortcutTask,completed:input.checked,expectedRevision:planSnapshot.revision,operationId:'shortcut-'+input.dataset.shortcutTask+'-'+planSnapshot.revision+'-'+input.checked})});const value=await response.json();planSnapshot=value.plan;planSnapshotAt=Date.now();toast('已同步到我的计划');}catch(error){input.checked=!input.checked;toast(error.message);}finally{input.disabled=false;}};
-      }else node.insertAdjacentHTML('beforeend',`<small>${view==='ask'?'今天暂未安排计划任务':'没有到期的计划复习任务'}</small>`);
+      }else if(view!=='ask'){node.insertAdjacentHTML('beforeend',`<small>没有到期的计划复习任务</small>`);}
     }catch(error){if(node.isConnected)node.insertAdjacentHTML('beforeend',`<small>计划暂未读取：${e(error.message)}</small>`);}
   }
   function render(){
@@ -96,12 +97,24 @@
     agentRuns?.refresh();
     if(state.view==='analysis')analysisUI?.mount($('#analysisModule'));
     if(state.view==='courses')coursesUI?.mount();
+    if(state.view==='overview')window.XueyaOverview?.mountListeners($('#spaceContent'),{ask,navigate:hash=>{location.hash=hash;}});
+    document.body.classList.toggle('in-ask', state.view === 'ask');
+    const stitchRecent=$('#stitchRecentSessions');
+    if(stitchRecent&&state.sessions){
+      if(typeof globalThis.XueyaWorkspaceSessionList==='function'){
+        stitchRecent.innerHTML=globalThis.XueyaWorkspaceSessionList();
+      }
+    }
+    const searchBox=$('#stitchSessionSearchBox');
+    if(searchBox){
+      searchBox.hidden=!Boolean(state.sessionSearchOpen||state.sessionQuery);
+    }
     if(state.view==='frameworks'){frameworkUI ||= window.XueyaFramework.create({toast,navigate:hash=>{location.hash=hash;}});frameworkUI.mount($('#frameworkHistory'),location.hash.split('/')[2]);}
     mountLearningShortcuts();
     window.XueyaStudyChat?.recover(state,persist,render);
     window.XueyaStudyQuiz?.mount($('#chatThread'));window.XueyaStudyQuiz?.recover(state,persist,render);
   }
-  let initialRoute=true;function route(){const parts=location.hash.replace(/^#/,'').split('/');if(parts[0]==='space'&&parts[1]==='library'&&parts[2]!=='manage'&&window.XueyaPlatform?.available)parts[1]='knowledge';const space=parts[0]==='space';$('#homePage').hidden=space;$('#spacePage').hidden=!space;document.body.classList.toggle('in-space',space);if(space){state.view=parts[1]==='overview'?'ask':titles[parts[1]]?parts[1]:'ask';$$('[data-view]').forEach(a=>{a.classList.toggle('active',a.dataset.view===state.view);a.dataset.view===state.view?a.setAttribute('aria-current','page'):a.removeAttribute('aria-current');});render();document.title=`${titles[state.view]} · 学涯 Copilot`;if(!initialRoute){scrollTo({top:0,behavior:'instant'});$('#spaceContent').focus({preventScroll:true});}}else{document.title='学涯 Copilot — 让知识，真正连起来';if(['possibilities','evidence','rhythm'].includes(parts[0]))requestAnimationFrame(()=>document.getElementById(parts[0]).scrollIntoView());else if(!initialRoute)scrollTo({top:0,behavior:'instant'});}initialRoute=false;}
+  let initialRoute=true;function route(){const parts=location.hash.replace(/^#/,'').split('/');if(parts[0]==='space'&&parts[1]==='library'&&parts[2]!=='manage'&&window.XueyaPlatform?.available)parts[1]='knowledge';const space=parts[0]==='space';$('#homePage').hidden=space;$('#spacePage').hidden=!space;document.body.classList.toggle('in-space',space);document.body.classList.toggle('in-ask',space&&state.view==='ask');if(space){state.view=titles[parts[1]]?parts[1]:'ask';$$('[data-view]').forEach(a=>{a.classList.toggle('active',a.dataset.view===state.view);a.dataset.view===state.view?a.setAttribute('aria-current','page'):a.removeAttribute('aria-current');});render();document.title=`${titles[state.view]} · 学涯 Copilot`;if(!initialRoute){scrollTo({top:0,behavior:'instant'});$('#spaceContent').focus({preventScroll:true});}}else{document.title='学涯 Copilot — 让知识，真正连起来';if(['possibilities','evidence','rhythm'].includes(parts[0]))requestAnimationFrame(()=>document.getElementById(parts[0]).scrollIntoView());else if(!initialRoute)scrollTo({top:0,behavior:'instant'});}initialRoute=false;}
   function sourceById(id){return [...viewLearning.sources,...state.documents.flatMap(d=>d.chunks||[])].find(s=>s.id===id)||state.messages.flatMap(m=>m.sources||[]).find(s=>s.id===id)||(id?.startsWith('web-')?{id,title:'全网搜索网页',location:'互联网搜索',isWeb:true}:null);}
   function openSource(source){
     if(!source)return;

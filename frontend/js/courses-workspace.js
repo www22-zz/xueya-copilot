@@ -604,107 +604,192 @@
       const progress = getProgress();
 
       const categories = [
-        { id: 'all', label: '全部计算机课程' },
-        { id: 'theory', label: '核心理论 / 408' },
-        { id: 'programming', label: '编程语言与全栈' },
-        { id: 'architecture', label: '系统架构与数据库' },
+        { id: 'all', label: '全部体系课程' },
+        { id: 'theory', label: '计算机考研 408' },
+        { id: 'programming', label: '数据结构与算法' },
+        { id: 'architecture', label: '操作系统与网络' },
         { id: 'ai-agent', label: 'AI 与智能体前沿' }
       ];
 
       return `
-        <div class="courses-container">
-          <div class="courses-header-banner">
-            <div class="banner-content">
-              <span class="banner-badge">计算机视频学堂 · 权威名校公开课已就绪</span>
-              <h1 class="banner-title">体系化计算机课程学习</h1>
-              <p class="banner-desc">精选清华、哈工大等权威大学名校公开课，全面涵盖数据结构与算法、操作系统内核、计算机网络、前端全栈、MySQL 调优与前沿 AI 智能体。内置超清名校视频播放，并支持选取本地视频文件流畅播放！</p>
-            </div>
-            <div class="banner-actions">
-              <button type="button" class="button button-blue" data-open-add-course>
-                <span class="icon-plus">＋</span> 添加自定义视频课
-              </button>
-            </div>
-          </div>
+        <div class="courses-container flex flex-col gap-6 animate-fade-in pb-12">
+          <!-- Top Metrics & Action Hero Banner (Stitch Screen 1) -->
+          <section class="relative w-full rounded-2xl bg-surface-container-lowest/90 backdrop-blur-xl shadow-sm border border-outline-variant/30 p-6 lg:p-7 overflow-hidden">
+            <div class="absolute -right-24 -top-24 w-80 h-80 rounded-full bg-primary/10 blur-3xl pointer-events-none"></div>
+            <div class="absolute right-1/3 -bottom-28 w-72 h-72 rounded-full bg-secondary-container/10 blur-3xl pointer-events-none"></div>
 
-          <div class="courses-stats-strip">
-            <div class="stat-card">
-              <span class="stat-num">${stats.totalCourses}</span>
-              <span class="stat-label">计算机精品课程</span>
-            </div>
-            <div class="stat-card">
-              <span class="stat-num">${stats.studiedEpisodes}</span>
-              <span class="stat-label">已学课时数</span>
-            </div>
-            <div class="stat-card">
-              <span class="stat-num">${stats.percentage}%</span>
-              <span class="stat-label">综合完成进度</span>
-            </div>
-            <div class="stat-progress-bar">
-              <div class="progress-fill" style="width: ${stats.percentage}%;"></div>
-            </div>
-          </div>
+            <div class="relative z-10 flex flex-col xl:flex-row xl:items-center justify-between gap-6">
+              <!-- Left: Academic Mission & Progress Stream -->
+              <div class="flex-1 flex flex-col gap-3 min-w-0">
+                <div class="flex flex-wrap items-center gap-2">
+                  <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary font-label-md text-xs font-semibold">
+                    <span class="material-symbols-outlined text-[15px]">terminal</span>
+                    CS 学科知识图谱引擎
+                  </span>
+                  <span class="inline-flex items-center gap-1.5 text-on-surface-variant font-code-sm text-xs">
+                    <span class="w-2 h-2 rounded-full bg-secondary"></span>
+                    同步大纲: 2025 计算机 408 统考 & 顶尖名校体系
+                  </span>
+                </div>
+                <div class="flex flex-col gap-1">
+                  <h1 class="font-display-lg text-2xl lg:text-3xl text-on-surface tracking-tight font-bold">计算机精品课程研修台</h1>
+                  <p class="font-body-md text-sm text-on-surface-variant">聚合顶级高校国家精品课程与前沿 AI 架构实践，构建严密、贯通底层的计算机认知范式。</p>
+                </div>
 
-          <div class="courses-toolbar">
-            <div class="courses-category-tabs" role="tablist" aria-label="课程分类">
+                <!-- Integrated Progress Metrics Strip -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+                  <div class="flex items-center gap-3 p-3 rounded-xl bg-surface-container-low/70 border border-outline-variant/20">
+                    <div class="w-10 h-10 rounded-lg bg-primary-container text-on-primary flex items-center justify-center shadow-sm">
+                      <span class="material-symbols-outlined text-[20px]">school</span>
+                    </div>
+                    <div class="flex flex-col">
+                      <span class="text-xs text-outline">已录入体系课程</span>
+                      <span class="text-lg text-on-surface font-bold tracking-tight">${stats.totalCourses} <span class="text-xs font-normal text-on-surface-variant">门精选</span></span>
+                    </div>
+                  </div>
+
+                  <div class="flex items-center gap-3 p-3 rounded-xl bg-surface-container-low/70 border border-outline-variant/20">
+                    <div class="w-10 h-10 rounded-lg bg-secondary text-on-secondary flex items-center justify-center shadow-sm">
+                      <span class="material-symbols-outlined text-[20px]">schedule</span>
+                    </div>
+                    <div class="flex flex-col">
+                      <span class="text-xs text-outline">累计已学课时</span>
+                      <span class="text-lg text-on-surface font-bold tracking-tight">${stats.studiedEpisodes} <span class="text-xs font-normal text-on-surface-variant">/ ${stats.totalEpisodes} 课时</span></span>
+                    </div>
+                  </div>
+
+                  <div class="flex items-center justify-between p-3 rounded-xl bg-surface-container-low/70 border border-outline-variant/20">
+                    <div class="flex flex-col">
+                      <span class="text-xs text-outline">综合完成进度</span>
+                      <span class="text-lg text-primary font-bold tracking-tight">${stats.percentage}%</span>
+                    </div>
+                    <div class="relative w-10 h-10 flex items-center justify-center">
+                      <svg class="w-10 h-10 -rotate-90" viewBox="0 0 36 36">
+                        <circle class="text-surface-container-high" cx="18" cy="18" fill="none" r="14" stroke="currentColor" stroke-width="3"></circle>
+                        <circle class="text-primary" cx="18" cy="18" fill="none" r="14" stroke="currentColor" stroke-dasharray="87.96" stroke-dashoffset="${87.96 * (1 - stats.percentage / 100)}" stroke-linecap="round" stroke-width="3.5"></circle>
+                      </svg>
+                      <span class="material-symbols-outlined absolute text-[15px] text-primary">flag</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Linear Progress Bar -->
+                <div class="flex flex-col gap-1 pt-1">
+                  <div class="flex items-center justify-between text-xs text-on-surface-variant">
+                    <span>当前学期总规划履约度</span>
+                    <span class="font-code-sm text-outline font-medium">本周建议新增研习 ≥ 4.5 小时</span>
+                  </div>
+                  <div class="w-full h-2 rounded-full bg-surface-container-highest overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-primary to-secondary rounded-full transition-all duration-700" style="width: ${Math.max(4, stats.percentage)}%;"></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Right: Rapid Action Hub -->
+              <div class="flex flex-col sm:flex-row xl:flex-col gap-2.5 xl:w-72 shrink-0">
+                <button class="group relative flex items-center justify-between w-full px-4 py-3 rounded-xl bg-primary text-on-primary font-semibold text-sm shadow-[0_6px_20px_rgba(79,70,229,0.25)] hover:bg-primary-container transition-all" type="button" data-open-add-course>
+                  <div class="flex items-center gap-2.5">
+                    <div class="w-7 h-7 rounded-lg bg-surface-container-lowest/20 flex items-center justify-center">
+                      <span class="material-symbols-outlined text-[18px]">add_circle</span>
+                    </div>
+                    <span>添加自定义视频课</span>
+                  </div>
+                  <span class="material-symbols-outlined text-[18px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
+                </button>
+                <div class="p-3 rounded-xl bg-surface-container-low text-on-surface-variant flex items-center gap-2 border border-outline-variant/20">
+                  <span class="material-symbols-outlined text-[18px] text-tertiary">psychology</span>
+                  <span class="text-xs leading-snug">支持随堂切片标记与 AI 启发式问答</span>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Toolbar: Categories and Search (Stitch Screen 1) -->
+          <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+            <div class="flex flex-wrap items-center gap-1.5 p-1 bg-surface-container-low rounded-xl border border-outline-variant/30" role="tablist" aria-label="课程分类">
               ${categories.map(cat => `
-                <button type="button" class="category-tab ${categoryFilter === cat.id ? 'active' : ''}" data-course-category="${cat.id}">
+                <button type="button" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${categoryFilter === cat.id ? 'bg-surface-container-lowest text-primary shadow-sm' : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container'}" data-course-category="${cat.id}">
                   ${cat.label}
                 </button>
               `).join('')}
             </div>
-            <div class="courses-search-wrap">
-              <input type="search" class="courses-search-input" id="courseSearchInput" placeholder="搜索课程名称、知识点或讲师…" value="${escapeHTML(searchQuery)}">
+            <div class="relative flex items-center min-w-[260px]">
+              <span class="material-symbols-outlined text-outline absolute left-3 text-[18px]">search</span>
+              <input type="search" class="w-full pl-9 pr-4 py-2 rounded-xl bg-surface-container-lowest text-on-surface text-xs outline-none border border-outline-variant/30 focus:border-primary shadow-sm" id="courseSearchInput" placeholder="搜索课程名称、知识点或讲师…" value="${escapeHTML(searchQuery)}">
             </div>
           </div>
 
-          <div class="courses-grid">
+          <!-- Courses Grid (Stitch Screen 1) -->
+          <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             ${courses.length ? courses.map(c => {
               const prog = progress[c.id];
               const finishedCount = prog?.episodes ? Object.values(prog.episodes).filter(e => e.completed).length : 0;
               const percent = c.episodes.length ? Math.round((finishedCount / c.episodes.length) * 100) : 0;
               return `
-                <article class="course-card" data-course-card-id="${escapeHTML(c.id)}">
-                  <div class="course-card-cover" style="background: ${escapeHTML(c.coverGradient || '#1e293b')};">
-                    <div class="cover-top-row">
-                      <span class="course-badge">${escapeHTML(c.badge || c.categoryName)}</span>
-                      <span class="course-level">${escapeHTML(c.level || '精选')}</span>
-                    </div>
-                    <div class="cover-icon-box">
-                      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                        <polygon points="5 3 19 12 5 21 5 3"></polygon>
-                      </svg>
-                    </div>
-                    <div class="cover-duration-pill">${escapeHTML(c.duration || (c.episodes.length + ' 课时'))}</div>
-                  </div>
-                  <div class="course-card-body">
-                    <div class="course-category-tag">${escapeHTML(c.categoryName)}</div>
-                    <h3 class="course-title" title="${escapeHTML(c.title)}">${escapeHTML(c.title)}</h3>
-                    <p class="course-desc">${escapeHTML(c.description || '深入剖析核心原理与工程实操，配套边看边问 AI 答疑。')}</p>
-                    <div class="course-tags">
-                      ${(c.tags || []).slice(0, 3).map(t => `<span class="course-tag">${escapeHTML(t)}</span>`).join('')}
-                    </div>
-                    <div class="course-card-footer">
-                      <div class="course-instructor">
-                        <span class="instructor-icon">👨‍🏫</span>
-                        <span class="instructor-name">${escapeHTML(c.instructor || '名校精编教研组')}</span>
+                <article class="stitch-card flex flex-col justify-between overflow-hidden group hover:-translate-y-1 transition-all" data-course-card-id="${escapeHTML(c.id)}">
+                  <div>
+                    <!-- Course Header Cover -->
+                    <div class="relative h-40 p-4 flex flex-col justify-between overflow-hidden" style="background: ${escapeHTML(c.coverGradient || '#1e293b')};">
+                      <div class="flex items-center justify-between relative z-10">
+                        <span class="px-2.5 py-0.5 rounded-full bg-surface-container-lowest/85 backdrop-blur-md text-primary font-bold text-[11px]">${escapeHTML(c.badge || c.categoryName)}</span>
+                        <span class="px-2.5 py-0.5 rounded-full bg-black/40 backdrop-blur-md text-white text-[11px]">${escapeHTML(c.level || '精选')}</span>
                       </div>
-                      <button type="button" class="button button-blue button-small" data-enter-course="${escapeHTML(c.id)}">
-                        ${percent > 0 ? (percent === 100 ? '复习课程' : `继续学习 (${percent}%)`) : '开始学习'}
-                      </button>
+                      <div class="flex items-center justify-center relative z-10">
+                        <div class="w-12 h-12 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform">
+                          <span class="material-symbols-outlined text-[28px]">play_arrow</span>
+                        </div>
+                      </div>
+                      <div class="flex items-center justify-between text-white/90 text-xs relative z-10">
+                        <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">timer</span>${escapeHTML(c.duration || (c.episodes.length + ' 课时'))}</span>
+                        <span class="font-code-sm text-[11px]">${c.episodes.length} 讲全</span>
+                      </div>
                     </div>
+
+                    <!-- Course Body -->
+                    <div class="p-5 flex flex-col gap-2">
+                      <span class="text-xs text-primary font-semibold tracking-wider uppercase">${escapeHTML(c.categoryName)}</span>
+                      <h3 class="font-headline-sm text-base text-on-surface font-bold line-clamp-1" title="${escapeHTML(c.title)}">${escapeHTML(c.title)}</h3>
+                      <p class="text-xs text-on-surface-variant line-clamp-2">${escapeHTML(c.description || '深入剖析核心原理与工程实操，配套边看边问 AI 答疑。')}</p>
+                      
+                      <!-- Tags -->
+                      <div class="flex flex-wrap gap-1.5 pt-1">
+                        ${(c.tags || []).slice(0, 3).map(t => `<span class="px-2 py-0.5 rounded-md bg-surface-container text-on-surface-variant text-[11px]">${escapeHTML(t)}</span>`).join('')}
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Course Footer -->
+                  <div class="p-5 pt-0 flex flex-col gap-3">
                     ${percent > 0 ? `
-                      <div class="card-progress-track">
-                        <div class="card-progress-fill" style="width: ${percent}%;"></div>
+                      <div class="flex flex-col gap-1">
+                        <div class="flex items-center justify-between text-[11px] text-on-surface-variant">
+                          <span>已学进度</span>
+                          <span class="font-code-sm text-primary font-bold">${percent}%</span>
+                        </div>
+                        <div class="w-full h-1.5 rounded-full bg-surface-container overflow-hidden">
+                          <div class="h-full bg-primary rounded-full transition-all" style="width: ${percent}%;"></div>
+                        </div>
                       </div>
                     ` : ''}
+
+                    <div class="flex items-center justify-between pt-2 border-t border-outline-variant/20">
+                      <div class="flex items-center gap-1.5 text-xs text-on-surface-variant">
+                        <span class="material-symbols-outlined text-[16px]">person</span>
+                        <span class="truncate max-w-[120px]">${escapeHTML(c.instructor || '名校教研组')}</span>
+                      </div>
+                      <button type="button" class="px-3.5 py-1.5 rounded-lg bg-primary text-on-primary font-semibold text-xs flex items-center gap-1 hover:bg-primary-container transition-all shadow-sm" data-enter-course="${escapeHTML(c.id)}">
+                        <span>${percent > 0 ? (percent === 100 ? '复习课程' : `继续学习 (${percent}%)`) : '进入伴学播放'}</span>
+                        <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+                      </button>
+                    </div>
                   </div>
                 </article>
               `;
             }).join('') : `
-              <div class="courses-empty">
-                <div class="empty-icon">📺</div>
-                <h3>未找到匹配的计算机课程</h3>
-                <p>尝试切换筛选分类，或换一个关键词进行搜索。</p>
+              <div class="col-span-full p-12 text-center flex flex-col items-center justify-center gap-3 bg-surface-container-lowest rounded-2xl border border-outline-variant/30">
+                <span class="material-symbols-outlined text-4xl text-outline">search_off</span>
+                <h3 class="text-base font-bold text-on-surface">未找到匹配的计算机课程</h3>
+                <p class="text-xs text-on-surface-variant">尝试切换筛选分类，或换一个关键词进行搜索。</p>
               </div>
             `}
           </div>
@@ -725,161 +810,268 @@
       const bpage = currentEp?.bpage || 1;
 
       return `
-        <div class="course-player-workspace">
-          <div class="player-top-nav">
-            <button type="button" class="button button-outline button-small" data-back-to-catalog>
-              ← 返回课程学堂
-            </button>
-            <div class="player-breadcrumbs">
-              <span class="crumb-course">${escapeHTML(course.title)}</span>
-              <span class="crumb-sep">/</span>
-              <span class="crumb-ep">${escapeHTML(currentEp?.title || '选集中')}</span>
-            </div>
-            <div class="player-top-actions">
-              <button type="button" class="button button-outline button-small ${isCompleted ? 'is-completed' : ''}" data-toggle-ep-complete="${escapeHTML(currentEp?.id)}">
-                ${isCompleted ? '✓ 本节已学完' : '标记为已学完'}
+        <div class="w-full max-w-[1680px] mx-auto px-4 lg:px-6 py-4 flex flex-col gap-5 animate-fade-in">
+          <!-- Meta Bar: Lecture Context & Quick Actions (Stitch Screen 3) -->
+          <section class="w-full bg-surface-container-lowest/90 backdrop-blur-xl rounded-2xl p-4 lg:p-5 shadow-[0_4px_20px_-2px_rgba(15,23,42,0.04)] border border-outline-variant/30 flex flex-col xl:flex-row items-start xl:items-center justify-between gap-4">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4 min-w-0">
+              <button type="button" class="h-10 px-3.5 rounded-xl bg-surface-container-low hover:bg-surface-container text-on-surface-variant hover:text-on-surface font-label-md text-label-md flex items-center gap-2 transition-all shadow-sm flex-shrink-0" data-back-to-catalog title="返回课程列表">
+                <span class="material-symbols-outlined text-[18px]">arrow_back</span>
+                <span>返回目录</span>
               </button>
-            </div>
-          </div>
 
-          <!-- Multi-source Switcher Bar -->
-          <div class="player-source-selector">
-            <div class="source-pills">
-              <button type="button" class="source-pill ${activeSource === 'bilibili' ? 'active' : ''}" data-switch-source="bilibili" title="原平台播放器提供播放，可能需要登录或受地区限制" ${bvid?'':'disabled'}>
-                📺 B站原站播放器
+              <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-primary via-primary-container to-tertiary-container flex items-center justify-center text-on-primary shadow-md flex-shrink-0">
+                <span class="material-symbols-outlined text-[22px]">play_circle</span>
+              </div>
+
+              <div class="flex flex-col min-w-0">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <span class="font-headline-sm text-headline-sm text-on-surface font-semibold truncate max-w-[460px]">
+                    ${escapeHTML(currentEp?.title || course.title)}
+                  </span>
+                  <span class="px-2.5 py-0.5 rounded-full bg-primary-fixed text-primary font-label-md text-label-md font-semibold">
+                    ${escapeHTML(course.categoryName || '408 核心考点')}
+                  </span>
+                  <span class="px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm">
+                    ${escapeHTML(course.instructor || '名校公开课')} · ${escapeHTML(course.title)}
+                  </span>
+                </div>
+                <div class="flex items-center gap-3 text-on-surface-variant font-body-sm text-body-sm mt-1">
+                  <span class="flex items-center gap-1 font-code-sm text-code-sm text-primary font-semibold">
+                    <span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+                    ${escapeHTML(currentEp?.duration || '15:00')}
+                  </span>
+                  <span class="text-outline-variant">•</span>
+                  <span class="truncate max-w-[600px]">${escapeHTML(currentEp?.summary || course.description)}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Action Cluster -->
+            <div class="flex items-center gap-2 sm:gap-2.5 flex-wrap self-end xl:self-auto">
+              <button type="button" class="h-9 px-3 rounded-lg ${isCompleted ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-surface-container-low hover:bg-surface-container text-on-surface-variant hover:text-on-surface'} font-label-md text-label-md flex items-center gap-1.5 transition-all shadow-sm" data-toggle-ep-complete="${escapeHTML(currentEp?.id)}">
+                <span class="material-symbols-outlined text-[18px]">${isCompleted ? 'check_circle' : 'radio_button_unchecked'}</span>
+                <span>${isCompleted ? '已学完' : '标记已学完'}</span>
               </button>
-              <button type="button" class="source-pill ${activeSource === 'html5' ? 'active' : ''}" data-switch-source="html5" title="播放电脑上的本地视频或直链">
-                🎬 本地视频 / HTML5 播放器
+
+              <a href="#space/knowledge" class="h-9 px-3 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface-variant hover:text-on-surface font-label-md text-label-md flex items-center gap-1.5 transition-all shadow-sm">
+                <span class="material-symbols-outlined text-[18px]">picture_as_pdf</span>
+                <span>讲义资料</span>
+              </a>
+
+              <a href="#space/practice" class="h-9 px-3 rounded-lg bg-primary text-on-primary hover:bg-primary-container font-label-md text-label-md flex items-center gap-1.5 shadow-sm transition-all">
+                <span class="material-symbols-outlined text-[18px]">quiz</span>
+                <span>随堂练习</span>
+              </a>
+            </div>
+          </section>
+
+          <!-- Source Switcher Bar -->
+          <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 px-1">
+            <div class="flex items-center gap-2 p-1 bg-surface-container-low rounded-xl border border-outline-variant/30 flex-wrap">
+              <button type="button" class="px-3.5 py-1.5 rounded-lg font-label-sm text-label-sm font-semibold flex items-center gap-1.5 transition-all ${activeSource === 'bilibili' ? 'bg-surface-container-lowest text-primary shadow-sm' : 'text-on-surface-variant hover:text-on-surface'}" data-switch-source="bilibili" ${bvid ? '' : 'disabled'}>
+                <span class="material-symbols-outlined text-[16px]">live_tv</span>
+                <span>B 站在线高清播放器</span>
               </button>
-              <button type="button" class="source-pill ${activeSource === 'algo-demo' ? 'active' : ''}" data-switch-source="algo-demo" title="数据结构与算法运行机制动态动画演示">
-                ✨ 算法机制演练屏
+              <button type="button" class="px-3.5 py-1.5 rounded-lg font-label-sm text-label-sm font-semibold flex items-center gap-1.5 transition-all ${activeSource === 'html5' ? 'bg-surface-container-lowest text-primary shadow-sm' : 'text-on-surface-variant hover:text-on-surface'}" data-switch-source="html5">
+                <span class="material-symbols-outlined text-[16px]">video_library</span>
+                <span>本地无损 / HTML5 播放器</span>
+              </button>
+              <button type="button" class="px-3.5 py-1.5 rounded-lg font-label-sm text-label-sm font-semibold flex items-center gap-1.5 transition-all ${activeSource === 'algo-demo' ? 'bg-surface-container-lowest text-primary shadow-sm' : 'text-on-surface-variant hover:text-on-surface'}" data-switch-source="algo-demo">
+                <span class="material-symbols-outlined text-[16px]">animation</span>
+                <span>算法机制演练屏</span>
               </button>
             </div>
-            <div class="local-file-trigger-box">
-              <label class="button button-small button-outline local-upload-btn" title="选取电脑中的视频文件，零网络延迟流畅播放">
-                📂 选取电脑本地视频
+
+            <div class="flex items-center gap-2">
+              <label class="h-8 px-3 rounded-lg bg-surface-container-lowest border border-outline-variant/40 hover:border-primary text-on-surface font-label-sm text-label-sm flex items-center gap-1.5 cursor-pointer shadow-sm transition-all" title="选取电脑中的视频文件，零网络延迟流畅播放">
+                <span class="material-symbols-outlined text-[16px] text-primary">folder_open</span>
+                <span>选取本地视频文件</span>
                 <input type="file" id="localVideoFileInput" accept="video/mp4,video/webm,video/ogg,video/mkv,.mp4,.webm,.mkv,.mov" hidden>
               </label>
-              ${localVideo?.name ? `<span class="current-local-name" title="${escapeHTML(localVideo.name)}">当前文件：${escapeHTML(localVideo.name)}</span>` : ''}
+              ${localVideo?.name ? `<span class="text-xs text-on-surface-variant max-w-[200px] truncate" title="${escapeHTML(localVideo.name)}">已载入：${escapeHTML(localVideo.name)}</span>` : ''}
             </div>
           </div>
 
-          <div class="player-main-layout">
-            <div class="player-left-stage">
-              <div class="video-screen-container">
-                ${activeSource === 'bilibili' && bvid ? `
-                  <iframe id="csBilibiliPlayer" class="cs-bilibili-iframe" src="https://player.bilibili.com/player.html?bvid=${encodeURIComponent(bvid)}&page=${encodeURIComponent(bpage)}&high_quality=1&danmaku=0&autoplay=0" scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true" sandbox="allow-top-navigation allow-same-origin allow-forms allow-scripts"></iframe>
-                ` : activeSource === 'html5' ? `
-                  ${videoSrc ? `
-                    <video id="csVideoPlayer" class="cs-video-element" controls preload="metadata" src="${escapeHTML(videoSrc)}">
-                      <p>您的浏览器不支持 HTML5 视频播放。</p>
-                    </video>
+          <!-- Main Dual Workbench: Left (65%) Video & Materials, Right (35%) AI Copilot -->
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 w-full items-start">
+            <!-- Left Column (Lecture & Materials - col-span-8) -->
+            <div class="lg:col-span-8 flex flex-col gap-4 min-w-0">
+              <!-- Video Player Viewport Container -->
+              <div class="relative w-full rounded-2xl overflow-hidden bg-inverse-surface shadow-2xl flex flex-col group border border-slate-800">
+                <div class="relative w-full aspect-video bg-black flex items-center justify-center overflow-hidden">
+                  ${activeSource === 'bilibili' && bvid ? `
+                    <iframe id="csBilibiliPlayer" class="w-full h-full border-0" src="https://player.bilibili.com/player.html?bvid=${encodeURIComponent(bvid)}&page=${encodeURIComponent(bpage)}&high_quality=1&danmaku=0&autoplay=0" scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true" sandbox="allow-top-navigation allow-same-origin allow-forms allow-scripts"></iframe>
+                  ` : activeSource === 'html5' ? `
+                    ${videoSrc ? `
+                      <video id="csVideoPlayer" class="w-full h-full object-contain" controls preload="metadata" src="${escapeHTML(videoSrc)}">
+                        <p>您的浏览器不支持 HTML5 视频播放。</p>
+                      </video>
+                    ` : `
+                      <div class="w-full h-full bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 flex flex-col items-center justify-center p-6 text-center text-white">
+                        <div class="w-16 h-16 rounded-2xl bg-white/10 flex items-center justify-center text-3xl mb-3 shadow-inner">🎬</div>
+                        <h3 class="text-lg font-bold">选取电脑上的视频文件即可立即播放</h3>
+                        <p class="text-sm text-slate-400 mt-1 mb-4 max-w-md">支持电脑中的 MP4、WebM、MKV 视频文件，零网络延迟，超清流畅播放！</p>
+                        <label class="px-4 py-2 rounded-xl bg-primary text-white font-semibold cursor-pointer hover:bg-primary-container transition shadow flex items-center gap-2">
+                          <span class="material-symbols-outlined text-[18px]">upload_file</span>
+                          <span>选取电脑上的视频文件</span>
+                          <input type="file" id="localVideoFileInputInner" accept="video/*" hidden>
+                        </label>
+                      </div>
+                    `}
                   ` : `
-                    <div class="html5-empty-prompt">
-                      <div class="empty-prompt-icon">🎬</div>
-                      <h3>选取电脑上的视频文件即可立即播放</h3>
-                      <p>支持电脑中的 MP4、WebM、MKV 视频文件，零网络延迟，超清流畅播放！</p>
-                      <label class="button button-blue button-small">
-                        📂 选取电脑上的视频文件
-                        <input type="file" id="localVideoFileInputInner" accept="video/*" hidden>
-                      </label>
+                    <div class="w-full h-full bg-slate-950 flex flex-col items-center justify-center p-4">
+                      <canvas id="algoCanvas" class="w-full max-w-[720px] aspect-[16/9] bg-slate-900 rounded-xl shadow-inner border border-slate-800" width="800" height="450"></canvas>
+                      <div class="flex items-center justify-between w-full max-w-[720px] mt-3 px-2 text-xs text-slate-400">
+                        <button type="button" class="px-3 py-1.5 rounded-lg bg-primary text-white font-semibold flex items-center gap-1.5 hover:bg-primary-container transition" data-run-algo-demo>
+                          <span class="material-symbols-outlined text-[14px]">replay</span>
+                          <span>重新开始动态演练</span>
+                        </button>
+                        <span>二叉搜索树（BST）插入、中序遍历与平衡树旋转机制动态可视化模拟</span>
+                      </div>
                     </div>
                   `}
-                ` : `
-                  <div class="algo-demo-container">
-                    <canvas id="algoCanvas" class="algo-canvas" width="800" height="450"></canvas>
-                    <div class="algo-controls">
-                      <button type="button" class="button button-small button-blue" data-run-algo-demo>▶ 重新开始动态演练</button>
-                      <span class="algo-desc-text">二叉搜索树（BST）插入、中序遍历与平衡树旋转机制动态可视化模拟</span>
+
+                  <!-- Floating Live Indicator Overlay -->
+                  <div class="absolute top-3 left-3 right-3 flex items-center justify-between pointer-events-none">
+                    <div class="flex items-center gap-2 pointer-events-auto">
+                      <span class="px-2.5 py-1 rounded-md bg-inverse-surface/85 backdrop-blur-md text-inverse-on-surface font-label-sm text-label-sm flex items-center gap-1.5 shadow-sm text-white">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                        1080P Ultra · 60 FPS
+                      </span>
+                      <span class="px-2.5 py-1 rounded-md bg-primary/85 backdrop-blur-md text-white font-label-sm text-label-sm font-semibold">
+                        当前：${escapeHTML(currentEp?.title || '正在学习')}
+                      </span>
                     </div>
                   </div>
-                `}
+                </div>
               </div>
 
-              <div class="video-info-strip">
-                <div class="video-main-heading">
-                  <h2 class="video-title">${escapeHTML(currentEp?.title || course.title)}</h2>
-                  <div class="video-meta-tags">
-                    <span class="video-meta-pill duration-pill">⏱ ${escapeHTML(currentEp?.duration || '15:00')}</span>
-                    <span class="video-meta-pill cat-pill">${escapeHTML(course.categoryName)}</span>
-                    <span class="video-meta-pill instructor-pill">讲师：${escapeHTML(course.instructor)}</span>
+              <!-- Keypoints Tags Strip -->
+              ${currentEp?.keyPoints?.length ? `
+                <div class="p-4 rounded-xl bg-surface-container-lowest border border-outline-variant/30 flex flex-col sm:flex-row items-start sm:items-center gap-3 shadow-sm">
+                  <div class="flex items-center gap-1.5 text-primary font-label-md text-label-md font-semibold flex-shrink-0">
+                    <span class="material-symbols-outlined text-[18px]">key</span>
+                    <span>本节核心考点：</span>
+                  </div>
+                  <div class="flex items-center gap-2 flex-wrap">
+                    ${currentEp.keyPoints.map(kp => `<span class="px-2.5 py-1 rounded-lg bg-surface-container-low text-on-surface font-label-sm text-label-sm border border-outline-variant/20">${escapeHTML(kp)}</span>`).join('')}
                   </div>
                 </div>
-                <p class="video-summary">${escapeHTML(currentEp?.summary || course.description)}</p>
+              ` : ''}
 
-                ${currentEp?.keyPoints?.length ? `
-                  <div class="video-keypoints-box">
-                    <span class="keypoints-label">本节核心知识点：</span>
-                    <div class="keypoints-tags">
-                      ${currentEp.keyPoints.map(kp => `<span class="keypoint-tag">${escapeHTML(kp)}</span>`).join('')}
-                    </div>
+              <!-- Course Episodes Timeline Grid -->
+              <div class="p-5 rounded-2xl bg-surface-container-lowest border border-outline-variant/30 flex flex-col gap-4 shadow-sm">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-primary text-[22px]">format_list_bulleted</span>
+                    <h3 class="font-headline-sm text-headline-sm font-bold text-on-surface">课程全集选课列表</h3>
                   </div>
-                ` : ''}
-              </div>
+                  <span class="font-label-md text-label-md text-on-surface-variant font-medium">全 ${course.episodes.length} 讲 · 实时同步学情</span>
+                </div>
 
-              <div class="copilot-in-class-panel">
-                <div class="in-class-header">
-                  <div class="in-class-title">
-                    <span class="copilot-sparkle">✦</span>
-                    <strong>随堂 AI 智能答疑 · 针对本节快速提问</strong>
-                  </div>
-                  <span class="in-class-hint">点击问题即可直接让 Copilot 解答</span>
-                </div>
-                <div class="in-class-prompts">
-                  ${(currentEp?.copilotPrompts || [
-                    `请结合《${escapeHTML(course.title)}》本节内容，通俗讲解其核心原理。`,
-                    `本节知识点在实际生产项目中有什么典型应用和性能陷阱？`,
-                    `能根据本节知识点为我出两道期末复习或面试高频题吗？`
-                  ]).map(q => `
-                    <button type="button" class="in-class-prompt-btn" data-ask-in-class="${encodeURIComponent(q)}">
-                      <span>${escapeHTML(q)}</span>
-                      <span class="chip-arrow">↗</span>
-                    </button>
-                  `).join('')}
-                </div>
-                <div class="in-class-custom-ask">
-                  <input type="text" class="in-class-input" id="inClassCustomInput" placeholder="输入你想在看视频时问 Copilot 的疑问…">
-                  <button type="button" class="button button-blue button-small" data-send-in-class>随堂提问</button>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5 max-h-[380px] overflow-y-auto pr-1">
+                  ${course.episodes.map((ep, idx) => {
+                    const epProg = courseProg.episodes?.[ep.id];
+                    const epDone = Boolean(epProg?.completed);
+                    const isCurrent = ep.id === (currentEp?.id || course.episodes[0].id);
+                    return `
+                      <button type="button" class="flex items-center justify-between p-3 rounded-xl text-left transition-all border ${isCurrent ? 'bg-primary-fixed/30 border-primary shadow-sm' : 'bg-surface-container-low/60 hover:bg-surface-container border-outline-variant/20'}" data-switch-episode="${escapeHTML(ep.id)}">
+                        <div class="flex items-center gap-3 min-w-0">
+                          <span class="w-6 h-6 rounded-lg ${isCurrent ? 'bg-primary text-on-primary' : 'bg-surface-container text-on-surface-variant'} flex items-center justify-center font-code-sm text-code-sm font-bold flex-shrink-0">${idx + 1}</span>
+                          <div class="flex flex-col min-w-0">
+                            <span class="font-label-md text-label-md font-semibold truncate ${isCurrent ? 'text-primary' : 'text-on-surface'}">${escapeHTML(ep.title)}</span>
+                            <span class="text-xs text-on-surface-variant">${escapeHTML(ep.duration || '15:00')}</span>
+                          </div>
+                        </div>
+                        <div class="flex items-center gap-1.5 flex-shrink-0 ml-2">
+                          ${isCurrent ? '<span class="text-primary font-bold text-xs">正在播放</span>' : epDone ? '<span class="material-symbols-outlined text-emerald-600 text-[18px]">check_circle</span>' : '<span class="material-symbols-outlined text-outline-variant text-[18px]">play_arrow</span>'}
+                        </div>
+                      </button>
+                    `;
+                  }).join('')}
                 </div>
               </div>
             </div>
 
-            <aside class="player-right-sidebar">
-              <div class="sidebar-syllabus-header">
-                <h3>课程目录选集</h3>
-                <span class="syllabus-count">${course.episodes.length} 讲全</span>
-              </div>
-              <div class="episode-list">
-                ${course.episodes.map((ep, idx) => {
-                  const epProg = courseProg.episodes?.[ep.id];
-                  const epDone = Boolean(epProg?.completed);
-                  const isCurrent = ep.id === (currentEp?.id || course.episodes[0].id);
-                  return `
-                    <button type="button" class="episode-item ${isCurrent ? 'is-active' : ''} ${epDone ? 'is-finished' : ''}" data-switch-episode="${escapeHTML(ep.id)}">
-                      <div class="ep-left">
-                        <span class="ep-index">${idx + 1}</span>
-                        <div class="ep-text">
-                          <strong class="ep-title">${escapeHTML(ep.title)}</strong>
-                          <span class="ep-meta">${escapeHTML(ep.duration || '15:00')} · ${epDone ? '已学完' : '未学完'}</span>
-                        </div>
+            <!-- Right Column: AI Copilot Companion Workbench (col-span-4) -->
+            <div class="lg:col-span-4 flex flex-col gap-4 min-w-0">
+              <div class="w-full bg-surface-container-lowest/95 backdrop-blur-2xl rounded-2xl shadow-[0_12px_32px_-4px_rgba(79,70,229,0.08)] border border-outline-variant/30 flex flex-col">
+                <!-- Copilot Header -->
+                <div class="p-4 rounded-t-2xl bg-surface-container-lowest flex items-center justify-between gap-3 border-b border-outline-variant/20">
+                  <div class="flex items-center gap-3 min-w-0">
+                    <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-primary to-tertiary-container flex items-center justify-center text-on-primary shadow-sm flex-shrink-0">
+                      <span class="material-symbols-outlined text-[20px]">smart_toy</span>
+                    </div>
+                    <div class="flex flex-col min-w-0">
+                      <div class="flex items-center gap-1.5">
+                        <span class="font-headline-sm text-headline-sm text-on-surface font-bold truncate">学涯 Copilot 随堂伴学</span>
+                        <span class="px-1.5 py-0.2 rounded bg-tertiary-fixed text-tertiary font-label-sm text-label-sm font-semibold">MiMo 3.5</span>
                       </div>
-                      <div class="ep-status-icon">
-                        ${isCurrent ? '<span class="playing-indicator">▶</span>' : epDone ? '<span class="done-check">✓</span>' : '<span class="ready-play">›</span>'}
+                      <div class="flex items-center gap-1.5 text-on-surface-variant font-label-sm text-label-sm">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                        <span>已对齐当前课程与知识切片</span>
                       </div>
-                    </button>
-                  `;
-                }).join('')}
-              </div>
+                    </div>
+                  </div>
+                </div>
 
-              <div class="course-doc-bridge">
-                <h4>关联学习资料与练习</h4>
-                <p>学完本节可随时到资料库与题库进行检验：</p>
-                <div class="doc-bridge-links">
-                  <a href="#space/knowledge" class="doc-bridge-btn">查看课程资料 →</a>
-                  <a href="#space/practice" class="doc-bridge-btn">开始随堂练习 →</a>
+                <!-- Smart Quick Chips Capsule Bar -->
+                <div class="px-4 py-2.5 bg-surface-container-low flex flex-col gap-2 border-b border-outline-variant/20">
+                  <div class="flex items-center gap-1 text-xs text-primary font-semibold">
+                    <span class="material-symbols-outlined text-[14px]">tips_and_updates</span>
+                    <span>针对本节快速提问（点击即问）：</span>
+                  </div>
+                  <div class="flex flex-col gap-1.5">
+                    ${(currentEp?.copilotPrompts || [
+                      `请结合《${escapeHTML(course.title)}》本节内容，通俗讲解其核心原理。`,
+                      `本节知识点在实际生产或考研 408 中有什么典型应用和性能陷阱？`,
+                      `能根据本节知识点为我出两道期末复习或面试高频题吗？`
+                    ]).map(q => `
+                      <button type="button" class="px-3 py-2 rounded-xl bg-surface-container-lowest hover:bg-primary-fixed/30 text-on-surface hover:text-primary font-label-sm text-label-sm flex items-center justify-between gap-2 shadow-sm transition-all text-left border border-outline-variant/20 group" data-ask-in-class="${encodeURIComponent(q)}">
+                        <span class="truncate">${escapeHTML(q)}</span>
+                        <span class="material-symbols-outlined text-[14px] text-outline-variant group-hover:text-primary flex-shrink-0">arrow_forward</span>
+                      </button>
+                    `).join('')}
+                  </div>
+                </div>
+
+                <!-- Copilot In-Class Custom Question Input -->
+                <div class="p-4 flex flex-col gap-3">
+                  <div class="relative w-full">
+                    <input type="text" id="inClassCustomInput" class="w-full h-11 pl-3.5 pr-20 rounded-xl bg-surface-container-low border border-outline-variant/40 text-on-surface placeholder:text-on-surface-variant font-body-sm text-body-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all" placeholder="输入关于本节的疑问…">
+                    <button type="button" class="absolute right-1.5 top-1.5 h-8 px-3 rounded-lg bg-primary text-on-primary hover:bg-primary-container font-label-sm text-label-sm font-semibold flex items-center gap-1 shadow-sm transition-all" data-send-in-class>
+                      <span>随堂提问</span>
+                      <span class="material-symbols-outlined text-[14px]">send</span>
+                    </button>
+                  </div>
+                  <div class="flex items-center justify-between text-xs text-on-surface-variant px-1">
+                    <span>支持 LaTeX 公式与代码推导</span>
+                    <a href="#space/ask" class="text-primary hover:underline flex items-center gap-0.5">
+                      <span>打开完整对话台</span>
+                      <span class="material-symbols-outlined text-[12px]">open_in_new</span>
+                    </a>
+                  </div>
                 </div>
               </div>
-            </aside>
+
+              <!-- Quick Link Card to Review and Analysis -->
+              <div class="p-4 rounded-2xl bg-surface-container-lowest border border-outline-variant/30 flex flex-col gap-2.5 shadow-sm">
+                <div class="flex items-center gap-2 text-on-surface font-semibold text-sm">
+                  <span class="material-symbols-outlined text-primary text-[18px]">insights</span>
+                  <span>关联学习闭环推荐</span>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                  <a href="#space/review" class="p-2.5 rounded-xl bg-surface-container-low hover:bg-surface-container text-xs text-on-surface font-medium flex flex-col gap-1 transition">
+                    <span class="text-primary font-bold">错题复习本</span>
+                    <span class="text-on-surface-variant">艾宾浩斯智能循环</span>
+                  </a>
+                  <a href="#space/analysis" class="p-2.5 rounded-xl bg-surface-container-low hover:bg-surface-container text-xs text-on-surface font-medium flex flex-col gap-1 transition">
+                    <span class="text-primary font-bold">AI 学情报告</span>
+                    <span class="text-on-surface-variant">知识断层靶向诊断</span>
+                  </a>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       `;

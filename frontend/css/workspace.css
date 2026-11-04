@@ -712,8 +712,8 @@ html[data-theme=dark] .action-icon-btn.action-icon-warn.is-active{
 .doubao-sidebar{overflow:hidden!important;contain:paint!important}
 
 /* Ultra-compact top external buttons bar: only slightly larger than icons */
-.chat-top-external-bar{display:inline-flex!important;align-items:center!important;gap:4px!important;width:fit-content!important;max-width:fit-content!important;height:28px!important;margin:0 0 6px 0!important;padding:0!important;flex-shrink:0!important}
-.sidebar-ext-btn{width:28px!important;height:28px!important;min-width:28px!important;border-radius:6px!important;padding:0!important}
+.chat-top-external-bar{display:flex!important;align-items:center!important;justify-content:space-between!important;width:100%!important;min-height:36px!important;margin:0 0 8px 0!important;padding:4px 12px!important;flex-shrink:0!important;box-sizing:border-box!important}
+.sidebar-ext-btn{height:28px!important;min-width:28px!important;border-radius:6px!important;padding:0 8px!important;white-space:nowrap!important}
 .sidebar-ext-btn svg{width:15px!important;height:15px!important}
 
 /* Overview bottom bar: Account info & Settings on bottom-left, 回到首页 on bottom-right */

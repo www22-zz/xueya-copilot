@@ -166,7 +166,7 @@ function createWorkspace(ctx){
   }
   const actions={
     toggleWebSearch:()=>{state.webSearch=!state.webSearch;persist();render();toast(state.webSearch?'全网搜索已开启：提问将同时检索互联网最新信息':'全网搜索已关闭：仅依据课程资料回答');},
-    newSession:()=>{store.newSession();render();},clearChat:()=>{store.newSession();render();},session:d=>{store.selectSession(d.session);render();},
+    newSession:()=>{store.newSession();render();},clearChat:()=>{store.newSession();render();},refreshSuggestions:()=>{state.suggestionOffset=((state.suggestionOffset||0)+4);render();},session:d=>{store.selectSession(d.session);render();},
     toggleSidebar:()=>{if(typeof window.XueyaToggleSidebar==='function')window.XueyaToggleSidebar();else document.body.classList.toggle('sidebar-collapsed');},
     toggleArchived:()=>{state.archivedOpen=!state.archivedOpen;render();},
     archiveSession:d=>{const isArchived=store.toggleArchiveSession(d.archiveSession);state.activeSessionMenuId=null;render();toast(isArchived?'已归档对话':'已取消归档');},
