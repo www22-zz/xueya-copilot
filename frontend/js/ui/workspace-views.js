@@ -120,14 +120,14 @@ function createViews(ctx,base){
       `<input id="audioInput" type="file" accept="audio/wav,audio/mpeg,.wav,.mp3" hidden>`+
       `<div class="composer-bottom">`+
         `<div class="composer-tools">`+
-          `<button type="button" class="composer-icon-button composer-add p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-slate-800 transition-colors" data-add-images aria-label="添加文件或图片" title="添加文件或图片（PDF、Word、TXT、Markdown）" ${locked?'disabled':''}>${plusIcon}</button>`+
-          `<button type="button" class="composer-icon-button composer-mic p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-slate-800 transition-colors ${recording?'is-recording':''}" data-add-audio aria-label="${recording?'停止录音并识别':voice.phase==='transcribing'?'正在识别语音':'开始录音'}" title="录音停止后识别为文字，核对后发送" aria-pressed="${recording}" ${state.pending||['requesting','transcribing'].includes(voice.phase)?'disabled':''}>${recording?'<span class="record-stop" aria-hidden="true"></span>':mic}</button>`+
+          `<button type="button" class="composer-icon-button composer-add p-1.5 rounded-lg hover:bg-surface-container-low text-on-surface-variant hover:text-on-surface transition-colors" data-add-images aria-label="添加文件或图片" title="添加文件或图片（PDF、Word、TXT、Markdown）" ${locked?'disabled':''}>${plusIcon}</button>`+
+          `<button type="button" class="composer-icon-button composer-mic p-1.5 rounded-lg hover:bg-surface-container-low text-on-surface-variant hover:text-on-surface transition-colors ${recording?'is-recording':''}" data-add-audio aria-label="${recording?'停止录音并识别':voice.phase==='transcribing'?'正在识别语音':'开始录音'}" title="录音停止后识别为文字，核对后发送" aria-pressed="${recording}" ${state.pending||['requesting','transcribing'].includes(voice.phase)?'disabled':''}>${recording?'<span class="record-stop" aria-hidden="true"></span>':mic}</button>`+
           `<button type="button" class="composer-web ${state.webSearch?'is-active':''}" data-toggle-web-search aria-label="全网 + 课程知识库混合检索" title="${state.webSearch?'全网搜索已开启（联网获取最新信息）':'开启全网搜索（联网获取最新信息）'}" aria-pressed="${Boolean(state.webSearch)}" ${locked?'disabled':''}>`+
             `<span class="text-sm">🌐</span> <span class="web-search-text">全网 + 课程知识库混合检索</span>`+
           `</button>`+
         `</div>`+
         `<div class="flex items-center gap-3">`+
-          `<span class="composer-note text-xs text-slate-400 hidden sm:inline">${state.pending?'正在生成，可随时停止':getAttachments().length&&!window.XueyaPlatform?.available?'启动本地服务后可发送附件':'Enter 发送 · Shift + Enter 换行'}</span>`+
+          `<span class="composer-note text-xs text-on-surface-variant hidden sm:inline">${state.pending?'正在生成，可随时停止':getAttachments().length&&!window.XueyaPlatform?.available?'启动本地服务后可发送附件':'Enter 发送 · Shift + Enter 换行'}</span>`+
           (state.pending?`<button class="stop-button" type="button" data-stop-chat>停止生成</button>`:`<button class="send-button" type="submit" aria-label="发送问题" ${voiceBusy?'disabled':''}>${sendArrow}</button>`)+
         `</div>`+
       `</div>`+
@@ -547,10 +547,10 @@ function createViews(ctx,base){
           `<span class="archived-arrow">▾</span>`+
         `</summary>`+
         `<div class="archived-session-list">`+
-          (archivedList.length ? archivedList.map(renderSessionItem).join('') : '<p class="panel-description panel-description-sm px-2 py-1 text-xs text-slate-400">暂无已归档对话</p>')+
+          (archivedList.length ? archivedList.map(renderSessionItem).join('') : '<p class="panel-description panel-description-sm px-2 py-1 text-xs text-on-surface-variant">暂无已归档对话</p>')+
         `</div>`+
       `</details>`
-    ) : '<p class="panel-description px-2 py-1 text-xs text-slate-400">没有匹配的对话。</p>';
+    ) : '<p class="panel-description px-2 py-1 text-xs text-on-surface-variant">没有匹配的对话。</p>';
   }
   globalThis.XueyaWorkspaceSessionList = renderSessionListContent;
 function chat(){
@@ -570,9 +570,9 @@ function chat(){
         `<div class="chat-empty-card-head">`+
           `<div class="flex items-center gap-2">`+
             `<span class="w-2 h-2 rounded-full bg-indigo-600"></span>`+
-            `<span class="text-xs font-bold text-slate-800">猜你想问 · 根据课程进度与历史记忆推荐</span>`+
+            `<span class="text-xs font-bold text-on-surface">猜你想问 · 根据课程进度与历史记忆推荐</span>`+
           `</div>`+
-          `<button type="button" class="text-xs text-slate-400 hover:text-indigo-600 flex items-center gap-1.5 transition-colors cursor-pointer py-1 px-2 rounded-lg hover:bg-indigo-50/50" data-refresh-suggestions title="换一批推荐问题">`+
+          `<button type="button" class="text-xs text-on-surface-variant hover:text-primary flex items-center gap-1.5 transition-colors cursor-pointer py-1 px-2 rounded-lg hover:bg-primary-fixed/50" data-refresh-suggestions title="换一批推荐问题">`+
             `<span class="material-symbols-outlined text-[15px]">sync</span>`+
             `<span>换一批</span>`+
           `</button>`+
@@ -589,7 +589,7 @@ function chat(){
       `</div>`+
       `<div class="chat-empty-sublinks">`+
         `<a href="#space/knowledge"><span class="material-symbols-outlined text-[16px]">folder_open</span><span>整理当前课程资料 →</span></a>`+
-        `<span class="text-slate-300">|</span>`+
+        `<span class="text-outline">|</span>`+
         `<a href="#space/courses"><span class="material-symbols-outlined text-[16px]">play_circle</span><span>进入配套视频学堂 →</span></a>`+
       `</div>`+
     `</div>`;
@@ -597,13 +597,13 @@ function chat(){
     return `<div class="workspace-chat"><div class="chat-main">`+
       `<div class="chat-top-external-bar" role="toolbar" aria-label="快捷操作">`+
         `<div class="flex items-center gap-3 text-xs whitespace-nowrap">`+
-          `<a href="#space/analysis/plans" class="font-semibold text-indigo-600 hover:underline">我的计划</a>`+
-          `<span class="text-slate-300">·</span>`+
-          `<a href="#space/courses" class="text-slate-600 hover:text-indigo-600 transition-colors">继续学习课程</a>`+
-          `<span class="text-slate-300">·</span>`+
-          `<a href="#space/review" class="text-slate-600 hover:text-indigo-600 transition-colors">复习错题本</a>`+
+          `<a href="#space/analysis/plans" class="font-semibold text-primary hover:underline">我的计划</a>`+
+          `<span class="text-outline">·</span>`+
+          `<a href="#space/courses" class="text-on-surface-variant hover:text-primary transition-colors">继续学习课程</a>`+
+          `<span class="text-outline">·</span>`+
+          `<a href="#space/review" class="text-on-surface-variant hover:text-primary transition-colors">复习错题本</a>`+
         `</div>`+
-        `<div class="flex items-center gap-2 text-xs text-slate-500 whitespace-nowrap ml-auto">`+
+        `<div class="flex items-center gap-2 text-xs text-on-surface-variant whitespace-nowrap ml-auto">`+
           `<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>`+
           `<span class="hidden sm:inline">学涯 Copilot 研学工作台 · 知识库索引已就绪</span>`+
           `<button type="button" class="sidebar-ask-btn ${state.sidebarAskOpen?'is-active':''} ml-2" data-toggle-sidebar-ask title="打开/收起划词提问侧边栏" aria-label="打开/收起划词提问侧边栏"><span class="material-symbols-outlined text-[15px]">side_navigation</span><span>划词提问</span></button>`+

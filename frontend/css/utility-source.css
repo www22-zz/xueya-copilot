@@ -1,0 +1,4 @@
+/* Browser utility source. Rebuild with python -m scripts.build_frontend_styles. */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;

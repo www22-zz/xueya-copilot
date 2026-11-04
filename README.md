@@ -31,6 +31,8 @@ python -m venv .venv
 
 打开 [本机学习空间](http://127.0.0.1:4173/)。也可用 `scripts/start.ps1` 自动准备环境；macOS/Linux 的解释器路径为 `.venv/bin/python`。已有 npm 时，`npm start` 同样启动 Python 服务，后端不需要 Node.js。
 
+界面布局样式和图标字体由本地提供，打开页面无需访问 Tailwind CDN 或 Google Fonts。浅色、深色及跟随系统沿用「系统设置 → 通用设置」。开发时修改前端 utility 类后，运行 `npm ci`，再用 `.venv/Scripts/python.exe -m scripts.build_frontend_styles` 更新随应用提供的 `frontend/css/utilities.css`；此编译步骤需要 Node.js，Python 服务运行时不需要。图标字体许可证及来源见 `frontend/assets/material-symbols-LICENSE.txt` 与最终交付说明。
+
 配置模板为 `.env.example`，真实密钥写入本机 `.env`。停止服务运行 `.venv/Scripts/python.exe -m backend.xueya.cli stop`，或 `scripts/stop.ps1`。更新时保留 `.env`、原数据目录和访问地址；数据库升级与恢复见 [平台指南](docs/platform-guide.md)。
 
 ## 使用

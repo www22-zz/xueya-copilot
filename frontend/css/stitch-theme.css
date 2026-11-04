@@ -1,6 +1,12 @@
+/* Local Apache-2.0 Google Material Symbols; license in assets/material-symbols-LICENSE.txt. */
+@font-face {
+  font-family: 'Material Symbols Outlined';
+  font-style: normal;
+  font-weight: 100 700;
+  font-display: block;
+  src: url('../assets/material-symbols-outlined.woff2') format('woff2');
+}
 /* Stitch Theme - Google Material You (M3) Design System for Xueya Copilot */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200');
 
 :root {
   --stitch-primary: #3525cd;
@@ -59,15 +65,15 @@ code, kbd, pre, .font-code-sm {
 
 /* Glassmorphism surfaces */
 .stitch-glass {
-  background: rgba(255, 255, 255, 0.85);
+  background: rgb(var(--stitch-color-surface-container-lowest) / 0.85);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
 }
 
 .stitch-card {
-  background: #ffffff;
+  background: var(--stitch-surface-container-lowest);
   border-radius: 1rem;
-  border: 1px solid rgba(199, 196, 216, 0.35);
+  border: 1px solid rgb(var(--stitch-color-outline-variant) / 0.35);
   box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.04);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
@@ -78,16 +84,16 @@ code, kbd, pre, .font-code-sm {
 
 /* Ambient background glow */
 .stitch-ambient-bg {
-  background: radial-gradient(ellipse 80% 80% at 50% -20%, rgba(226, 223, 255, 0.55), rgba(250, 248, 255, 1));
+  background: radial-gradient(ellipse 80% 80% at 50% -20%, rgb(var(--stitch-color-primary-fixed) / 0.55), rgba(250, 248, 255, 1));
 }
 
 /* Stitch Header & Sidebar Transitions */
 #spacePage .stitch-topbar {
   height: 64px;
-  background: rgba(255, 255, 255, 0.85);
+  background: rgb(var(--stitch-color-surface-container-lowest) / 0.85);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border-bottom: 1px solid rgba(199, 196, 216, 0.3);
+  border-bottom: 1px solid rgb(var(--stitch-color-outline-variant) / 0.3);
   position: fixed;
   top: 0;
   left: 0;
@@ -101,10 +107,10 @@ code, kbd, pre, .font-code-sm {
   bottom: 0;
   left: 0;
   width: 260px;
-  background: rgba(255, 255, 255, 0.75);
+  background: rgb(var(--stitch-color-surface-container-lowest) / 0.75);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border-right: 1px solid rgba(199, 196, 216, 0.3);
+  border-right: 1px solid rgb(var(--stitch-color-outline-variant) / 0.3);
   z-index: 40;
   overflow-y: auto;
   transition: transform 0.25s ease, width 0.25s ease;
@@ -136,7 +142,7 @@ code, kbd, pre, .font-code-sm {
   margin-left: 72px;
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 1023px) {
   #spacePage .stitch-sidebar {
     transform: translateX(-100%);
   }
@@ -164,7 +170,7 @@ code, kbd, pre, .font-code-sm {
 
 .workspace-primary a.active,
 .workspace-primary a[aria-current="page"] {
-  background: #ffffff !important;
+  background: var(--stitch-surface-container-lowest) !important;
   color: var(--stitch-primary) !important;
   font-weight: 600 !important;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
@@ -305,24 +311,24 @@ body.in-ask .space-content {
   z-index: 25 !important;
   margin: 0 !important;
   padding: 10px 16px !important;
-  background: rgba(255, 255, 255, 0.96) !important;
+  background: rgb(var(--stitch-color-surface-container-lowest) / 0.96) !important;
   backdrop-filter: blur(20px) !important;
   -webkit-backdrop-filter: blur(20px) !important;
-  border-top: 1px solid rgba(199, 196, 216, 0.45) !important;
+  border-top: 1px solid rgb(var(--stitch-color-outline-variant) / 0.45) !important;
   border-radius: 1.25rem 1.25rem 0 0 !important;
   box-shadow: 0 -8px 24px -4px rgba(79, 70, 229, 0.08) !important;
 }
 
 .workspace-chat .composer textarea {
-  background: #f8fafc !important;
-  border: 1px solid rgba(226, 232, 240, 0.9) !important;
+  background: var(--stitch-surface-container-low) !important;
+  border: 1px solid rgb(var(--stitch-color-outline-variant) / 0.9) !important;
   border-radius: 0.75rem !important;
   font-size: 13px !important;
   transition: all 0.2s ease !important;
 }
 
 .workspace-chat .composer textarea:focus {
-  background: #ffffff !important;
+  background: var(--stitch-surface-container-lowest) !important;
   border-color: #6366f1 !important;
   box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15) !important;
 }
@@ -346,8 +352,8 @@ body.in-ask .space-content {
   max-width: 380px !important;
   flex-shrink: 0 !important;
   height: 100% !important;
-  border-left: 1px solid rgba(199, 196, 216, 0.4) !important;
-  background: rgba(255, 255, 255, 0.94) !important;
+  border-left: 1px solid rgb(var(--stitch-color-outline-variant) / 0.4) !important;
+  background: rgb(var(--stitch-color-surface-container-lowest) / 0.94) !important;
   backdrop-filter: blur(16px) !important;
   -webkit-backdrop-filter: blur(16px) !important;
   display: flex !important;
@@ -367,9 +373,9 @@ body.in-ask .learning-shortcuts {
   padding: 6px 14px !important;
   border-radius: 0.75rem !important;
   font-size: 12px !important;
-  background: rgba(255, 255, 255, 0.8) !important;
+  background: rgb(var(--stitch-color-surface-container-lowest) / 0.8) !important;
   backdrop-filter: blur(12px) !important;
-  border: 1px solid rgba(199, 196, 216, 0.35) !important;
+  border: 1px solid rgb(var(--stitch-color-outline-variant) / 0.35) !important;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02) !important;
 }
 
@@ -383,9 +389,9 @@ body.in-ask .learning-shortcuts {
   margin-bottom: 4px !important;
   padding: 3px 6px !important;
   gap: 6px !important;
-  background: rgba(241, 245, 249, 0.7) !important;
+  background: rgb(var(--stitch-color-surface-container-low) / 0.7) !important;
   border-radius: 9999px !important;
-  border: 1px solid rgba(226, 232, 240, 0.8) !important;
+  border: 1px solid rgb(var(--stitch-color-outline-variant) / 0.8) !important;
   width: fit-content !important;
 }
 
@@ -395,12 +401,12 @@ body.in-ask .learning-shortcuts {
   font-size: 12px !important;
   border: none !important;
   background: transparent !important;
-  color: #64748b !important;
+  color: var(--stitch-on-surface-variant) !important;
 }
 
 .workspace-chat .chat-mode-tabs button.active {
-  background: #ffffff !important;
-  color: #4f46e5 !important;
+  background: var(--stitch-surface-container-lowest) !important;
+  color: var(--stitch-primary) !important;
   font-weight: 600 !important;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08) !important;
 }
@@ -410,8 +416,8 @@ body.in-ask .learning-shortcuts {
   padding: 4px 10px !important;
   font-size: 11px !important;
   border-radius: 0.5rem !important;
-  background: rgba(248, 250, 252, 0.7) !important;
-  border: 1px solid rgba(226, 232, 240, 0.7) !important;
+  background: rgb(var(--stitch-color-surface-container-low) / 0.7) !important;
+  border: 1px solid rgb(var(--stitch-color-outline-variant) / 0.7) !important;
 }
 
 /* User Message Bubble - Indigo Gradient (Issue 7) */
@@ -451,10 +457,10 @@ body.in-ask .learning-shortcuts {
 }
 
 .message.ai-message .message-body {
-  background: rgba(255, 255, 255, 0.94) !important;
+  background: rgb(var(--stitch-color-surface-container-lowest) / 0.94) !important;
   backdrop-filter: blur(16px) !important;
   -webkit-backdrop-filter: blur(16px) !important;
-  border: 1px solid rgba(224, 231, 255, 0.8) !important;
+  border: 1px solid rgb(var(--stitch-color-outline-variant) / 0.8) !important;
   border-radius: 1.25rem !important;
   box-shadow: 0 8px 30px -4px rgba(79, 70, 229, 0.07), 0 2px 6px rgba(0, 0, 0, 0.02) !important;
   padding: 20px 24px !important;
@@ -462,8 +468,8 @@ body.in-ask .learning-shortcuts {
 }
 
 .message.ai-message .message-avatar {
-  background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%) !important;
-  color: var(--stitch-primary, #4f46e5) !important;
+  background: linear-gradient(135deg, var(--stitch-primary-fixed) 0%, var(--stitch-primary-fixed) 100%) !important;
+  color: var(--stitch-primary, var(--stitch-primary)) !important;
   border: 1px solid rgba(199, 210, 254, 0.8) !important;
   box-shadow: 0 2px 8px rgba(79, 70, 229, 0.12) !important;
   width: 32px !important;
@@ -480,22 +486,22 @@ body.in-ask .learning-shortcuts {
   gap: 8px !important;
   padding-bottom: 10px !important;
   margin-bottom: 12px !important;
-  border-bottom: 1px solid rgba(226, 232, 240, 0.8) !important;
+  border-bottom: 1px solid rgb(var(--stitch-color-outline-variant) / 0.8) !important;
 }
 
 .message.ai-message .message-meta strong {
   font-size: 13px !important;
   font-weight: 700 !important;
-  color: #0f172a !important;
+  color: var(--stitch-on-surface) !important;
 }
 
 .message.ai-message .message-meta span {
   font-size: 11px !important;
   padding: 2px 8px !important;
   border-radius: 6px !important;
-  background: #eef2ff !important;
-  color: #4338ca !important;
-  border: 1px solid #c7d2fe !important;
+  background: var(--stitch-primary-fixed) !important;
+  color: var(--stitch-primary) !important;
+  border: 1px solid var(--stitch-outline-variant) !important;
   font-weight: 500 !important;
 }
 
@@ -518,8 +524,8 @@ body.in-ask .learning-shortcuts {
 
 /* Thinking block in AI message */
 .thinking-box {
-  background: rgba(248, 250, 252, 0.85) !important;
-  border: 1px solid rgba(226, 232, 240, 0.9) !important;
+  background: rgb(var(--stitch-color-surface-container-low) / 0.85) !important;
+  border: 1px solid rgb(var(--stitch-color-outline-variant) / 0.9) !important;
   border-radius: 0.75rem !important;
   margin-bottom: 14px !important;
   overflow: hidden !important;
@@ -527,7 +533,7 @@ body.in-ask .learning-shortcuts {
 
 .thinking-summary {
   padding: 8px 12px !important;
-  color: #475569 !important;
+  color: var(--stitch-on-surface-variant) !important;
   font-size: 12px !important;
   font-weight: 500 !important;
   cursor: pointer !important;
@@ -535,9 +541,9 @@ body.in-ask .learning-shortcuts {
 
 .thinking-content {
   padding: 10px 14px !important;
-  border-top: 1px dashed rgba(226, 232, 240, 0.9) !important;
+  border-top: 1px dashed rgb(var(--stitch-color-outline-variant) / 0.9) !important;
   font-size: 12px !important;
-  color: #64748b !important;
+  color: var(--stitch-on-surface-variant) !important;
   line-height: 1.6 !important;
 }
 
@@ -545,15 +551,15 @@ body.in-ask .learning-shortcuts {
 .suggested-followup-box {
   margin-top: 14px !important;
   padding: 12px 14px !important;
-  background: rgba(248, 250, 252, 0.6) !important;
-  border: 1px solid rgba(226, 232, 240, 0.8) !important;
+  background: rgb(var(--stitch-color-surface-container-low) / 0.6) !important;
+  border: 1px solid rgb(var(--stitch-color-outline-variant) / 0.8) !important;
   border-radius: 0.75rem !important;
 }
 
 .suggested-chip {
-  background: #ffffff !important;
-  border: 1px solid #e0e7ff !important;
-  color: #4338ca !important;
+  background: var(--stitch-surface-container-lowest) !important;
+  border: 1px solid var(--stitch-outline-variant) !important;
+  color: var(--stitch-primary) !important;
   border-radius: 9999px !important;
   padding: 4px 12px !important;
   font-size: 12px !important;
@@ -561,7 +567,7 @@ body.in-ask .learning-shortcuts {
 }
 
 .suggested-chip:hover {
-  background: #eef2ff !important;
+  background: var(--stitch-primary-fixed) !important;
   border-color: #6366f1 !important;
   transform: translateY(-1px) !important;
 }
@@ -589,11 +595,11 @@ body.in-ask .learning-shortcuts {
 
 .stitch-sidebar .session-item-row:hover,
 .stitch-sidebar .session-item-row.active {
-  background: var(--stitch-surface-container, #eaedff);
+  background: var(--stitch-surface-container, var(--stitch-surface-container));
 }
 
 .stitch-sidebar .session-item-row.active {
-  background: #eef2ff !important;
+  background: var(--stitch-primary-fixed) !important;
   box-shadow: inset 3px 0 0 #4f46e5;
 }
 
@@ -605,7 +611,7 @@ body.in-ask .learning-shortcuts {
   padding: 6px 8px;
   border: none;
   background: transparent;
-  color: var(--stitch-on-surface-variant, #464555);
+  color: var(--stitch-on-surface-variant, var(--stitch-on-surface-variant));
   font-size: 12px;
   text-align: left;
   cursor: pointer;
@@ -614,7 +620,7 @@ body.in-ask .learning-shortcuts {
 
 .stitch-sidebar .session-item-btn.active,
 .stitch-sidebar .session-item-row.active .session-item-btn {
-  color: #312e81 !important;
+  color: var(--stitch-primary) !important;
   font-weight: 600 !important;
 }
 
@@ -627,8 +633,8 @@ body.in-ask .learning-shortcuts {
 
 .stitch-sidebar .session-count-tag {
   font-size: 10px;
-  color: #6366f1;
-  background: #eef2ff;
+  color: var(--stitch-primary);
+  background: var(--stitch-primary-fixed);
   padding: 1px 5px;
   border-radius: 4px;
   font-weight: 500;
@@ -636,7 +642,7 @@ body.in-ask .learning-shortcuts {
 }
 
 .stitch-sidebar .session-pinned-tag {
-  color: #4f46e5;
+  color: var(--stitch-primary);
   font-size: 11px;
   margin-left: 2px;
   flex-shrink: 0;
@@ -659,7 +665,7 @@ body.in-ask .learning-shortcuts {
   background: transparent;
   padding: 3px;
   border-radius: 4px;
-  color: #64748b;
+  color: var(--stitch-on-surface-variant);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -667,8 +673,8 @@ body.in-ask .learning-shortcuts {
 }
 
 .stitch-sidebar .session-hover-btn:hover {
-  background: #e2e8f0;
-  color: #1e293b;
+  background: var(--stitch-surface-container-high);
+  color: var(--stitch-on-surface);
 }
 
 .stitch-sidebar .session-dropdown-menu {
@@ -677,8 +683,8 @@ body.in-ask .learning-shortcuts {
   right: 4px;
   z-index: 100;
   min-width: 140px;
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
+  background: var(--stitch-surface-container-lowest);
+  border: 1px solid var(--stitch-outline-variant);
   border-radius: 0.5rem;
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
   padding: 4px;
@@ -693,7 +699,7 @@ body.in-ask .learning-shortcuts {
   gap: 8px;
   padding: 6px 10px;
   font-size: 11px;
-  color: #334155;
+  color: var(--stitch-on-surface);
   border: none;
   background: transparent;
   width: 100%;
@@ -703,8 +709,8 @@ body.in-ask .learning-shortcuts {
 }
 
 .stitch-sidebar .session-dropdown-menu .menu-item:hover {
-  background: #f1f5f9;
-  color: #0f172a;
+  background: var(--stitch-surface-container-low);
+  color: var(--stitch-on-surface);
 }
 
 .stitch-sidebar .session-dropdown-menu .menu-item-danger {
@@ -717,7 +723,7 @@ body.in-ask .learning-shortcuts {
 
 .stitch-sidebar .session-dropdown-menu .menu-divider {
   height: 1px;
-  background: #f1f5f9;
+  background: var(--stitch-surface-container-low);
   margin: 3px 0;
 }
 
@@ -759,7 +765,7 @@ body.in-ask .learning-shortcuts {
 .chat-empty-headline {
   font-size: clamp(26px, 3.5vw, 34px);
   font-weight: 800;
-  color: #0f172a;
+  color: var(--stitch-on-surface);
   letter-spacing: -0.025em;
   margin-bottom: 12px;
   line-height: 1.25;
@@ -767,7 +773,7 @@ body.in-ask .learning-shortcuts {
 
 .chat-empty-subtitle {
   font-size: 14px;
-  color: #64748b;
+  color: var(--stitch-on-surface-variant);
   max-width: 620px;
   margin: 0 auto 28px;
   line-height: 1.6;
@@ -775,10 +781,10 @@ body.in-ask .learning-shortcuts {
 
 .chat-empty-suggest-card {
   width: 100%;
-  background: rgba(255, 255, 255, 0.95);
+  background: rgb(var(--stitch-color-surface-container-lowest) / 0.95);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(224, 231, 255, 0.85);
+  border: 1px solid rgb(var(--stitch-color-outline-variant) / 0.85);
   border-radius: 1.25rem;
   padding: 18px 20px 20px;
   box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.04), 0 2px 6px rgba(79, 70, 229, 0.03);
@@ -797,7 +803,7 @@ body.in-ask .learning-shortcuts {
   justify-content: space-between;
   padding-bottom: 12px;
   margin-bottom: 14px;
-  border-bottom: 1px solid rgba(241, 245, 249, 0.9);
+  border-bottom: 1px solid rgb(var(--stitch-color-outline-variant) / 0.9);
 }
 
 .chat-empty-grid {
@@ -817,8 +823,8 @@ body.in-ask .learning-shortcuts {
   align-items: center;
   justify-content: space-between;
   padding: 14px 16px;
-  background: rgba(248, 250, 252, 0.7);
-  border: 1px solid rgba(226, 232, 240, 0.85);
+  background: rgb(var(--stitch-color-surface-container-low) / 0.7);
+  border: 1px solid rgb(var(--stitch-color-outline-variant) / 0.85);
   border-radius: 0.875rem;
   text-align: left;
   cursor: pointer;
@@ -828,7 +834,7 @@ body.in-ask .learning-shortcuts {
 }
 
 .suggest-card-item:hover {
-  background: #f5f3ff;
+  background: var(--stitch-primary-fixed);
   border-color: #a5b4fc;
   box-shadow: 0 4px 14px -2px rgba(99, 102, 241, 0.12);
   transform: translateY(-1px);
@@ -837,9 +843,9 @@ body.in-ask .learning-shortcuts {
 .suggest-tag {
   font-size: 11px;
   font-weight: 600;
-  color: #4f46e5;
-  background: #eef2ff;
-  border: 1px solid #c7d2fe;
+  color: var(--stitch-primary);
+  background: var(--stitch-primary-fixed);
+  border: 1px solid var(--stitch-outline-variant);
   padding: 2px 7px;
   border-radius: 6px;
   white-space: nowrap;
@@ -849,7 +855,7 @@ body.in-ask .learning-shortcuts {
 .suggest-text {
   font-size: 12.5px;
   font-weight: 500;
-  color: #334155;
+  color: var(--stitch-on-surface);
   line-height: 1.45;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -860,18 +866,18 @@ body.in-ask .learning-shortcuts {
 }
 
 .suggest-card-item:hover .suggest-text {
-  color: #1e1b4b;
+  color: var(--stitch-primary);
 }
 
 .suggest-arrow {
   font-size: 13px;
-  color: #94a3b8;
+  color: var(--stitch-outline);
   flex-shrink: 0;
   transition: color 0.15s ease, transform 0.15s ease;
 }
 
 .suggest-card-item:hover .suggest-arrow {
-  color: #4f46e5;
+  color: var(--stitch-primary);
   transform: translate(2px, -2px);
 }
 
@@ -881,11 +887,11 @@ body.in-ask .learning-shortcuts {
   justify-content: center;
   gap: 16px;
   font-size: 12px;
-  color: #94a3b8;
+  color: var(--stitch-outline);
 }
 
 .chat-empty-sublinks a {
-  color: #64748b;
+  color: var(--stitch-on-surface-variant);
   text-decoration: none;
   display: inline-flex;
   align-items: center;
@@ -894,7 +900,7 @@ body.in-ask .learning-shortcuts {
 }
 
 .chat-empty-sublinks a:hover {
-  color: #4f46e5;
+  color: var(--stitch-primary);
 }
 
 /* Floating Composer styling matching the reference screenshot */
@@ -902,8 +908,8 @@ body.in-ask .learning-shortcuts {
   max-width: 920px !important;
   margin: 0 auto 12px auto !important;
   width: calc(100% - 32px) !important;
-  background: rgba(255, 255, 255, 0.98) !important;
-  border: 1px solid rgba(203, 213, 225, 0.8) !important;
+  background: rgb(var(--stitch-color-surface-container-lowest) / 0.98) !important;
+  border: 1px solid rgb(var(--stitch-color-outline-variant) / 0.8) !important;
   border-radius: 1.5rem !important;
   box-shadow: 0 12px 36px -4px rgba(15, 23, 42, 0.08), 0 2px 8px rgba(79, 70, 229, 0.04) !important;
   padding: 14px 18px 12px !important;
@@ -914,13 +920,13 @@ body.in-ask .learning-shortcuts {
   border: none !important;
   box-shadow: none !important;
   font-size: 13.5px !important;
-  color: #1e293b !important;
+  color: var(--stitch-on-surface) !important;
   padding: 2px 0 8px 0 !important;
   resize: none !important;
 }
 
 .workspace-chat .composer textarea::placeholder {
-  color: #94a3b8 !important;
+  color: var(--stitch-outline) !important;
 }
 
 .workspace-chat .composer-bottom {
@@ -928,7 +934,7 @@ body.in-ask .learning-shortcuts {
   align-items: center !important;
   justify-content: space-between !important;
   padding-top: 6px !important;
-  border-top: 1px solid rgba(241, 245, 249, 0.9) !important;
+  border-top: 1px solid rgb(var(--stitch-color-outline-variant) / 0.9) !important;
 }
 
 .workspace-chat .composer-tools {
@@ -941,9 +947,9 @@ body.in-ask .learning-shortcuts {
   display: inline-flex !important;
   align-items: center !important;
   gap: 6px !important;
-  background: #eef2ff !important;
-  color: #4338ca !important;
-  border: 1px solid #c7d2fe !important;
+  background: var(--stitch-primary-fixed) !important;
+  color: var(--stitch-primary) !important;
+  border: 1px solid var(--stitch-outline-variant) !important;
   border-radius: 9999px !important;
   padding: 4px 12px !important;
   font-size: 11.5px !important;
@@ -953,13 +959,13 @@ body.in-ask .learning-shortcuts {
 }
 
 .workspace-chat .composer-web:hover {
-  background: #e0e7ff !important;
+  background: var(--stitch-primary-fixed) !important;
   border-color: #a5b4fc !important;
 }
 
 .workspace-chat .composer-note {
   font-size: 11px !important;
-  color: #94a3b8 !important;
+  color: var(--stitch-outline) !important;
   margin-right: 8px !important;
 }
 
@@ -998,10 +1004,10 @@ body.in-ask .learning-shortcuts {
   padding: 6px 14px !important;
   margin: 0 0 8px 0 !important;
   box-sizing: border-box !important;
-  background: rgba(255, 255, 255, 0.7) !important;
+  background: rgb(var(--stitch-color-surface-container-lowest) / 0.7) !important;
   backdrop-filter: blur(12px) !important;
   -webkit-backdrop-filter: blur(12px) !important;
-  border-bottom: 1px solid rgba(226, 232, 240, 0.75) !important;
+  border-bottom: 1px solid rgb(var(--stitch-color-outline-variant) / 0.75) !important;
   flex-shrink: 0 !important;
 }
 
@@ -1023,24 +1029,24 @@ body.in-ask .learning-shortcuts {
   align-items: center !important;
   gap: 4px !important;
   cursor: pointer !important;
-  border: 1px solid rgba(203, 213, 225, 0.8) !important;
-  background: rgba(255, 255, 255, 0.9) !important;
-  color: #64748b !important;
+  border: 1px solid rgb(var(--stitch-color-outline-variant) / 0.8) !important;
+  background: rgb(var(--stitch-color-surface-container-lowest) / 0.9) !important;
+  color: var(--stitch-on-surface-variant) !important;
   transition: all 0.15s ease !important;
 }
 
 .workspace-chat .sidebar-ask-btn:hover,
 .sidebar-ask-btn:hover {
-  background: #eef2ff !important;
-  border-color: #c7d2fe !important;
-  color: #4f46e5 !important;
+  background: var(--stitch-primary-fixed) !important;
+  border-color: var(--stitch-outline-variant) !important;
+  color: var(--stitch-primary) !important;
 }
 
 .workspace-chat .sidebar-ask-btn.is-active,
 .sidebar-ask-btn.is-active {
-  background: #eef2ff !important;
+  background: var(--stitch-primary-fixed) !important;
   border-color: #6366f1 !important;
-  color: #4338ca !important;
+  color: var(--stitch-primary) !important;
 }
 
 
@@ -1081,7 +1087,7 @@ body.in-ask .learning-shortcuts {
   flex-wrap: wrap;
   align-self: flex-start;
   flex-shrink: 0;
-  background: #f2f3ff;
+  background: var(--stitch-surface-container-low);
   padding: 4px;
   border-radius: 9999px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
@@ -1096,7 +1102,7 @@ body.in-ask .learning-shortcuts {
   border-radius: 9999px;
   font-size: 12px;
   font-weight: 600;
-  color: #464555;
+  color: var(--stitch-on-surface-variant);
   background: transparent;
   border: none;
   cursor: pointer;
@@ -1105,8 +1111,8 @@ body.in-ask .learning-shortcuts {
 }
 
 .hot100-status-btn:hover {
-  color: #131b2e;
-  background: #eaedff;
+  color: var(--stitch-on-surface);
+  background: var(--stitch-surface-container);
 }
 
 .hot100-status-btn.is-active {
@@ -1124,13 +1130,13 @@ body.in-ask .learning-shortcuts {
 }
 
 .hot100-status-btn.is-active .hot100-status-badge {
-  background: rgba(255, 255, 255, 0.22);
+  background: rgb(var(--stitch-color-surface-container-lowest) / 0.22);
   color: #ffffff;
 }
 
 .hot100-status-btn:not(.is-active) .hot100-status-badge {
-  background: #e2e7ff;
-  color: #464555;
+  background: var(--stitch-surface-container-high);
+  color: var(--stitch-on-surface-variant);
 }
 
 .hot100-status-badge.is-wrong {
@@ -1142,12 +1148,12 @@ body.in-ask .learning-shortcuts {
 /* Filter & Search Control Dock */
 .hot100-dock {
   width: 100%;
-  background: rgba(255, 255, 255, 0.92);
+  background: rgb(var(--stitch-color-surface-container-lowest) / 0.92);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border-radius: 0.85rem;
   padding: 10px 14px;
-  border: 1px solid rgba(199, 196, 216, 0.35);
+  border: 1px solid rgb(var(--stitch-color-outline-variant) / 0.35);
   box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.04);
   display: flex;
   flex-direction: column;
@@ -1174,16 +1180,16 @@ body.in-ask .learning-shortcuts {
   padding-left: 36px;
   padding-right: 12px;
   border-radius: 0.5rem;
-  background: #f2f3ff;
+  background: var(--stitch-surface-container-low);
   border: 1px solid transparent;
-  color: #131b2e;
+  color: var(--stitch-on-surface);
   font-size: 13px;
   transition: all 0.15s ease;
 }
 
 .hot100-search-wrap input:focus {
-  background: #ffffff;
-  border-color: #c7d2fe;
+  background: var(--stitch-surface-container-lowest);
+  border-color: var(--stitch-outline-variant);
   outline: 2px solid rgba(79, 70, 229, 0.2);
 }
 
@@ -1215,9 +1221,9 @@ body.in-ask .learning-shortcuts {
   max-height: 300px;
   overflow: hidden;
   border-radius: 0.85rem;
-  background: rgba(255, 255, 255, 0.88);
+  background: rgb(var(--stitch-color-surface-container-lowest) / 0.88);
   backdrop-filter: blur(16px);
-  border: 1px solid rgba(199, 196, 216, 0.35);
+  border: 1px solid rgb(var(--stitch-color-outline-variant) / 0.35);
   box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.03);
   padding: 10px;
   display: flex;
@@ -1261,8 +1267,8 @@ body.in-ask .learning-shortcuts {
   font-size: 11.5px;
   font-weight: 600;
   white-space: nowrap;
-  background: #eaedff;
-  color: #131b2e;
+  background: var(--stitch-surface-container);
+  color: var(--stitch-on-surface);
   border: none;
   cursor: pointer;
   transition: all 0.15s ease;
@@ -1270,7 +1276,7 @@ body.in-ask .learning-shortcuts {
 }
 
 .stitch-capsule-btn:hover {
-  background: #e2e7ff;
+  background: var(--stitch-surface-container-high);
 }
 
 .stitch-capsule-btn.is-active {
@@ -1286,8 +1292,8 @@ body.in-ask .learning-shortcuts {
   gap: 3px !important;
   padding: 7px 10px !important;
   border-radius: 0.65rem !important;
-  background: #fff !important;
-  border: 1px solid rgba(199, 196, 216, 0.25) !important;
+  background: var(--stitch-surface-container-lowest) !important;
+  border: 1px solid rgb(var(--stitch-color-outline-variant) / 0.25) !important;
   border-left: 4px solid transparent !important;
   cursor: pointer !important;
   transition: all 0.16s ease !important;
@@ -1295,11 +1301,11 @@ body.in-ask .learning-shortcuts {
 }
 
 .stitch-question-card:hover {
-  background: #eaedff !important;
+  background: var(--stitch-surface-container) !important;
 }
 
 .stitch-question-card.is-active {
-  background: rgba(226, 223, 255, 0.45) !important;
+  background: rgb(var(--stitch-color-primary-fixed) / 0.45) !important;
   border-color: rgba(79, 70, 229, 0.3) !important;
   border-left: 4px solid #3525cd !important;
 }
@@ -1319,8 +1325,8 @@ body.in-ask .learning-shortcuts {
 }
 
 .stitch-chip-pending {
-  background: #e2e7ff;
-  color: #464555;
+  background: var(--stitch-surface-container-high);
+  color: var(--stitch-on-surface-variant);
 }
 
 .stitch-chip-mastered {
@@ -1346,11 +1352,11 @@ body.in-ask .learning-shortcuts {
 }
 
 .hot100-workbench .practice-detail {
-  background: rgba(255, 255, 255, 0.92);
+  background: rgb(var(--stitch-color-surface-container-lowest) / 0.92);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border-radius: 0.85rem;
-  border: 1px solid rgba(199, 196, 216, 0.35);
+  border: 1px solid rgb(var(--stitch-color-outline-variant) / 0.35);
   box-shadow: 0 4px 28px rgba(15, 23, 42, 0.03);
   padding: 20px;
   display: flex;
@@ -1455,8 +1461,8 @@ body.in-ask .learning-shortcuts {
   display: flex;
   flex-direction: column;
   border-radius: 0.75rem;
-  border: 1px solid rgba(199, 196, 216, 0.35);
-  background: #ffffff;
+  border: 1px solid rgb(var(--stitch-color-outline-variant) / 0.35);
+  background: var(--stitch-surface-container-lowest);
   overflow: hidden;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
 }
@@ -1466,8 +1472,8 @@ body.in-ask .learning-shortcuts {
   align-items: center;
   justify-content: space-between;
   padding: 6px 12px;
-  background: #f2f3ff;
-  border-bottom: 1px solid rgba(199, 196, 216, 0.35);
+  background: var(--stitch-surface-container-low);
+  border-bottom: 1px solid rgb(var(--stitch-color-outline-variant) / 0.35);
 }
 
 /* Floating AI Whiteboard Drawer */
@@ -1479,8 +1485,8 @@ body.in-ask .learning-shortcuts {
   max-width: calc(100vw - 48px);
   max-height: min(480px, calc(100dvh - 40px));
   border-radius: 12px;
-  background: #fff;
-  border: 1px solid #e2e8f0;
+  background: var(--stitch-surface-container-lowest);
+  border: 1px solid var(--stitch-outline-variant);
   box-shadow: 0 12px 32px rgba(15, 23, 42, 0.16);
   display: flex;
   flex-direction: column;
@@ -1495,4 +1501,158 @@ body.in-ask .learning-shortcuts {
     max-height: none;
     box-shadow: none;
   }
+}
+
+/* Shared tokens also feed the locally compiled utility classes. */
+:root {
+  --stitch-color-primary: 53 37 205;
+  --stitch-color-primary-container: 79 70 229;
+  --stitch-color-on-primary: 255 255 255;
+  --stitch-color-on-primary-container: 218 215 255;
+  --stitch-color-primary-fixed: 226 223 255;
+  --stitch-color-primary-fixed-dim: 195 192 255;
+  --stitch-color-secondary: 0 88 190;
+  --stitch-color-secondary-container: 33 112 228;
+  --stitch-color-on-secondary: 255 255 255;
+  --stitch-color-on-secondary-container: 254 252 255;
+  --stitch-color-secondary-fixed: 216 226 255;
+  --stitch-color-secondary-fixed-dim: 173 198 255;
+  --stitch-color-tertiary: 87 26 192;
+  --stitch-color-tertiary-container: 111 61 217;
+  --stitch-color-on-tertiary: 255 255 255;
+  --stitch-color-tertiary-fixed: 233 221 255;
+  --stitch-color-tertiary-fixed-dim: 208 188 255;
+  --stitch-color-background: 250 248 255;
+  --stitch-color-on-background: 19 27 46;
+  --stitch-color-surface: 250 248 255;
+  --stitch-color-surface-bright: 250 248 255;
+  --stitch-color-surface-dim: 210 217 244;
+  --stitch-color-surface-container-lowest: 255 255 255;
+  --stitch-color-surface-container-low: 242 243 255;
+  --stitch-color-surface-container: 234 237 255;
+  --stitch-color-surface-container-high: 226 231 255;
+  --stitch-color-surface-container-highest: 218 226 253;
+  --stitch-color-inverse-surface: 40 48 68;
+  --stitch-color-inverse-on-surface: 238 240 255;
+  --stitch-color-inverse-primary: 195 192 255;
+  --stitch-color-on-surface: 19 27 46;
+  --stitch-color-on-surface-variant: 70 69 85;
+  --stitch-color-outline: 96 94 115;
+  --stitch-color-outline-variant: 199 196 216;
+  --stitch-color-error: 186 26 26;
+  --stitch-color-error-container: 255 218 214;
+  --stitch-primary: rgb(var(--stitch-color-primary));
+  --stitch-primary-container: rgb(var(--stitch-color-primary-container));
+  --stitch-on-primary: rgb(var(--stitch-color-on-primary));
+  --stitch-on-primary-container: rgb(var(--stitch-color-on-primary-container));
+  --stitch-primary-fixed: rgb(var(--stitch-color-primary-fixed));
+  --stitch-secondary: rgb(var(--stitch-color-secondary));
+  --stitch-secondary-container: rgb(var(--stitch-color-secondary-container));
+  --stitch-on-secondary: rgb(var(--stitch-color-on-secondary));
+  --stitch-tertiary: rgb(var(--stitch-color-tertiary));
+  --stitch-tertiary-container: rgb(var(--stitch-color-tertiary-container));
+  --stitch-background: rgb(var(--stitch-color-background));
+  --stitch-surface: rgb(var(--stitch-color-surface));
+  --stitch-surface-container: rgb(var(--stitch-color-surface-container));
+  --stitch-surface-container-low: rgb(var(--stitch-color-surface-container-low));
+  --stitch-surface-container-high: rgb(var(--stitch-color-surface-container-high));
+  --stitch-surface-container-highest: rgb(var(--stitch-color-surface-container-highest));
+  --stitch-surface-container-lowest: rgb(var(--stitch-color-surface-container-lowest));
+  --stitch-on-surface: rgb(var(--stitch-color-on-surface));
+  --stitch-on-surface-variant: rgb(var(--stitch-color-on-surface-variant));
+  --stitch-outline: rgb(var(--stitch-color-outline));
+  --stitch-outline-variant: rgb(var(--stitch-color-outline-variant));
+  --stitch-error: rgb(var(--stitch-color-error));
+  --stitch-error-container: rgb(var(--stitch-color-error-container));
+}
+html[data-theme="dark"] {
+  --stitch-color-primary: 196 189 255;
+  --stitch-color-primary-container: 81 70 217;
+  --stitch-color-on-primary: 30 22 77;
+  --stitch-color-on-primary-container: 237 233 255;
+  --stitch-color-primary-fixed: 49 43 82;
+  --stitch-color-primary-fixed-dim: 77 66 119;
+  --stitch-color-secondary: 171 198 255;
+  --stitch-color-secondary-container: 40 71 120;
+  --stitch-color-on-secondary: 13 35 72;
+  --stitch-color-on-secondary-container: 222 234 255;
+  --stitch-color-secondary-fixed: 36 53 85;
+  --stitch-color-secondary-fixed-dim: 57 78 117;
+  --stitch-color-tertiary: 216 185 255;
+  --stitch-color-tertiary-container: 93 54 150;
+  --stitch-color-on-tertiary: 45 18 80;
+  --stitch-color-tertiary-fixed: 61 39 88;
+  --stitch-color-tertiary-fixed-dim: 87 58 121;
+  --stitch-color-background: 17 20 30;
+  --stitch-color-on-background: 233 236 246;
+  --stitch-color-surface: 17 20 30;
+  --stitch-color-surface-bright: 43 48 64;
+  --stitch-color-surface-dim: 14 17 26;
+  --stitch-color-surface-container-lowest: 23 28 41;
+  --stitch-color-surface-container-low: 28 34 49;
+  --stitch-color-surface-container: 34 41 58;
+  --stitch-color-surface-container-high: 42 50 69;
+  --stitch-color-surface-container-highest: 51 60 80;
+  --stitch-color-inverse-surface: 232 235 247;
+  --stitch-color-inverse-on-surface: 30 36 50;
+  --stitch-color-inverse-primary: 66 51 157;
+  --stitch-color-on-surface: 233 236 246;
+  --stitch-color-on-surface-variant: 190 199 220;
+  --stitch-color-outline: 165 176 199;
+  --stitch-color-outline-variant: 75 86 111;
+  --stitch-color-error: 255 180 171;
+  --stitch-color-error-container: 93 29 32;
+  --stitch-color-on-tertiary-container: 241 226 255;
+  --stitch-primary: rgb(var(--stitch-color-primary));
+  --stitch-primary-container: rgb(var(--stitch-color-primary-container));
+  --stitch-on-primary: rgb(var(--stitch-color-on-primary));
+  --stitch-on-primary-container: rgb(var(--stitch-color-on-primary-container));
+  --stitch-primary-fixed: rgb(var(--stitch-color-primary-fixed));
+  --stitch-secondary: rgb(var(--stitch-color-secondary));
+  --stitch-secondary-container: rgb(var(--stitch-color-secondary-container));
+  --stitch-on-secondary: rgb(var(--stitch-color-on-secondary));
+  --stitch-tertiary: rgb(var(--stitch-color-tertiary));
+  --stitch-tertiary-container: rgb(var(--stitch-color-tertiary-container));
+  --stitch-background: rgb(var(--stitch-color-background));
+  --stitch-surface: rgb(var(--stitch-color-surface));
+  --stitch-surface-container: rgb(var(--stitch-color-surface-container));
+  --stitch-surface-container-low: rgb(var(--stitch-color-surface-container-low));
+  --stitch-surface-container-high: rgb(var(--stitch-color-surface-container-high));
+  --stitch-surface-container-highest: rgb(var(--stitch-color-surface-container-highest));
+  --stitch-surface-container-lowest: rgb(var(--stitch-color-surface-container-lowest));
+  --stitch-on-surface: rgb(var(--stitch-color-on-surface));
+  --stitch-on-surface-variant: rgb(var(--stitch-color-on-surface-variant));
+  --stitch-outline: rgb(var(--stitch-color-outline));
+  --stitch-outline-variant: rgb(var(--stitch-color-outline-variant));
+  --stitch-error: rgb(var(--stitch-color-error));
+  --stitch-error-container: rgb(var(--stitch-color-error-container));
+}
+
+/* The fixed navigation replaces the former centered, max-width workspace shell. */
+body.in-space #spacePage:not([hidden]) { width: 100% !important; max-width: none; margin: 0 !important; color: var(--stitch-on-surface); }
+#spacePage.stitch-ambient-bg {
+  background: radial-gradient(ellipse at 50% 0, rgb(var(--stitch-color-primary-fixed) / .3), transparent 65%), var(--stitch-background);
+}
+#spacePage :is(h1,h2,h3,h4) { color: var(--stitch-on-surface); }
+#spacePage .stitch-main-content { width: calc(100% - 260px); }
+#spacePage .stitch-sidebar.collapsed ~ .stitch-main-content { width: calc(100% - 72px); }
+#spacePage :is(.session-title,.session-item strong) { color: var(--stitch-on-surface); }
+#spacePage .stitch-sidebar { background: rgb(var(--stitch-color-surface-container-lowest) / .97); }
+#spacePage .workspace-primary a:is(.active,[aria-current="page"]) { background: var(--stitch-surface-container-high) !important; }
+@media (max-width: 1023px) { #spacePage .stitch-main-content { width: 100%; } }
+@media (max-width: 1279px) { #spacePage #searchTrigger { display: none; } }
+
+#spacePage .chat-empty-card-head { color: var(--stitch-on-surface); }
+#spacePage .chat-empty-card-head :is(strong,span) { color: inherit; }
+@media (max-width: 767px) {
+  #spacePage .chat-top-external-bar { flex-wrap: wrap !important; min-width: 0 !important; gap: 6px; }
+  #spacePage .stitch-header-center { display: none; }
+  #spacePage :is(.stitch-header-brand,.stitch-header-actions) { min-width: 0; }
+  #spacePage .stitch-header-brand { gap: 8px; }
+  #spacePage .stitch-header-actions { gap: 4px; }
+  #spacePage .stitch-topbar > div { gap: 8px; padding-inline: 12px; }
+  #spacePage .stitch-header-brand a > div > :last-child { display: none; }
+  #spacePage .stitch-header-actions :is([data-manage-courses],[data-export-workspace]) { display: none; }
+  #spacePage .stitch-header-actions .course-context { padding-inline: 6px; gap: 4px; }
+  #spacePage #courseSelect { max-width: 100px; }
 }
