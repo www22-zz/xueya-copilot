@@ -82,7 +82,7 @@ class SpaceQuiz:
 
     def submit_generation(self,account,value):
         subject=value.get('subject');kind=value.get('type','single')
-        require(isinstance(subject,str) and 0<len(subject)<=100 and kind in ('single','short'),'INVALID_QUIZ_REQUEST')
+        require(isinstance(subject,str) and 0<len(subject)<=100 and kind in ('single','multiple','boolean','fill','short'),'INVALID_QUIZ_REQUEST')
         count=value.get('count',1);require(type(count) is int and 1<=count<=5,'INVALID_QUIZ_COUNT')
         scope=self.scope(account)
         return self.p.jobs.submit(scope.user_id,{'type':GENERATE,'courseId':scope.course_id,'resource':'api','maxAttempts':1,
@@ -146,7 +146,9 @@ class SpaceQuiz:
             else:
                 evaluation={'id':generate_id('evaluation-'),'source':'objective','status':'graded','createdAt':utc_now(),
                             'result':self.service.grade_submission(question,answer)}
-                attempt['evaluations'].append(evaluation);attempt['effectiveEvaluation']=copy.deepcopy(evaluation)
+                evaluation['status']=evaluation['result']['status']
+                attempt['evaluations'].append(evaluation)
+                if evaluation['status']=='graded':attempt['effectiveEvaluation']=copy.deepcopy(evaluation)
             self.p.repo.put(scope,'attempt',attempt['id'],attempt,0)
             return self.public_attempt(attempt)
         return self.receipt(scope,value.get('operationId'),value,save)
@@ -195,7 +197,7 @@ class SpaceQuiz:
                 result={'method':'human-correction','feedback':reason}
                 if value.get('disputed') is True:
                     entry['status']='disputed'
-                elif question['type']=='single':
+                elif question['type']!='short':
                     require(type(value.get('correct')) is bool,'INVALID_CORRECTION')
                     result.update(correct=value['correct'],score=int(value['correct']),maxScore=1)
                 elif question.get('rubric'):
@@ -205,8 +207,9 @@ class SpaceQuiz:
                 else:
                     require('score' not in value,'RUBRIC_REQUIRED')
                 entry['result']=result
-            elif question['type']=='single':
+            elif question['type']!='short':
                 entry.update(status='graded',source='objective-recheck',result=self.service.grade_submission(question,attempt['answer']))
+                entry['status']=entry['result']['status']
             else:
                 require(not any(e['status']=='queued' for e in attempt['evaluations']),'EVALUATION_BUSY')
                 job=self.p.jobs.submit(scope.user_id,{'type':EVALUATE,'courseId':scope.course_id,'resource':'api','maxAttempts':1,

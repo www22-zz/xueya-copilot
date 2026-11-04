@@ -526,6 +526,7 @@ class StudySpaceService:
             "prompt": q["prompt"],
             "sourceType": q.get("sourceType", "standard")
         }
+        if q['type'] == 'fill':pub['blankCount']=len(q.get('answer',[]))
         if "options" in q:
             pub["options"] = list(q["options"])
         if q.get('limitations'):pub['limitations']=list(q['limitations'])
@@ -537,20 +538,9 @@ class StudySpaceService:
     def grade_submission(self, q: Dict[str, Any], user_answer: Any) -> Dict[str, Any]:
         """Grades question submission deterministically for objective; rubric-based for subjective."""
         q_type = q.get("type", "single")
-        if q_type == "single":
-            correct_ans = q.get("answer")
-            require(type(user_answer) is int and 0 <= user_answer < len(q.get("options", [])), "INVALID_ANSWER")
-            is_correct = (user_answer == correct_ans)
-            return {
-                "status": "graded",
-                "correct": is_correct,
-                "score": 1 if is_correct else 0,
-                "maxScore": 1,
-                "correctAnswer": correct_ans,
-                "userAnswer": user_answer,
-                "explanation": q.get("explanation", ""),
-                "method": "deterministic-v1"
-            }
+        from .objective_questions import TYPES, grade
+        if q_type in TYPES:
+            return grade(q, user_answer)
         elif q_type == "short":
             raise AppError("MODEL_EVALUATION_REQUIRED")
         raise AppError("INVALID_QUESTION_TYPE")
@@ -600,17 +590,16 @@ class StudySpaceService:
 
     async def generate_model_question(self, account_id, provider, subject, q_type, *, previous_prompts=None):
         require(isinstance(subject, str) and 0 < len(subject) <= 100, "INVALID_SUBJECT")
-        require(q_type in ("single", "short"), "INVALID_QUESTION_TYPE")
+        require(q_type in ("single", "multiple", "boolean", "fill", "short"), "INVALID_QUESTION_TYPE")
         q = await self.model_json(account_id, provider,
-            '根据学科生成一道可独立解答的练习。单选格式prompt,options(2至6项),answer(从0开始下标),explanation；主观题格式prompt,rubric(可空，项含id,description,points),explanation。不得虚构官方题源。',
+            '根据学科生成一道可独立解答的练习。单选格式prompt,options(2至6项),answer(从0开始下标),explanation；主观题格式prompt,rubric(可空，项含id,description,points),explanation。多选type=multiple，options及answer(至少2个不同下标的数组)；判断type=boolean，answer为布尔；填空type=fill，题干每空用____，answer为逐空可接受字符串数组的数组。不得虚构官方题源。',
             {"subject": subject, "type": q_type, 'avoidPrompts':(previous_prompts or [])[-5:],
              'requirement':'同一批题不重复题干与作答任务。'})
         require(isinstance(q.get("prompt"), str) and 0 < len(q["prompt"]) <= 12000, "AI_INVALID_RESPONSE")
         require(isinstance(q.get("explanation"), str), "AI_INVALID_RESPONSE")
-        if q_type == "single":
-            require(isinstance(q.get("options"), list) and 2 <= len(q["options"]) <= 6
-                    and all(isinstance(x, str) and x for x in q["options"])
-                    and type(q.get("answer")) is int and 0 <= q["answer"] < len(q["options"]), "AI_INVALID_RESPONSE")
+        if q_type != 'short':
+            from .objective_questions import validate
+            validate({**q,'type':q_type})
         else:
             rubric = q.get("rubric", [])
             require(isinstance(rubric, list) and len(rubric) <= 20, "AI_INVALID_RESPONSE")

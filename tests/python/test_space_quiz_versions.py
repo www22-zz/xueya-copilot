@@ -198,3 +198,32 @@ def test_hot100_text_review_does_not_execute_code_or_invent_numeric_rubric(setup
     assert attempt['questionSnapshot']['rubric']==[]
     assert 'score' not in attempt['effectiveEvaluation']['result']
     assert '不运行代码' in attempt['questionSnapshot']['limitations'][0]
+
+
+@pytest.mark.parametrize('kind,extra,answer,status', [
+    ('multiple',{'options':['a','b','c'],'answer':[0,2]},[2,0],'graded'),
+    ('boolean',{'answer':False},False,'graded'),
+    ('fill',{'answer':[['FIFO','先进先出']]},['先进先出'],'graded'),
+    ('fill',{'answer':[['FIFO']]},['可能等价的描述'],'pending-review'),
+])
+def test_objective_types_use_same_private_attempt_chain(setup,kind,extra,answer,status):
+    app,client,model,_=setup
+    q={'id':'typed-question','type':kind,'subject':'数据结构','prompt':'____' if kind=='fill' else '请选择',
+       'sourceType':'ai-generated','explanation':'保存的解析',**extra}
+    service=app.state.space_quiz
+    app.state.platform.repo.put(service.scope('alice'),'question',q['id'],q,0)
+    public=client.get('/api/learning/space/quiz/question/'+q['id']).json()['question']
+    assert 'answer' not in public and 'explanation' not in public
+    body={'questionId':q['id'],'questionRevision':1,'answer':answer,'operationId':'typed-first'}
+    response=client.post('/api/learning/space/quiz/attempts',json=body)
+    assert response.status_code==200,response.text
+    attempt=response.json()['attempt']
+    assert attempt['evaluations'][0]['status']==status
+    if status=='graded':assert attempt['effectiveEvaluation']['result']['score']==1
+    else:
+        assert 'effectiveEvaluation' not in attempt
+        reviewed=service.review('alice',attempt['id'],{'expectedRevision':1,'reason':'请复核等价形式','operationId':'typed-review'})
+        assert reviewed['evaluations'][-1]['status']=='pending-review'
+        assert 'effectiveEvaluation' not in reviewed
+    assert client.post('/api/learning/space/quiz/attempts',json=body).json()['attempt']['id']==attempt['id']
+    assert not model.calls

@@ -53,12 +53,19 @@
         let draft='';try{draft=sessionStorage.getItem(draftKey(id))||'';}catch{}
         function draw(){
           if(!node.isConnected)return;
-          node.innerHTML=`<header><strong>${e(q.sourceType==='fixed-reference'?'固定题参考评阅':q.sourceType==='fixed'?'固定题库':'AI 生成题（未独立审校）')} · ${e(q.type==='short'?'主观题':'单选题')}</strong><h3>${e(q.subject)}</h3></header><p class="study-quiz-prompt">${e(q.prompt)}</p>${(q.limitations||[]).map(text=>`<p>${e(text)}</p>`).join('')}
+          node.innerHTML=`<header><strong>${e(q.sourceType==='fixed-reference'?'固定题参考评阅':q.sourceType==='fixed'?'固定题库':'AI 生成题（未独立审校）')} · ${e(({single:'单选题',multiple:'多选题（全对得分）',boolean:'判断题',fill:'填空题（未匹配待复核）',short:'主观题'})[q.type])}</strong><h3>${e(q.subject)}</h3></header><p class="study-quiz-prompt">${e(q.prompt)}</p>${(q.limitations||[]).map(text=>`<p>${e(text)}</p>`).join('')}
             ${attempt?`<details><summary>本次原始答案（题目版本 ${e(attempt.questionRevision??'旧记录未保存')}）</summary><p>${e(attempt.questionSnapshotView?.prompt||'旧记录未保存完整题目快照')}</p><p>${e(q.type==='single'&&attempt.questionSnapshotView?.options?attempt.questionSnapshotView.options[attempt.answer]:attempt.answer)}</p></details>`:''}
-            <form data-quiz-answer>${q.type==='single'?q.options.map((option,index)=>`<label class="study-quiz-option"><input type="radio" name="answer" value="${index}" ${draft===String(index)?'checked':''} required>${e(option)}</label>`).join(''):`<label>完整答案<textarea name="answer" rows="5" maxlength="20000" required>${e(draft)}</textarea></label>`}
+            <form data-quiz-answer>${['single','multiple','boolean'].includes(q.type)?(q.type==='boolean'?['正确','错误']:q.options).map((option,index)=>`<label class="study-quiz-option"><input type="${q.type==='multiple'?'checkbox':'radio'}" name="answer" value="${index}" ${q.type!=='multiple'?'required':''}>${e(option)}</label>`).join(''):q.type==='fill'?Array.from({length:q.blankCount},(_,i)=>`<label>第${i+1}空<input name="answer" maxlength="500" required></label>`).join(''):`<label>完整答案<textarea name="answer" rows="5" maxlength="20000" required>${e(draft)}</textarea></label>`}
+
               <button type="submit" class="button button-blue button-small">${attempt?'再次作答（新增一次作答）':'保存并提交作答'}</button></form>
             ${evaluations(attempt)}${attempt?.canReview?'<button type="button" class="button button-outline button-small" data-quiz-review>说明理由并复核</button><button type="button" class="button button-outline button-small" data-quiz-correct>人工修正 / 标记争议</button>':attempt?'<p>旧记录缺少题目快照，保留阅读；重新作答后可使用版本化评阅。</p>':''}<p role="status" data-quiz-status></p>`;
-          node.querySelector('[data-quiz-answer]').oninput=event=>{draft=event.target.value;try{sessionStorage.setItem(draftKey(id),draft);}catch{}};
+          const answerForm=node.querySelector('[data-quiz-answer]');
+          let values;try{values=JSON.parse(draft);}catch{values=draft;}
+          if(q.type!=='short')answerForm.querySelectorAll('[name=answer]').forEach((input,index)=>{
+            if(q.type==='fill')input.value=Array.isArray(values)?values[index]||'':'';
+            else input.checked=q.type==='multiple'?Array.isArray(values)&&values.includes(input.value):String(values)===input.value;
+          });
+          answerForm.oninput=()=>{const values=new FormData(answerForm).getAll('answer');draft=q.type==='short'?String(values[0]||''):JSON.stringify(['multiple','fill'].includes(q.type)?values:values[0]);try{sessionStorage.setItem(draftKey(id),draft);}catch{}};
           const status=node.querySelector('[data-quiz-status]');
           const action=operation=>async event=>{
             event?.preventDefault();const buttons=node.querySelectorAll('button');buttons.forEach(b=>b.disabled=true);
@@ -66,10 +73,10 @@
             finally{if(node.isConnected)buttons.forEach(b=>b.disabled=false);}
           };
           node.querySelector('form').onsubmit=action(async()=>{
-            const answer=q.type==='single'?Number(new FormData(node.querySelector('form')).get('answer')):draft;
+            const form=new FormData(node.querySelector('form'));const answer=q.type==='single'?Number(form.get('answer')):q.type==='multiple'?form.getAll('answer').map(Number):q.type==='boolean'?form.get('answer')==='0':q.type==='fill'?form.getAll('answer'):draft;
             const request={questionId:q.id,questionRevision:q.revision,answer,operationId:crypto.randomUUID()};
             const key=draftKey(id)+':pending';let saved;try{saved=JSON.parse(sessionStorage.getItem(key));}catch{}
-            if(saved&&saved.answer===answer)request.operationId=saved.operationId;
+            if(saved&&JSON.stringify(saved.answer)===JSON.stringify(answer))request.operationId=saved.operationId;
             try{sessionStorage.setItem(key,JSON.stringify(request));}catch{}
             attempt=(await api('quiz/attempts',request)).attempt;
             node.dataset.attemptId=attempt.id;
@@ -106,7 +113,7 @@
       const formState=previous?Object.fromEntries(new FormData(previous)):{subject:'操作系统：进程管理',type:'single'};
       const value=await api('quiz/list');if(!node.isConnected)return;
       node.innerHTML=`<section class="panel study-quiz-directory"><a href="#space/practice">← 返回练习</a><h2>我的小测与作答</h2><p>与聊天共用题目、原答案和评阅版本。上传资料不自动出题。</p>
-        <form data-new-quiz><label>学科 / 专题<input name="subject" required maxlength="100" value="${e(formState.subject)}"></label><label>题型<select name="type"><option value="single" ${formState.type==='single'?'selected':''}>单选</option><option value="short" ${formState.type==='short'?'selected':''}>主观</option></select></label><button type="submit" class="button button-small button-blue">主动生成一题</button></form><p role="status" data-quiz-generation>${value.jobs.filter(job=>['queued','running','unknown','failed'].includes(job.status)).map(job=>'生成 / 评阅作业：'+e(job.status)).join('；')}</p>
+        <form data-new-quiz><label>学科 / 专题<input name="subject" required maxlength="100" value="${e(formState.subject)}"></label><label>题型<select name="type"><option value="single" ${formState.type==='single'?'selected':''}>单选</option><option value="multiple" ${formState.type==='multiple'?'selected':''}>多选</option><option value="boolean" ${formState.type==='boolean'?'selected':''}>判断</option><option value="fill" ${formState.type==='fill'?'selected':''}>填空</option><option value="short" ${formState.type==='short'?'selected':''}>主观</option></select></label><button type="submit" class="button button-small button-blue">主动生成一题</button></form><p role="status" data-quiz-generation>${value.jobs.filter(job=>['queued','running','unknown','failed'].includes(job.status)).map(job=>'生成 / 评阅作业：'+e(job.status)).join('；')}</p>
         <nav>${value.questions.map(q=>`<p><a href="#space/practice/ai/${e(q.id)}">${e(q.subject)} · ${e(q.prompt.slice(0,80))}</a></p>`).join('')||'<p>还没有小测，可以在聊天主动请求，或使用上方生成。</p>'}</nav>${questionId?shell(questionId,attemptId):''}</section>`;
       node.querySelector('[data-new-quiz]').onsubmit=async event=>{
         event.preventDefault();const form=event.target;form.querySelector('button').disabled=true;
