@@ -90,6 +90,23 @@ def install_study_space(app):
         return success(**app.state.material_learning.listing(account_id(request),p.scope_user_id,
                        request.query_params.get('courseId','course-default')))
 
+    @router.get('/course-graph')
+    async def course_graph(request: Request):
+        authorize(request)
+        p=app.state.platform
+        return success(**app.state.material_learning.corpus.read(account_id(request),p.scope_user_id,
+                       request.query_params.get('courseId','course-default'),request.query_params.get('subject','')))
+
+    @router.post('/course-graph/continue')
+    async def continue_course_graph(request: Request):
+        authorize(request)
+        value=await json_body(request,32768)
+        from .common import require
+        require(value.get('confirmedExternal') is True,'EXTERNAL_CONFIRMATION_REQUIRED')
+        p=app.state.platform
+        return success(**app.state.material_learning.corpus.submit(account_id(request),p.scope_user_id,
+                       value.get('courseId','course-default'),value.get('subject',''),value.get('callLimit',10)))
+
     @router.post('/materials/prepare')
     async def prepare_material(request: Request):
         authorize(request)

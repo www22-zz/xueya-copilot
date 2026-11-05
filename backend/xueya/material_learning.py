@@ -39,7 +39,7 @@ class MaterialLearning:
                 nodes.append({'id':phase_id+'-'+concept_id,'label':concept['label'],'parentId':phase_id,'level':2,
                               'description':'本阶段学习此知识点；首次安排 '+day['date'],
                               'conceptId':concept_id,'materialId':resource['materialId'],
-                              'questionIds':concept['questionIds']})
+                              'questionIds':concept['questionIds'],'video':task.get('video'), 'resource':task.get('resource')})
         if not seen:return None
         key='kf-'+digest(plan['id'])[:40]
         value={'id':key,'title':plan['title']+' · 阶段知识框架','subject':' / '.join(plan['subjects']),
@@ -85,6 +85,8 @@ class MaterialLearning:
                 self.submit(accounts[0], scope.user_id, scope.course_id, scope, result['documentId'])
 
         self.rag.on_publish = published
+        from .course_graph import CourseGraph
+        self.corpus = CourseGraph(self)
 
     def documents(self, owner, request_course):
         self.p.repo.require_course(Scope(user_id=owner,course_id=request_course))
@@ -157,14 +159,23 @@ class MaterialLearning:
         doc = self.current(args['owner'], args['requestCourse'], source_scope, args['documentId'], args['revision'])
         sources = self.rag.sources(source_scope, document_ids=[doc['id']])
         require(sources, 'MATERIAL_NO_TRUSTED_CONTENT')
-        # Bounded first batch, explicit partial coverage rather than a fake complete book.
+        # Corpus jobs address one exact source range; never truncate its tail.
+        part = args.get('sourcePart')
         selected, used = [], 0
-        for source in sources:
-            text = source['quote'][:3000]
-            if used + len(text) > 18000:
-                break
-            selected.append({'id': source['id'], 'text': text, 'page': source.get('page')})
-            used += len(text)
+        if part:
+            for segment in part:
+                source = next((s for s in sources if s['id'] == segment['sourceId']), None)
+                require(source is not None, 'MATERIAL_REVISION_CHANGED')
+                text = source['quote'][segment['start']:segment['end']]
+                require(text and digest(text) == segment['hash'], 'MATERIAL_REVISION_CHANGED')
+                selected.append({'id': source['id'], 'text': text, 'page': source.get('page')})
+        else:
+            for source in sources:
+                text = source['quote'][:3000]
+                if used + len(text) > 18000:
+                    break
+                selected.append({'id': source['id'], 'text': text, 'page': source.get('page')})
+                used += len(text)
         require(selected, 'MATERIAL_NO_TRUSTED_CONTENT')
         output_limit=min(10000,self.app.state.config.max_output_tokens)
         concept_limit=max(1,min(6,output_limit//1400))
@@ -202,9 +213,10 @@ class MaterialLearning:
                 questions.append({k: q[k] for k in ('type', 'prompt', 'explanation', 'answer', 'options') if k in q} |
                                  {'id': ident, 'subject': concept['label'], 'sourceType': 'ai-material',
                                   'conceptId': node_id, 'materialId': args['materialId'], 'sourceRevision': args['revision'],
+                                  'courseSubject': self.p.repo.require_course(source_scope)['name'],
                                   'createdAt': utc_now()})
             nodes.append({'id': node_id, 'label': concept['label'], 'description': str(concept.get('description', ''))[:2000],
-                          'questionIds': ids, 'locations': [{'page': s.get('page')} for s in selected if s['id'] in refs]})
+                          'sourceIds': refs, 'questionIds': ids, 'locations': [{'page': s.get('page')} for s in selected if s['id'] in refs]})
         def save():
             self.current(args['owner'], args['requestCourse'], source_scope, args['documentId'], args['revision'])
             for q in questions:

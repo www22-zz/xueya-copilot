@@ -92,6 +92,8 @@
               ${node.description ? `<p class="kf-node-desc">${e(node.description)}</p>` : ''}
               <div class="kf-node-actions">
                 ${node.materialId&&node.conceptId?`<a class="button button-small button-outline" href="#space/materials/${e(node.materialId)}/${e(node.conceptId)}">打开资料知识点与练习</a>`:''}
+                ${(node.questionIds||[]).slice(0,4).map(id=>`<a class="button button-small button-outline" href="#space/practice/ai/${e(id)}">练习题</a>`).join('')}
+                ${node.video?.url?`<a class="button button-small button-outline" href="${e(node.video.url)}">${e(node.video.title||'相关课程')}</a>`:node.materialId?'<small>暂无已匹配视频分集</small>':''}
                 ${(currentFramework.nodes||[]).some(n=>n.parentId===node.id)?`<button type="button" class="button button-small button-outline" data-kf-collapse="${e(node.id)}">${collapsed.has(node.id)?'展开':'收起'}</button>`:''}
                 <button type="button" class="button button-small button-outline" data-kf-ask="${e(node.label)}" title="围绕该节点向 AI 提问">答疑</button>
                 <button type="button" class="button button-small button-outline" data-kf-add-child="${e(node.id)}">＋添加子节点</button>

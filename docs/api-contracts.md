@@ -1,5 +1,11 @@
 # 模块接口约定
 
+## 2026-11-05 整门课程图谱
+
+- GET `/api/learning/space/course-graph?courseId=...&subject=...`：鉴权后返回当前可访问文档、课程/资料/知识点包含图、无原文引用位置、已存在questionIds、输入范围进度与unknown/failed批次；只读不提交。
+- POST `/api/learning/space/course-graph/continue`：`courseId,subject,callLimit`（整数1—50）、`confirmedExternal:true`。按预算提交未开始范围，返回jobIds/maximumCalls，不自动重放未知请求。服务器重建输入范围，不接受客户端sourceScope、原文或题目。
+- 既有Question/Attempt与阶段导图接口不替换；资料题增加courseSubject，阶段节点带真实questionIds及已验证存在的video资源。课程总览标识保留，不冒充精确分集。
+
 ## 2026-11-04 资料学习与模拟考试
 
 以下接口统一使用 `/api/learning/space` 前缀、既有登录Cookie和 `X-Xueya-Token`。学习实体仍位于当前账号稳定的 `space:<learningOwner>/learning-space`，不能由客户端自报owner。来源资料仍回原Scope核验。

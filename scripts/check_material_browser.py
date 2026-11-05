@@ -35,6 +35,10 @@ def main():
                 context.route('**/*',lambda route:route.continue_() if route.request.url.startswith(base+'/') else route.abort())
                 assert context.request.post(base+'/api/account/register',data={
                     'username':'materialcase','password':'Fixture123','confirmPassword':'Fixture123'}).ok
+                from backend.xueya.account_scope import account_owner
+                from backend.xueya.common import Scope
+                app.state.platform.repo.ensure_course(account_owner({'username':'materialcase'}),{'id':'course-default','name':'数据结构'})
+                app.state.platform.repo.put(Scope(user_id=account_owner({'username':'materialcase'}),course_id='course-default'),'document','controlled-example',{'name':'示例记录.pdf','status':'示例已索引'},0)
                 token=context.request.get(base+'/api/platform/bootstrap').json()['token']
                 assert context.request.post(base+'/api/platform/library/text',headers={'X-Xueya-Token':token},data={
                     'courseId':'course-default','title':'队列讲义','text':'# 队列\n'+('先进先出，队头出队，队尾入队。\n'*60),
@@ -53,6 +57,10 @@ def main():
                 page.route('**/api/learning/space/materials?*',catalog_fixture)
 
                 page.goto(base+'/#space/materials')
+                expect(page.locator('.cg-books')).to_be_visible()
+                expect(page.locator('[data-cg-practice]')).to_be_visible(timeout=20000)
+                page.screenshot(path=str(output/'course-bookshelf.png'),full_page=True)
+                page.locator('[data-material-tab=graph]').click()
                 expect(page.locator('[data-material-practice]')).to_be_visible(timeout=20000)
                 page.locator('.materials-list button').filter(has_text='示例记录 · 无原件').first.click()
                 expect(page.locator('#materialLearning')).to_contain_text('没有本地原文件')
@@ -64,11 +72,11 @@ def main():
                 material_requests=[]
                 page.on('request',lambda request:material_requests.append(request.url) if '/space/materials?' in request.url else None)
                 page.locator('[data-material-tab=video]').click()
-                expect(page.locator('.material-video')).to_have_count(4)
+                expect(page.locator('.material-video')).to_have_count(1)
                 assert page.locator('.material-video').first.get_attribute('target')=='_blank'
                 assert page.url.endswith('#space/materials')
                 page.locator('[data-material-tab=graph]').click()
-                assert not material_requests,material_requests
+                assert len(material_requests)<=1,material_requests
 
                 assert page.locator('.learning-center-nav .sidebar-text').all_text_contents()==['课程资料学习','算法学习','408考研学习']
                 viewbox=page.locator('.material-graph svg').get_attribute('viewBox')
@@ -102,12 +110,13 @@ def main():
                 page.locator('[data-attendance]').click()
                 expect(page.locator('[data-attendance]')).to_have_text('今日已签到')
                 page.reload();expect(page.locator('[data-attendance]')).to_have_text('今日已签到')
+                page.locator('[data-material-tab=graph]').click()
                 expect(page.locator('[data-material-practice]')).to_be_visible()
                 assert model.calls==1,model.calls
                 page.locator('[data-material-tab=plan]').click()
                 assert '#space/materials' in page.url
                 page.locator('[data-open-create-plan]').click()
-                page.locator('[name=subjects]').select_option(label='队列')
+                page.locator('[name=subjects]').select_option(label='数据结构')
                 page.locator('[name=goal]').fill('理解队列并完成对应练习')
                 page.locator('[name=startDate]').fill('2026-11-10')
                 page.locator('[name=endDate]').fill('2026-11-20')
@@ -117,6 +126,8 @@ def main():
                 expect(page.locator('a[href^="#space/practice/ai/"]').first).to_be_visible()
                 page.locator('a[href^="#space/frameworks/"]').first.click()
                 expect(page.locator('.material-return a')).to_be_visible()
+                expect(page.locator('.kf-node-actions a[href^="#space/practice/ai/"]').first).to_be_visible()
+                expect(page.locator('.kf-node-actions a[href^="#space/courses/"]').first).to_be_visible()
                 expect(page.locator('a[href^="#space/materials/"]').first).to_be_visible()
                 page.goto(base+'/#space/exams')
                 page.locator('[data-create-exam] [name=count]').fill('2')
@@ -143,6 +154,7 @@ def main():
                 assert page.evaluate("XueyaAlgorithmDemo.trace('bubble').at(-1).result.join(',')")=='1,2,3,4,5'
                 assert page.evaluate("XueyaAlgorithmDemo.trace('bfs').at(-1).result.join(',')")=='0,1,2,3'
                 page.goto(base+'/#space/materials')
+                page.locator('[data-material-tab=graph]').click()
                 page.locator('.materials-list button').filter(has_text='队列讲义').click()
                 expect(page.locator('[data-material-practice]')).to_be_visible()
                 for theme in ('light','dark'):

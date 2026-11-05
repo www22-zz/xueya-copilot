@@ -663,7 +663,7 @@ class StudySpaceService:
     def material_question_resources(self,account_id):
         from urllib.parse import quote
         return [{'type':'question','questionId':q['id'],'version':q['version'],'title':q['prompt'][:150],
-                 'subject':q.get('subject',''),'topic':q.get('subject',''),'tags':[],
+                 'subject':q.get('courseSubject') or q.get('subject',''),'topic':q.get('subject',''),'tags':[],
                  'category':'ai','matched':True,'conceptId':q['conceptId'],'materialId':q['materialId'],
                  'url':'#space/practice/ai/'+quote(q['id'],safe='')}
                 for q in self.repo.all(self._scope(account_id),'question') if q.get('conceptId') and q.get('materialId')]

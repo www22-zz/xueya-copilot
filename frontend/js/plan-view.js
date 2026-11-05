@@ -14,7 +14,7 @@
     let showCreateModal = false;
     let adjusting = false;
     let jobs=[],pollTimer;
-    let availableSubjects=['数据结构','计算机组成原理','操作系统','计算机网络'];
+    let availableSubjects=[];
 
     async function loadPlans() {
       const stamp=generation;
@@ -28,7 +28,7 @@
           activePlan = data.active;
           drafts = data.drafts || [];
           history = data.history || [];jobs=data.jobs||[];
-          try{const response=await window.XueyaPlatform.spaceFetch('/api/learning/space/materials');const catalog=await response.json();availableSubjects=[...new Set([...availableSubjects,...(catalog.materials||[]).flatMap(m=>[m.subject,...m.concepts.map(c=>c.label)])])];}catch{}
+          try{const response=await window.XueyaPlatform.spaceFetch('/api/learning/space/materials');const catalog=await response.json();availableSubjects=[...new Set((catalog.materials||[]).filter(m=>m.ready).map(m=>m.subject))];}catch{}
         }
       } catch (error) { toast(error.message || '学习操作未完成'); }
       finally {
