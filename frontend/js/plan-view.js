@@ -32,7 +32,7 @@
         }
       } catch (error) { toast(error.message || '学习操作未完成'); }
       finally {
-        if(stamp===generation){loading=false;render();clearTimeout(pollTimer);if(jobs.some(job=>['queued','running','cancelling'].includes(job.status)))pollTimer=setTimeout(loadPlans,500);}
+        if(stamp===generation){loading=false;render();clearTimeout(pollTimer);if(jobs.some(job=>['queued','running','cancelling'].includes(job.status)))pollTimer=setTimeout(loadPlans,2000);}
       }
     }
 

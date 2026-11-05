@@ -1661,3 +1661,34 @@ body.in-space #spacePage:not([hidden]) { width: 100% !important; max-width: none
   #spacePage .stitch-header-actions .course-context { padding-inline: 6px; gap: 4px; }
   #spacePage #courseSelect { max-width: 100px; }
 }
+
+/* Material workspace: contain icon styles and keep the learning flow compact. */
+#materialLearning .material-learning { max-width:1180px; margin:0 auto; padding:24px; display:flex; flex-direction:column; gap:16px; border:0; }
+#materialLearning .material-learning h1 { font-size:24px; line-height:1.4; }
+#materialLearning .material-learning h2 { font-size:19px; line-height:1.5; overflow-wrap:anywhere; }
+#materialLearning .material-learning p { font-size:14px; line-height:1.75; }
+#materialLearning .material-learning .button { min-height:38px; padding:8px 15px; border-radius:12px; font-size:13px; gap:8px; }
+#materialLearning .material-workflow { border-bottom:1px solid var(--stitch-outline-variant); padding-bottom:16px; }
+#materialLearning .material-workflow [aria-pressed=true] { background:var(--stitch-primary-fixed); color:var(--stitch-on-surface); border-color:var(--stitch-primary); }
+#materialLearning [data-material-graph-view] { display:flex; flex-direction:column; gap:14px; min-width:0; }
+#materialLearning .materials-list { max-height:180px; overflow:auto; align-content:start; padding:4px; }
+#materialLearning .material-graph { border:1px solid var(--stitch-outline-variant); border-radius:16px; overflow:hidden; padding:12px; background:var(--stitch-surface-container-low); }
+#materialLearning .material-graph svg { width:100%; max-width:760px; height:380px; max-height:46vh; margin:auto; stroke:none; stroke-width:0; fill:none; }
+#materialLearning .material-graph svg text { stroke:none; stroke-width:0; font-family:inherit; font-size:11px; font-weight:500; letter-spacing:0; }
+#materialLearning .material-graph svg circle { stroke-width:1.5; }
+#materialLearning .material-graph svg line { stroke-width:1; }
+#materialLearning .material-graph [data-node] { cursor:pointer; }
+#materialLearning .material-graph [data-node]:focus-visible circle { stroke:var(--stitch-primary); stroke-width:3; }
+#materialLearning .material-graph p { text-align:center; color:var(--stitch-on-surface-variant); font-size:12px; }
+#materialLearning [data-material-subview] { min-width:0; }
+#materialLearning .material-video { display:flex; justify-content:space-between; flex-wrap:wrap; gap:12px; padding:18px; margin-top:12px; border:1px solid var(--stitch-outline-variant); border-radius:12px; font-size:14px; }
+.material-return { display:flex; flex-wrap:wrap; align-items:center; gap:12px; padding:12px 16px; margin-bottom:18px; border:1px solid var(--stitch-outline-variant); border-radius:12px; font-size:13px; }
+.material-return a { color:var(--stitch-primary); font-weight:600; }
+@media(max-width:767px){ #materialLearning .material-learning { padding:16px 8px; } #materialLearning .material-graph svg { height:260px; } }
+
+#spacePage .learning-center-nav { border:0; padding:4px 0; margin:0; gap:6px; }
+#spacePage .learning-center-nav a { display:flex; align-items:center; gap:12px; padding:12px; font-size:14px; min-height:46px; }
+#spacePage .learning-center-nav a span { background:transparent; border:0; padding:0; color:inherit; }
+#spacePage .learning-center-nav a .sidebar-text { font-size:14px; font-weight:600; }
+#spacePage .learning-center-nav a .material-symbols-outlined { font-size:21px; }
+#spacePage .learning-secondary-tools { margin-top:14px; font-size:13px; }

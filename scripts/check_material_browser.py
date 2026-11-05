@@ -40,10 +40,33 @@ def main():
                     'courseId':'course-default','title':'队列讲义','text':'# 队列\n'+('先进先出，队头出队，队尾入队。\n'*60),
                     'idempotencyKey':'browser-upload'}).ok
                 page=context.new_page();errors=[];page.on('pageerror',lambda error:errors.append(str(error)))
+                polling_fixture={'active':False}
+                def catalog_fixture(route):
+                    response=route.fetch();payload=response.json()
+                    for material in payload.get('materials',[]):
+                        for concept in material.get('concepts',[]):
+                            concept['label']='二叉树的顺序存储与链式存储结构及指针变化'
+                    if polling_fixture['active'] and payload.get('materials'):
+                        extra={**payload['materials'][0],'id':'controlled-pending','documentId':'controlled-pending','name':'后台解析状态夹具','concepts':[],'status':'parsing','ready':False}
+                        payload['materials'].append(extra)
+                    route.fulfill(response=response,json=payload)
+                page.route('**/api/learning/space/materials?*',catalog_fixture)
+
                 page.goto(base+'/#space/materials')
                 page.locator('.materials-list button').filter(has_text='队列讲义').click()
                 expect(page.locator('[data-material-practice]')).to_be_visible(timeout=20000)
                 assert page.locator('.material-graph svg').bounding_box()['height']>150
+                assert page.locator('.material-graph svg text').evaluate_all("els=>els.every(e=>getComputedStyle(e).stroke==='none')")
+                assert page.locator('.material-graph svg [data-node] text').evaluate_all("els=>els.every(e=>e.getBBox().width<90 && e.getBBox().height<80)")
+                material_requests=[]
+                page.on('request',lambda request:material_requests.append(request.url) if '/space/materials?' in request.url else None)
+                page.locator('[data-material-tab=video]').click()
+                expect(page.locator('.material-video')).to_have_count(4)
+                assert page.locator('.material-video').first.get_attribute('target')=='_blank'
+                assert page.url.endswith('#space/materials')
+                page.locator('[data-material-tab=graph]').click()
+                assert not material_requests,material_requests
+
                 assert page.locator('.learning-center-nav .sidebar-text').all_text_contents()==['课程资料学习','算法学习','408考研学习']
                 viewbox=page.locator('.material-graph svg').get_attribute('viewBox')
                 page.locator('[data-graph-zoom="0.8"]').click()
@@ -55,6 +78,14 @@ def main():
                 expect(page.locator('[data-quiz-card]')).to_have_count(4)
                 forms=page.locator('[data-quiz-answer]')
                 expect(forms).to_have_count(4)
+                # Simulate another parsing document and a real polling interval.
+                # The same live form/input must survive the response unchanged.
+                polling_fixture['active']=True
+                page.evaluate("window.__answerForm=document.querySelector('[data-quiz-answer]');window.__answerForm.dataset.retention='keep';XueyaMaterialLearning.mount(document.querySelector('#materialLearning'))")
+                page.wait_for_timeout(8500)
+                assert page.evaluate("window.__answerForm===document.querySelector('[data-quiz-answer]') && window.__answerForm.dataset.retention==='keep'")
+                polling_fixture['active']=False
+
                 forms.nth(0).locator('input').first.check()
                 forms.nth(0).locator('button[type=submit]').click()
                 expect(page.locator('[data-quiz-card]').nth(0)).to_contain_text('判定正确')
@@ -70,7 +101,8 @@ def main():
                 page.reload();expect(page.locator('[data-attendance]')).to_have_text('今日已签到')
                 expect(page.locator('[data-material-practice]')).to_be_visible()
                 assert model.calls==1,model.calls
-                page.goto(base+'/#space/analysis/plans')
+                page.locator('[data-material-tab=plan]').click()
+                assert '#space/materials' in page.url
                 page.locator('[data-open-create-plan]').click()
                 page.locator('[name=subjects]').select_option(label='队列')
                 page.locator('[name=goal]').fill('理解队列并完成对应练习')
@@ -81,6 +113,7 @@ def main():
                 page.locator('details').filter(has=page.locator('a[href^="#space/practice/ai/"]')).locator('summary').first.click()
                 expect(page.locator('a[href^="#space/practice/ai/"]').first).to_be_visible()
                 page.locator('a[href^="#space/frameworks/"]').first.click()
+                expect(page.locator('.material-return a')).to_be_visible()
                 expect(page.locator('a[href^="#space/materials/"]').first).to_be_visible()
                 page.goto(base+'/#space/exams')
                 page.locator('[data-create-exam] [name=count]').fill('2')
@@ -109,11 +142,15 @@ def main():
                 page.goto(base+'/#space/materials')
                 page.locator('.materials-list button').filter(has_text='队列讲义').click()
                 expect(page.locator('[data-material-practice]')).to_be_visible()
-                for width in (1440,390):
-                    page.set_viewport_size({'width':width,'height':1000})
-                    page.wait_for_function("document.getAnimations().filter(a=>a.effect?.getTiming().iterations!==Infinity).every(a=>a.playState!=='running')")
-                    assert page.evaluate('document.documentElement.scrollWidth<=innerWidth+1')
-                    page.screenshot(path=str(output/f'graph-{width}.png'),full_page=True)
+                for theme in ('light','dark'):
+                    page.evaluate("theme=>document.documentElement.dataset.theme=theme",theme)
+                    for width in (2560,1440,390):
+                        page.set_viewport_size({'width':width,'height':1000})
+                        page.wait_for_function("document.getAnimations().filter(a=>a.effect?.getTiming().iterations!==Infinity).every(a=>a.playState!=='running')")
+                        assert page.evaluate('document.documentElement.scrollWidth<=innerWidth+1')
+                        assert page.locator('.material-graph svg text').evaluate_all("els=>els.every(e=>getComputedStyle(e).stroke==='none')")
+                        assert page.locator('.material-graph svg [data-node] text').evaluate_all("els=>els.every(e=>e.getBBox().width<90 && e.getBBox().height<80)")
+                        page.screenshot(path=str(output/f'graph-{theme}-{width}.png'),full_page=True)
                 assert model.calls==3,model.calls
                 assert not errors,errors
                 browser.close()
