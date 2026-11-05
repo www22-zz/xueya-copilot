@@ -1742,3 +1742,17 @@ body.in-space #spacePage:not([hidden]) { width: 100% !important; max-width: none
 @media(max-width:1199px){.cg-reader-layout{grid-template-columns:minmax(0,1fr)}.cg-reader .cg-detail{border-left:0;border-top:1px solid var(--stitch-outline-variant)}.cg-detail-links{max-height:250px}}
 @media(max-width:767px){.cg-books{grid-template-columns:repeat(auto-fill,minmax(190px,240px));justify-content:center}.cg-reader-heading{gap:12px}.cg-reader-count{margin-left:0;width:100%}.cg-search{margin-left:0;width:100%}#materialLearning svg.cg-mindmap{min-height:340px}.cg-map-legend{padding:8px}.cg-reader .cg-detail{padding:18px}.cg-reader-heading h2{font-size:17px!important}}
 @media(prefers-reduced-motion:reduce){.cg-books .cg-book{transition:none}}
+/* The learning sidebar has four peers; conversation history belongs to Ask. */
+#spacePage [data-ai-session-section][hidden]{display:none!important}
+#spacePage .learning-center-nav{display:flex;flex-direction:column;gap:6px;flex-shrink:0}
+#spacePage .learning-center-nav[hidden]{display:none!important}
+.wrong-center-heading h1{font-size:26px;margin-bottom:8px}.wrong-center-heading p{font-size:14px;color:var(--stitch-on-surface-variant)}
+.wrong-area-tabs{display:flex;flex-wrap:wrap;gap:10px;padding:8px 0 18px;border-bottom:1px solid var(--stitch-outline-variant)}
+.wrong-area-tabs a{padding:12px 22px;border:1px solid var(--stitch-outline-variant);border-radius:12px;color:var(--stitch-on-surface);font-weight:600;font-size:14px}
+.wrong-area-tabs a[aria-current=page]{background:var(--stitch-primary-fixed);border-color:var(--stitch-primary);color:var(--stitch-primary)}
+.wrong-quiz-heading{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}.wrong-quiz-heading h2{font-size:18px}
+.wrong-quiz-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:12px;margin-top:16px}
+.wrong-quiz-row{padding:18px;border:1px solid var(--stitch-outline-variant);border-radius:14px;min-width:0;background:var(--stitch-surface-container-low)}
+.wrong-quiz-row p{line-height:1.75;overflow-wrap:anywhere}.wrong-quiz-row small{display:block;font-size:12px;color:var(--stitch-on-surface-variant);margin:10px 0}.wrong-unclassified{margin-top:18px}
+[data-wrong-detail]:not(:empty){margin-top:24px}.wrong-empty{color:var(--stitch-on-surface-variant);padding:18px 0}
+@media(max-width:767px){.wrong-area-tabs a{flex:1;min-width:0;text-align:center;padding:10px;font-size:13px}}

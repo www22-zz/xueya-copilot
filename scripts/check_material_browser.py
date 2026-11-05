@@ -61,6 +61,8 @@ def main():
                     # one, matching the formal bookshelf's introduction lesson.
                     payload['documents'].insert(0,{'id':'controlled-no-questions',
                         'name':'已解析但尚未出题的课件','subject':'数据结构','ready':True,'ranges':1})
+                    # Deliberately shuffled chapter/part names must sort naturally.
+                    payload['documents'].extend({'id':f'order-{i}','name':name,'subject':'数据结构','ready':True,'ranges':1} for i,name in enumerate(['week6_第4章_数组.pptx','week4 第3章_栈和队列.pptx','week3-第2章线性表（2）链表.pptx','week1 第1章_绪论.pptx','week2-第2章线性表（1）-顺序表.pptx']))
                     route.fulfill(response=response,json=payload)
                 page.route('**/api/learning/space/course-graph?*',graph_fixture)
 
@@ -74,6 +76,10 @@ def main():
                 page.locator('[data-cg-book]').click()
                 expect(page.locator('.cg-mindmap')).to_be_visible()
                 expect(page.locator('[data-cg-concept]')).to_have_count(1)
+                order=page.locator('[data-cg-document]').all_text_contents()
+                assert ['绪论','顺序表','链表','栈和队列','数组']==[next(x for x in ['绪论','顺序表','链表','栈和队列','数组'] if x in name) for name in order[:5]],order
+                expect(page.locator('[data-ai-session-section]')).to_be_hidden()
+                assert page.locator('.learning-secondary-tools').count()==0
                 # Parsed, empty sources remain visible without fabricated points.
                 page.locator('[data-cg-node=controlled-no-questions]').click()
                 expect(page.locator('[data-cg-detail]')).to_contain_text('尚无已保存知识点')
@@ -124,7 +130,7 @@ def main():
                 page.locator('[data-material-tab=graph]').click()
                 assert len(material_requests)<=1,material_requests
 
-                assert page.locator('.learning-center-nav .sidebar-text').all_text_contents()==['课程资料学习','算法学习','408考研学习']
+                assert page.locator('.learning-center-nav .sidebar-text').all_text_contents()==['课程资料学习','算法学习','408考研学习','错题本']
                 viewbox=page.locator('.material-graph svg').get_attribute('viewBox')
                 page.locator('[data-graph-zoom="0.8"]').click()
                 assert page.locator('.material-graph svg').get_attribute('viewBox')!=viewbox
@@ -153,6 +159,35 @@ def main():
                 expect(page.locator('[data-quiz-card]').nth(2)).to_contain_text('判定正确')
                 forms.nth(3).locator('input').fill('先进先出');forms.nth(3).locator('button[type=submit]').click()
                 expect(page.locator('[data-quiz-card]').nth(3)).to_contain_text('判定正确')
+                # Wrong material answers use the same original Question/Attempt.
+                forms.nth(0).locator('input').nth(1).check()
+                forms.nth(0).locator('button[type=submit]').click()
+                expect(page.locator('[data-quiz-card]').nth(0)).to_contain_text('判定错误')
+                page.goto(base+'/#space/review/materials')
+                expect(page.locator('[data-wrong-quiz]')).to_have_count(1)
+                expect(page.locator('[data-ai-session-section]')).to_be_hidden()
+                page.locator('[data-wrong-quiz]').click()
+                form=page.locator('[data-wrong-detail] [data-quiz-answer]')
+                expect(form).to_be_visible()
+                form.locator('input').first.check();form.locator('button[type=submit]').click()
+                expect(page.locator('[data-wrong-detail]')).to_contain_text('判定正确')
+                page.locator('[data-wrong-refresh]').click()
+                expect(page.locator('[data-wrong-quiz]')).to_have_count(0)
+                page.reload();expect(page.locator('[data-wrong-quiz]')).to_have_count(0)
+                page.goto(base+'/#space/practice/hot100')
+                expect(page.locator('[data-action=mark-wrong]').first).to_be_visible()
+                algorithm_id=page.locator('.practice-row.is-active').get_attribute('data-id')
+                page.locator('[data-action=mark-wrong]').first.click()
+                page.goto(base+'/#space/review/algorithms')
+                expect(page.locator('.practice-row')).to_have_count(1)
+                assert page.locator('.practice-row').get_attribute('data-id')==algorithm_id
+                page.screenshot(path=str(output/'wrong-algorithms.png'),full_page=True)
+                page.goto(base+'/#space/review/exams')
+                expect(page.locator('.practice-row')).to_have_count(0)
+                expect(page.locator('[data-wrong-quiz]')).to_have_count(0)
+                page.goto(base+'/#space/ask')
+                expect(page.locator('[data-ai-session-section]')).to_be_visible()
+                page.goto(base+'/#space/materials')
                 page.locator('[data-attendance]').click()
                 expect(page.locator('[data-attendance]')).to_have_text('今日已签到')
                 page.reload();expect(page.locator('[data-attendance]')).to_have_text('今日已签到')
@@ -184,13 +219,36 @@ def main():
                 expect(link).to_be_visible(timeout=15000);link.click()
                 page.locator('[data-exam-start]').click()
                 expect(page.locator('[data-exam-answer]').first).to_be_visible()
-                page.locator('[data-exam-answer]').first.check()
+                from backend.xueya.practice_catalog import exam_question
+                exam_question_id=page.locator('[data-exam-answer]').first.get_attribute('name')
+                wrong_option=(exam_question(exam_question_id)['answer']+1)%4
+                page.locator('[data-exam-answer]').nth(wrong_option).check()
                 expect(page.locator('[data-exam-submit]')).to_be_enabled()
                 page.reload()
-                expect(page.locator('[data-exam-answer]').first).to_be_checked()
+                expect(page.locator('[data-exam-answer]').nth(wrong_option)).to_be_checked()
                 page.locator('[data-exam-submit]').click()
                 expect(page.locator('#examLearning')).to_contain_text('得分：')
                 expect(page.locator('#examLearning')).to_contain_text('正确答案：')
+                page.goto(base+'/#space/review/exams')
+                expect(page.locator('[data-wrong-quiz]')).to_have_count(1)
+                expect(page.locator('.practice-row')).to_have_count(0)
+                page.reload();expect(page.locator('[data-wrong-quiz]')).to_have_count(1)
+                page.locator('[data-wrong-quiz]').click()
+                expect(page.locator('[data-wrong-detail] [data-quiz-answer]')).to_be_visible()
+                for theme in ('light','dark'):
+                    page.evaluate("theme=>document.documentElement.dataset.theme=theme",theme)
+                    for width in (1440,390):
+                        page.set_viewport_size({'width':width,'height':1000})
+                        page.wait_for_function("document.getAnimations().filter(a=>a.effect?.getTiming().iterations!==Infinity).every(a=>a.playState!=='running')")
+                        assert page.evaluate('document.documentElement.scrollWidth<=innerWidth+1'),(theme,width)
+                        page.screenshot(path=str(output/f'wrong-exams-{theme}-{width}.png'),full_page=True)
+                page.set_viewport_size({'width':1440,'height':1000})
+                page.goto(base+'/#space/review/algorithms')
+                expect(page.locator('.practice-row')).to_have_count(1)
+                expect(page.locator('[data-wrong-quiz]')).to_have_count(0)
+                page.goto(base+'/#space/review/materials')
+                expect(page.locator('.practice-row')).to_have_count(0)
+                expect(page.locator('[data-wrong-quiz]')).to_have_count(0)
                 page.goto(base+'/#space/algorithms/bubble')
                 expect(page.locator('[data-demo-next]')).to_be_visible()
                 page.locator('[data-demo-next]').click()

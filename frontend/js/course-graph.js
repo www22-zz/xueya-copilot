@@ -23,7 +23,23 @@
     let concepts = new Map(), children = new Map(), subjects = [];
     const alive = () => stamp === epoch && target.isConnected;
     target.innerHTML = '<p role="status">正在读取课程书架…</p>';
-    const documents = () => data.documents.filter(d => d.ready && (!subject || d.subject === subject));
+    const chapterNumber = text => {
+      if (/^\d+$/.test(text)) return Number(text);
+      const digits={'零':0,'一':1,'二':2,'三':3,'四':4,'五':5,'六':6,'七':7,'八':8,'九':9,'两':2};
+      if (text.includes('十')) { const [a,b]=text.split('十'); return (digits[a]||1)*10+(digits[b]||0); }
+      return digits[text] ?? Infinity;
+    };
+    const orderOf = d => {
+      const chapter=d.name.match(/第\s*([0-9零一二三四五六七八九十两]+)\s*章/);
+      const part=d.name.match(/[（(]\s*(\d+)\s*[）)]/);
+      const week=d.name.match(/week\s*(\d+)/i);
+      return [chapter?chapterNumber(chapter[1]):Infinity,part?Number(part[1]):0,week?Number(week[1]):Infinity];
+    };
+    const documents = () => data.documents.filter(d => d.ready && (!subject || d.subject === subject)).sort((a,b)=>{
+      const aa=orderOf(a),bb=orderOf(b);
+      for(let i=0;i<aa.length;i++)if(aa[i]!==bb[i])return aa[i]<bb[i]?-1:1;
+      return a.name.localeCompare(b.name,'zh-CN',{numeric:true});
+    });
     const pointsFor = docs => [...new Map(docs.flatMap(d => children.get(d.id) || []).map(n => [n.id, n])).values()];
     const questionCount = nodes => new Set(nodes.flatMap(n => n.questionIds)).size;
     const openDocument = id => { focusedDocument = id; selected = id; page = 0; search = ''; draw(); };

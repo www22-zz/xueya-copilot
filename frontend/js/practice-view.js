@@ -22,7 +22,9 @@ function createPracticeView({store,client,toast=()=>{},navigate=()=>{}}={}){
   const ui=store.state.ui;
   const button=(label,action,attrs='',style='button-outline')=>`<button type="button" class="button button-small ${style}" data-action="${action}" ${attrs}>${label}</button>`;
   const bank=()=>client.bank()||[];
-  const pool=()=>view==='review'?bank():bank().filter(q=>ui.category==='hot100'?(q.bankSource==='algorithm'||!q.bankSource&&q.category==='hot100'):ui.category==='exam408'?q.bankSource==='exam408':ui.category==='legacy'?q.bankSource==='legacy':q.category===ui.category);
+  const reviewArea=()=>['materials','algorithms','exams'].includes(ui.reviewArea)?ui.reviewArea:'materials';
+  const areaOf=q=>q.bankSource==='algorithm'?'algorithms':q.bankSource==='exam408'?'exams':q.bankSource?'materials':q.category==='hot100'?'algorithms':q.category==='exam408'?'exams':'materials';
+  const pool=()=>view==='review'?bank().filter(q=>areaOf(q)===reviewArea()):bank().filter(q=>ui.category==='hot100'?(q.bankSource==='algorithm'||!q.bankSource&&q.category==='hot100'):ui.category==='exam408'?q.bankSource==='exam408':ui.category==='legacy'?q.bankSource==='legacy':q.category===ui.category);
   const subjects=()=>[...new Set(pool().map(q=>q.subject))];
   const answerText=(q,value)=>q.type==='boolean'?(value?'正确':'错误'):q.type==='multiple'?(value||[]).map(i=>q.options[i]).join('；'):q.type==='single'?q.options[value]:value;
   function generationStatus(){
@@ -30,10 +32,10 @@ function createPracticeView({store,client,toast=()=>{},navigate=()=>{}}={}){
     const labels={waiting_parse:'等待资料解析',generating:'正在生成',model_unavailable:'请先在服务设置中配置模型',insufficient_material:'资料内容不足，无法可靠生成200道不同题',unknown:'上次调用结果不确定，请核对用量后再继续',failed:'生成未完成',cancelled:'已停止',stale:'资料已变更，请重新上传生成',succeeded:'已生成 Hot 100 和基础 100'};
     return rows.length?`<div class="practice-generation" aria-live="polite">${rows.map(row=>`<div><strong>${e(row.name)}</strong><span>${e(labels[row.status]||row.status)} · ${Number(row.completed)||0}/200</span>${row.error?`<small>${e(row.error)}</small>`:''}${['failed','unknown','cancelled','model_unavailable'].includes(row.status)?button('继续生成','resume-generation',`data-id="${e(row.id)}"`):''}${row.status==='generating'?button('停止生成','cancel-generation',`data-id="${e(row.id)}"`):''}${row.status==='generating'?`<progress value="${Number(row.completed)||0}" max="200" aria-label="出题进度"></progress>`:''}</div>`).join('')}</div>`:'';
   }
-  const filters=()=>view==='review'?ui.reviewFilters:store.filters();
+  const filters=()=>view==='review'?((ui.reviewAreaFilters||={})[reviewArea()]||={}):store.filters();
   const progress=id=>store.state.statuses[id]||{};
   const statusOf=id=>progress(id).status||'pending';
-  const positionKey=()=>view==='review'?'review':ui.category;
+  const positionKey=()=>view==='review'?'review:'+reviewArea():ui.category;
   const position=()=>ui.positions[positionKey()]||(ui.positions[positionKey()]={selected:null,scroll:0,completed:false});
   function matches(q,f){
     if(f.subject&&q.subject!==f.subject||f.difficulty&&q.difficulty!==f.difficulty||f.type&&q.type!==f.type||f.tag&&!(q.tags||[]).includes(f.tag))return false;
@@ -50,7 +52,7 @@ function createPracticeView({store,client,toast=()=>{},navigate=()=>{}}={}){
   }
   function current(){return position().completed?null:bank().find(q=>q.id===position().selected)||null;}
   function clearTransient(){revealed=false;attempt=null;choice=null;shortDraft='';fillDraft='';consoleTab='testcase';activeCaseIndex=0;lastRunResult=null;}
-  function ensureSelected(){if(!bank().length)return;const f=filters(),items=pool();if(view!=='review'&&ui.category==='hot100'){f.subject='';f.type='';}for(const key of ['subject','type','difficulty','tag']){if(f[key]&&!items.some(q=>key==='tag'?(q.tags||[]).includes(f[key]):q[key]===f[key]))f[key]='';}const p=position();if(!p.completed&&!items.some(q=>q.id===p.selected)){p.selected=listed()[0]?.id||null;}ui.selectedQuestionId=p.selected;}
+  function ensureSelected(){if(!bank().length)return;const f=filters(),items=pool();if(view!=='review'&&ui.category==='hot100'){f.subject='';f.type='';}for(const key of ['subject','type','difficulty','tag']){if(f[key]&&!items.some(q=>key==='tag'?(q.tags||[]).includes(f[key]):q[key]===f[key]))f[key]='';}const p=position();if(!p.completed&&!(view==='review'?listed():items).some(q=>q.id===p.selected)){p.selected=listed()[0]?.id||null;}ui.selectedQuestionId=p.selected;}
   function listScroller(){
     return root?.querySelector('.hot100-workbench .practice-list')||root?.querySelector('.practice-list-pane');
   }
@@ -72,70 +74,8 @@ function createPracticeView({store,client,toast=()=>{},navigate=()=>{}}={}){
   function allTags(){const f=filters();return [...new Set(pool().filter(q=>(!f.subject||q.subject===f.subject)&&(!f.type||q.type===f.type)).flatMap(q=>q.tags||[]))].sort();}
   function selectFilter(name,label,options){const f=filters();return `<select class="form-field" data-filter="${name}" aria-label="${label}"><option value="">全部${label}</option>${options.map(v=>{const [value,text]=Array.isArray(v)?v:[v,v];return `<option value="${e(value)}" ${f[name]===value?'selected':''}>${e(text)}</option>`;}).join('')}</select>`;}
   function reviewHeaderBanner(){
-    const wrongCount = listed().length;
-    const masteredCount = store.state.statuses ? Object.values(store.state.statuses).filter(s => s.status === 'mastered').length : 0;
-    return `
-      <div class="mb-4 flex flex-col gap-3">
-        <!-- 艾宾浩斯智能预警胶囊条 (Stitch Screen 5) -->
-        <div class="relative overflow-hidden rounded-xl bg-surface-container-lowest/90 backdrop-blur-xl p-4 border border-outline-variant/30 shadow-sm">
-          <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 relative z-10">
-            <div class="flex items-center gap-3">
-              <div class="w-9 h-9 rounded-xl bg-error-container/60 text-error flex items-center justify-center shrink-0 shadow-sm">
-                <span class="material-symbols-outlined text-[20px]">notification_important</span>
-              </div>
-              <div class="flex flex-col">
-                <div class="flex flex-wrap items-center gap-2">
-                  <span class="font-bold text-xs text-on-surface">艾宾浩斯复习节奏提醒</span>
-                  <span class="px-2 py-0.5 rounded-full bg-error text-white text-[11px] font-semibold">临界遗忘点预警</span>
-                  <span class="px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface-variant text-[11px] font-code-sm">周期：D+1 / D+4 / D+7</span>
-                </div>
-                <p class="text-xs text-on-surface-variant mt-0.5">
-                  根据遗忘曲线衰减算法计算，今日优先重练错题可将长期概念留存率提升至 <strong class="text-primary font-semibold">92.4%</strong>。
-                </p>
-              </div>
-            </div>
-            <div class="flex items-center gap-2">
-              <button class="px-3 py-1.5 rounded-lg bg-primary text-on-primary text-xs font-semibold hover:bg-primary-container transition-all flex items-center gap-1 shadow-sm" type="button" data-action="random">
-                <span class="material-symbols-outlined text-[15px]">bolt</span>
-                <span>重练错题</span>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- 关键进度微指标卡片 (Stitch Screen 5) -->
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div class="p-3 rounded-xl bg-surface-container-lowest border border-outline-variant/30 shadow-sm">
-            <span class="text-xs text-on-surface-variant">待清空错题</span>
-            <div class="flex items-baseline gap-1 mt-0.5">
-              <span class="text-lg font-bold text-on-surface">${wrongCount}</span>
-              <span class="text-[11px] text-error font-medium">道待攻克</span>
-            </div>
-          </div>
-          <div class="p-3 rounded-xl bg-surface-container-lowest border border-outline-variant/30 shadow-sm">
-            <span class="text-xs text-on-surface-variant">完全掌握归档</span>
-            <div class="flex items-baseline gap-1 mt-0.5">
-              <span class="text-lg font-bold text-primary">${masteredCount}</span>
-              <span class="text-[11px] text-primary font-medium">道已掌握</span>
-            </div>
-          </div>
-          <div class="p-3 rounded-xl bg-surface-container-lowest border border-outline-variant/30 shadow-sm">
-            <span class="text-xs text-on-surface-variant">AI 解析采纳率</span>
-            <div class="flex items-baseline gap-1 mt-0.5">
-              <span class="text-lg font-bold text-tertiary">98.2%</span>
-              <span class="text-[11px] text-tertiary font-medium">优秀</span>
-            </div>
-          </div>
-          <div class="p-3 rounded-xl bg-surface-container-lowest border border-outline-variant/30 shadow-sm">
-            <span class="text-xs text-on-surface-variant">巩固平均耗时</span>
-            <div class="flex items-baseline gap-1 mt-0.5">
-              <span class="text-lg font-bold text-on-surface">4.2</span>
-              <span class="text-[11px] text-on-surface-variant">min/题</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    `;
+    const labels={materials:'资料错题',algorithms:'算法错题',exams:'考研错题'};
+    return `<header class="wrong-center-heading"><h1>错题本</h1><p>按学习模块归集已有错题，保留原题、作答和订正记录。</p></header><nav class="wrong-area-tabs" aria-label="错题分类">${Object.entries(labels).map(([key,label])=>`<a href="#space/review/${key}" aria-current="${reviewArea()===key?'page':'false'}">${label}</a>`).join('')}</nav>`;
   }
 
   function hot100Toolbar(){
@@ -150,9 +90,9 @@ function createPracticeView({store,client,toast=()=>{},navigate=()=>{}}={}){
     return `
       <div class="hot100-header flex flex-col lg:flex-row lg:items-center justify-between gap-3 pt-1">
         <div class="flex flex-wrap items-center gap-2.5">
-          <a class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface font-label-md text-xs transition-colors" href="#space/practice">
+          <a class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface font-label-md text-xs transition-colors" href="#space/algorithms">
             <span class="material-symbols-outlined text-[15px]">arrow_back</span>
-            <span>返回练习首页</span>
+            <span>返回算法学习</span>
           </a>
           <span class="text-outline-variant select-none">/</span>
           <h1 class="font-headline-md text-xl lg:text-2xl text-on-surface font-bold tracking-tight">力扣算法 Hot100 精选题库</h1>
@@ -167,7 +107,7 @@ function createPracticeView({store,client,toast=()=>{},navigate=()=>{}}={}){
             <span>已掌握</span>
             <span class="hot100-status-badge">${masteredCount}</span>
           </button>
-          <a class="hot100-status-btn" href="#space/review">
+          <a class="hot100-status-btn" href="#space/review/${ui.category==='hot100'?'algorithms':ui.category==='exam408'?'exams':'materials'}">
             <span>错题本</span>
             <span class="hot100-status-badge is-wrong">${wrongCount}</span>
             <span class="material-symbols-outlined text-[13px]">arrow_forward</span>
@@ -208,8 +148,8 @@ function createPracticeView({store,client,toast=()=>{},navigate=()=>{}}={}){
   function toolbar(){
     const f=filters();const pending=store.pendingOps;const syncText=pending?'待同步'+(pending?` · ${pending}`:''):(client.online?'已同步':'本机服务未连接');
     if(view!=='review'&&ui.category==='hot100')return `${generationStatus()}${hot100Toolbar()}`;
-    return `${generationStatus()}${view==='review'?reviewHeaderBanner():''}<div class="practice-toolbar">${view==='review'?`<h2 class="practice-review-title">错题复习与笔记</h2><div class="practice-statuses">${button('最近出错优先','wrong-sort','data-sort="recent"',ui.wrongSort==='recent'?'button-blue':'button-outline')}${button('错误次数最多','wrong-sort','data-sort="count"',ui.wrongSort==='count'?'button-blue':'button-outline')}</div>`:
-      `<div class="practice-source-bar"><a class="text-link" href="#space/practice">← 返回练习首页</a><h1>${ui.category==='hot100'?'力扣算法 Hot100':ui.category==='exam408'?'408 考研题库':'历史练习'}</h1><span class="practice-source-label">${ui.category==='hot100'?'100 道算法题 · 17 个专题':ui.category==='exam408'?'240 单选 · 60 综合应用':'旧题与记录保留'}</span></div><div class="practice-statuses">${['pending','mastered'].map(s=>button(STATUS_LABEL[s],'status',`data-status="${s}"`,f.status===s?'button-blue':'button-outline')).join('')}<a class="text-link" href="#space/review">错题本 →</a></div>`}
+    return `${view==='review'?reviewHeaderBanner():generationStatus()}<div class="practice-toolbar">${view==='review'?`<h2 class="practice-review-title">${({materials:'课程与历史固定题',algorithms:'算法固定题',exams:'考研固定题'})[reviewArea()]}</h2><div class="practice-statuses">${button('最近出错优先','wrong-sort','data-sort="recent"',ui.wrongSort==='recent'?'button-blue':'button-outline')}${button('错误次数最多','wrong-sort','data-sort="count"',ui.wrongSort==='count'?'button-blue':'button-outline')}</div>`:
+      `<div class="practice-source-bar"><a class="text-link" href="${ui.category==='hot100'?'#space/algorithms':ui.category==='exam408'?'#space/exams':'#space/materials'}">← 返回${ui.category==='hot100'?'算法学习':ui.category==='exam408'?'考研学习':'课程资料学习'}</a><h1>${ui.category==='hot100'?'力扣算法 Hot100':ui.category==='exam408'?'408 考研题库':'历史练习'}</h1><span class="practice-source-label">${ui.category==='hot100'?'100 道算法题 · 17 个专题':ui.category==='exam408'?'240 单选 · 60 综合应用':'旧题与记录保留'}</span></div><div class="practice-statuses">${['pending','mastered'].map(s=>button(STATUS_LABEL[s],'status',`data-status="${s}"`,f.status===s?'button-blue':'button-outline')).join('')}<a class="text-link" href="#space/review/${ui.category==='hot100'?'algorithms':ui.category==='exam408'?'exams':'materials'}">错题本 →</a></div>`}
       ${unitNavigation()}<div class="practice-filters"><input type="search" class="form-field" data-filter="keyword" aria-label="搜索题目" placeholder="搜索题号、标题、题干、知识点" value="${e(f.keyword||'')}">
       ${view!=='review'&&ui.category==='hot100'?'':selectFilter('subject','科目',subjects())}${view==='review'?'':selectFilter('difficulty','难度',DIFFICULTY[ui.category])}
       ${view!=='review'&&ui.category==='hot100'?'':selectFilter('type','题型',Object.entries(TYPE_LABEL).filter(([type])=>pool().some(q=>q.type===type)))}${selectFilter('tag','知识点',allTags())}${button('清除筛选','clear-filters')}</div>
@@ -222,7 +162,7 @@ function createPracticeView({store,client,toast=()=>{},navigate=()=>{}}={}){
     return `<nav class="practice-units" aria-label="知识单元"><button type="button" data-action="unit" data-unit="" aria-pressed="${!selected}">全部知识点</button>${units.map(unit=>`<button type="button" data-action="unit" data-unit="${e(unit.name)}" aria-pressed="${selected===unit.name}">${e(unit.name)}<small>${Number(unit[ui.category])||10}</small></button>`).join('')}</nav>`;
   }
   function statusChip(id){const status=statusOf(id);return `<span class="chip chip-${status}">${STATUS_LABEL[status]}</span>${progress(id).confidence==='fuzzy'&&status==='pending'?'<span class="chip chip-fuzzy">待巩固</span>':''}`;}
-  function empty(){const complete=position().completed;return `<div class="practice-empty"><p>${view==='review'?'当前错题已清空。':!bank().length?'当前题库暂时没有可练习题目，请返回练习首页选择其他入口。':complete?'当前筛选下的题目已刷完。':'当前筛选下没有题目。'}</p>${!bank().length?'<a class="text-link" href="#space/practice">返回练习首页 →</a>':button('调整筛选','clear-filters')}${view==='review'||!bank().length?'':button('查看已掌握','show-mastered')}</div>`;}
+  function empty(){if(view==='review'&&!bank().length)return `<div class="practice-empty" role="status"><p>${loading?'正在读取固定题与错题记录…':'固定题库尚未读取，暂不能确认此分类的错题数量。'}</p>${loading?'':button('重试同步','retry-sync')}</div>`;const complete=position().completed;return `<div class="practice-empty"><p>${view==='review'?'当前错题已清空。':!bank().length?'当前题库暂时没有可练习题目，请返回练习首页选择其他入口。':complete?'当前筛选下的题目已刷完。':'当前筛选下没有题目。'}</p>${!bank().length?'<a class="text-link" href="#space/practice">返回练习首页 →</a>':button('调整筛选','clear-filters')}${view==='review'||!bank().length?'':button('查看已掌握','show-mastered')}</div>`;}
   function hot100ListRows(){
     const list=listed();
     const f=filters();
@@ -631,6 +571,7 @@ function createPracticeView({store,client,toast=()=>{},navigate=()=>{}}={}){
     const selection=focused?.selectionStart,selectionEnd=focused?.selectionEnd;
     const sameQuestion=root.dataset.renderedQuestion===(current()?.id||'');
     const openDetails=sameQuestion?[...root.querySelectorAll('details')].map(el=>el.open):[],detailScroll=sameQuestion?root.querySelector('.practice-detail-pane')?.scrollTop||0:0;
+    const savedReview=root.querySelector('[data-review-area]');
     root.dataset.renderedQuestion=current()?.id||'';
     root.innerHTML=`<div class="practice-module ${view!=='review'&&ui.category==='hot100'?'hot100-workbench':''} ${view==='review'?'practice-review':''} ${ui.detailFullscreen&&current()?'is-fullscreen':''}">${toolbar()}${loading?'<p role="status">正在加载题库…</p>':loadError?`<p role="alert">${e(loadError)}</p>`:''}<div class="practice-split"><section class="practice-list-pane">${listRows()}</section><section class="practice-detail-pane">${detail()}</section></div></div>`;
     listScroller().scrollTop=position().scroll||0;
@@ -640,7 +581,13 @@ function createPracticeView({store,client,toast=()=>{},navigate=()=>{}}={}){
       const demo=/二分|搜索插入|搜索二维/.test(title)?'binary':/层序|岛屿|广度/.test(title)?'bfs':/有效的括号|最小栈|栈/.test(title)?'stack':null;
       if(demo){const link=document.createElement('a');link.className='button button-outline';link.href='#space/algorithms/'+demo;link.textContent='查看相关算法机制演示（预设示例，非本题代码执行）';root.querySelector('.practice-detail-pane').prepend(link);}
     }
-    if(view==='review'&&globalThis.XueyaStudyQuiz){const section=document.createElement('section');section.className='study-quiz-card panel';root.append(section);globalThis.XueyaStudyQuiz.review(section);}
+    if(view==='review'&&globalThis.XueyaStudyQuiz){
+      const keep=savedReview?.dataset.reviewArea===reviewArea()&&savedReview.dataset.bankVersion===client.version;
+      const section=keep?savedReview:document.createElement('section');section.className='study-quiz-card panel';
+      section.dataset.reviewArea=reviewArea();section.dataset.bankVersion=client.version;
+      root.querySelector('.wrong-area-tabs').after(section);
+      if(!keep)globalThis.XueyaStudyQuiz.review(section,{area:reviewArea(),bank:bank()});
+    }
     root.querySelectorAll('details').forEach((el,i)=>{el.open=Boolean(openDetails[i]);});
     if(focusSelector){const input=root.querySelector(focusSelector);input?.focus({preventScroll:true});if(selection!=null&&typeof input?.setSelectionRange==='function')try{input.setSelectionRange(selection,selectionEnd);}catch{}}
   }
@@ -795,6 +742,7 @@ function createPracticeView({store,client,toast=()=>{},navigate=()=>{}}={}){
     const switched=root!==node||view!==nextView;
     if(switched){flushWritten();flushNote();clearTransient();}root=node;view=nextView;
     entry=nextView==='review'?'practice':params.page==='materials'?'materials':params.category?'practice':'hub';
+    if(nextView==='review'){ui.reviewArea=['materials','algorithms','exams'].includes(params.area)?params.area:'materials';}
     const category=params.category;requestedQuestionId=params.questionId||null;
     if(category&&category!==ui.category){ui.category=category;clearTransient();}
     if(switched)ui.detailFullscreen=false;

@@ -3,7 +3,7 @@
   'use strict';
   const e=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   let generation=0,timer,subject='',selected='',selectedDocument='',nodeId='',autoPrepared=0;
-  let cached=null,cacheCourse='',signature='',tab='graph',planUI=null,preferGenerated=false;
+  let cached=null,cacheCourse='',signature='',tab='graph',planUI=null,preferGenerated=false,mountedLocation='',mountedCourse='';
   const attempted=new Set();
   async function api(path,body){
     const reply=await window.XueyaPlatform.spaceFetch('/api/learning/space/'+path,body?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}:{});
@@ -12,7 +12,7 @@
   async function mount(container,courseId='course-default',local=false){
     if(!container)return;const entering=!container.dataset.materialMounted,stamp=++generation;clearTimeout(timer);
     try{
-      if(!container.dataset.materialMounted){tab=location.hash.split('/')[2]&&!location.hash.split('/')[2].startsWith('cg-')?'graph':'corpus';signature='';container.dataset.materialMounted='1';const parts=location.hash.split('/');if(parts[1]==='materials'&&parts[2]){selected=parts[2];nodeId=parts[3]||'';subject='';}}
+      if(!container.dataset.materialMounted){if(mountedLocation!==location.hash||mountedCourse!==courseId)tab=location.hash.split('/')[2]&&!location.hash.split('/')[2].startsWith('cg-')?'graph':'corpus';mountedLocation=location.hash;mountedCourse=courseId;signature='';container.dataset.materialMounted='1';const parts=location.hash.split('/');if(parts[1]==='materials'&&parts[2]){selected=parts[2];nodeId=parts[3]||'';subject='';}}
       const selectionKey=(window.XueyaDataKey||((key)=>key))('xueya-material-selection:'+courseId);
       if(!selected){try{const saved=JSON.parse(localStorage.getItem(selectionKey)||'{}');selected=saved.selected||'';selectedDocument=saved.selectedDocument||'';subject=saved.subject||'';nodeId=saved.nodeId||'';}catch{}}
       if(!local||!cached||cacheCourse!==courseId){
@@ -41,7 +41,7 @@
       const status={parsing:'正在解析资料',queued:'等待出题',running:'正在生成',succeeded:'已生成',failed:'生成失败',unknown:'调用状态待核对',cancelled:'已取消','not-generated':'待准备'};
       const nodes=material?.concepts||[];
       container.innerHTML=`<section class="panel material-learning"><h1>课程资料学习</h1><p>选择资料，查看知识关系，并练习对应知识点。AI题目未经独立审校。</p>
-        <nav class="heading-actions material-workflow" aria-label="资料学习流程"><button class="button button-outline" data-material-tab="corpus" aria-pressed="${tab==='corpus'}">课程书架与知识图谱</button><button class="button button-outline" data-material-tab="video" aria-pressed="${tab==='video'}">视频目录</button><button class="button button-outline" data-material-tab="plan" aria-pressed="${tab==='plan'}">个性化学习</button><button class="button button-outline" data-material-tab="graph" aria-pressed="${tab==='graph'}">知识点与练习</button><a class="button button-outline" href="#space/knowledge" data-material-manage>上传与管理</a><button class="button button-blue" type="button" data-attendance ${attendance.signed?'disabled':''}>${attendance.signed?'今日已签到':'每日签到'}</button></nav>
+        <nav class="heading-actions material-workflow" aria-label="资料学习流程"><button class="button button-outline" data-material-tab="corpus" aria-pressed="${tab==='corpus'}">课程书架与知识图谱</button><button class="button button-outline" data-material-tab="video" aria-pressed="${tab==='video'}">视频目录</button><button class="button button-outline" data-material-tab="plan" aria-pressed="${tab==='plan'}">个性化学习</button><button class="button button-outline" data-material-tab="graph" aria-pressed="${tab==='graph'}">知识点与练习</button><a class="button button-outline" href="#space/knowledge" data-material-manage>上传与管理</a><a class="button button-outline" href="#space/practice/legacy">课程固定练习</a><button class="button button-blue" type="button" data-attendance ${attendance.signed?'disabled':''}>${attendance.signed?'今日已签到':'每日签到'}</button></nav>
         <details><summary>签到记录（${attendance.timezone}）</summary>${attendance.history.map(row=>`<p>${e(row.date)}</p>`).join('')||'<p>还没有签到</p>'}<p>签到仅记录到访，不代表完成任务或掌握知识。</p></details>
         <div data-material-subview ${tab==='graph'?'hidden':''}></div><div data-material-graph-view ${tab!=='graph'?'hidden':''}>
         <label class="form-field">学科<select data-material-subject><option value="">全部学科</option>${subjects.map(s=>`<option ${s===subject?'selected':''}>${e(s)}</option>`).join('')}</select></label>
@@ -111,5 +111,5 @@
 
     }catch(error){if(stamp===generation&&container.isConnected)container.innerHTML=`<p role="alert">资料学习暂不可用：${e(error.message)}</p>`;}
   }
-  window.XueyaMaterialLearning={mount,unmount(){generation++;clearTimeout(timer);planUI?.unmount();window.XueyaCourseGraph?.unmount();cached=null;signature='';}};
+  window.XueyaMaterialLearning={mount,unmount(){if(!location.hash.startsWith('#space/materials'))mountedLocation='';generation++;clearTimeout(timer);planUI?.unmount();window.XueyaCourseGraph?.unmount();cached=null;signature='';}};
 })();

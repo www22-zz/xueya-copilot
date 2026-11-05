@@ -239,33 +239,9 @@
               <a href="#space/materials" data-view="materials" class="sidebar-nav-item flex items-center gap-3 px-3 py-2 rounded-xl text-on-surface-variant"><span class="material-symbols-outlined">account_tree</span><span class="sidebar-text">课程资料学习</span></a>
               <a href="#space/algorithms" data-view="algorithms" class="sidebar-nav-item flex items-center gap-3 px-3 py-2 rounded-xl text-on-surface-variant"><span class="material-symbols-outlined">code</span><span class="sidebar-text">算法学习</span></a>
               <a href="#space/exams" data-view="exams" class="sidebar-nav-item flex items-center gap-3 px-3 py-2 rounded-xl text-on-surface-variant"><span class="material-symbols-outlined">quiz</span><span class="sidebar-text">408考研学习</span></a>
+              <a href="#space/review" data-view="review" class="sidebar-nav-item flex items-center gap-3 px-3 py-2 rounded-xl text-on-surface-variant"><span class="material-symbols-outlined">edit_note</span><span class="sidebar-text">错题本</span></a>
             </nav>
-            <details class="learning-secondary-tools"><summary>学习工具与记录</summary><nav class="space-nav flex flex-col gap-1" aria-label="学习辅助工具">
-              <a href="#space/overview" data-view="overview" class="sidebar-nav-item flex items-center gap-3 px-3 py-2 rounded-xl text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all text-sm font-medium">
-                <span class="material-symbols-outlined text-[19px]">dashboard</span>
-                <span class="sidebar-text">工作台概览</span>
-              </a>
-              <a href="#space/courses" data-view="courses" class="sidebar-nav-item flex items-center gap-3 px-3 py-2 rounded-xl text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all text-sm font-medium">
-                <span class="material-symbols-outlined text-[19px]">play_lesson</span>
-                <span class="sidebar-text">课程学习</span>
-              </a>
-              <a href="#space/practice" data-view="practice" class="sidebar-nav-item flex items-center gap-3 px-3 py-2 rounded-xl text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all text-sm font-medium">
-                <span class="material-symbols-outlined text-[19px]">quiz</span>
-                <span class="sidebar-text">专项练习</span>
-              </a>
-              <a href="#space/review" data-view="review" class="sidebar-nav-item flex items-center gap-3 px-3 py-2 rounded-xl text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all text-sm font-medium">
-                <span class="material-symbols-outlined text-[19px]">edit_note</span>
-                <span class="sidebar-text">错题复习</span>
-              </a>
-              <a href="#space/analysis" data-view="analysis" class="sidebar-nav-item flex items-center gap-3 px-3 py-2 rounded-xl text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all text-sm font-medium">
-                <span class="material-symbols-outlined text-[19px]">insights</span>
-                <span class="sidebar-text">学情分析</span>
-              </a>
-              <a href="#space/ask" data-view="ask" class="sidebar-nav-item flex items-center gap-3 px-3 py-2 rounded-xl text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all text-sm font-medium">
-                <span class="material-symbols-outlined text-[19px]">forum</span>
-                <span class="sidebar-text">AI 助手问答</span>
-              </a>
-            </nav></details>
+
           </div>
 
           <!-- Sidebar Section 2: Tools & Knowledge -->
@@ -289,7 +265,7 @@
           </div>
 
           <!-- Sidebar Section 3: Recent AI Sessions -->
-          <div class="flex flex-col gap-1 border-t border-outline-variant/20 pt-3">
+          <div data-ai-session-section class="flex flex-col gap-1 border-t border-outline-variant/20 pt-3">
             <div class="flex items-center justify-between px-3 py-1">
               <span class="sidebar-section-title font-label-sm text-[11px] text-outline font-semibold tracking-wider uppercase">近期 AI 答疑</span>
               <div class="flex items-center gap-1">

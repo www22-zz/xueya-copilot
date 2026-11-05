@@ -141,22 +141,40 @@
       }).catch(()=>{}).finally(()=>restoring.delete(ref.jobId));
     }
   }
-  async function review(node){
+  function reviewRows(value,bank=[]){
+    const fixed=new Map(bank.map(q=>[q.id,q])),seen=new Set(),rows=[];
+    const areaOf=q=>{
+      if(q.sourceType==='ai-material')return 'materials';
+      const original=fixed.get(q.originalQuestionId||q.id);
+      if(original)return original.bankSource==='exam408'?'exams':original.bankSource==='algorithm'?'algorithms':original.bankSource?'materials':original.category==='exam408'?'exams':original.category==='hot100'?'algorithms':'materials';
+      return 'unclassified';
+    };
+    for(const attempt of [...value.attempts].sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||''))){
+      if(seen.has(attempt.questionId))continue;seen.add(attempt.questionId);
+      const assessment=attempt.effectiveEvaluation,result=assessment?.result;
+      if(assessment?.status!=='graded'||!result)continue;
+      const objective=['objective','objective-recheck','human'].includes(assessment.source)&&result.correct===false;
+      const reference=['ai-reference','ai-review','human'].includes(assessment.source)&&Number.isFinite(result.score)&&Number.isFinite(result.maxScore)&&result.maxScore>0&&result.score<result.maxScore;
+      if(!objective&&!reference)continue;
+      const question=value.questions.find(q=>q.id===attempt.questionId);if(!question)continue;
+      rows.push({question,attempt,area:areaOf(question),objective});
+    }
+    return rows;
+  }
+  async function review(node,{area='materials',bank=[]}={}){
+    node.innerHTML='<p role="status">正在读取此类作答与订正记录…</p>';
     try{
       const value=await api('quiz/list');if(!node.isConnected)return;
-      const seen=new Set(),rows=[];
-      for(const attempt of value.attempts){
-        if(seen.has(attempt.questionId))continue;seen.add(attempt.questionId);
-        const assessment=attempt.effectiveEvaluation,result=assessment?.result;
-        if(assessment?.status!=='graded'||!result)continue;
-        const objective=['objective','objective-recheck','human'].includes(assessment.source)&&result.correct===false;
-        const reference=['ai-reference','ai-review','human'].includes(assessment.source)&&Number.isFinite(result.score)&&result.score<result.maxScore;
-        if(!objective&&!reference)continue;
-        const question=value.questions.find(q=>q.id===attempt.questionId);if(!question)continue;
-        rows.push(`<p><a href="#space/practice/ai/${e(question.id)}/${e(attempt.id)}">${e(question.prompt.slice(0,100))}</a> · ${objective?'客观判定 / 人工修正待复习':'参考评阅建议巩固，不等同客观判错'}</p>`);
-      }
-      node.innerHTML='<h3>小测复习</h3><p>读取同一作答的最新有效评阅；争议、失败和无评分标准点评不会自动算错。</p>'+ (rows.join('')||'<p>目前没有按已完成评阅列出的待复习小测。</p>');
-    }catch(error){if(node.isConnected)node.textContent='小测复习暂未读取：'+error.message;}
+      const all=reviewRows(value,bank),rows=all.filter(r=>r.area===area),other=all.filter(r=>r.area==='unclassified');
+      const items=list=>list.map(({question:q,attempt:a,objective})=>`<article class="wrong-quiz-row"><strong>${e(q.subject)}</strong><p>${e(q.prompt.slice(0,180))}</p><small>${objective?'客观判错 / 人工修正':'参考评阅建议巩固，不等同客观判错'} · ${e(a.createdAt)}</small><button type="button" class="button button-outline" data-wrong-quiz="${e(q.id)}" data-attempt="${e(a.id)}">查看原作答并重练</button></article>`).join('');
+      node.innerHTML=`<div class="wrong-quiz-heading"><h2>${({materials:'资料题与课程小测',algorithms:'算法参考评阅',exams:'考试作答与参考评阅'})[area]}</h2><button type="button" class="button button-outline" data-wrong-refresh>刷新错题</button></div><p>按每题最近一次作答的最新有效评阅归集；失败、待复核和争议不算错。重新答对后刷新即可从本列表移出。</p><div class="wrong-quiz-list">${items(rows)||'<p class="wrong-empty">此分类暂时没有待复习的已评阅题目。</p>'}</div>
+        ${area==='materials'&&other.length?`<details class="wrong-unclassified"><summary>未关联学习模块的历史小测（${other.length}题，保留原记录）</summary>${items(other)}</details>`:''}<div data-wrong-detail></div>`;
+      node.querySelector('[data-wrong-refresh]').onclick=()=>review(node,{area,bank});
+      node.querySelectorAll('[data-wrong-quiz]').forEach(button=>button.onclick=()=>{
+        const box=node.querySelector('[data-wrong-detail]');box.innerHTML=`<button type="button" class="button button-outline" data-wrong-close>收起作答</button>${shell(button.dataset.wrongQuiz,button.dataset.attempt)}`;
+        box.querySelector('[data-wrong-close]').onclick=()=>{box.innerHTML='';button.focus();};mount(box);box.scrollIntoView({block:'start',behavior:'smooth'});
+      });
+    }catch(error){if(node.isConnected)node.textContent='错题记录暂未读取：'+error.message;}
   }
-  root.XueyaStudyQuiz={tryChat,markup,mount,directory,recover,review};
+  root.XueyaStudyQuiz={tryChat,markup,mount,directory,recover,review,reviewRows};
 })(window);
