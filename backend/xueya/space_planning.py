@@ -1,10 +1,12 @@
 """Conversation planning intake and durable generation over the shared services."""
 import copy
 import datetime
+import json
+import httpx
 import re
 from zoneinfo import ZoneInfo
 
-from .common import digest, identifier, require, utc_now
+from .common import AppError, digest, identifier, require, utc_now
 from .rag_api import borrowed_api_permit
 from .study_space_service import StudySpaceService
 
@@ -56,19 +58,54 @@ class ConversationPlanning:
         self.service=StudySpaceService(self.p)
         self.p.jobs.register(JOB,self.execute)
 
-    def submit(self, account, value, *, session_id=None, origins=None, assumptions=None):
+    @staticmethod
+    def validate(value):
         require(isinstance(value.get('goal'),str) and 0<len(value['goal'])<=1000,'PLAN_GOAL_REQUIRED')
         require(type(value.get('daysCount')) is int and 1<=value['daysCount']<=366,'INVALID_PLAN_DATES')
         require(type(value.get('dailyMinutes')) is int and 15<=value['dailyMinutes']<=480,'INVALID_DAILY_MINUTES')
-        conditions={key:value[key] for key in ('title','goal','daysCount','dailyMinutes','restDays','subjects','startDate','endDate','difficulty') if key in value}
         require(value.get('difficulty','基础') in ('基础','进阶','挑战'),'INVALID_DIFFICULTY')
+
+    async def connectivity(self):
+        probe=getattr(self.app.state.provider,'probe_connectivity',None)
+        if probe:
+            require(bool(self.app.state.config.api_key),'AI_UNAVAILABLE')
+            return await probe()
+        return {'connected':None,'inference':False,'controlledProvider':True}
+
+    def submit(self, account, value, *, session_id=None, origins=None, assumptions=None):
+        self.validate(value)
+        conditions={key:value[key] for key in ('title','goal','daysCount','dailyMinutes','restDays','subjects','startDate','endDate','difficulty') if key in value}
         scope=self.service._scope(account)
         return self.p.jobs.submit(scope.user_id,{'type':JOB,'courseId':scope.course_id,'resource':'api','maxAttempts':1,
             'idempotencyKey':identifier(value.get('operationId')),
             'input':{'account':account,'sessionId':session_id,'conditions':conditions,'origins':origins or {},'assumptions':assumptions or []}})
 
+    async def submit_connected(self, account, value):
+        self.validate(value)
+        scope=self.service._scope(account)
+        key=identifier(value.get('operationId'))
+        prior=self.p.db.one('SELECT id FROM jobs WHERE user_id=? AND course_id=? AND type=? AND idempotency_key=?',
+                            (scope.user_id,scope.course_id,JOB,key))
+        if prior:
+            # Let the shared queue verify the full input signature. Returning an
+            # existing receipt must not depend on external connectivity.
+            return self.submit(account,value)
+        await self.connectivity()
+        return self.submit(account,value)
+
     def listing(self, account):
-        return [job for job in self.p.jobs.list(self.service._scope(account).user_id) if job['type']==JOB][:20]
+        scope=self.service._scope(account)
+        jobs=[job for job in self.p.jobs.list(scope.user_id) if job['type']==JOB][:20]
+        diagnostics={}
+        for row in self.p.db.all("SELECT m.value FROM invocations i JOIN meta m ON m.key='invocation-context:'||i.id WHERE i.user_id=? ORDER BY i.at DESC LIMIT 200",(scope.user_id,)):
+            context=json.loads(row['value'])
+            if context.get('jobId') and context.get('errorType') in ('ConnectError','ConnectTimeout','ProxyError'):
+                diagnostics.setdefault(context['jobId'],'AI_CONNECTION_FAILED')
+        for job in jobs:
+            if job['status'] in ('unknown','failed'):
+                code=diagnostics.get(job['id']) or (job.get('error') if job.get('error')=='AI_CONNECTION_FAILED' else None)
+                if code:job['diagnosticCode']=code
+        return jobs
 
     def intake(self, account, value):
         scope=self.service._scope(account)
@@ -126,6 +163,15 @@ class ConversationPlanning:
         return {'handled':True,'status':'queued','conditions':known,'jobId':job['id'],'answer':summary+'。正在生成草稿；采用前不会进入执行待办。'}
 
     async def execute(self, scope, args, *, progress, checkpoint, commit):
+        # Recheck inside the worker too: connectivity can change after enqueue.
+        await self.connectivity()
+        try:
+            return await self._execute(scope,args,progress=progress,checkpoint=checkpoint,commit=commit)
+        except (httpx.ConnectError,httpx.ConnectTimeout,httpx.ProxyError) as error:
+            # The ledger stays unknown; do not expose exception messages or retry.
+            raise AppError('AI_CONNECTION_FAILED') from error
+
+    async def _execute(self, scope, args, *, progress, checkpoint, commit):
         account=args['account']
         require(self.service._scope(account)==scope,'AUTH_SCOPE_MISMATCH')
         with borrowed_api_permit(self.p):

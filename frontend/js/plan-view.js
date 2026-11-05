@@ -14,7 +14,20 @@
     let showCreateModal = false;
     let adjusting = false;
     let jobs=[],pollTimer;
-    let availableSubjects=[];
+    let availableSubjects=[],formDraft=null;
+    const pendingKey=()=> (root.XueyaDataKey||((key)=>key))('xueya-plan-pending');
+    let pendingRequests={};
+    try{
+      const saved=JSON.parse(sessionStorage.getItem(pendingKey())||'{}');
+      if(saved&&typeof saved==='object'&&!Array.isArray(saved))pendingRequests=saved;
+      const last=Object.values(pendingRequests).at(-1);
+      if(last&&typeof last.goal==='string'&&typeof last.operationId==='string'){
+        const {operationId,...conditions}=last;formDraft=conditions;
+      }
+    }catch{}
+    const savePending=()=>{try{sessionStorage.setItem(pendingKey(),JSON.stringify(pendingRequests));}catch{}};
+    const failureText=job=>job.diagnosticCode==='AI_CONNECTION_FAILED'||job.error==='AI_CONNECTION_FAILED'?'连接模型服务失败，未拿到可用结果。请先检查连接；历史调用费用待核对，不会自动重试。':job.error==='AI_INVALID_RESPONSE'?'模型返回格式未通过校验，未完成计划；不会自动重试。':'生成未完成，结果与费用待核对，不会自动重试。';
+    const errorText=code=>({AI_CONNECTION_FAILED:'当前后台无法连接模型站点，本次未提交新的计划作业。请检查网络、代理及服务启动环境。',AI_UNAVAILABLE:'尚未配置可用模型，请检查服务设置。'}[code]||code||'操作未完成');
 
     async function loadPlans() {
       const stamp=generation;
@@ -37,6 +50,11 @@
     }
 
     async function createDraft(formData) {
+      if(loading)return;
+      formDraft=formData;
+      const signature=JSON.stringify(formData);
+      const request=pendingRequests[signature]||{...formData,operationId:crypto.randomUUID()};
+      pendingRequests[signature]=request;savePending();
       try {
         loading = true;
         render();
@@ -44,18 +62,19 @@
         const res = await window.XueyaPlatform.spaceFetch('/api/learning/space/plan/generate', {
           method: 'POST',
           headers,
-          body: JSON.stringify({...formData,operationId:crypto.randomUUID()})
+          body: JSON.stringify(request)
         });
         const data = await res.json();
         if (data.ok) {
           toast('已提交后台生成作业，完成后核对草稿和知识框架，再明确采用。');
-          showCreateModal = false;
+          showCreateModal = false;formDraft=null;
+          delete pendingRequests[signature];savePending();
           await loadPlans();
         } else {
-          toast('生成草稿失败：' + (data.error || '参数有误'));
+          toast('生成草稿失败：' + errorText(data.error));
         }
       } catch {
-        toast('网络异常，请重试');
+        toast('提交回执未确认，请先核对作业列表；再次提交相同条件会复用原请求，不会另开一份作业。');
       } finally {
         loading = false;
         render();
@@ -177,12 +196,13 @@
               <p>${activePlan ? e(activePlan.goal) + ' · 周期：' + e(activePlan.startDate) + ' 至 ' + e(activePlan.endDate) : '制定并执行个性化计算机考研与核心课程复习计划'}</p>
             </div>
             ${activePlan?'<button type="button" class="button button-outline button-small" data-adjust-plan>调整每日时间与日期</button>':''}
+            <button type="button" class="button button-outline button-small" data-plan-connectivity>检查模型连接（不生成）</button>
             <button type="button" class="button button-blue button-small" data-open-create-plan>
               ＋ 制定新计划
             </button>
           </div>
 
-          ${jobs.some(job=>['queued','running','cancelling','unknown','failed'].includes(job.status))?`<div class="panel" role="status">${jobs.filter(job=>['queued','running','cancelling','unknown','failed'].includes(job.status)).map(job=>`<p>计划生成：${e(job.status)} ${e(job.progress?.label||'')} ${['unknown','failed'].includes(job.status)?'结果待核对，不会自动付费重试。':''}</p>`).join('')}</div>`:''}
+          ${jobs.some(job=>['queued','running','cancelling','unknown','failed'].includes(job.status))?`<div class="panel" role="status">${jobs.filter(job=>['queued','running','cancelling','unknown','failed'].includes(job.status)).map(job=>`<p>${['unknown','failed'].includes(job.status)?e(failureText(job)):'计划生成：'+e(({queued:'等待处理',running:'生成中',cancelling:'正在取消'})[job.status])+' '+e(job.progress?.label||'')}</p>`).join('')}</div>`:''}
           ${activePlan ? `
             <div class="plan-stats-panel panel">
               <div class="plan-stat-bar">
@@ -267,20 +287,20 @@
             <div class="modal-card panel">
               <h3>${adjusting?'调整当前计划（先预览）':'制定新学习计划'}</h3>
               <form id="createPlanForm">
-                ${!adjusting?`<label class="form-field">选择学科 / 专题（可多选）<select name="subjects" multiple required>${availableSubjects.map(s=>`<option value="${e(s)}">${e(s)}</option>`).join('')}</select></label><label class="form-field">难度<select name="difficulty"><option>基础</option><option>进阶</option><option>挑战</option></select></label><label class="form-field">开始日期<input type="date" name="startDate" required value="${new Date().toLocaleDateString('en-CA')}"></label><label class="form-field">结束日期<input type="date" name="endDate" required></label>`:''}
+                ${!adjusting?`<label class="form-field">选择学科 / 专题（可多选）<select name="subjects" multiple required>${availableSubjects.map(s=>`<option value="${e(s)}" ${(formDraft?.subjects||[]).includes(s)?'selected':''}>${e(s)}</option>`).join('')}</select></label><label class="form-field">难度<select name="difficulty">${['基础','进阶','挑战'].map(d=>`<option ${formDraft?.difficulty===d?'selected':''}>${d}</option>`).join('')}</select></label><label class="form-field">开始日期<input type="date" name="startDate" required value="${e(formDraft?.startDate||new Date().toLocaleDateString('en-CA'))}"></label><label class="form-field">结束日期<input type="date" name="endDate" required value="${e(formDraft?.endDate||'')}"></label>`:''}
                 <label class="form-field">计划名称
-                  <input name="title" required value="${e(adjusting?activePlan.title:'我的个性化学习计划')}" ${adjusting?'readonly':''}>
+                  <input name="title" required value="${e(adjusting?activePlan.title:formDraft?.title||'我的个性化学习计划')}" ${adjusting?'readonly':''}>
                 </label>
                 <label class="form-field">学习目标
-                  <textarea name="goal" rows="2" required ${adjusting?'readonly':''}>${e(adjusting?activePlan.goal:'完成所选科目与专题的学习和练习')}</textarea>
+                  <textarea name="goal" rows="2" required ${adjusting?'readonly':''}>${e(adjusting?activePlan.goal:formDraft?.goal||'完成所选科目与专题的学习和练习')}</textarea>
                 </label>
                 <div class="form-row" style="display:flex;gap:12px;">
                   <label class="form-field" style="flex:1;">每日可用时间 (分钟)
-                    <input type="number" name="dailyMinutes" min="15" max="480" value="${adjusting?activePlan.dailyMinutes:60}" required>
+                    <input type="number" name="dailyMinutes" min="15" max="480" value="${adjusting?activePlan.dailyMinutes:formDraft?.dailyMinutes||60}" required>
                   </label>
-                  ${adjusting?`<label class="form-field" style="flex:1;">新的截止日期<input type="date" name="endDate" value="${e(activePlan.endDate)}" required></label>`:`<label class="form-field" style="flex:1;">持续天数<input type="number" name="daysCount" min="1" max="366" value="14" required></label>`}
+                  ${adjusting?`<label class="form-field" style="flex:1;">新的截止日期<input type="date" name="endDate" value="${e(activePlan.endDate)}" required></label>`:`<label class="form-field" style="flex:1;">持续天数<input type="number" name="daysCount" min="1" max="366" value="${e(formDraft?.daysCount||14)}" required></label>`}
                 </div>
-                <fieldset><legend>休息日</legend>${['一','二','三','四','五','六','日'].map((name,i)=>`<label><input type="checkbox" name="restDays" value="${i+1}" ${(adjusting?activePlan.restDays:[7]).includes(i+1)?'checked':''}>周${name} </label>`).join('')}</fieldset>
+                <fieldset><legend>休息日</legend>${['一','二','三','四','五','六','日'].map((name,i)=>`<label><input type="checkbox" name="restDays" value="${i+1}" ${(adjusting?activePlan.restDays:formDraft?.restDays||[7]).includes(i+1)?'checked':''}>周${name} </label>`).join('')}</fieldset>
                 <div class="modal-actions" style="display:flex;gap:12px;margin-top:16px;">
                   <button type="button" class="button button-outline" data-close-create-modal>取消</button>
                   <button type="submit" class="button button-blue">生成排程草稿</button>
@@ -297,6 +317,11 @@
     function bindEvents() {
       container.querySelector('[data-adjust-plan]')?.addEventListener('click',()=>{adjusting=true;showCreateModal=true;render();});
       container.querySelectorAll('[data-task-link]').forEach(button=>button.onclick=()=>addTaskLink(button.dataset.taskLink));
+      container.querySelector('[data-plan-connectivity]')?.addEventListener('click',async event=>{
+        const button=event.currentTarget;button.disabled=true;
+        try{const response=await window.XueyaPlatform.spaceFetch('/api/learning/space/plan/connectivity');const value=await response.json();toast(value.ok?(value.connected===true?'模型站点连接正常；本次没有生成计划或调用推理接口。':'当前为受控测试模型，未验证外部连接。'):errorText(value.error));}
+        catch{toast('连接检查未完成，请检查本地服务。');}finally{if(button.isConnected)button.disabled=false;}
+      });
       container.querySelector('[data-open-create-plan]')?.addEventListener('click', () => {
         adjusting=false;showCreateModal = true;
         render();

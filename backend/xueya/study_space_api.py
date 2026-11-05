@@ -193,7 +193,13 @@ def install_study_space(app):
     async def generate_plan_job(request: Request):
         authorize(request)
         data=await json_body(request,16384)
-        return success(job=app.state.conversation_planning.submit(account_id(request),data))
+        planner=app.state.conversation_planning
+        return success(job=await planner.submit_connected(account_id(request),data))
+
+    @router.get('/plan/connectivity')
+    async def plan_connectivity(request: Request):
+        authorize(request)
+        return success(**await app.state.conversation_planning.connectivity())
 
     @router.get("/plan/{plan_id}")
     async def get_plan(request: Request, plan_id: str):

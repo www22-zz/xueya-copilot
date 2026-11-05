@@ -526,3 +526,9 @@ generation摘要含 `{id,courseId,documentId,name,status,revision,jobId,complete
 网页资料问答的最终正文保留模型生成的完整 `answer`，不再用 `claims` 条目拼接替代。发布前将正文及其证据笔记在同一次来源核对中检查；正文不通过时不会用已通过的零散摘录冒充完整回答。SSE 在核对完成前仅报告工作进度，通过后沿用原 content/done 格式发布正文。`verification=reviewed-narrative` 表示整篇正文经过模型来源核对，不表示绝对正确；完全逐字的正文仍为 verbatim-only。
 
 自主兜底仍是一次独立、无课程证据包的请求，使用独立HTTP连接，避免承接异常的池内连接；不会重发原请求或循环调用。连接异常与超时分别记录错误类别，仅记录类别及异常类型，不记录密钥或请求正文。没有新付费在线验收。
+
+### 2026-11-05 计划生成连接检查与回执恢复补充
+
+- GET `/api/learning/space/plan/connectivity`：沿用本地Host/Origin、账号与X-Xueya-Token鉴权，向服务端配置的模型站点根路径发无密钥、无资料、非推理GET；`connected=true,inference=false,httpStatus`仅说明传输连接，不证明鉴权或生成质量。失败返回`AI_CONNECTION_FAILED`，不写模型调用账本。
+- POST `/api/learning/space/plan/generate`：相同账号与operationId已存在时先核验输入一致并返回原job；真正新作业先连接预检，失败零入队、零推理。worker也预检，连接变化时不重试未知调用。客户端丢回执应保留并复用原operationId，不用新编号重发同一次操作。
+- GET `/api/learning/space/plan/list`：失败/未知作业可扩展只读`diagnosticCode=AI_CONNECTION_FAILED`，来自同账号账本异常类名或作业错误码；旧status/error不改写，不公开异常正文或密钥，未知计费语义保留。

@@ -201,8 +201,29 @@ def main():
                 page.locator('[name=goal]').fill('理解队列并完成对应练习')
                 page.locator('[name=startDate]').fill('2026-11-10')
                 page.locator('[name=endDate]').fill('2026-11-20')
+                plan_operations=[]
+                def lost_receipt(route):
+                    plan_operations.append(route.request.post_data_json['operationId'])
+                    if len(plan_operations)==1:
+                        response=route.fetch()
+                        assert response.ok
+                        route.abort()
+                    else:
+                        route.continue_()
+                page.route('**/api/learning/space/plan/generate',lost_receipt)
                 page.locator('#createPlanForm button[type=submit]').click()
+                # A lost response preserves both the original fields and request ID.
+                expect(page.locator('[name=goal]')).to_have_value('理解队列并完成对应练习')
+                page.reload()
+                page.locator('[data-material-tab=plan]').click()
+                page.locator('[data-open-create-plan]').click()
+                expect(page.locator('[name=goal]')).to_have_value('理解队列并完成对应练习')
+                expect(page.locator('[name=startDate]')).to_have_value('2026-11-10')
+                expect(page.locator('[name=endDate]')).to_have_value('2026-11-20')
+                page.locator('#createPlanForm button[type=submit]').click()
+
                 expect(page.locator('[data-adopt-draft]')).to_be_visible(timeout=20000)
+                assert len(plan_operations)==2 and len(set(plan_operations))==1
                 page.locator('details').filter(has=page.locator('a[href^="#space/practice/ai/"]')).locator('summary').first.click()
                 expect(page.locator('a[href^="#space/practice/ai/"]').first).to_be_visible()
                 page.locator('a[href^="#space/frameworks/"]').first.click()
