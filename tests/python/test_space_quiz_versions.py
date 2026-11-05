@@ -227,3 +227,15 @@ def test_objective_types_use_same_private_attempt_chain(setup,kind,extra,answer,
         assert 'effectiveEvaluation' not in reviewed
     assert client.post('/api/learning/space/quiz/attempts',json=body).json()['attempt']['id']==attempt['id']
     assert not model.calls
+
+
+@pytest.mark.parametrize('word,kind',[('单选','single'),('多选','multiple'),('判断','boolean'),('填空','fill')])
+def test_chat_respects_requested_objective_type(setup,word,kind):
+    app,client,model,_=setup
+    reply=client.post('/api/learning/space/chat/quiz',json={'question':'给我出1道'+word+'题，关于队列',
+         'sessionId':'typed-chat','operationId':'typed-chat-'+kind})
+    assert reply.status_code==200,reply.text
+    job=reply.json()['jobId']
+    row=app.state.platform.db.one('SELECT input FROM jobs WHERE id=?',(job,))
+    assert json.loads(row['input'])['type']==kind
+    assert not model.calls

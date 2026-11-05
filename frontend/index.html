@@ -69,6 +69,9 @@
   <script src="js/courses-workspace.js" defer></script>
   <script src="js/plan-view.js" defer></script>
   <script src="js/framework-view.js" defer></script>
+  <script src="js/material-learning.js" defer></script>
+  <script src="js/algorithm-demo.js" defer></script>
+  <script src="js/exam-workspace.js" defer></script>
   <script src="js/overview-view.js" defer></script>
   <script src="js/app.js" defer></script>
 </head>
@@ -157,7 +160,7 @@
                 <span class="material-symbols-outlined text-[15px]">auto_awesome</span>
                 <span>AI 伴学助手</span>
               </a>
-              <a href="#space/courses" data-area="center" data-view="courses" class="px-3.5 py-1.5 rounded-full font-label-md text-xs text-on-surface-variant hover:text-on-surface transition-all flex items-center gap-1.5">
+              <a href="#space/materials" data-area="center" data-view="courses" class="px-3.5 py-1.5 rounded-full font-label-md text-xs text-on-surface-variant hover:text-on-surface transition-all flex items-center gap-1.5">
                 <span class="material-symbols-outlined text-[15px]">school</span>
                 <span>学习中心</span>
               </a>
@@ -212,8 +215,8 @@
                 学
               </div>
               <div class="hidden 2xl:flex flex-col text-left">
-                <span class="font-label-md text-xs font-semibold text-on-surface leading-tight">Linus C.</span>
-                <span class="font-label-sm text-[10px] text-primary font-medium leading-tight">CS 专业 · 大三</span>
+                <span class="font-label-md text-xs font-semibold text-on-surface leading-tight">我的账号</span>
+                <span class="font-label-sm text-[10px] text-primary font-medium leading-tight">本地学习空间</span>
               </div>
             </div>
           </div>
@@ -232,6 +235,11 @@
               </button>
             </div>
             <nav class="space-nav learning-center-nav flex flex-col gap-1" aria-label="学习中心导航">
+              <a href="#space/materials" data-view="materials" class="sidebar-nav-item flex items-center gap-3 px-3 py-2 rounded-xl text-on-surface-variant"><span class="material-symbols-outlined">account_tree</span><span class="sidebar-text">课程资料学习</span></a>
+              <a href="#space/algorithms" data-view="algorithms" class="sidebar-nav-item flex items-center gap-3 px-3 py-2 rounded-xl text-on-surface-variant"><span class="material-symbols-outlined">code</span><span class="sidebar-text">算法学习</span></a>
+              <a href="#space/exams" data-view="exams" class="sidebar-nav-item flex items-center gap-3 px-3 py-2 rounded-xl text-on-surface-variant"><span class="material-symbols-outlined">quiz</span><span class="sidebar-text">408考研学习</span></a>
+            </nav>
+            <details class="learning-secondary-tools"><summary>学习工具与记录</summary><nav class="space-nav flex flex-col gap-1" aria-label="学习辅助工具">
               <a href="#space/overview" data-view="overview" class="sidebar-nav-item flex items-center gap-3 px-3 py-2 rounded-xl text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all text-sm font-medium">
                 <span class="material-symbols-outlined text-[19px]">dashboard</span>
                 <span class="sidebar-text">工作台概览</span>
@@ -256,7 +264,7 @@
                 <span class="material-symbols-outlined text-[19px]">forum</span>
                 <span class="sidebar-text">AI 助手问答</span>
               </a>
-            </nav>
+            </nav></details>
           </div>
 
           <!-- Sidebar Section 2: Tools & Knowledge -->

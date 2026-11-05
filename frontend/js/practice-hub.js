@@ -163,8 +163,8 @@
         <span class="material-symbols-outlined text-[20px]">folder</span>
       </div>
       <span class="text-[11px] font-bold text-outline tracking-wider uppercase">COURSE PRACTICE</span>
-      <h1 class="text-lg font-bold text-on-surface">资料上传用于参考问答</h1>
-      <p class="text-xs text-on-surface-variant">资料不自动出题。请在 AI 伴学助手主动请求小测，或打开我的小测与作答。</p>
+      <h1 class="text-lg font-bold text-on-surface">资料学习与知识点练习</h1>
+      <p class="text-xs text-on-surface-variant">资料可信解析并完成必要确认后自动生成题目，从知识点图谱进入对应练习。</p><a class="button button-blue" href="#space/materials">进入课程资料学习</a>
     </div>
     <div class="flex gap-2 pt-2">
       <a class="px-4 py-2 rounded-xl bg-primary text-on-primary text-xs font-semibold" href="#space/practice/hot100">先练算法 Hot100</a>

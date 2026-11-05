@@ -601,5 +601,129 @@
     "platform": true,
     "sourceType": "platform",
     "verification": "legacy-unverified"
+  },
+  {
+    "id": "mooc-ds",
+    "title": "数据结构（浙江大学 / 中国大学MOOC）",
+    "subject": "数据结构",
+    "category": "theory",
+    "categoryName": "官方公开课程",
+    "level": "基础",
+    "badge": "原站课程",
+    "instructor": "授课教师见原站",
+    "duration": "课时与时长见原站",
+    "description": "原站课程元信息已核对。请在官方平台学习，可能需要登录。本站未核验逐视频播放与分集映射。",
+    "tags": [
+      "数据结构"
+    ],
+    "coverGradient": "linear-gradient(135deg,#303b74,#5146d9)",
+    "coverIcon": "school",
+    "platform": true,
+    "verification": "verified-metadata",
+    "sourceUrl": "https://www.icourse163.org/course/ZJU-93001",
+    "episodes": [
+      {
+        "id": "mooc-ds-overview",
+        "title": "进入官方完整课程",
+        "sourceUrl": "https://www.icourse163.org/course/ZJU-93001",
+        "duration": "见原站",
+        "keyPoints": [
+          "数据结构"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "mooc-co",
+    "title": "计算机组成原理（上）（哈尔滨工业大学 / 中国大学MOOC）",
+    "subject": "计算机组成原理",
+    "category": "theory",
+    "categoryName": "官方公开课程",
+    "level": "基础",
+    "badge": "原站课程",
+    "instructor": "授课教师见原站",
+    "duration": "课时与时长见原站",
+    "description": "原站课程元信息已核对。请在官方平台学习，可能需要登录。本站未核验逐视频播放与分集映射。",
+    "tags": [
+      "计算机组成原理"
+    ],
+    "coverGradient": "linear-gradient(135deg,#303b74,#5146d9)",
+    "coverIcon": "school",
+    "platform": true,
+    "verification": "verified-metadata",
+    "sourceUrl": "https://www.icourse163.org/course/HIT-309001",
+    "episodes": [
+      {
+        "id": "mooc-co-overview",
+        "title": "进入官方完整课程",
+        "sourceUrl": "https://www.icourse163.org/course/HIT-309001",
+        "duration": "见原站",
+        "keyPoints": [
+          "计算机组成原理"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "mooc-os",
+    "title": "计算机操作系统（南京大学 / 中国大学MOOC）",
+    "subject": "操作系统",
+    "category": "theory",
+    "categoryName": "官方公开课程",
+    "level": "基础",
+    "badge": "原站课程",
+    "instructor": "授课教师见原站",
+    "duration": "课时与时长见原站",
+    "description": "原站课程元信息已核对。请在官方平台学习，可能需要登录。本站未核验逐视频播放与分集映射。",
+    "tags": [
+      "操作系统"
+    ],
+    "coverGradient": "linear-gradient(135deg,#303b74,#5146d9)",
+    "coverIcon": "school",
+    "platform": true,
+    "verification": "verified-metadata",
+    "sourceUrl": "https://www.icourse163.org/course/NJU-1001571004",
+    "episodes": [
+      {
+        "id": "mooc-os-overview",
+        "title": "进入官方完整课程",
+        "sourceUrl": "https://www.icourse163.org/course/NJU-1001571004",
+        "duration": "见原站",
+        "keyPoints": [
+          "操作系统"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "mooc-cn",
+    "title": "计算机网络（哈尔滨工业大学 / 中国大学MOOC）",
+    "subject": "计算机网络",
+    "category": "theory",
+    "categoryName": "官方公开课程",
+    "level": "基础",
+    "badge": "原站课程",
+    "instructor": "授课教师见原站",
+    "duration": "课时与时长见原站",
+    "description": "原站课程元信息已核对。请在官方平台学习，可能需要登录。本站未核验逐视频播放与分集映射。",
+    "tags": [
+      "计算机网络"
+    ],
+    "coverGradient": "linear-gradient(135deg,#303b74,#5146d9)",
+    "coverIcon": "school",
+    "platform": true,
+    "verification": "verified-metadata",
+    "sourceUrl": "https://www.icourse163.org/course/HIT-154005",
+    "episodes": [
+      {
+        "id": "mooc-cn-overview",
+        "title": "进入官方完整课程",
+        "sourceUrl": "https://www.icourse163.org/course/HIT-154005",
+        "duration": "见原站",
+        "keyPoints": [
+          "计算机网络"
+        ]
+      }
+    ]
   }
 ]

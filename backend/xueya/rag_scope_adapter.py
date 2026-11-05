@@ -147,6 +147,15 @@ def public_api_projector(platform, course_id="course-default"):
                 cleaned=project(nested)
                 return item if cleaned==nested else json.dumps(cleaned, ensure_ascii=False)
             for quote in quotes:
+                # Single digits/short labels are common parser fragments, not
+                # identifying prose. Substring-replacing them corrupts random
+                # bootstrap tokens, UUIDs, status names and private account IDs.
+                # Structured protected sources still lose quote/body fields
+                # through their trusted source/document identity below.
+                if len(quote.strip()) < 8:
+                    if field in ('quote','rawText','rawContent') and item.strip()==quote.strip():
+                        item='[平台资料正文受保护]'
+                    continue
                 if quote in item:
                     item = item.replace(quote, '[平台资料正文受保护]')
             return item

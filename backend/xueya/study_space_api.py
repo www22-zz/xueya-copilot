@@ -23,6 +23,10 @@ def install_study_space(app):
             host.state.conversation_planning=ConversationPlanning(host)
             host.state.space_quiz=SpaceQuiz(host)
             host.state.framework_jobs=FrameworkJobs(host)
+            from .material_learning import MaterialLearning
+            host.state.material_learning=MaterialLearning(host)
+            from .exam_sessions import ExamSessions
+            host.state.exam_sessions=ExamSessions(host)
             yield
     app.router.lifespan_context=lifespan
 
@@ -49,6 +53,54 @@ def install_study_space(app):
         return srv
 
     # --- Today's Tasks & Continue Learning ---
+    @router.get('/exams')
+    async def exam_catalog(request: Request):
+        authorize(request)
+        return success(**app.state.exam_sessions.catalog(account_id(request)))
+
+    @router.post('/exams')
+    async def create_exam(request: Request):
+        authorize(request)
+        return success(**app.state.exam_sessions.create(account_id(request),await json_body(request,32768)))
+
+    @router.get('/exams/{exam_id}')
+    async def read_exam(request: Request,exam_id: str):
+        authorize(request)
+        return success(session=app.state.exam_sessions.operate(account_id(request),exam_id,'read'))
+
+    @router.post('/exams/{exam_id}/{action}')
+    async def exam_action(request: Request,exam_id: str,action: str):
+        authorize(request)
+        return success(session=app.state.exam_sessions.operate(account_id(request),exam_id,action,await json_body(request,65536)))
+
+    @router.get('/attendance')
+    async def attendance(request: Request):
+        authorize(request)
+        return success(**app.state.material_learning.attendance(account_id(request)))
+
+    @router.post('/attendance')
+    async def sign_attendance(request: Request):
+        authorize(request)
+        return success(**app.state.material_learning.attendance(account_id(request),sign=True))
+
+    @router.get('/materials')
+    async def materials(request: Request):
+        authorize(request)
+        p=app.state.platform
+        return success(**app.state.material_learning.listing(account_id(request),p.scope_user_id,
+                       request.query_params.get('courseId','course-default')))
+
+    @router.post('/materials/prepare')
+    async def prepare_material(request: Request):
+        authorize(request)
+        from .common import Scope
+        value=await json_body(request,32768)
+        p=app.state.platform
+        source_scope=Scope(user_id=p.user_id if value.get('public') is True else p.scope_user_id,
+                           course_id=value.get('sourceCourseId','course-default'))
+        return success(job=app.state.material_learning.submit(account_id(request),p.scope_user_id,
+                       value.get('courseId','course-default'),source_scope,value.get('documentId')))
+
     @router.get('/courses')
     async def courses(request: Request):
         authorize(request)

@@ -1629,6 +1629,11 @@ html[data-theme="dark"] {
 }
 
 /* The fixed navigation replaces the former centered, max-width workspace shell. */
+.material-learning .heading-actions,.material-learning .materials-list { display:flex; flex-wrap:wrap; gap:8px; min-width:0; }
+.material-learning .heading-actions label { display:flex; flex-wrap:wrap; gap:8px; min-width:0; max-width:100%; }
+.material-learning :is(input,select) { max-width:100%; min-width:0; }
+.material-learning .button { max-width:100%; white-space:normal; overflow-wrap:anywhere; }
+.material-learning .material-graph svg { display:block; width:100%; height:auto; aspect-ratio:640/420; max-height:440px; }
 body.in-space #spacePage:not([hidden]) { width: 100% !important; max-width: none; margin: 0 !important; color: var(--stitch-on-surface); }
 #spacePage.stitch-ambient-bg {
   background: radial-gradient(ellipse at 50% 0, rgb(var(--stitch-color-primary-fixed) / .3), transparent 65%), var(--stitch-background);

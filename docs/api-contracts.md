@@ -1,5 +1,31 @@
 # 模块接口约定
 
+## 2026-11-04 资料学习与模拟考试
+
+以下接口统一使用 `/api/learning/space` 前缀、既有登录Cookie和 `X-Xueya-Token`。学习实体仍位于当前账号稳定的 `space:<learningOwner>/learning-space`，不能由客户端自报owner。来源资料仍回原Scope核验。
+
+| 接口 | 行为 |
+| --- | --- |
+| `GET /materials?courseId=…` | 只读列出本人全部活动课程资料及按该请求课程可访问的原公共范围；返回真实解析状态、ready、生成jobId/status/error、知识点、题目ID和截取覆盖统计，不返回原文。 |
+| `POST /materials/prepare` | `{documentId,sourceCourseId,courseId,public}`；public仅在可信公共owner内解析，不接受任意源owner。可信解析后按当前账号、源课程、文件哈希、内容修订去重，同一批次不自动重发。 |
+| `GET/POST /attendance` | 返回/记录Asia/Shanghai当天签到及历史，同日一次，不读客户端日期，不修改课程、计划或掌握度。 |
+| `GET /exams` | 本人试卷、组卷作业、408科目及原卷/解析原站索引。 |
+| `POST /exams` | `{mode:fixed或ai,subject,count:1..40,minutes:1..180,operationId}`；fixed返回session，ai返回持久job。模拟卷不是历年真题。 |
+| `GET /exams/{id}` | 本人试卷和serverNow；超时会确认交卷。未交卷不返回答案和解析。 |
+| `POST /exams/{id}/start` | `{expectedRevision}`；服务器记录startedAt/deadline。 |
+| `POST /exams/{id}/answers` | `{expectedRevision,answers:{questionId:选项下标}}`；只接受本卷题目和合法答案，过期不接受新答案。 |
+| `POST /exams/{id}/submit` | `{expectedRevision}`；评分与题目快照一致，重复交卷返回已存结果，不重复生成Attempt。 |
+
+题目新增 `multiple/boolean/fill`。多选答案为无重复下标数组，完全匹配计分；判断为严格bool；填空为逐空字符串数组，仅匹配保存的标准形式，否则 `pending-review` 且无score/correct。未作答fill仅投影blankCount，不返回标准答案。人工修正及复核继续保留评阅版本。聊天按明确题型提交相同服务。
+
+资料生成 `material-learning` 单次最多读取18,000字符，遵守本机输出预算，最多六知识点/24题；4096预算对应最多两点/8题。对部分截取明确标记，不声称全书覆盖。确认解析质量后自动触发私人资料生成；新页面每次加载会话最多自动准备20份已有资料，超出可明确点击准备。发布前重查权限/修订，拒绝大段原文输出；API失败沿用主队列保守unknown语义，不自动重放。
+
+资料题目保存 `materialId/conceptId`。计划资源可引用这些题目及同知识点阶段节点，保留真实ID。计划新增startDate/endDate/difficulty；视频关联只使用实际课程/章节ID，课程总览标注为总览而非精确分集。模型缺少说明字段时可由程序依据实际任务生成明确标注的排程说明，任务合法性验证不放宽。
+
+AI组卷候选经过科目筛选及数量限制。返回的ID必须存在于提供候选内且无重复；不足目标题数拒绝。超额合法候选由程序按科目轮选到精确配额，明确标为“AI推荐＋程序配额选编”，保存recommendedCount/selectedCount/method，不假称模型恰好遵从题量。
+
+原卷PDF目前提供原站链接，站内客观模拟卷单题等权，主观题仍走原分科参考评阅。新增四科MOOC为已核对元信息的官方课程总览链接，不宣称站内嵌入播放或逐分集播放已验收。
+
 ## 2026-10-31 六份预置教材跨课程问答（已批准）
 
 用户明确批准仅[六份完整SHA256清单](contracts/public-preset-scope-map.md)。现有 `rag/search`、`knowledge/search`、问答内部来源及MCP `search_materials/read_source` 复用同一ScopeAdapter：本人当前课程+同课程原有公共兼容范围+其他预置课程中实际fileHash命中该清单的材料。仅枚举可信预置owner，不遍历其他账号私人库；文件名、isPlatform/sample、sourceFileHash声明均不能扩大跨课程范围。匿名旧单机调用维持原兼容范围。

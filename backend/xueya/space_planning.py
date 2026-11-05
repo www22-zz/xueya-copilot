@@ -60,7 +60,8 @@ class ConversationPlanning:
         require(isinstance(value.get('goal'),str) and 0<len(value['goal'])<=1000,'PLAN_GOAL_REQUIRED')
         require(type(value.get('daysCount')) is int and 1<=value['daysCount']<=366,'INVALID_PLAN_DATES')
         require(type(value.get('dailyMinutes')) is int and 15<=value['dailyMinutes']<=480,'INVALID_DAILY_MINUTES')
-        conditions={key:value[key] for key in ('title','goal','daysCount','dailyMinutes','restDays','subjects') if key in value}
+        conditions={key:value[key] for key in ('title','goal','daysCount','dailyMinutes','restDays','subjects','startDate','endDate','difficulty') if key in value}
+        require(value.get('difficulty','基础') in ('基础','进阶','挑战'),'INVALID_DIFFICULTY')
         scope=self.service._scope(account)
         return self.p.jobs.submit(scope.user_id,{'type':JOB,'courseId':scope.course_id,'resource':'api','maxAttempts':1,
             'idempotencyKey':identifier(value.get('operationId')),
@@ -135,7 +136,10 @@ class ConversationPlanning:
             checkpoint({'planId':plan['id'],'stage':'framework'})
             progress({'percent':60,'label':'草稿已保存，正在生成独立知识框架'})
             subject=next((s for s in ('数据结构','计算机组成原理','操作系统','计算机网络') if s in plan['goal']),'计算机基础')
-            framework=await self.service.generate_model_framework(account,self.app.state.provider,subject,plan['goal'][:200])
+            materials=getattr(self.app.state,'material_learning',None)
+            framework=materials.plan_framework(account,plan) if materials else None
+            if framework is None:
+                framework=await self.service.generate_model_framework(account,self.app.state.provider,subject,plan['goal'][:200])
         def save():
             row=self.p.repo.read(scope,'plan',plan['id']);saved=row['value']
             saved.update(frameworkId=framework['id'],sessionId=args['sessionId'],conditionsOrigin=args['origins'],assumptions=args['assumptions'],generationStatus='completed')

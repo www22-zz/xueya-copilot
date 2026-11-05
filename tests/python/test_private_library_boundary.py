@@ -61,6 +61,23 @@ def upload(app, client, headers, path='/api/platform/knowledge/upload', key='upl
     return client.get('/api/platform/jobs/status?id='+job['id'], headers=headers).json()['job']
 
 
+def test_short_numeric_protected_fragment_does_not_corrupt_service_identity(library):
+    app,client,_=library;p=app.state.platform;scope=p.scope()
+    doc=next(d for d in p.repo.all(scope,'document') if d.get('isPlatform'))
+    short={'id':'protected-short-fragment','documentId':doc['id'],'quote':'2','fileHash':doc['fileHash']}
+    p.repo.put(scope,'source',short['id'],short,0)
+    identity='115a436b-186a-48d2-937f-81186a2e371a'
+    app.state.instance_id=identity
+    assert client.get('/api/health').json()['instanceId']==identity
+    boot=client.get('/api/platform/bootstrap').json()
+    assert boot['token']==app.state.token
+    projected=public_api_value(p,{'instanceId':identity,'token':'a2'*32,'username':'study2',
+                                  'text':'PLATFORM_INTERNAL_6293 栈只能在一端插入删除。'})
+    assert projected['instanceId']==identity and projected['token']=='a2'*32 and projected['username']=='study2'
+    assert 'PLATFORM_INTERNAL_6293' not in projected['text']
+    assert 'quote' not in public_api_value(p,short)
+
+
 @pytest.mark.parametrize('path', ['/api/platform/knowledge/upload', '/api/platform/rag/upload', '/api/platform/documents/upload'])
 def test_upload_read_search_jobs_and_old_routes_are_account_scoped(library, path):
     app, client, _ = library

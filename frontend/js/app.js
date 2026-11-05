@@ -35,6 +35,9 @@
   titles.ask='AI 助手';titles.overview='工作台概览';titles.knowledge='个人参考资料';renders.knowledge=()=>'';
   renders.overview=()=>window.XueyaOverview?window.XueyaOverview.render({state,store}):'';
   renders.practice=()=>'<div id="practiceModule"></div>';
+  titles.materials='课程资料学习';renders.materials=()=>'<div id="materialLearning"></div>';
+  titles.algorithms='算法学习';renders.algorithms=()=>'<div id="algorithmLearning"></div>';
+  titles.exams='408考研学习';renders.exams=()=>'<div id="examLearning"></div>';
   const chatService=window.XueyaChat.createChatService();
   const experience=window.XueyaExperience?.create({state});
   let activeChat;
@@ -88,11 +91,11 @@
   }
   function render(){
     analysisUI?.unmount();frameworkUI?.unmount?.();
-    const inCenter=['courses','practice','review','analysis'].includes(state.view);document.body.classList.toggle('learning-center',inCenter);document.querySelector('.learning-center-nav').hidden=!inCenter;document.querySelectorAll('[data-area]').forEach(a=>a.setAttribute('aria-current',(a.dataset.area==='center')===inCenter?'page':'false'));
+    const inCenter=['exams','algorithms','materials','courses','practice','review','analysis'].includes(state.view);document.body.classList.toggle('learning-center',inCenter);document.querySelector('.learning-center-nav').hidden=!inCenter;document.querySelectorAll('[data-area]').forEach(a=>a.setAttribute('aria-current',(a.dataset.area==='center')===inCenter?'page':'false'));
     practiceUI?.beforeRender();
     const prior=$('#chatThread'),sameSession=prior?.dataset.sessionId===state.sessionId,scrollTop=prior?.scrollTop||0,nearBottom=!prior||prior.scrollHeight-prior.scrollTop-prior.clientHeight<90;
     const pool=currentQuestions();if(state.quizIndex>=pool.length)state.quizIndex=0;
-    workspace.beforeRender();$('#spaceContent').innerHTML=renders[state.view]();$('#documentCount').textContent=window.XueyaWorkspaceAppearance.isOriginal()?state.documents.filter(d=>!d.superseded).length:Number.isInteger(state.documentCount)?state.documentCount:window.XueyaPlatform?.available?'…':state.documents.filter(d=>!d.superseded&&!d.archived).length;icons();workspace.afterRender();workbench?.prepare();libraryUI?.mount();workbench?.mount();experience?.mount();mediaUI?.mount();historyLayout?.mount();knowledgeUI?.mount();if(!window.XueyaWorkspaceAppearance.isOriginal())knowledgeUI?.refreshCount();const practiceModule=$('#practiceModule');if(practiceModule){if(state.view==='practice'&&location.hash.split('/')[2]==='ai')window.XueyaStudyQuiz?.directory(practiceModule,location.hash.split('/')[3],location.hash.split('/')[4]);else if(state.view==='review')practiceUI?.mountReview(practiceModule);else practiceUI?.mountPractice(practiceModule,{page:location.hash.split('/')[2],questionId:decodeURIComponent(location.hash.split('/')[3]||''),category:({foundation:'basic',interview:'interview',legacy:'legacy',hot100:'hot100',exam408:'exam408'})[location.hash.split('/')[2]]});}
+    workspace.beforeRender();$('#spaceContent').innerHTML=renders[state.view]();$('#documentCount').textContent=window.XueyaWorkspaceAppearance.isOriginal()?state.documents.filter(d=>!d.superseded).length:Number.isInteger(state.documentCount)?state.documentCount:window.XueyaPlatform?.available?'…':state.documents.filter(d=>!d.superseded&&!d.archived).length;icons();if(state.view==='exams')window.XueyaExamWorkspace.mount($('#examLearning'),location.hash.split('/')[2]);if(state.view==='algorithms')window.XueyaAlgorithmDemo.mount($('#algorithmLearning'),location.hash.split('/')[2]);if(state.view==='materials')window.XueyaMaterialLearning.mount($('#materialLearning'),state.courseId);workspace.afterRender();workbench?.prepare();libraryUI?.mount();workbench?.mount();experience?.mount();mediaUI?.mount();historyLayout?.mount();knowledgeUI?.mount();if(!window.XueyaWorkspaceAppearance.isOriginal())knowledgeUI?.refreshCount();const practiceModule=$('#practiceModule');if(practiceModule){if(state.view==='practice'&&location.hash.split('/')[2]==='ai')window.XueyaStudyQuiz?.directory(practiceModule,location.hash.split('/')[3],location.hash.split('/')[4]);else if(state.view==='review')practiceUI?.mountReview(practiceModule);else practiceUI?.mountPractice(practiceModule,{page:location.hash.split('/')[2],questionId:decodeURIComponent(location.hash.split('/')[3]||''),category:({foundation:'basic',interview:'interview',legacy:'legacy',hot100:'hot100',exam408:'exam408'})[location.hash.split('/')[2]]});}
     const thread=$('#chatThread');if(thread)thread.scrollTop=!state.messages.length?0:!sameSession||nearBottom?thread.scrollHeight:scrollTop;
     agentRuns?.refresh();
     if(state.view==='analysis')analysisUI?.mount($('#analysisModule'));

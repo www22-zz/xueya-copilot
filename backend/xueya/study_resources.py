@@ -37,9 +37,9 @@ def external_link(url, title='用户补充学习资源'):
             'sourceType':'user-link','verification':'unverified'}
 
 
-def match_task(candidate, courses=None):
+def match_task(candidate, courses=None, extra_questions=None):
     """Model suggestions cannot invent IDs. Ambiguous text remains self-study."""
-    catalog=question_catalog()
+    catalog=question_catalog()+list(extra_questions or [])
     nested=candidate.get('resource') if isinstance(candidate.get('resource'),dict) else {}
     course_id=candidate.get('courseId') or nested.get('courseId')
     episode_id=candidate.get('episodeId') or nested.get('episodeId')

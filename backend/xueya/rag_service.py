@@ -58,7 +58,9 @@ class RagService:
             require(bool(doc.get('chunks')), 'NO_SOURCES')
             saved = self.repo.put(scope, 'document', document_id, {**doc, 'status': '已确认，可检索', 'knowledgeReview': {
                 'confirmedRevision': doc['contentRevision'], 'confirmedAt': utc_now(), 'confirmedBy': scope.user_id}}, version)
-            return {'documentId': document_id, 'version': saved['version'], 'contentRevision': doc['contentRevision']}
+            result={'documentId': document_id, 'version': saved['version'], 'contentRevision': doc['contentRevision']}
+            if self.on_publish:self.on_publish(scope,result)
+            return result
 
     def submit(self, scope, job_type, document_id, key, *, expected_version=None, pages=None):
         self.repo.require_course(scope)

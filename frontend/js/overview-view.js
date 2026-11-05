@@ -1,6 +1,7 @@
 /* Xueya Copilot - Welcome & Workspace Navigator Overview (Stitch Screen 4) */
 (() => {
   'use strict';
+  const escape=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
   function render(ctx) {
     const { state, store } = ctx;
@@ -30,19 +31,19 @@
               </span>
               <span class="inline-flex items-center gap-1 px-3 py-0.5 rounded-full bg-primary-fixed text-primary text-xs font-semibold">
                 <span class="material-symbols-outlined text-[14px]">timer</span>
-                备考倒计时 58 天
+                制定我的学习计划
               </span>
               <span class="inline-flex items-center gap-1 px-3 py-0.5 rounded-full bg-surface-container-high text-on-surface text-xs font-medium">
                 <span class="material-symbols-outlined text-[14px] text-primary">bolt</span>
-                专注精力良好 · 88/100
+                按实际学习记录回顾
               </span>
             </div>
             
             <h1 class="font-display-lg text-2xl sm:text-3xl text-on-surface tracking-tight font-bold mt-1">
-              ${greetingTime}，<span class="bg-gradient-to-r from-primary to-tertiary bg-clip-text text-transparent">Linus</span>。今天想从哪里开始深潜？
+              ${greetingTime}，<span class="bg-gradient-to-r from-primary to-tertiary bg-clip-text text-transparent">${escape(window.XueyaAccountId||'同学')}</span>。今天想从哪里开始深潜？
             </h1>
             <p class="font-body-md text-sm text-on-surface-variant">
-              学涯神经中枢已聚合讲义断点、错题热区与最新模型知识图谱。当前课程：<strong class="text-primary font-semibold">${currentCourse.name}</strong>（${docCount} 份资料在录）。
+              结合资料、知识点练习与计划安排学习。当前问答课程：<strong class="text-primary font-semibold">${escape(currentCourse.name)}</strong>（${docCount} 份资料在录）。
             </p>
           </div>
 
@@ -54,11 +55,11 @@
               </div>
               <div class="flex flex-col min-w-0 pr-2 text-left">
                 <div class="flex items-center gap-1.5">
-                  <span class="text-xs text-on-surface-variant">上次研习断点</span>
-                  <span class="font-code-sm text-[11px] text-primary bg-primary-fixed/60 px-1 rounded font-bold">18:42</span>
+                  <span class="text-xs text-on-surface-variant">课程与学习记录</span>
+                  <span class="font-code-sm text-[11px] text-primary bg-primary-fixed/60 px-1 rounded font-bold">查看</span>
                 </div>
                 <span class="font-headline-sm text-sm text-on-surface font-semibold truncate max-w-[280px]">
-                  《数据结构与算法精析》第 3 章 AVL 树
+                  打开课程目录与已保存进度
                 </span>
               </div>
               <span class="material-symbols-outlined text-primary text-[20px] group-hover:translate-x-1 transition-transform">
@@ -93,7 +94,7 @@
             </div>
             
             <p class="text-sm text-on-surface-variant mb-4">
-              碎片化探索 · 遇到不懂随时问 · 原文毫秒级精准溯源与白板推导联动
+              碎片化探索 · 遇到不懂随时问 · 资料来源定位与学习记录关联
             </p>
 
             <!-- Quick Ask Input Box -->
@@ -131,7 +132,7 @@
             <div class="flex flex-col gap-1 text-xs text-on-surface-variant mb-4">
               <div class="flex items-center gap-2">
                 <span class="material-symbols-outlined text-[15px] text-primary">check_circle</span>
-                <span>教材考纲讲义原文章节毫秒定位，告别盲目翻书</span>
+                <span>查看资料来源与对应知识点，便于核对</span>
               </div>
               <div class="flex items-center gap-2">
                 <span class="material-symbols-outlined text-[15px] text-primary">check_circle</span>

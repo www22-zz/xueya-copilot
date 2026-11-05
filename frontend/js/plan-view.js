@@ -14,6 +14,7 @@
     let showCreateModal = false;
     let adjusting = false;
     let jobs=[],pollTimer;
+    let availableSubjects=['数据结构','计算机组成原理','操作系统','计算机网络'];
 
     async function loadPlans() {
       const stamp=generation;
@@ -27,6 +28,7 @@
           activePlan = data.active;
           drafts = data.drafts || [];
           history = data.history || [];jobs=data.jobs||[];
+          try{const response=await window.XueyaPlatform.spaceFetch('/api/learning/space/materials');const catalog=await response.json();availableSubjects=[...new Set([...availableSubjects,...(catalog.materials||[]).flatMap(m=>[m.subject,...m.concepts.map(c=>c.label)])])];}catch{}
         }
       } catch (error) { toast(error.message || '学习操作未完成'); }
       finally {
@@ -145,7 +147,7 @@
       } catch(error){toast(error.message);}
     }
     function resourceLinks(task) {
-      const links=[...(task.resource?.url?[task.resource]:[]),...(task.links||[])];
+      const links=[...(task.resource?.url?[task.resource]:[]),...(task.video?.url?[task.video]:[]),...(task.links||[])];
       return links.filter(link=>/^(#space\/|https?:\/\/)/.test(link.url||'')).map(link=>
         `<a class="button button-outline button-small" href="${e(link.url)}" ${link.type==='external'?'target="_blank" rel="noopener noreferrer"':''}>${e(link.title||'打开题目')}${link.type==='external'?'（用户链接，未核验）':''}</a>`).join('');
     }
@@ -265,11 +267,12 @@
             <div class="modal-card panel">
               <h3>${adjusting?'调整当前计划（先预览）':'制定新学习计划'}</h3>
               <form id="createPlanForm">
+                ${!adjusting?`<label class="form-field">选择学科 / 专题（可多选）<select name="subjects" multiple required>${availableSubjects.map(s=>`<option value="${e(s)}">${e(s)}</option>`).join('')}</select></label><label class="form-field">难度<select name="difficulty"><option>基础</option><option>进阶</option><option>挑战</option></select></label><label class="form-field">开始日期<input type="date" name="startDate" required value="${new Date().toLocaleDateString('en-CA')}"></label><label class="form-field">结束日期<input type="date" name="endDate" required></label>`:''}
                 <label class="form-field">计划名称
-                  <input name="title" required value="${e(adjusting?activePlan.title:'计算机考研基础强化计划')}" ${adjusting?'readonly':''}>
+                  <input name="title" required value="${e(adjusting?activePlan.title:'我的个性化学习计划')}" ${adjusting?'readonly':''}>
                 </label>
                 <label class="form-field">学习目标
-                  <textarea name="goal" rows="2" required ${adjusting?'readonly':''}>${e(adjusting?activePlan.goal:'完成408数据结构、计组、操作系统与网络系统复习')}</textarea>
+                  <textarea name="goal" rows="2" required ${adjusting?'readonly':''}>${e(adjusting?activePlan.goal:'完成所选科目与专题的学习和练习')}</textarea>
                 </label>
                 <div class="form-row" style="display:flex;gap:12px;">
                   <label class="form-field" style="flex:1;">每日可用时间 (分钟)
@@ -311,7 +314,8 @@
           title: fd.get('title'),
           goal: fd.get('goal'),
           dailyMinutes: Number(fd.get('dailyMinutes')),
-          daysCount: Number(fd.get('daysCount')),endDate:fd.get('endDate'),
+          daysCount: fd.get('startDate')&&fd.get('endDate')?Math.round((Date.parse(fd.get('endDate'))-Date.parse(fd.get('startDate')))/86400000)+1:Number(fd.get('daysCount')),endDate:fd.get('endDate'),
+          ...(adjusting?{}:{startDate:fd.get('startDate'),subjects:fd.getAll('subjects'),difficulty:fd.get('difficulty')}),
           restDays: fd.getAll('restDays').map(Number)
         });
       });

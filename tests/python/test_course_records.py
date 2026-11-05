@@ -75,6 +75,10 @@ def test_model_cannot_reference_another_accounts_private_course(platform):
 
 def test_original_course_ids_and_episode_ids_are_preserved():
     courses=platform_courses()
-    assert len(courses)==7 and sum(len(c['episodes']) for c in courses)==22
+    legacy=[c for c in courses if c.get('verification')=='legacy-unverified']
+    assert len(legacy)==7 and sum(len(c['episodes']) for c in legacy)==22
     assert courses[0]['id']=='cs-ds-algo' and courses[0]['episodes'][0]['id']=='ds-ep-1'
-    assert all(c['verification']=='legacy-unverified' for c in courses)
+    official=[c for c in courses if c.get('verification')=='verified-metadata']
+    assert {c['id'] for c in official}=={'mooc-ds','mooc-co','mooc-os','mooc-cn'}
+    assert len(courses)==11 and all(c['sourceUrl'].startswith('https://www.icourse163.org/course/') for c in official)
+    assert all(c['episodes'][0]['sourceUrl']==c['sourceUrl'] for c in official)

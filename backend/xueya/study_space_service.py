@@ -130,11 +130,16 @@ class StudySpaceService:
                     and 0 < len(candidate["title"]) <= 300 and type(candidate.get("minutes")) is int
                     and 1 <= candidate["minutes"] <= 480, "INVALID_PLAN_TASKS")
             from .study_resources import match_task
-            resource=copy.deepcopy(candidate['resource']) if retained_ids and candidate.get('id') in retained_ids else match_task(candidate,courses)
+            resource=copy.deepcopy(candidate['resource']) if retained_ids and candidate.get('id') in retained_ids else match_task(candidate,courses,self.material_question_resources(account_id))
             task_id=candidate['id'] if retained_ids and candidate.get('id') in retained_ids else generate_id('task-')
+            video_course=next((c for c in courses if c.get('verification')=='verified-metadata'
+                               and c.get('subject')==candidate.get('subject') and c.get('episodes')),None)
+            video=({'type':'course','courseId':video_course['id'],'episodeId':video_course['episodes'][0]['id'],
+                    'title':video_course['title']+'（课程总览，非精确分集）','url':'#space/courses/'+video_course['id']+'/'+video_course['episodes'][0]['id'],
+                    'verification':'verified-metadata'} if video_course else None)
             pending.append({"id":task_id,"title":candidate["title"],"subject":str(candidate.get("subject") or subjects[0]),
                             "kind":candidate.get('kind','self-study') if retained_ids and task_id in retained_ids else "practice" if resource['type']=='question' else "course" if resource['type']=='course' else "self-study","minutes":candidate["minutes"],"resource":resource,
-                            "phase":str(candidate.get('phase') or '学习与巩固')[:100],"sourceTaskId":candidate.get('sourceTaskId') or task_id,
+                            "video":video,"phase":str(candidate.get('phase') or '学习与巩固')[:100],"sourceTaskId":candidate.get('sourceTaskId') or task_id,
                             "links":copy.deepcopy(candidate.get('links',[])) if retained_ids else [],
                             "originalDate":candidate.get('originalDate') if retained_ids else None,
                             "completed":False,"completedAt":None,"delayCount":candidate.get('delayCount',0) if retained_ids else 0})
@@ -157,6 +162,7 @@ class StudySpaceService:
             "accountId": account_id,
             "title": title,
             "goal": goal,
+            "difficulty": data.get('difficulty','基础'),
             "status": "draft",
             "revision": 1,
             "adoptionBase": {'id':current['id'],'revision':current['revision']} if current else None,
@@ -654,17 +660,32 @@ class StudySpaceService:
         self.repo.put(self._scope(account_id), "concept", fw["id"], fw, expected_version=0)
         return fw
 
+    def material_question_resources(self,account_id):
+        from urllib.parse import quote
+        return [{'type':'question','questionId':q['id'],'version':q['version'],'title':q['prompt'][:150],
+                 'subject':q.get('subject',''),'topic':q.get('subject',''),'tags':[],
+                 'category':'ai','matched':True,'conceptId':q['conceptId'],'materialId':q['materialId'],
+                 'url':'#space/practice/ai/'+quote(q['id'],safe='')}
+                for q in self.repo.all(self._scope(account_id),'question') if q.get('conceptId') and q.get('materialId')]
+
     async def generate_model_plan(self, account_id, provider, data):
         require(isinstance(data.get("goal"),str) and data["goal"].strip(), "PLAN_GOAL_REQUIRED")
         require(type(data.get("dailyMinutes")) is int and 15 <= data["dailyMinutes"] <= 480, "INVALID_DAILY_MINUTES")
         require(type(data.get("daysCount")) is int and 1 <= data["daysCount"] <= 366, "INVALID_PLAN_DATES")
         from .study_resources import question_catalog
-        resources=question_catalog()
+        resources=self.material_question_resources(account_id)+question_catalog()
         subjects=data.get('subjects') or []
         if subjects:resources=[r for r in resources if r['subject'] in subjects]
         resources=resources[:80]
+        from .course_records import CourseRecords
+        courses=[{'courseId':c['id'],'title':c['title'],'subject':c.get('subject'),
+                  'verification':c.get('verification'),'episodes':[{'episodeId':ep['id'],'title':ep['title']} for ep in c['episodes']]}
+                 for c in CourseRecords(self.platform).listing(account_id)['courses']]
         result=await self.model_json(account_id, provider,
             '按学习目标拆解可执行任务，返回explanation及tasks数组(1至100项，每项key唯一字符串,title,subject,phase,minutes正整数,dependsOn先修任务key数组，可选questionId必须来自给定resources)。关注本次目标，任务按阶段排列，依赖不得成环，不能虚构课程ID或链接。找不到资源时明确自主学习。程序将校验依赖并按每日总预算排程。',
-            {**{k:v for k,v in data.items() if k in ("goal","daysCount","dailyMinutes","subjects","restDays")},'resources':resources})
-        require(isinstance(result.get("explanation"),str) and isinstance(result.get("tasks"),list), "AI_INVALID_RESPONSE")
-        return self.create_plan_draft(account_id,{**data,"tasks":result["tasks"],"explanation":result["explanation"],"generationMethod":"llm-with-validated-schedule"})
+            {**{k:v for k,v in data.items() if k in ("goal","daysCount","dailyMinutes","subjects","restDays","difficulty","startDate","endDate")},'resources':resources,'courses':courses})
+        require(isinstance(result.get("tasks"),list), "AI_INVALID_RESPONSE")
+        explanation=result.get('explanation')
+        if not isinstance(explanation,str) or not explanation.strip():
+            explanation=f"根据返回的{len(result['tasks'])}项任务，按{data['daysCount']}天、每天{data['dailyMinutes']}分钟和所选休息日排程。此说明由程序整理，模型未提供额外文字说明；以任务和未安排项为准。"
+        return self.create_plan_draft(account_id,{**data,"tasks":result["tasks"],"explanation":explanation,"generationMethod":"llm-with-validated-schedule"})

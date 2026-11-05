@@ -635,6 +635,11 @@ function createPracticeView({store,client,toast=()=>{},navigate=()=>{}}={}){
     root.innerHTML=`<div class="practice-module ${view!=='review'&&ui.category==='hot100'?'hot100-workbench':''} ${view==='review'?'practice-review':''} ${ui.detailFullscreen&&current()?'is-fullscreen':''}">${toolbar()}${loading?'<p role="status">正在加载题库…</p>':loadError?`<p role="alert">${e(loadError)}</p>`:''}<div class="practice-split"><section class="practice-list-pane">${listRows()}</section><section class="practice-detail-pane">${detail()}</section></div></div>`;
     listScroller().scrollTop=position().scroll||0;
     root.querySelector('.practice-detail-pane').scrollTop=detailScroll;
+    if(current()&&ui.category==='hot100'){
+      const title=current().title||'';
+      const demo=/二分|搜索插入|搜索二维/.test(title)?'binary':/层序|岛屿|广度/.test(title)?'bfs':/有效的括号|最小栈|栈/.test(title)?'stack':null;
+      if(demo){const link=document.createElement('a');link.className='button button-outline';link.href='#space/algorithms/'+demo;link.textContent='查看相关算法机制演示（预设示例，非本题代码执行）';root.querySelector('.practice-detail-pane').prepend(link);}
+    }
     if(view==='review'&&globalThis.XueyaStudyQuiz){const section=document.createElement('section');section.className='study-quiz-card panel';root.append(section);globalThis.XueyaStudyQuiz.review(section);}
     root.querySelectorAll('details').forEach((el,i)=>{el.open=Boolean(openDetails[i]);});
     if(focusSelector){const input=root.querySelector(focusSelector);input?.focus({preventScroll:true});if(selection!=null&&typeof input?.setSelectionRange==='function')try{input.setSelectionRange(selection,selectionEnd);}catch{}}

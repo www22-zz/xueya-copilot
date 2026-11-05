@@ -90,14 +90,14 @@ class SpaceQuiz:
 
     def chat(self,account,value):
         text=value.get('question');require(isinstance(text,str) and len(text)<=4000,'INVALID_QUESTION')
-        if re.search(r'什么是|是什么意思|解释.{0,8}小测',text) or not re.search(r'(?:给我|出|来|生成|做).{0,12}(?:一道|一题|\d题|小测|测试题|单选题|主观题|练习题)',text):
+        if re.search(r'什么是|是什么意思|解释.{0,8}小测',text) or not re.search(r'(?:给我|出|来|生成|做).{0,12}(?:[0-9一二两三四五]+\s*(?:道|题)|小测|测试题|单选题|多选题|判断题|填空题|主观题|练习题)',text):
             return {'handled':False}
         from .space_planning import number
         count_match=re.search(r'([0-9一二两三四五]+)\s*(?:道|题)',text)
         count=number(count_match[1]) if count_match else 1
         require(type(count) is int and 1<=count<=5,'INVALID_QUIZ_COUNT')
         # Fixed questions take priority when a unique, usable topic matches.
-        if count==1 and not re.search(r'AI|生成|新题|主观',text,re.I):
+        if count==1 and not re.search(r'AI|生成|新题|主观|多选|判断|填空',text,re.I):
             from .study_resources import match_task
             resource=match_task({'title':text})
             if resource['type']=='question':
@@ -109,7 +109,7 @@ class SpaceQuiz:
                     if not self.p.repo.read(scope,'question',question['id']):
                         self.p.repo.put(scope,'question',question['id'],{**copy.deepcopy(question),'sourceType':'fixed','sourceRevision':resource['version'],'createdAt':utc_now()},0)
                     return {'handled':True,'status':'succeeded','questionIds':[question['id']]}
-        kind='short' if re.search(r'主观|简答|综合',text) else 'single'
+        kind='short' if re.search(r'主观|简答|综合',text) else 'multiple' if '多选' in text else 'boolean' if '判断' in text else 'fill' if '填空' in text else 'single'
         job=self.submit_generation(account,{'subject':text[:100],'type':kind,'count':count,'sessionId':value.get('sessionId'),'operationId':value.get('operationId')})
         return {'handled':True,'status':'queued','jobId':job['id']}
 

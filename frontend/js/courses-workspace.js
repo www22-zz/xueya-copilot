@@ -731,7 +731,7 @@
                     <!-- Course Header Cover -->
                     <div class="relative h-40 p-4 flex flex-col justify-between overflow-hidden" style="background: ${escapeHTML(c.coverGradient || '#1e293b')};">
                       <div class="flex items-center justify-between relative z-10">
-                        <span class="px-2.5 py-0.5 rounded-full bg-surface-container-lowest/85 backdrop-blur-md text-primary font-bold text-[11px]">${escapeHTML(c.badge || c.categoryName)}</span>
+                        <span class="px-2.5 py-0.5 rounded-full bg-surface-container-lowest/85 backdrop-blur-md text-primary font-bold text-[11px]">${escapeHTML(c.verification==='legacy-unverified'?'历史目录 · 待核验':c.badge || c.categoryName)}</span>
                         <span class="px-2.5 py-0.5 rounded-full bg-black/40 backdrop-blur-md text-white text-[11px]">${escapeHTML(c.level || '精选')}</span>
                       </div>
                       <div class="flex items-center justify-center relative z-10">
@@ -740,8 +740,8 @@
                         </div>
                       </div>
                       <div class="flex items-center justify-between text-white/90 text-xs relative z-10">
-                        <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">timer</span>${escapeHTML(c.duration || (c.episodes.length + ' 课时'))}</span>
-                        <span class="font-code-sm text-[11px]">${c.episodes.length} 讲全</span>
+                        <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">timer</span>${escapeHTML(c.verification==='legacy-unverified'?'时长待核验':c.duration || (c.episodes.length + ' 条章节'))}</span>
+                        <span class="font-code-sm text-[11px]">${c.sourceUrl?'官方课程总览':c.verification==='legacy-unverified'?'分集映射待核验':c.episodes.length+' 条章节'}</span>
                       </div>
                     </div>
 
@@ -899,7 +899,7 @@
               <!-- Video Player Viewport Container -->
               <div class="relative w-full rounded-2xl overflow-hidden bg-inverse-surface shadow-2xl flex flex-col group border border-slate-800">
                 <div class="relative w-full aspect-video bg-black flex items-center justify-center overflow-hidden">
-                  ${activeSource === 'bilibili' && bvid ? `
+                  ${course.sourceUrl ? `<div class="panel"><h3>官方课程</h3><p>本课程通过原站学习；本站没有逐分集播放权限或遥测。</p><a class="button button-blue" href="${escapeHTML(course.sourceUrl)}" target="_blank" rel="noopener noreferrer">前往官方课程</a></div>` : activeSource === 'bilibili' && bvid ? `
                     <iframe id="csBilibiliPlayer" class="w-full h-full border-0" src="https://player.bilibili.com/player.html?bvid=${encodeURIComponent(bvid)}&page=${encodeURIComponent(bpage)}&high_quality=1&danmaku=0&autoplay=0" scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true" sandbox="allow-top-navigation allow-same-origin allow-forms allow-scripts"></iframe>
                   ` : activeSource === 'html5' ? `
                     ${videoSrc ? `
@@ -936,7 +936,7 @@
                     <div class="flex items-center gap-2 pointer-events-auto">
                       <span class="px-2.5 py-1 rounded-md bg-inverse-surface/85 backdrop-blur-md text-inverse-on-surface font-label-sm text-label-sm flex items-center gap-1.5 shadow-sm text-white">
                         <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
-                        1080P Ultra · 60 FPS
+                        ${course.sourceUrl?'官方课程链接':activeSource==='html5'?'HTML5本机播放':activeSource==='algo-demo'?'算法示意':'原站嵌入 · 播放能力待验证'}
                       </span>
                       <span class="px-2.5 py-1 rounded-md bg-primary/85 backdrop-blur-md text-white font-label-sm text-label-sm font-semibold">
                         当前：${escapeHTML(currentEp?.title || '正在学习')}

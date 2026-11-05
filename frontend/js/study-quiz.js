@@ -90,9 +90,9 @@
           node.querySelector('[data-quiz-correct]')?.addEventListener('click',action(async()=>{
             const reason=prompt('人工修正的理由或争议说明：');if(!reason?.trim())return;
             const value={reason,expectedRevision:attempt.revision,operationId:crypto.randomUUID()};
-            const decision=prompt(q.type==='single'?'输入“正确”“错误”或“争议”：':q.maxPoints?'输入修正参考分（0至'+q.maxPoints+'）或“争议”：':'没有评分标准，只能内容修正。输入“确认”或“争议”：');if(decision===null)return;
+            const decision=prompt(q.type!=='short'?'输入“正确”“错误”或“争议”：':q.maxPoints?'输入修正参考分（0至'+q.maxPoints+'）或“争议”：':'没有评分标准，只能内容修正。输入“确认”或“争议”：');if(decision===null)return;
             if(decision==='争议')value.disputed=true;
-            else if(q.type==='single'){if(!['正确','错误'].includes(decision))throw Error('请输入正确、错误或争议');value.correct=decision==='正确';}
+            else if(q.type!=='short'){if(!['正确','错误'].includes(decision))throw Error('请输入正确、错误或争议');value.correct=decision==='正确';}
             else if(q.maxPoints)value.score=Number(decision);
             attempt=(await api('quiz/attempts/'+attempt.id+'/correct',value)).attempt;draw();
           }));
@@ -112,7 +112,7 @@
       const previous=node.querySelector('[data-new-quiz]');
       const formState=previous?Object.fromEntries(new FormData(previous)):{subject:'操作系统：进程管理',type:'single'};
       const value=await api('quiz/list');if(!node.isConnected)return;
-      node.innerHTML=`<section class="panel study-quiz-directory"><a href="#space/practice">← 返回练习</a><h2>我的小测与作答</h2><p>与聊天共用题目、原答案和评阅版本。上传资料不自动出题。</p>
+      node.innerHTML=`<section class="panel study-quiz-directory"><a href="#space/materials">← 返回课程资料学习</a><h2>我的小测与作答</h2><p>与聊天共用题目、原答案和评阅版本。资料自动生成题可从课程资料学习的知识点进入。</p>
         <form data-new-quiz><label>学科 / 专题<input name="subject" required maxlength="100" value="${e(formState.subject)}"></label><label>题型<select name="type"><option value="single" ${formState.type==='single'?'selected':''}>单选</option><option value="multiple" ${formState.type==='multiple'?'selected':''}>多选</option><option value="boolean" ${formState.type==='boolean'?'selected':''}>判断</option><option value="fill" ${formState.type==='fill'?'selected':''}>填空</option><option value="short" ${formState.type==='short'?'selected':''}>主观</option></select></label><button type="submit" class="button button-small button-blue">主动生成一题</button></form><p role="status" data-quiz-generation>${value.jobs.filter(job=>['queued','running','unknown','failed'].includes(job.status)).map(job=>'生成 / 评阅作业：'+e(job.status)).join('；')}</p>
         <nav>${value.questions.map(q=>`<p><a href="#space/practice/ai/${e(q.id)}">${e(q.subject)} · ${e(q.prompt.slice(0,80))}</a></p>`).join('')||'<p>还没有小测，可以在聊天主动请求，或使用上方生成。</p>'}</nav>${questionId?shell(questionId,attemptId):''}</section>`;
       node.querySelector('[data-new-quiz]').onsubmit=async event=>{
