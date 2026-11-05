@@ -26,7 +26,7 @@
       }
     }catch{}
     const savePending=()=>{try{sessionStorage.setItem(pendingKey(),JSON.stringify(pendingRequests));}catch{}};
-    const failureText=job=>job.diagnosticCode==='AI_PLAN_RESPONSE_TIMEOUT'||['AI_PLAN_RESPONSE_TIMEOUT','JOB_TIMEOUT'].includes(job.error)?'模型响应超时，未生成可用计划。该请求的结果与费用仍待核对，不会自动重试。':job.diagnosticCode==='AI_CONNECTION_FAILED'||job.error==='AI_CONNECTION_FAILED'?'连接模型服务失败，未拿到可用结果。请先检查连接；历史调用费用待核对，不会自动重试。':job.error==='AI_INVALID_RESPONSE'?'模型返回格式未通过校验，未完成计划；不会自动重试。':'生成未完成，结果与费用待核对，不会自动重试。';
+    const failureText=job=>job.checkpoint?.stage==='framework'&&job.checkpoint?.planId?'学习计划已保存，关联导图生成未完成；可先核对并采用计划，不会自动重新调用AI。':job.diagnosticCode==='AI_PLAN_RESPONSE_TIMEOUT'||['AI_PLAN_RESPONSE_TIMEOUT','JOB_TIMEOUT'].includes(job.error)?'模型响应超时，未生成可用计划。该请求的结果与费用仍待核对，不会自动重试。':job.diagnosticCode==='AI_CONNECTION_FAILED'||job.error==='AI_CONNECTION_FAILED'?'连接模型服务失败，未拿到可用结果。请先检查连接；历史调用费用待核对，不会自动重试。':job.error==='AI_INVALID_RESPONSE'?'模型返回格式未通过校验，未完成计划；不会自动重试。':'生成未完成，结果与费用待核对，不会自动重试。';
     const errorText=code=>({AI_CONNECTION_FAILED:'当前后台无法连接模型站点，本次未提交新的计划作业。请检查网络、代理及服务启动环境。',AI_UNAVAILABLE:'尚未配置可用模型，请检查服务设置。'}[code]||code||'操作未完成');
 
     async function loadPlans() {
@@ -204,7 +204,8 @@
 
           ${jobs.some(job=>['queued','running','cancelling','unknown','failed'].includes(job.status))?`<div class="panel" role="status">${jobs.filter(job=>['queued','running','cancelling','unknown','failed'].includes(job.status)).map(job=>`<p>${['unknown','failed'].includes(job.status)?e(failureText(job)):'计划生成：'+e(({queued:'等待处理',running:'生成中',cancelling:'正在取消'})[job.status])+' '+e(job.progress?.label||'')}</p>`).join('')}</div>`:''}
           ${activePlan ? `
-            <div class="plan-stats-panel panel">
+            ${activePlan.frameworkStatus==='failed'?'<p>当前计划已采用并可执行；关联导图未完成，原失败记录保留，不会自动重新生成。</p>':''}
+          <div class="plan-stats-panel panel">
               <div class="plan-stat-bar">
                 <span>总完成进度：<strong>${doneCount} / ${allTasks.length} 项任务</strong> (${progressPercent}%)</span>
                 <span>每日预算：${e(activePlan.dailyMinutes)} 分钟 · 保留历史完成 ${(activePlan.completedHistory||[]).length} 项</span>
@@ -255,13 +256,13 @@
                   <div>
                     <strong>${e(d.title)}</strong> - <small>${e(d.goal)} · ${d.daysCount}天</small>
                     <details class="plan-draft-preview"><summary>查看说明与每日安排</summary>
-                      <p>${e(d.explanation)}</p><p>已安排 ${(d.days||[]).filter(day=>day.tasks?.length).length} 个学习日 / ${(d.days||[]).filter(day=>!day.isRestDay).length} 个可学习日，合计 ${(d.days||[]).reduce((sum,day)=>sum+(day.tasks||[]).reduce((n,t)=>n+t.minutes,0),0)} 分钟；${(d.days||[]).filter(day=>!day.isRestDay&&!day.tasks?.length).length} 个非休息日尚无任务。</p>${d.frameworkId?`<a href="#space/frameworks/${e(d.frameworkId)}">${d.frameworkCoverage?.partial?'打开资料关联局部图（'+e(d.frameworkCoverage.representedPhases)+'/'+e(d.frameworkCoverage.totalPhases)+'阶段）':'打开关联知识框架'}</a>`:d.generationStatus?'<p>知识框架生成尚未完成，本草稿暂不可采用。</p>':''}
+                      <p>${e(d.explanation)}</p><p>已安排 ${(d.days||[]).filter(day=>day.tasks?.length).length} 个学习日 / ${(d.days||[]).filter(day=>!day.isRestDay).length} 个可学习日，合计 ${(d.days||[]).reduce((sum,day)=>sum+(day.tasks||[]).reduce((n,t)=>n+t.minutes,0),0)} 分钟；${(d.days||[]).filter(day=>!day.isRestDay&&!day.tasks?.length).length} 个非休息日尚无任务。</p>${d.frameworkId?`<a href="#space/frameworks/${e(d.frameworkId)}">${d.frameworkCoverage?.partial?'打开资料关联局部图（'+e(d.frameworkCoverage.representedPhases)+'/'+e(d.frameworkCoverage.totalPhases)+'阶段）':'打开关联知识框架'}</a>`:d.frameworkStatus==='failed'?'<p>计划排程已保存，可以采用；关联导图未完成，不会自动重新调用AI。</p>':d.generationStatus?'<p>计划及关联导图仍在处理中，请等待当前作业结束。</p>':''}
                       ${d.changePreview?`<p>调整预览：每日 ${e(d.changePreview.dailyMinutes.before)} → ${e(d.changePreview.dailyMinutes.after)} 分钟；截止 ${e(d.changePreview.endDate.before)} → ${e(d.changePreview.endDate.after)}；保留已完成 ${d.changePreview.retainedCompleted} 项。采用前原计划继续执行。</p>`:''}
                       ${(d.days||[]).map(day=>`<p><strong>${e(day.date)}</strong> · ${day.isRestDay?'休息日':e(day.budgetMinutes)+' 分钟'}<br>${(day.tasks||[]).map(t=>e(t.title)+'（'+e(t.minutes)+' 分钟）'+resourceLinks(t)).join('<br>')||'无任务'}</p>`).join('')}
                       ${d.remaining?.length?`<p>时间不足，另有 ${d.remaining.length} 项任务尚未排入。请增加天数或每日时间后重新生成。</p>`:''}
                     </details>
                   </div>
-                  <button type="button" class="button button-blue button-small" data-adopt-draft="${e(d.id)}" data-rev="${d.revision}" ${d.generationStatus&&d.generationStatus!=='completed'?'disabled':''}>
+                  <button type="button" class="button button-blue button-small" data-adopt-draft="${e(d.id)}" data-rev="${d.revision}" ${d.canAdopt===false||(d.canAdopt===undefined&&d.generationStatus&&d.generationStatus!=='completed')?'disabled':''}>
                     采用此计划
                   </button>
                 </div>

@@ -185,10 +185,27 @@ class StudySpaceService:
         self.repo.put(scope, "plan", plan_id, plan, expected_version=0)
         return plan
 
+    def plan_view(self, account_id, plan):
+        """Project adoption readiness without repairing jobs or paying again."""
+        value=copy.deepcopy(plan)
+        ready=value.get('generationStatus') in (None,'completed','plan-ready-framework-failed')
+        if value.get('generationStatus')=='framework-pending' and not value.get('frameworkId'):
+            scope=self._scope(account_id)
+            for row in self.platform.db.all(
+                "SELECT input,checkpoint,error FROM jobs WHERE user_id=? AND course_id=? AND type='space-plan-generate' AND status IN ('unknown','failed','cancelled') AND lease_owner IS NULL ORDER BY created_at DESC",
+                (scope.user_id,scope.course_id)):
+                checkpoint=json.loads(row['checkpoint']);args=json.loads(row['input'])
+                if not isinstance(args,dict) or not isinstance(checkpoint,dict):continue
+                if args.get('account')==account_id and checkpoint.get('stage')=='framework' and checkpoint.get('planId')==value['id']:
+                    ready=True;value['frameworkStatus']='failed';value['frameworkError']=row['error']
+                    break
+        value['canAdopt']=value.get('status')=='draft' and ready
+        return value
+
     def get_plan(self, account_id: str, plan_id: str) -> Optional[Dict[str, Any]]:
         scope = self._scope(account_id)
         row = self.repo.read(scope, "plan", plan_id)
-        return row["value"] if row else None
+        return self.plan_view(account_id,row["value"]) if row else None
 
     def get_active_plan(self, account_id: str) -> Optional[Dict[str, Any]]:
         scope = self._scope(account_id)
@@ -201,6 +218,7 @@ class StudySpaceService:
         scope = self._scope(account_id)
         active, drafts, history = None, [], []
         for row in self.repo.all(scope, "plan"):
+            row=self.plan_view(account_id,row)
             st = row.get("status")
             if st == "active":
                 active = row
@@ -229,7 +247,10 @@ class StudySpaceService:
             draft = draft_row["value"]
             require(draft["revision"] == expected_revision, "PLAN_REVISION_CONFLICT")
             require(draft.get("status") == "draft", "PLAN_NOT_DRAFT")
-            require(draft.get('generationStatus') in (None,'completed'),'GENERATION_NOT_COMPLETED')
+            readiness=self.plan_view(account_id,draft)
+            require(readiness['canAdopt'],'GENERATION_NOT_COMPLETED')
+            if readiness.get('frameworkStatus')=='failed':
+                draft.update(generationStatus='plan-ready-framework-failed',frameworkStatus='failed',frameworkError=readiness.get('frameworkError'))
             current=self.get_active_plan(account_id)
             if 'adoptionBase' in draft and not draft.get('sourcePlanId'):
                 actual={'id':current['id'],'revision':current['revision']} if current else None

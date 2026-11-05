@@ -184,7 +184,7 @@ class ConversationPlanning:
             self.p.repo.put(scope,'plan',plan['id'],{**row['value'],'generationStatus':'framework-pending'},row['version'])
             checkpoint({'planId':plan['id'],'stage':'framework'})
             progress({'percent':60,'label':'草稿已保存，正在生成独立知识框架'})
-            subject=next((s for s in ('数据结构','计算机组成原理','操作系统','计算机网络') if s in plan['goal']),'计算机基础')
+            subject=' / '.join(args['conditions'].get('subjects') or []) or next((s for s in ('数据结构','计算机组成原理','操作系统','计算机网络') if s in plan['goal']),'计算机基础')
             materials=getattr(self.app.state,'material_learning',None)
             framework=materials.plan_framework(account,plan) if materials else None
             if framework is None:

@@ -542,3 +542,9 @@ generation摘要含 `{id,courseId,documentId,name,status,revision,jobId,complete
 ### 2026-11-05 资料关联框架覆盖标记
 
 material-plan框架新增coverage：kind=material-linked、representedPhases/totalPhases、representedTasks/totalTasks、partial。任务数以sourceTaskId去重，跨日拆分不虚增；该覆盖只指当前计划的资源关联，不代表教材学术完整性。plan完成草稿保存frameworkCoverage副本供展示，旧记录缺失时仍可读。模型生成的标题/阶段/说明不得把当前原创/改编候选称为站内逐字真题；程序规范化展示表述，用户目标与原题引用不改写。
+
+### 2026-11-05 计划采用与导图失败隔离
+
+计划GET/list增加派生canAdopt、可选frameworkStatus=failed/frameworkError。framework-pending草稿仅在同账号生成作业已终止并释放租约，且检查点stage=framework、planId及输入account匹配时可采用；GET不修写数据、不再付费生成。运行中的未完成草稿仍拒绝采用。
+
+POST /plan/adopt继续要求confirmed=true、业务expectedRevision及operationId，保留事务、存储CAS、adoptionBase及单活跃计划规则。已保存有效计划的附属导图失败不再硬阻止采用；明确采用后持久化generationStatus=plan-ready-framework-failed，不修改原作业/账本或虚构frameworkId。再次提交同operationId返回原回执，不重复采用。业务revision与Repository version保持各自语义。

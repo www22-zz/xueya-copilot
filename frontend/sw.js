@@ -1,6 +1,6 @@
 /* Cache only the public application shell. API responses and account data are never cached here. */
 'use strict';
-const CACHE='xueya-public-shell-20261105-plan-reviewed-v15';
+const CACHE='xueya-public-shell-20261105-plan-adoption-v16';
 self.addEventListener('install',event=>event.waitUntil((async()=>{
   const response=await fetch('./',{cache:'reload'});
   if(!response.ok)throw Error('Shell unavailable');

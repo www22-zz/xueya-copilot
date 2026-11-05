@@ -90,6 +90,7 @@ def test_both_entries_generate_same_kind_of_persisted_draft_and_independent_fram
     assert plan['status']=='draft' and plan['generationStatus']=='completed'
     assert fw['planId']==plan['id'] and plan['frameworkId']==fw['id']
     assert service.get_active_plan('alice') is None
+    assert fw['subject']=='操作系统'
     assert fw['nodes'][1]['label']=='上下文切换' and 'date' not in fw['nodes'][1]
     assert len(model.calls)==2
     before=len(model.calls)
@@ -104,9 +105,15 @@ def test_failed_framework_keeps_partial_draft_and_never_auto_replays_after_resta
     job=asyncio.run(finish(app,submitted['jobId']));assert job['status']=='unknown'
     plan=app.state.conversation_planning.service.get_plan('alice',job['checkpoint']['planId'])
     assert plan['status']=='draft' and plan['generationStatus']=='framework-pending'
-    adoption=client.post('/api/learning/space/plan/adopt',json={'planId':plan['id'],'expectedRevision':1,'confirmed':True,'operationId':'not-complete'})
-    assert adoption.json()['error']=='GENERATION_NOT_COMPLETED'
+    listing=client.get('/api/learning/space/plan/list').json()['drafts'][0]
+    assert listing['canAdopt'] is True and listing['frameworkStatus']=='failed'
+    assert listing['revision']==1  # Domain revision, not storage version 2.
+    adoption=client.post('/api/learning/space/plan/adopt',json={'planId':plan['id'],'expectedRevision':1,'confirmed':True,'operationId':'saved-plan-only'})
+    assert adoption.json()['plan']['status']=='active'
+    assert adoption.json()['plan']['generationStatus']=='plan-ready-framework-failed'
     assert len(model.calls)==2
+    repeated=client.post('/api/learning/space/plan/adopt',json={'planId':plan['id'],'expectedRevision':1,'confirmed':True,'operationId':'saved-plan-only'})
+    assert repeated.json()==adoption.json() and len(model.calls)==2
     again=intake(client,'帮我规划操作系统，两周，每天30分钟')
     assert again['jobId']==job['id'] and len(model.calls)==2
     with TestClient(create_app(config,provider=model,start_jobs=False),base_url='http://127.0.0.1') as recovered:
@@ -114,3 +121,13 @@ def test_failed_framework_keeps_partial_draft_and_never_auto_replays_after_resta
         headers={'X-Xueya-Token':recovered.get('/api/platform/bootstrap').json()['token']}
         assert recovered.get('/api/learning/space/jobs/'+job['id'],headers=headers).json()['job']['status']=='unknown'
         assert len(model.calls)==2
+
+
+def test_framework_uses_explicit_subject_when_goal_is_generic(setup):
+    app,client,model,_=setup
+    response=client.post('/api/learning/space/plan/generate',json={
+        'goal':'完成所选科目与专题的学习和练习','subjects':['数据结构'],
+        'daysCount':26,'dailyMinutes':60,'operationId':'explicit-subject'}).json()
+    job=asyncio.run(finish(app,response['job']['id']))
+    assert job['status']=='succeeded'
+    assert json.loads(model.calls[1][1]['content'])['subject']=='数据结构'

@@ -1,5 +1,18 @@
 # 学涯 Copilot 最终交付说明
 
+## 2026-11-05 已保存草稿无法采用：导图失败不再封锁有效计划
+
+正式库只读确认用户草稿plan-ec6954d92579已保存26天/14条日任务，业务revision=1、存储version=2，generationStatus=framework-pending，无frameworkId；关联作业ec0f8e12…在60% framework检查点unknown/AI_INVALID_RESPONSE。两次模型调用均已有usage，第二次返回未通过导图结构校验，不是计划排程未生成，也不能称未计费。原前后端却将导图完成作为采用的硬门槛，导致按钮禁用。
+
+已修复：GET计划视图只读派生canAdopt和frameworkStatus。仅对同账号/learning-space的生成作业已终止（unknown/failed/cancelled）、已释放lease、输入account匹配且checkpoint明确对应此plan的framework阶段，允许采用已保存草稿；queued/running、错计划/错阶段/错账号仍不解锁。列表不改原job/草稿/账本，不重新推理。点击采用并明确确认后，在原plan_operation事务内继续核对业务revision、存储CAS、operationId、adoptionBase和唯一当前计划；仅此时保存诚实状态plan-ready-framework-failed及原导图错误，原计划日程/资源不重做。业务revision不与存储version混用。
+
+前端采用按钮依据服务端canAdopt；说明“计划排程已保存，可以采用，关联导图未完成”，历史作业改为计划已保存/导图未完成，不把整份计划说成未生成；采用后显示当前计划可执行及缺图状态。没有将失败导图包装成成功，也未创建占位图。另外修复框架选科优先读取已确认subjects，默认目标不含学科名时不再退到计算机基础；未明确subjects时仍按目标推断。
+
+验证：专项36项通过，覆盖导图失败后采用、明确confirmed/过期revision拒绝、同operationId回执、运行中不允许、跨账号/错checkpoint拒绝、读取不写库、任务完成及选科学科。将正式SQLite只读快照复制到忽略目录test-results/formal-adoption-20261105/data，用本机Edge在副本采用用户这份真实草稿、勾选任务并刷新确认完成状态持久；付费0/页面错误0/副本账本数量不变。正式原库保持draft，未代用户采用。截图before-adoption.png、adopted-and-persisted.png及result.json保留在同目录。 最终全量893通过、10跳过、0失败，223.28秒（test-results/plan-adoption-full.xml）；10项为本机缺C编译器。前端50项通过，完整受控Edge流程通过（受控3次、付费0、页面错误0）。
+
+切换前活动作业0、正式调用账本48条；CLI备份.xueya-backups/before-plan-adoption-20261105（22文件）后安全停机，允许联网环境隐藏启动。实际GET plan/list现已返回该草稿canAdopt=true、frameworkStatus=failed、revision=1；正式只读Edge阻断非GET和外网，确认采用按钮可用，截图formal-adoption-enabled.png。未发送生成请求、未重试旧调用、未改.env，正式账号仍待用户自己点击并确认采用。
+
+
 ## 2026-11-05 获批真实计划验收：1次成功及内容复核
 
 用户本轮明确授权最多2次新的真实调用，仅独立临时库合成数据，不发送私人资料、不重放旧请求、不自动重试。一次性回执文件不存在时才允许提交，正式POST /plan/generate仅一次，Job maxAttempts=1，模型预算硬上限2。实际只用1次（未使用第二次），48.45秒返回成功，usage输入1905/输出1771/合计3676 tokens，费用以供应商账单为准。真实账本status=succeeded；不是连接GET或Mock冒充推理成功。
