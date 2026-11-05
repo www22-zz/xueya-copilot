@@ -538,3 +538,7 @@ generation摘要含 `{id,courseId,documentId,name,status,revision,jobId,complete
 计划作业服务端总限时270秒、单次规划请求120秒，仍取全局执行预算剩余值的较小者；仅服务端handler可配置作业时限，客户端Job DTO不接受timeout。其他作业默认90秒与其他学习生成默认60秒不扩大。新增只读诊断AI_PLAN_RESPONSE_TIMEOUT（兼容历史JOB_TIMEOUT），保留unknown计费、单次尝试与不自动重放语义。
 
 规划输入只发送有界题目代表元信息和所选科目的课程元信息；资源上限64知识点/12,000字符并标partial，完整题目仍保留原Question/题库。按输出预算给出maxTasks（4096token最多20项），不要求模型逐日展开。模型响应经过既有依赖、来源、日期、休息日和每日预算检查后才保存草稿；不以固定模板冒充成功的AI计划。
+
+### 2026-11-05 资料关联框架覆盖标记
+
+material-plan框架新增coverage：kind=material-linked、representedPhases/totalPhases、representedTasks/totalTasks、partial。任务数以sourceTaskId去重，跨日拆分不虚增；该覆盖只指当前计划的资源关联，不代表教材学术完整性。plan完成草稿保存frameworkCoverage副本供展示，旧记录缺失时仍可读。模型生成的标题/阶段/说明不得把当前原创/改编候选称为站内逐字真题；程序规范化展示表述，用户目标与原题引用不改写。

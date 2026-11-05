@@ -20,11 +20,15 @@ class MaterialLearning:
     def plan_framework(self,account,plan):
         scope=self.service._scope(account)
         nodes=[{'id':'root','label':plan['title'],'parentId':None,'level':0}]
-        phases={};seen=set()
+        phases={};seen=set();represented_tasks=set()
+        tasks=[t for day in plan['days'] for t in day['tasks']]
+        all_phases={t.get('phase','学习') for t in tasks}
+        all_tasks={t.get('sourceTaskId') or t['id'] for t in tasks}
         for day in plan['days']:
             for task in day['tasks']:
                 resource=task.get('resource',{});concept_id=resource.get('conceptId')
                 if not concept_id:continue
+                represented_tasks.add(task.get('sourceTaskId') or task['id'])
                 material=self.p.repo.read(scope,'artifact',resource['materialId'])
                 concept=next((c for c in material['value']['concepts'] if c['id']==concept_id),None) if material else None
                 require(concept is not None,'PLAN_CONCEPT_NOT_FOUND')
@@ -42,10 +46,13 @@ class MaterialLearning:
                               'questionIds':concept['questionIds'],'video':task.get('video'), 'resource':task.get('resource')})
         if not seen:return None
         key='kf-'+digest(plan['id'])[:40]
-        value={'id':key,'title':plan['title']+' · 阶段知识框架','subject':' / '.join(plan['subjects']),
+        value={'id':key,'title':plan['title']+' · 资料关联知识框架','subject':' / '.join(plan['subjects']),
                'topic':plan['goal'],'nodes':nodes,'edges':[{'id':'e-'+digest(n['id'])[:24],
                'source':n['parentId'],'target':n['id'],'relation':'stage-content'} for n in nodes[1:]],
-               'planId':plan['id'],'sourceType':'material-plan','createdAt':utc_now(),'updatedAt':utc_now()}
+               'planId':plan['id'],'sourceType':'material-plan','createdAt':utc_now(),'updatedAt':utc_now(),
+               'coverage':{'kind':'material-linked','totalPhases':len(all_phases),'representedPhases':len(phases),
+                           'totalTasks':len(all_tasks),'representedTasks':len(represented_tasks),
+                           'partial':len(phases)<len(all_phases) or len(represented_tasks)<len(all_tasks)}}
         self.p.repo.put(scope,'concept',key,value,0)
         return value
 

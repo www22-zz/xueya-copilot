@@ -255,7 +255,7 @@
                   <div>
                     <strong>${e(d.title)}</strong> - <small>${e(d.goal)} · ${d.daysCount}天</small>
                     <details class="plan-draft-preview"><summary>查看说明与每日安排</summary>
-                      <p>${e(d.explanation)}</p>${d.frameworkId?`<a href="#space/frameworks/${e(d.frameworkId)}">打开关联知识框架</a>`:d.generationStatus?'<p>知识框架生成尚未完成，本草稿暂不可采用。</p>':''}
+                      <p>${e(d.explanation)}</p><p>已安排 ${(d.days||[]).filter(day=>day.tasks?.length).length} 个学习日 / ${(d.days||[]).filter(day=>!day.isRestDay).length} 个可学习日，合计 ${(d.days||[]).reduce((sum,day)=>sum+(day.tasks||[]).reduce((n,t)=>n+t.minutes,0),0)} 分钟；${(d.days||[]).filter(day=>!day.isRestDay&&!day.tasks?.length).length} 个非休息日尚无任务。</p>${d.frameworkId?`<a href="#space/frameworks/${e(d.frameworkId)}">${d.frameworkCoverage?.partial?'打开资料关联局部图（'+e(d.frameworkCoverage.representedPhases)+'/'+e(d.frameworkCoverage.totalPhases)+'阶段）':'打开关联知识框架'}</a>`:d.generationStatus?'<p>知识框架生成尚未完成，本草稿暂不可采用。</p>':''}
                       ${d.changePreview?`<p>调整预览：每日 ${e(d.changePreview.dailyMinutes.before)} → ${e(d.changePreview.dailyMinutes.after)} 分钟；截止 ${e(d.changePreview.endDate.before)} → ${e(d.changePreview.endDate.after)}；保留已完成 ${d.changePreview.retainedCompleted} 项。采用前原计划继续执行。</p>`:''}
                       ${(d.days||[]).map(day=>`<p><strong>${e(day.date)}</strong> · ${day.isRestDay?'休息日':e(day.budgetMinutes)+' 分钟'}<br>${(day.tasks||[]).map(t=>e(t.title)+'（'+e(t.minutes)+' 分钟）'+resourceLinks(t)).join('<br>')||'无任务'}</p>`).join('')}
                       ${d.remaining?.length?`<p>时间不足，另有 ${d.remaining.length} 项任务尚未排入。请增加天数或每日时间后重新生成。</p>`:''}

@@ -670,6 +670,16 @@ class StudySpaceService:
                  'url':'#space/practice/ai/'+quote(q['id'],safe='')}
                 for q in self.repo.all(self._scope(account_id),'question') if q.get('conceptId') and q.get('materialId')]
 
+    @staticmethod
+    def generated_plan_text(value):
+        """Normalize unsupported source claims in generated display text only.
+
+        Current planning candidates have no verified verbatim exam papers.
+        User goals/titles and stored question content must remain untouched.
+        """
+        if not isinstance(value,str):return value
+        return value.replace('真题改编题','考点改编题').replace('真题','考点练习')
+
     async def generate_model_plan(self, account_id, provider, data):
         require(isinstance(data.get("goal"),str) and data["goal"].strip(), "PLAN_GOAL_REQUIRED")
         require(type(data.get("dailyMinutes")) is int and 15 <= data["dailyMinutes"] <= 480, "INVALID_DAILY_MINUTES")
@@ -717,6 +727,7 @@ class StudySpaceService:
             f'tasks为1至{task_limit}项（不要逐日展开，不要为凑天数复制任务），每项key唯一字符串(至多24字符),title(至多60字),subject,phase(具体阶段名，至多24字),minutes正整数(1至480),dependsOn先修任务key数组。'
             '按目标和难度组织多个阶段，任务工作量参考availableStudyMinutes，较长任务可由程序跨天拆分；未能覆盖的内容须明确说明。'
             '可选questionId必须来自给定resources；可选courseId和episodeId必须来自给定courses。资源只展示每个知识点的代表题元信息，完整题目保留在本地；不要编造题目或课程ID。'
+            '当前固定题为原创或考点改编，不是已核验逐字真题，不得在任务、阶段和说明中冒称真题。课程总览不代表已匹配到此知识点的精确分集。'
             '关注本次目标，任务按阶段排列，依赖不得成环，不能虚构链接。找不到资源时明确自主学习。程序将校验依赖并按每日总预算排程。',
             {**{k:v for k,v in data.items() if k in ("goal","dailyMinutes","subjects","restDays","difficulty","startDate","endDate")},
              'daysCount':days_count,'availableStudyDays':study_days,'availableStudyMinutes':study_days*data['dailyMinutes'],'maxTasks':task_limit,
@@ -727,4 +738,6 @@ class StudySpaceService:
         explanation=result.get('explanation')
         if not isinstance(explanation,str) or not explanation.strip():
             explanation=f"根据返回的{len(result['tasks'])}项任务，按{data['daysCount']}天、每天{data['dailyMinutes']}分钟和所选休息日排程。此说明由程序整理，模型未提供额外文字说明；以任务和未安排项为准。"
-        return self.create_plan_draft(account_id,{**data,"tasks":result["tasks"],"explanation":explanation,"generationMethod":"llm-with-validated-schedule"})
+        tasks=[{**task,**{key:self.generated_plan_text(task[key]) for key in ('title','phase') if key in task}}
+               if isinstance(task,dict) else task for task in result['tasks']]
+        return self.create_plan_draft(account_id,{**data,"tasks":tasks,"explanation":self.generated_plan_text(explanation),"generationMethod":"llm-with-validated-schedule"})

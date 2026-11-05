@@ -191,7 +191,7 @@ class ConversationPlanning:
                 framework=await self.service.generate_model_framework(account,self.app.state.provider,subject,plan['goal'][:200])
         def save():
             row=self.p.repo.read(scope,'plan',plan['id']);saved=row['value']
-            saved.update(frameworkId=framework['id'],sessionId=args['sessionId'],conditionsOrigin=args['origins'],assumptions=args['assumptions'],generationStatus='completed')
+            saved.update(frameworkId=framework['id'],frameworkCoverage=framework.get('coverage'),sessionId=args['sessionId'],conditionsOrigin=args['origins'],assumptions=args['assumptions'],generationStatus='completed')
             self.p.repo.put(scope,'plan',plan['id'],saved,row['version'])
             row=self.p.repo.read(scope,'concept',framework['id']);fw=row['value']
             fw.update(planId=plan['id'],sessionId=args['sessionId'])
