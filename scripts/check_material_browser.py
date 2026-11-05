@@ -55,10 +55,26 @@ def main():
                         payload['materials'].append(extra)
                     route.fulfill(response=response,json=payload)
                 page.route('**/api/learning/space/materials?*',catalog_fixture)
+                def graph_fixture(route):
+                    response=route.fetch();payload=response.json()
+                    # A parsed document without questions precedes the usable
+                    # one, matching the formal bookshelf's introduction lesson.
+                    payload['documents'].insert(0,{'id':'controlled-no-questions',
+                        'name':'已解析但尚未出题的课件','subject':'数据结构','ready':True,'ranges':1})
+                    route.fulfill(response=response,json=payload)
+                page.route('**/api/learning/space/course-graph?*',graph_fixture)
 
                 page.goto(base+'/#space/materials')
                 expect(page.locator('.cg-books')).to_be_visible()
                 expect(page.locator('[data-cg-practice]')).to_be_visible(timeout=20000)
+                expect(page.locator('.cg-books [aria-pressed=true]')).to_contain_text('队列讲义')
+                expect(page.locator('.cg-books [aria-pressed=true] [data-cg-count]')).to_contain_text('4道题')
+                page.locator('[data-cg-book=controlled-no-questions]').click()
+                expect(page.locator('[data-cg-book=controlled-no-questions] [data-cg-count]')).to_contain_text('尚未生成题目')
+                expect(page.locator('[data-cg-practice]')).to_have_count(0)
+                page.locator('.cg-books button').filter(has_text='队列讲义').click()
+                page.locator('[data-cg-practice]').click()
+                expect(page.locator('[data-cg-questions] [data-quiz-answer]')).to_have_count(4)
                 page.screenshot(path=str(output/'course-bookshelf.png'),full_page=True)
                 page.locator('[data-material-tab=graph]').click()
                 expect(page.locator('[data-material-practice]')).to_be_visible(timeout=20000)
