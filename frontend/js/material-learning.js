@@ -10,7 +10,7 @@
     return reply.json();
   }
   async function mount(container,courseId='course-default',local=false){
-    if(!container)return;const stamp=++generation;clearTimeout(timer);
+    if(!container)return;const entering=!container.dataset.materialMounted,stamp=++generation;clearTimeout(timer);
     try{
       if(!container.dataset.materialMounted){tab='graph';signature='';container.dataset.materialMounted='1';const parts=location.hash.split('/');if(parts[1]==='materials'&&parts[2]){selected=parts[2];nodeId=parts[3]||'';subject='';}}
       const selectionKey=(window.XueyaDataKey||((key)=>key))('xueya-material-selection:'+courseId);
@@ -28,7 +28,11 @@
 
       const materials=data.materials,subjects=[...new Set(materials.map(m=>m.subject))];
       const filtered=materials.filter(m=>!subject||m.subject===subject);
-      const material=filtered.find(m=>m.id===selected)||filtered.find(m=>m.documentId===selectedDocument)||filtered[0];
+      const requested=filtered.find(m=>m.id===selected)||filtered.find(m=>m.documentId===selectedDocument);
+      const hasExplicitTarget=Boolean(location.hash.split('/')[2]);
+      const material=(entering&&!hasExplicitTarget&&!requested?.concepts?.length?filtered.find(m=>m.concepts?.length):requested)||requested||filtered.find(m=>m.concepts?.length)||filtered.find(m=>m.ready)||filtered[0];
+      const materialStatus=m=>String(m.parseStatus||'').startsWith('示例')&&!m.revision?'示例记录 · 无原件':status[m.status]||m.status;
+
       if(material){selected=material.id;selectedDocument=material.documentId;}
       const concept=material?.concepts.find(n=>n.id===nodeId)||material?.concepts[0];
       if(concept)nodeId=concept.id;
@@ -40,11 +44,11 @@
         <details><summary>签到记录（${attendance.timezone}）</summary>${attendance.history.map(row=>`<p>${e(row.date)}</p>`).join('')||'<p>还没有签到</p>'}<p>签到仅记录到访，不代表完成任务或掌握知识。</p></details>
         <div data-material-subview ${tab==='graph'?'hidden':''}></div><div data-material-graph-view ${tab!=='graph'?'hidden':''}>
         <label class="form-field">学科<select data-material-subject><option value="">全部学科</option>${subjects.map(s=>`<option ${s===subject?'selected':''}>${e(s)}</option>`).join('')}</select></label>
-        <div class="materials-list">${filtered.map(m=>`<button type="button" class="button ${m.id===selected?'button-blue':'button-outline'}" data-material="${e(m.id)}">${e(m.name)} · ${e(status[m.status]||m.status)}</button>`).join('')||'<p>还没有可用资料，请先上传。</p>'}</div>
+        <div class="materials-list">${filtered.map(m=>`<button type="button" class="button ${m.id===selected?'button-blue':'button-outline'}" data-material="${e(m.id)}">${e(m.name)} · ${e(materialStatus(m))}</button>`).join('')||'<p>还没有可用资料，请先上传。</p>'}</div>
         ${material?`<h2>${e(material.name)}</h2><p>解析：${e(material.parseStatus)} · 出题：${e(status[material.status]||material.status)} ${e(material.error||'')}</p>
         ${material.ready&&!material.jobId&&data.available?'<button type="button" class="button button-outline" data-material-prepare>准备此资料题目</button>':''}
         ${material.coverage?`<p>${material.coverage.questions}题 · ${material.coverage.selectedChunks}/${material.coverage.totalChunks}个输入片段（不代表知识点全部覆盖）${material.coverage.partial?'，当前仅覆盖部分资料，不能视为整本教材已覆盖':''}</p>`:''}
-        ${!material.ready?'<p>资料尚未达到可信解析状态，请先完成解析或校正确认。</p>':!data.available?'<p>模型尚未配置，暂不能生成题目。</p>':''}
+        ${String(material.parseStatus||'').startsWith('示例')&&!material.revision?'<p>这是一条示例记录，没有本地原文件，不能解析、出题或生成图谱。请选择上方已有图谱的真实资料，或上传原文件。</p>':!material.ready?'<p>资料尚未达到可信解析状态，请先完成解析或校正确认。</p>':!data.available?'<p>模型尚未配置，暂不能生成题目。</p>':''}
         ${nodes.length?`<div class="heading-actions"><button class="button button-outline" data-graph-zoom="0.8">放大</button><button class="button button-outline" data-graph-zoom="1.25">缩小</button><button class="button button-outline" data-graph-reset>重置视图</button><label>查找知识点<input type="search" data-graph-search></label></div><div class="material-graph" role="group" aria-label="资料知识图谱"><svg viewBox="0 0 640 420" aria-label="知识点关系图" style="width:100%;max-height:440px;touch-action:none">
           ${nodes.map((n,i)=>{const angle=2*Math.PI*i/nodes.length;return `<line x1="320" y1="210" x2="${320+200*Math.cos(angle)}" y2="${210+145*Math.sin(angle)}" stroke="var(--stitch-outline-variant)"/>`;}).join('')}
           <circle cx="320" cy="210" r="48" fill="var(--stitch-primary-fixed)"/><text x="320" y="215" text-anchor="middle" fill="var(--stitch-on-surface)">资料主题</text>

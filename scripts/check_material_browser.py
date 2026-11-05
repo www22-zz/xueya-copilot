@@ -53,6 +53,9 @@ def main():
                 page.route('**/api/learning/space/materials?*',catalog_fixture)
 
                 page.goto(base+'/#space/materials')
+                expect(page.locator('[data-material-practice]')).to_be_visible(timeout=20000)
+                page.locator('.materials-list button').filter(has_text='示例记录 · 无原件').first.click()
+                expect(page.locator('#materialLearning')).to_contain_text('没有本地原文件')
                 page.locator('.materials-list button').filter(has_text='队列讲义').click()
                 expect(page.locator('[data-material-practice]')).to_be_visible(timeout=20000)
                 assert page.locator('.material-graph svg').bounding_box()['height']>150
