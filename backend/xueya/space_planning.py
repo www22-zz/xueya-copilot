@@ -56,7 +56,7 @@ class ConversationPlanning:
     def __init__(self, app):
         self.app,self.p=app,app.state.platform
         self.service=StudySpaceService(self.p)
-        self.p.jobs.register(JOB,self.execute)
+        self.p.jobs.register(JOB,self.execute,timeout=270)
 
     @staticmethod
     def validate(value):
@@ -99,11 +99,12 @@ class ConversationPlanning:
         diagnostics={}
         for row in self.p.db.all("SELECT m.value FROM invocations i JOIN meta m ON m.key='invocation-context:'||i.id WHERE i.user_id=? ORDER BY i.at DESC LIMIT 200",(scope.user_id,)):
             context=json.loads(row['value'])
-            if context.get('jobId') and context.get('errorType') in ('ConnectError','ConnectTimeout','ProxyError'):
-                diagnostics.setdefault(context['jobId'],'AI_CONNECTION_FAILED')
+            kind=context.get('errorType')
+            code='AI_CONNECTION_FAILED' if kind in ('ConnectError','ConnectTimeout','ProxyError') else 'AI_PLAN_RESPONSE_TIMEOUT' if kind in ('TimeoutError','ReadTimeout','WriteTimeout','PoolTimeout') else None
+            if context.get('jobId') and code:diagnostics.setdefault(context['jobId'],code)
         for job in jobs:
             if job['status'] in ('unknown','failed'):
-                code=diagnostics.get(job['id']) or (job.get('error') if job.get('error')=='AI_CONNECTION_FAILED' else None)
+                code=diagnostics.get(job['id']) or ('AI_PLAN_RESPONSE_TIMEOUT' if job.get('error')=='JOB_TIMEOUT' else job.get('error') if job.get('error') in ('AI_CONNECTION_FAILED','AI_PLAN_RESPONSE_TIMEOUT') else None)
                 if code:job['diagnosticCode']=code
         return jobs
 
@@ -167,6 +168,8 @@ class ConversationPlanning:
         await self.connectivity()
         try:
             return await self._execute(scope,args,progress=progress,checkpoint=checkpoint,commit=commit)
+        except (TimeoutError,httpx.ReadTimeout,httpx.WriteTimeout,httpx.PoolTimeout) as error:
+            raise AppError('AI_PLAN_RESPONSE_TIMEOUT') from error
         except (httpx.ConnectError,httpx.ConnectTimeout,httpx.ProxyError) as error:
             # The ledger stays unknown; do not expose exception messages or retry.
             raise AppError('AI_CONNECTION_FAILED') from error
@@ -175,7 +178,7 @@ class ConversationPlanning:
         account=args['account']
         require(self.service._scope(account)==scope,'AUTH_SCOPE_MISMATCH')
         with borrowed_api_permit(self.p):
-            progress({'percent':10,'label':'正在拆解目标与排程'})
+            progress({'percent':10,'label':'正在等待模型生成阶段任务（单次最长120秒）'})
             plan=await self.service.generate_model_plan(account,self.app.state.provider,args['conditions'])
             row=self.p.repo.read(scope,'plan',plan['id'])
             self.p.repo.put(scope,'plan',plan['id'],{**row['value'],'generationStatus':'framework-pending'},row['version'])

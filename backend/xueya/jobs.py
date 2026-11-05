@@ -2,11 +2,12 @@
 from __future__ import annotations
 import asyncio
 import json
+import math
 import time
 from functools import wraps
 from uuid import uuid4
 from .common import AppError, Scope, dumps, identifier, require, utc_now
-from .execution_budget import budget_scope
+from .execution_budget import budget_scope, current_budget
 
 
 def budgeted_job(method):
@@ -23,6 +24,7 @@ class JobQueue:
     def __init__(self, repository, resources, lease_ms=15000, timeout=90):
         self.repo, self.db, self.resources = repository, repository.db, resources
         self.owner, self.handlers, self.active = str(uuid4()), {}, {}
+        self.handler_timeouts = {}
         self.lease_ms, self.timeout, self.runner = lease_ms, timeout, None
         self.stopped = True
 
@@ -42,9 +44,11 @@ class JobQueue:
     def list(self, user_id):
         return [self.get(r["id"], user_id) for r in self.db.all("SELECT id FROM jobs WHERE user_id=? ORDER BY created_at DESC LIMIT 100", (user_id,))]
 
-    def register(self, name, handler):
+    def register(self, name, handler, *, timeout=None):
         require(name not in self.handlers and callable(handler), "INVALID_JOB_HANDLER")
+        require(timeout is None or (type(timeout) in (int,float) and math.isfinite(timeout) and 0 < timeout <= 600), 'INVALID_JOB_TIMEOUT')
         self.handlers[name] = handler
+        if timeout is not None:self.handler_timeouts[name] = timeout
 
     def submit(self, user_id, args):
         require(isinstance(args, dict) and not set(args)-{"type", "courseId", "input", "resource", "idempotencyKey", "maxAttempts"}, "INVALID_JOB")
@@ -110,7 +114,7 @@ class JobQueue:
             from .account_scope import owner_context
             owner_token = owner_context.set(scope.user_id)
             self.repo.require_course(scope)
-            async with asyncio.timeout(self.timeout):
+            async with asyncio.timeout(min(self.handler_timeouts.get(row['type'],self.timeout),current_budget.get().remaining())):
                 result = await self.handlers[row["type"]](scope, json.loads(row["input"]), progress=lambda v: self.update(job_id, "progress", v), checkpoint=lambda v: self.update(job_id, "checkpoint", v), commit=lambda fn: self.commit(job_id, fn))
             require(len(dumps(result).encode()) <= 131072, "JOB_RESULT_TOO_LARGE")
 

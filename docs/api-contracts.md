@@ -532,3 +532,9 @@ generation摘要含 `{id,courseId,documentId,name,status,revision,jobId,complete
 - GET `/api/learning/space/plan/connectivity`：沿用本地Host/Origin、账号与X-Xueya-Token鉴权，向服务端配置的模型站点根路径发无密钥、无资料、非推理GET；`connected=true,inference=false,httpStatus`仅说明传输连接，不证明鉴权或生成质量。失败返回`AI_CONNECTION_FAILED`，不写模型调用账本。
 - POST `/api/learning/space/plan/generate`：相同账号与operationId已存在时先核验输入一致并返回原job；真正新作业先连接预检，失败零入队、零推理。worker也预检，连接变化时不重试未知调用。客户端丢回执应保留并复用原operationId，不用新编号重发同一次操作。
 - GET `/api/learning/space/plan/list`：失败/未知作业可扩展只读`diagnosticCode=AI_CONNECTION_FAILED`，来自同账号账本异常类名或作业错误码；旧status/error不改写，不公开异常正文或密钥，未知计费语义保留。
+
+### 2026-11-05 计划超时与输入上限
+
+计划作业服务端总限时270秒、单次规划请求120秒，仍取全局执行预算剩余值的较小者；仅服务端handler可配置作业时限，客户端Job DTO不接受timeout。其他作业默认90秒与其他学习生成默认60秒不扩大。新增只读诊断AI_PLAN_RESPONSE_TIMEOUT（兼容历史JOB_TIMEOUT），保留unknown计费、单次尝试与不自动重放语义。
+
+规划输入只发送有界题目代表元信息和所选科目的课程元信息；资源上限64知识点/12,000字符并标partial，完整题目仍保留原Question/题库。按输出预算给出maxTasks（4096token最多20项），不要求模型逐日展开。模型响应经过既有依赖、来源、日期、休息日和每日预算检查后才保存草稿；不以固定模板冒充成功的AI计划。

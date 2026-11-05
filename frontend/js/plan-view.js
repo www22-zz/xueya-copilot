@@ -26,7 +26,7 @@
       }
     }catch{}
     const savePending=()=>{try{sessionStorage.setItem(pendingKey(),JSON.stringify(pendingRequests));}catch{}};
-    const failureText=job=>job.diagnosticCode==='AI_CONNECTION_FAILED'||job.error==='AI_CONNECTION_FAILED'?'连接模型服务失败，未拿到可用结果。请先检查连接；历史调用费用待核对，不会自动重试。':job.error==='AI_INVALID_RESPONSE'?'模型返回格式未通过校验，未完成计划；不会自动重试。':'生成未完成，结果与费用待核对，不会自动重试。';
+    const failureText=job=>job.diagnosticCode==='AI_PLAN_RESPONSE_TIMEOUT'||['AI_PLAN_RESPONSE_TIMEOUT','JOB_TIMEOUT'].includes(job.error)?'模型响应超时，未生成可用计划。该请求的结果与费用仍待核对，不会自动重试。':job.diagnosticCode==='AI_CONNECTION_FAILED'||job.error==='AI_CONNECTION_FAILED'?'连接模型服务失败，未拿到可用结果。请先检查连接；历史调用费用待核对，不会自动重试。':job.error==='AI_INVALID_RESPONSE'?'模型返回格式未通过校验，未完成计划；不会自动重试。':'生成未完成，结果与费用待核对，不会自动重试。';
     const errorText=code=>({AI_CONNECTION_FAILED:'当前后台无法连接模型站点，本次未提交新的计划作业。请检查网络、代理及服务启动环境。',AI_UNAVAILABLE:'尚未配置可用模型，请检查服务设置。'}[code]||code||'操作未完成');
 
     async function loadPlans() {
