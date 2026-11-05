@@ -104,6 +104,16 @@ def install_study_space(app):
         from .common import require
         require(value.get('confirmedExternal') is True,'EXTERNAL_CONFIRMATION_REQUIRED')
         p=app.state.platform
+        require(type(value.get('callLimit',10)) is int and 1 <= value.get('callLimit',10) <= 50,
+                'INVALID_GRAPH_CALL_LIMIT')
+        require(bool(app.state.config.api_key),'AI_UNAVAILABLE')
+        # Verify access before contacting even the provider's unauthenticated
+        # origin. Do not enqueue a paid batch when this host cannot connect.
+        _, _, ranges=app.state.material_learning.corpus.inventory(account_id(request),p.scope_user_id,
+                       value.get('courseId','course-default'),value.get('subject',''))
+        probe=getattr(app.state.provider,'probe_connectivity',None)
+        if probe and any(not row['saved'] and not row['job'] for row in ranges):
+            await probe()
         return success(**app.state.material_learning.corpus.submit(account_id(request),p.scope_user_id,
                        value.get('courseId','course-default'),value.get('subject',''),value.get('callLimit',10)))
 
