@@ -3,7 +3,7 @@
   'use strict';
   const e=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   let generation=0,timer,subject='',selected='',selectedDocument='',nodeId='',autoPrepared=0;
-  let cached=null,cacheCourse='',signature='',tab='graph',planUI=null,preferGenerated=false,mountedLocation='',mountedCourse='';
+  let cached=null,cacheCourse='',signature='',tab='graph',planUI=null,videoUI=null,preferGenerated=false,mountedLocation='',mountedCourse='';
   const attempted=new Set();
   async function api(path,body){
     const reply=await window.XueyaPlatform.spaceFetch('/api/learning/space/'+path,body?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}:{});
@@ -13,6 +13,8 @@
     if(!container)return;const entering=!container.dataset.materialMounted,stamp=++generation;clearTimeout(timer);
     try{
       if(!container.dataset.materialMounted){if(mountedLocation!==location.hash||mountedCourse!==courseId)tab=location.hash.split('/')[2]&&!location.hash.split('/')[2].startsWith('cg-')?'graph':'corpus';mountedLocation=location.hash;mountedCourse=courseId;signature='';container.dataset.materialMounted='1';const parts=location.hash.split('/');if(parts[1]==='materials'&&parts[2]){selected=parts[2];nodeId=parts[3]||'';subject='';}}
+      const returnTabKey=(window.XueyaDataKey||((key)=>key))('xueya-material-return-tab');
+      if(entering){const returnTab=sessionStorage.getItem(returnTabKey);if(['corpus','graph','plan'].includes(returnTab)){tab=returnTab;sessionStorage.removeItem(returnTabKey);}}
       const selectionKey=(window.XueyaDataKey||((key)=>key))('xueya-material-selection:'+courseId);
       if(!selected){try{const saved=JSON.parse(localStorage.getItem(selectionKey)||'{}');selected=saved.selected||'';selectedDocument=saved.selectedDocument||'';subject=saved.subject||'';nodeId=saved.nodeId||'';}catch{}}
       if(!local||!cached||cacheCourse!==courseId){
@@ -23,7 +25,7 @@
       const {data,attendance}=cached,nextSignature=JSON.stringify(cached);
       // Keep focused inputs, open answers and unchanged DOM intact during polling.
       if(!local&&container.dataset.renderedTab===tab&&container.querySelector('.material-learning')&&(signature===nextSignature||container.querySelector('[data-quiz-card]')||(container.contains(document.activeElement)&&document.activeElement.matches('input,textarea,select,[contenteditable=true]'))||tab!=='graph')){schedule();return;}
-      signature=nextSignature;planUI?.unmount();window.XueyaCourseGraph?.unmount();
+      signature=nextSignature;planUI?.unmount();videoUI?.unmount();window.XueyaCourseGraph?.unmount();
       const redraw=()=>mount(container,courseId,true);
 
       const materials=data.materials,subjects=[...new Set(materials.map(m=>m.subject))];
@@ -59,16 +61,18 @@
       container.dataset.renderedTab=tab;
       container.querySelectorAll('[data-material-tab]').forEach(button=>button.onclick=()=>{tab=button.dataset.materialTab;if(tab==='graph'){preferGenerated=true;mount(container,courseId);}else redraw();});
       container.querySelector('[data-material-manage]').onclick=()=>{try{sessionStorage.setItem((window.XueyaDataKey||((key)=>key))('xueya-material-return'),JSON.stringify({hash:'#space/materials/'+selected+'/'+nodeId,name:material?.name||'课程资料学习'}));}catch{}};
+      if(tab==='graph'){const view=container.querySelector('[data-material-graph-view]');window.XueyaCourseGraph.mount(view,courseId,location.hash.split('/')[2],true);}
       if(tab==='corpus'){window.XueyaCourseGraph.mount(container.querySelector('[data-material-subview]'),courseId,location.hash.split('/')[2]);}
       if(tab==='plan'){
         const target=container.querySelector('[data-material-subview]');target.innerHTML='<h2>学习计划</h2><p>计划使用当前账号的资料与题目；完成后切回知识点与练习继续。</p><div data-material-plan></div>';
         planUI||=window.XueyaPlan.create({toast:window.toast,navigate:hash=>{location.hash=hash;}});planUI.mount(target.querySelector('[data-material-plan]'));
       }
       if(tab==='video'){
-        const target=container.querySelector('[data-material-subview]');target.innerHTML='<h2>配套课程</h2><p>官方课程总览，尚未精确匹配知识点分集。在新标签打开，保留当前学习位置。</p>';
-        api('courses').then(({courses:rows})=>{if(stamp!==generation||!container.isConnected)return;target.insertAdjacentHTML('beforeend',rows.filter(c=>c.sourceUrl&&materials.some(m=>m.ready&&m.subject===c.subject)).map(c=>`<a class="material-video" href="${e(c.sourceUrl)}" target="_blank" rel="noopener noreferrer"><strong>${e(c.title)}</strong><span>官方原站 ↗</span></a>`).join('')||'<p>暂无课程入口。</p>');}).catch(()=>{if(target.isConnected)target.insertAdjacentHTML('beforeend','<p>课程目录读取失败，请切回后重试。</p>');});
+        const target=container.querySelector('[data-material-subview]');
+        const drawVideo=()=>{if(stamp!==generation||!target.isConnected)return;target.innerHTML='<h2>课程资料 · 视频目录</h2><p>课程总览与精确分集分别标注；暂无已核验分集时，请前往原站。返回知识图谱可继续原知识点。</p>'+videoUI.render();videoUI.mount();};
+        videoUI=window.XueyaCourses.create({host:target,embedded:true,subjects:[...new Set(materials.filter(m=>m.ready).map(m=>m.subject))],toast:window.toast,render:drawVideo,navigate:hash=>location.hash=hash});drawVideo();
       }
-      container.querySelector('[data-material-subject]').onchange=event=>{subject=event.target.value;redraw();};
+      container.querySelector('[data-material-subject]')?.addEventListener('change',event=>{subject=event.target.value;redraw();});
       container.querySelector('[data-attendance]').onclick=async()=>{try{cached.attendance=await api('attendance',{});redraw();}catch(error){container.querySelector('[data-material-status]').textContent=error.message;}};
       container.querySelector('[data-material-prepare]')?.addEventListener('click',async()=>{try{await api('materials/prepare',{documentId:material.documentId,sourceCourseId:material.sourceCourseId,public:material.public,courseId});mount(container,courseId);}catch(error){container.querySelector('[data-material-status]').textContent=error.message;}});
       container.querySelectorAll('[data-material]').forEach(button=>button.onclick=()=>{selected=button.dataset.material;nodeId='';redraw();});
@@ -96,13 +100,6 @@
       // Existing accessible materials are prepared once; each document batch is
       // bounded server-side. Refreshing never retries a failed or unknown job.
       container.onclick=event=>{const link=event.target.closest('a[href^="#space/"]');if(link)try{sessionStorage.setItem((window.XueyaDataKey||((key)=>key))('xueya-material-return'),JSON.stringify({hash:'#space/materials/'+selected+'/'+nodeId,name:material?.name||'课程资料学习'}));}catch{}};
-      if(data.available){
-        for(const m of materials.filter(m=>m.ready&&!m.jobId&&!attempted.has(m.id)).slice(0,Math.max(0,20-autoPrepared))){
-          attempted.add(m.id);autoPrepared++;
-          try{await api('materials/prepare',{documentId:m.documentId,sourceCourseId:m.sourceCourseId,public:m.public,courseId});m.status='queued';if(stamp!==generation||!container.isConnected)return;}
-          catch(error){container.querySelector('[data-material-status]').textContent=error.message;}
-        }
-      }
       schedule();
       function schedule(){
         clearTimeout(timer);
@@ -111,5 +108,5 @@
 
     }catch(error){if(stamp===generation&&container.isConnected)container.innerHTML=`<p role="alert">资料学习暂不可用：${e(error.message)}</p>`;}
   }
-  window.XueyaMaterialLearning={mount,unmount(){if(!location.hash.startsWith('#space/materials'))mountedLocation='';generation++;clearTimeout(timer);planUI?.unmount();window.XueyaCourseGraph?.unmount();cached=null;signature='';}};
+  window.XueyaMaterialLearning={mount,unmount(){if(!location.hash.startsWith('#space/materials'))mountedLocation='';generation++;clearTimeout(timer);planUI?.unmount();videoUI?.unmount();window.XueyaCourseGraph?.unmount();cached=null;signature='';}};
 })();

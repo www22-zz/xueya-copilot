@@ -207,7 +207,7 @@
             ${activePlan.frameworkStatus==='failed'?'<p>当前计划已采用并可执行；关联导图未完成，原失败记录保留，不会自动重新生成。</p>':''}
           <div class="plan-stats-panel panel">
               <div class="plan-stat-bar">
-                <span>总完成进度：<strong>${doneCount} / ${allTasks.length} 项任务</strong> (${progressPercent}%)</span>
+                <span>辅助任务清单进度：<strong>${doneCount} / ${allTasks.length} 项任务</strong> (${progressPercent}%)</span>
                 <span>每日预算：${e(activePlan.dailyMinutes)} 分钟 · 保留历史完成 ${(activePlan.completedHistory||[]).length} 项</span>
               </div>
               <div class="plan-progress-track">
@@ -216,7 +216,7 @@
             </div>
 
             ${activePlan.completedHistory?.length?`<details class="panel"><summary>此前完成记录 (${activePlan.completedHistory.length})</summary>${activePlan.completedHistory.map(t=>`<p>${e(t.date||t.originalDate)} · ${e(t.title)} · 已完成${resourceLinks(t)}</p>`).join('')}</details>`:''}
-            <div class="plan-days-list">
+            <div data-learning-route="${e(activePlan.id)}"></div><details><summary>日历与任务清单（辅助视图）</summary><div class="plan-days-list">
               ${(activePlan.days || []).map(day => `
                 <div class="plan-day-card panel ${day.isRestDay ? 'is-rest-day' : ''}">
                   <div class="plan-day-head">
@@ -240,7 +240,7 @@
                   </div>
                 </div>
               `).join('')}
-            </div>
+            </div></details>
           ` : `
             <div class="plan-empty panel">
               <h3>暂无正在执行的学习计划</h3>
@@ -255,7 +255,7 @@
                 <div class="draft-row">
                   <div>
                     <strong>${e(d.title)}</strong> - <small>${e(d.goal)} · ${d.daysCount}天</small>
-                    <details class="plan-draft-preview"><summary>查看说明与每日安排</summary>
+                    <div data-learning-route="${e(d.id)}"></div><details class="plan-draft-preview"><summary>查看说明与每日安排</summary>
                       <p>${e(d.explanation)}</p><p>已安排 ${(d.days||[]).filter(day=>day.tasks?.length).length} 个学习日 / ${(d.days||[]).filter(day=>!day.isRestDay).length} 个可学习日，合计 ${(d.days||[]).reduce((sum,day)=>sum+(day.tasks||[]).reduce((n,t)=>n+t.minutes,0),0)} 分钟；${(d.days||[]).filter(day=>!day.isRestDay&&!day.tasks?.length).length} 个非休息日尚无任务。</p>${d.frameworkId?`<a href="#space/frameworks/${e(d.frameworkId)}">${d.frameworkCoverage?.partial?'打开资料关联局部图（'+e(d.frameworkCoverage.representedPhases)+'/'+e(d.frameworkCoverage.totalPhases)+'阶段）':'打开关联知识框架'}</a>`:d.frameworkStatus==='failed'?'<p>计划排程已保存，可以采用；关联导图未完成，不会自动重新调用AI。</p>':d.generationStatus?'<p>计划及关联导图仍在处理中，请等待当前作业结束。</p>':''}
                       ${d.changePreview?`<p>调整预览：每日 ${e(d.changePreview.dailyMinutes.before)} → ${e(d.changePreview.dailyMinutes.after)} 分钟；截止 ${e(d.changePreview.endDate.before)} → ${e(d.changePreview.endDate.after)}；保留已完成 ${d.changePreview.retainedCompleted} 项。采用前原计划继续执行。</p>`:''}
                       ${(d.days||[]).map(day=>`<p><strong>${e(day.date)}</strong> · ${day.isRestDay?'休息日':e(day.budgetMinutes)+' 分钟'}<br>${(day.tasks||[]).map(t=>e(t.title)+'（'+e(t.minutes)+' 分钟）'+resourceLinks(t)).join('<br>')||'无任务'}</p>`).join('')}
@@ -313,6 +313,7 @@
       `;
 
       bindEvents();
+      container.querySelectorAll("[data-learning-route]").forEach(host=>{const plan=[activePlan,...drafts].find(p=>p?.id===host.dataset.learningRoute);if(plan)window.XueyaLearningRoute.mount(host,plan);});
     }
 
     function bindEvents() {

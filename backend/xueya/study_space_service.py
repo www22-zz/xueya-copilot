@@ -125,12 +125,13 @@ class StudySpaceService:
         pending=[]
         from .course_records import CourseRecords
         courses=CourseRecords(self.platform).listing(account_id)['courses']
+        material_resources=self.material_question_resources(account_id)
         for candidate in candidates:
             require(isinstance(candidate,dict) and isinstance(candidate.get("title"),str)
                     and 0 < len(candidate["title"]) <= 300 and type(candidate.get("minutes")) is int
                     and 1 <= candidate["minutes"] <= 480, "INVALID_PLAN_TASKS")
             from .study_resources import match_task
-            resource=copy.deepcopy(candidate['resource']) if retained_ids and candidate.get('id') in retained_ids else match_task(candidate,courses,self.material_question_resources(account_id))
+            resource=copy.deepcopy(candidate['resource']) if retained_ids and candidate.get('id') in retained_ids else match_task(candidate,courses,material_resources)
             task_id=candidate['id'] if retained_ids and candidate.get('id') in retained_ids else generate_id('task-')
             video_course=next((c for c in courses if c.get('verification')=='verified-metadata'
                                and c.get('subject')==candidate.get('subject') and c.get('episodes')),None)
@@ -139,7 +140,7 @@ class StudySpaceService:
                     'verification':'verified-metadata'} if video_course else None)
             pending.append({"id":task_id,"title":candidate["title"],"subject":str(candidate.get("subject") or subjects[0]),
                             "kind":candidate.get('kind','self-study') if retained_ids and task_id in retained_ids else "practice" if resource['type']=='question' else "course" if resource['type']=='course' else "self-study","minutes":candidate["minutes"],"resource":resource,
-                            "video":video,"phase":str(candidate.get('phase') or '学习与巩固')[:100],"sourceTaskId":candidate.get('sourceTaskId') or task_id,
+                            "dependsOn":copy.deepcopy(candidate.get("dependsOn",[])),"video":video,"phase":str(candidate.get('phase') or '学习与巩固')[:100],"sourceTaskId":candidate.get('sourceTaskId') or task_id,
                             "links":copy.deepcopy(candidate.get('links',[])) if retained_ids else [],
                             "originalDate":candidate.get('originalDate') if retained_ids else None,
                             "completed":False,"completedAt":None,"delayCount":candidate.get('delayCount',0) if retained_ids else 0})
@@ -182,6 +183,8 @@ class StudySpaceService:
         }
 
         scope = self._scope(account_id)
+        from .learning_route import build
+        plan["learningRoute"] = build(self, account_id, plan)
         self.repo.put(scope, "plan", plan_id, plan, expected_version=0)
         return plan
 
@@ -199,6 +202,8 @@ class StudySpaceService:
                 if args.get('account')==account_id and checkpoint.get('stage')=='framework' and checkpoint.get('planId')==value['id']:
                     ready=True;value['frameworkStatus']='failed';value['frameworkError']=row['error']
                     break
+        from .learning_route import view
+        value['learningRoute']=view(self,account_id,value)
         value['canAdopt']=value.get('status')=='draft' and ready
         return value
 
@@ -553,6 +558,8 @@ class StudySpaceService:
             "prompt": q["prompt"],
             "sourceType": q.get("sourceType", "standard")
         }
+        for key in ('difficulty','difficultyReason','conceptId','materialId','sourceRevision','sourceIds','sourceDocumentId'):
+            if key in q:pub[key]=copy.deepcopy(q[key])
         if q['type'] == 'fill':pub['blankCount']=len(q.get('answer',[]))
         if "options" in q:
             pub["options"] = list(q["options"])
@@ -685,11 +692,15 @@ class StudySpaceService:
 
     def material_question_resources(self,account_id):
         from urllib.parse import quote
+        materials=getattr(self.platform,'material_learning',None)
+        accessible=None
+        if materials:
+            accessible=materials.accessible_concepts(account_id)
         return [{'type':'question','questionId':q['id'],'version':q['version'],'title':q['prompt'][:150],
                  'subject':q.get('courseSubject') or q.get('subject',''),'topic':q.get('subject',''),'tags':[],
                  'category':'ai','matched':True,'conceptId':q['conceptId'],'materialId':q['materialId'],
                  'url':'#space/practice/ai/'+quote(q['id'],safe='')}
-                for q in self.repo.all(self._scope(account_id),'question') if q.get('conceptId') and q.get('materialId')]
+                for q in self.repo.all(self._scope(account_id),'question') if q.get('conceptId') and q.get('materialId') and (accessible is None or q['conceptId'] in accessible)]
 
     @staticmethod
     def generated_plan_text(value):

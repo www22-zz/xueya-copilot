@@ -43,8 +43,10 @@ def test_full_range_resume_merge_isolation_and_revision(tmp_path, http_root):
         full=client.get(endpoint).json()
         assert full['coverage']['inputComplete']
         assert full['coverage']['remainingCalls']==0
-        assert len([n for n in full['nodes'] if n['kind']=='concept'])==1
-        assert full['coverage']['questions']==4 # Exact duplicate question prompts merge.
+        concepts=[n for n in full['nodes'] if n['kind']=='concept']
+        assert len(concepts)==full['coverage']['completedRanges']+1
+        assert len({n['id'] for n in concepts})==len(concepts)
+        assert full['coverage']['questions']==4*len(concepts) # Equal titles/prompts do not prove a shared source identity.
         assert client.post(endpoint+'/continue',json=request).json()['jobIds']==[]
         assert client.post(endpoint+'/continue',json={'callLimit':1}).status_code!=200
         assert client.get(endpoint+'?courseId=not-owned').status_code!=200

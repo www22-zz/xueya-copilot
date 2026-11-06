@@ -48,8 +48,9 @@
       if(node.dataset.mounted)return;node.dataset.mounted='1';const id=node.dataset.quizCard;
       try{
         const {question:q}=await api('quiz/question/'+encodeURIComponent(id));
+        if(node.dataset.planRevision&&Number(node.dataset.planRevision)!==q.revision)throw Error('题目版本已变化，当前计划保留原引用；请调整计划后再练习。');
         const directory=await api('quiz/list');
-        let attempt=node.dataset.attemptId?(await api('quiz/attempts/'+encodeURIComponent(node.dataset.attemptId))).attempt:directory.attempts.find(a=>a.questionId===id);
+        let attempt=node.dataset.attemptId?(await api('quiz/attempts/'+encodeURIComponent(node.dataset.attemptId))).attempt:directory.attempts.find(a=>a.questionId===id&&(!node.dataset.planId||(a.planId===node.dataset.planId&&a.nodeId===node.dataset.planNode)));
         let draft='';try{draft=sessionStorage.getItem(draftKey(id))||'';}catch{}
         function draw(){
           if(!node.isConnected)return;
@@ -75,7 +76,8 @@
           node.querySelector('form').onsubmit=action(async()=>{
             const form=new FormData(node.querySelector('form'));const answer=q.type==='single'?Number(form.get('answer')):q.type==='multiple'?form.getAll('answer').map(Number):q.type==='boolean'?form.get('answer')==='0':q.type==='fill'?form.getAll('answer'):draft;
             const request={questionId:q.id,questionRevision:q.revision,answer,operationId:crypto.randomUUID()};
-            const key=draftKey(id)+':pending';let saved;try{saved=JSON.parse(sessionStorage.getItem(key));}catch{}
+            if(node.dataset.planId){request.planId=node.dataset.planId;request.nodeId=node.dataset.planNode;}
+            const key=draftKey(id)+':pending:'+ (node.dataset.planId||'')+':'+(node.dataset.planNode||'');let saved;try{saved=JSON.parse(sessionStorage.getItem(key));}catch{}
             if(saved&&JSON.stringify(saved.answer)===JSON.stringify(answer))request.operationId=saved.operationId;
             try{sessionStorage.setItem(key,JSON.stringify(request));}catch{}
             attempt=(await api('quiz/attempts',request)).attempt;

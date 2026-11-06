@@ -63,7 +63,7 @@ class SpaceQuiz:
     @staticmethod
     def public_attempt(attempt):
         attempt=SpaceQuiz.normalize(attempt)
-        result={key:copy.deepcopy(attempt[key]) for key in ('id','questionId','questionRevision','answer','evaluations','effectiveEvaluation','revision','createdAt') if key in attempt}
+        result={key:copy.deepcopy(attempt[key]) for key in ('id','questionId','questionRevision','answer','evaluations','effectiveEvaluation','revision','createdAt','planId','nodeId') if key in attempt}
         if attempt.get('questionSnapshot'):result['questionSnapshotView']=StudySpaceService.public_question(attempt['questionSnapshot'])
         result['canReview']=bool(attempt.get('questionSnapshot',{}).get('prompt'))
         return result
@@ -133,6 +133,8 @@ class SpaceQuiz:
         def save():
             question=self.question(account,value.get('questionId'))
             require(type(value.get('questionRevision')) is int and value['questionRevision']==question['revision'],'QUESTION_REVISION_CONFLICT')
+            from .learning_route import validate_attempt, sync_completion
+            learning_context=validate_attempt(self.service,account,value,question)
             answer=value.get('answer')
             if question['type']=='short':require(isinstance(answer,str) and 0<len(answer.strip())<=20000,'INVALID_ANSWER')
             else:self.service.grade_submission(question,answer)
@@ -149,7 +151,9 @@ class SpaceQuiz:
                 evaluation['status']=evaluation['result']['status']
                 attempt['evaluations'].append(evaluation)
                 if evaluation['status']=='graded':attempt['effectiveEvaluation']=copy.deepcopy(evaluation)
+            attempt.update(learning_context)
             self.p.repo.put(scope,'attempt',attempt['id'],attempt,0)
+            if learning_context:sync_completion(self.service,account,learning_context['planId'])
             return self.public_attempt(attempt)
         return self.receipt(scope,value.get('operationId'),value,save)
 

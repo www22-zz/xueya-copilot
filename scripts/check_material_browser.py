@@ -95,6 +95,7 @@ def main():
                 expect(page.locator('[data-cg-practice]')).to_be_visible()
                 expect(page.locator('[data-cg-video]')).to_contain_text('尚未定位')
                 page.locator('[data-cg-practice]').click()
+                page.locator('[data-difficulty="待分级"]').click()
                 expect(page.locator('[data-cg-questions] [data-quiz-answer]')).to_have_count(4)
                 page.locator('[data-cg-close-quiz]').click()
                 page.locator('[data-cg-search]').fill('队列')
@@ -113,31 +114,23 @@ def main():
                 page.locator('[data-cg-back]').click()
                 expect(page.locator('.cg-books')).to_be_visible()
                 page.locator('[data-material-tab=graph]').click()
-                expect(page.locator('[data-material-practice]')).to_be_visible(timeout=20000)
-                page.locator('.materials-list button').filter(has_text='示例记录 · 无原件').first.click()
-                expect(page.locator('#materialLearning')).to_contain_text('没有本地原文件')
-                page.locator('.materials-list button').filter(has_text='队列讲义').click()
-                expect(page.locator('[data-material-practice]')).to_be_visible(timeout=20000)
-                assert page.locator('.material-graph svg').bounding_box()['height']>150
-                assert page.locator('.material-graph svg text').evaluate_all("els=>els.every(e=>getComputedStyle(e).stroke==='none')")
-                assert page.locator('.material-graph svg [data-node] text').evaluate_all("els=>els.every(e=>e.getBBox().width<90 && e.getBBox().height<80)")
+                page.locator('[data-cg-book]').click()
+                expect(page.locator('[data-directory-node]')).to_have_count(1)
+                page.locator('[data-directory-node]').click()
+                expect(page.locator('[data-cg-practice]')).to_be_visible()
                 material_requests=[]
                 page.on('request',lambda request:material_requests.append(request.url) if '/space/materials?' in request.url else None)
                 page.locator('[data-material-tab=video]').click()
-                expect(page.locator('.material-video')).to_have_count(1)
-                assert page.locator('.material-video').first.get_attribute('target')=='_blank'
+                expect(page.locator('[data-course-card-id]')).to_have_count(1)
+                page.locator('[data-course-card-id]').click()
+                assert page.get_by_role('link',name='前往官方课程').get_attribute('target')=='_blank'
                 assert page.url.endswith('#space/materials')
                 page.locator('[data-material-tab=graph]').click()
                 assert len(material_requests)<=1,material_requests
-
                 assert page.locator('.learning-center-nav .sidebar-text').all_text_contents()==['课程资料学习','算法学习','408考研学习','错题本']
-                viewbox=page.locator('.material-graph svg').get_attribute('viewBox')
-                page.locator('[data-graph-zoom="0.8"]').click()
-                assert page.locator('.material-graph svg').get_attribute('viewBox')!=viewbox
-                page.locator('[data-graph-reset]').click()
-                assert page.locator('.material-graph svg').get_attribute('viewBox')=='0 0 640 420'
-                page.locator('#materialLearning [data-node]').first.click()
-                page.locator('[data-material-practice]').click()
+                page.locator('[data-directory-node]').click()
+                page.locator('[data-cg-practice]').click()
+                page.locator('[data-difficulty="待分级"]').click()
                 expect(page.locator('[data-quiz-card]')).to_have_count(4)
                 forms=page.locator('[data-quiz-answer]')
                 expect(forms).to_have_count(4)
@@ -192,7 +185,7 @@ def main():
                 expect(page.locator('[data-attendance]')).to_have_text('今日已签到')
                 page.reload();expect(page.locator('[data-attendance]')).to_have_text('今日已签到')
                 page.locator('[data-material-tab=graph]').click()
-                expect(page.locator('[data-material-practice]')).to_be_visible()
+                expect(page.locator('[data-cg-practice]')).to_be_visible()
                 assert model.calls==1,model.calls
                 page.locator('[data-material-tab=plan]').click()
                 assert '#space/materials' in page.url
@@ -280,16 +273,17 @@ def main():
                 assert page.evaluate("XueyaAlgorithmDemo.trace('bfs').at(-1).result.join(',')")=='0,1,2,3'
                 page.goto(base+'/#space/materials')
                 page.locator('[data-material-tab=graph]').click()
-                page.locator('.materials-list button').filter(has_text='队列讲义').click()
-                expect(page.locator('[data-material-practice]')).to_be_visible()
+                page.locator('[data-material-tab=corpus]').click()
+                page.locator('[data-cg-concept]').click()
+                expect(page.locator('[data-cg-practice]')).to_be_visible()
                 for theme in ('light','dark'):
                     page.evaluate("theme=>document.documentElement.dataset.theme=theme",theme)
                     for width in (2560,1440,390):
                         page.set_viewport_size({'width':width,'height':1000})
                         page.wait_for_function("document.getAnimations().filter(a=>a.effect?.getTiming().iterations!==Infinity).every(a=>a.playState!=='running')")
                         assert page.evaluate('document.documentElement.scrollWidth<=innerWidth+1'), (theme,width,page.evaluate("[...document.querySelectorAll('#materialLearning *')].filter(e=>e.getBoundingClientRect().right>innerWidth+2).slice(0,12).map(e=>[e.tagName,e.className.baseVal??e.className,e.getBoundingClientRect().width])"))
-                        assert page.locator('.material-graph svg text').evaluate_all("els=>els.every(e=>getComputedStyle(e).stroke==='none')")
-                        assert page.locator('.material-graph svg [data-node] text').evaluate_all("els=>els.every(e=>e.getBBox().width<90 && e.getBBox().height<80)")
+                        assert page.locator('.cg-mindmap text').evaluate_all("els=>els.every(e=>getComputedStyle(e).stroke==='none')")
+                        assert page.locator('.cg-node-concept text').evaluate_all("els=>els.every(e=>e.getBBox().width<90 && e.getBBox().height<80)")
                         page.screenshot(path=str(output/f'graph-{theme}-{width}.png'),full_page=True)
                 assert model.calls==3,model.calls
                 assert not errors,errors

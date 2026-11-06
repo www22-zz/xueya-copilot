@@ -548,3 +548,16 @@ material-plan框架新增coverage：kind=material-linked、representedPhases/tot
 计划GET/list增加派生canAdopt、可选frameworkStatus=failed/frameworkError。framework-pending草稿仅在同账号生成作业已终止并释放租约，且检查点stage=framework、planId及输入account匹配时可采用；GET不修写数据、不再付费生成。运行中的未完成草稿仍拒绝采用。
 
 POST /plan/adopt继续要求confirmed=true、业务expectedRevision及operationId，保留事务、存储CAS、adoptionBase及单活跃计划规则。已保存有效计划的附属导图失败不再硬阻止采用；明确采用后持久化generationStatus=plan-ready-framework-failed，不修改原作业/账本或虚构frameworkId。再次提交同operationId返回原回执，不重复采用。业务revision与Repository version保持各自语义。
+
+
+### 2026-11-06 知识点练习、确定性演示与阶段路线（增量契约）
+
+既有 HTTP/SSE 入口和返回字段保留。下列接口继续使用本站 token、账号边界及学习空间存储。
+
+- `GET /api/learning/space/materials/concept/{conceptId}?courseId=course-default`：返回已保存 `concept`、`sourceRevision`、`groups`（简单/中等/困难/待分级）及本知识点补题作业 `jobs`。知识点必须属于当前可访问、可信解析且版本有效的资料；题目仅公开题干、选项、难度、分级理由和来源字段，不返回答案。
+- `POST /api/learning/space/materials/supplement`：输入 `conceptId`、`difficulty`、可选 `courseId`、`confirmedExternal:true`。复用 material-learning 作业；知识点/来源版本/难度构成幂等身份，一次最多4题，maxAttempts=1；相同身份的成功、失败和 unknown 均返回原作业，不自动重试。原题与记录保留，新题追加至原知识点。
+- `GET /api/learning/space/algorithm-demo/{questionId}?sample=0`：仅支持 h100-63、h100-53，返回原题样例、教学代码及确定性 `steps`。不存在的题目/样例显式拒绝，不使用模型；DFS保持二维四邻域。
+- 计划增加 `learningRoute`：完整计划 → phases → stages → nodes；节点保存题目 id/revision/sourceRevision、难度、日期、预算、缺题数和资源状态。新草稿创建时保存，GET只投影当前完成情况，不重新选题或调用模型。`POST /api/learning/space/plan/{planId}/route` 仅为无路线的历史计划整理一次现有资源，重复调用不替换题组。
+- `POST /api/learning/space/quiz/attempts` 增加可选 `planId`、`nodeId`。服务端校验当前计划、节点、题目版本及资料可访问性；客户端不得将其他节点或计划的作答记到本节点。公开 attempt 增加 planId/nodeId 用于恢复同一上下文。
+- 路线完成以节点中全部固定题的有效提交为依据，缺题节点不能完成；重复作答不增加完成题数，错题不阻止完成。每天学习完成事件按计划/日期幂等保存为 study-completion，与旧 attendance 到访记录分离。
+- 阶段报告按 planId/nodeId/questionRevision 限定作答，首次正确率以首次作答的原始评阅为依据；争议、待评分和无法判定单独计数。重评不新增作答，其他阶段记录不混入；没有判定依据时 firstAccuracy=null。

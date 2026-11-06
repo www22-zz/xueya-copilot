@@ -94,6 +94,21 @@ class MaterialLearning:
         self.rag.on_publish = published
         from .course_graph import CourseGraph
         self.corpus = CourseGraph(self)
+        self.p.material_learning = self
+
+    def account_owner_for(self, account):
+        for row in self.p.db.all("SELECT value FROM meta WHERE key='local-account-v1' OR key LIKE 'account-v2:%'"):
+            record=json.loads(row['value'])
+            if (record.get('learningOwner') or record.get('username')) == account:
+                return account_owner(record)
+        return None
+
+    def accessible_concepts(self, account):
+        owner=self.account_owner_for(account)
+        courses=[c for c in self.p.repo.courses(owner) if not c['archived']] if owner else []
+        if not courses:return set()
+        course=next((c['id'] for c in courses if c['id']=='course-default'),courses[0]['id'])
+        return {n['id'] for n in self.corpus.read(account,owner,course)['nodes'] if n['kind']=='concept'}
 
     def documents(self, owner, request_course):
         self.p.repo.require_course(Scope(user_id=owner,course_id=request_course))
@@ -165,6 +180,8 @@ class MaterialLearning:
         source_scope = Scope(**args['sourceScope'])
         doc = self.current(args['owner'], args['requestCourse'], source_scope, args['documentId'], args['revision'])
         sources = self.rag.sources(source_scope, document_ids=[doc['id']])
+        if args.get('targetConcept'):
+            sources = [s for s in sources if s['id'] in args['targetSourceIds']]
         require(sources, 'MATERIAL_NO_TRUSTED_CONTENT')
         # Corpus jobs address one exact source range; never truncate its tail.
         part = args.get('sourcePart')
@@ -186,8 +203,9 @@ class MaterialLearning:
         require(selected, 'MATERIAL_NO_TRUSTED_CONTENT')
         selected.sort(key=lambda source: source.get('page') if type(source.get('page')) is int else float('inf'))
         output_limit=min(10000,self.app.state.config.max_output_tokens)
-        concept_limit=max(1,min(6,output_limit//1400))
+        concept_limit=1 if args.get('targetConcept') else max(1,min(6,output_limit//1400))
         prompt = (f'根据提供资料提取1至{concept_limit}个实际知识点，给每个知识点生成4道练习，尽量覆盖single,multiple,boolean,fill。'
+                  '每题提供difficulty（简单/中等/困难）和difficultyReason：简单为单概念直接应用，中等为多步骤推导，困难为跨概念综合推理；不得按题型猜难度。'
                   '返回concepts数组，每项label,description,sourceIds,questions。questions每项type,prompt,explanation,answer，'
                   '单选options为2至6字符串，answer为下标；多选answer为至少2个不同下标；判断answer布尔；'
                   '填空每空用____，answer是逐空可接受字符串数组的数组。不要臆测缺失页。'
@@ -196,6 +214,12 @@ class MaterialLearning:
                   '按行或按列优先、维数和元素大小；对称矩阵的转置性质不得套用到一般三角矩阵。'
                   '不得使用没有在本题定义的“题给方式”或符号作为条件或答案；先独立验算数值，再填写答案和解析。'
                   '资料只枚举了几个例子，不表示其他例子无效；无法判定时不出该题。仅输出JSON。')
+        if args.get('targetConcept'):
+            prompt += '只为指定知识点补题：'+args['targetLabel']+'。所有题目难度必须为'+args['difficulty']+'，提供分级理由。'
+            saved=self.p.repo.read(scope,'artifact',args['materialId'])
+            existing=next(n for n in saved['value']['concepts'] if n['id']==args['targetConcept'])
+            prior=[self.p.repo.read(scope,'question',qid)['value']['prompt'][:300] for qid in existing['questionIds'][:16]]
+            prompt += '不要重复已有题目：'+json.dumps(prior,ensure_ascii=False)
         from backend.core import parse_model_json
         with borrowed_api_permit(self.p):
             response = await self.app.state.provider.generate([
@@ -212,7 +236,7 @@ class MaterialLearning:
             require(isinstance(concept.get('label'), str) and 0 < len(concept['label']) <= 200, 'AI_INVALID_RESPONSE')
             refs = concept.get('sourceIds')
             require(isinstance(refs, list) and refs and all(isinstance(r, str) and r in known for r in refs), 'AI_INVALID_RESPONSE')
-            node_id = args['materialId'] + '-k' + str(index)
+            node_id = args.get('targetConcept') or args['materialId'] + '-k' + str(index)
             batch = concept.get('questions')
             require(isinstance(batch, list) and 1 <= len(batch) <= 4, 'AI_INVALID_RESPONSE')
             ids = []
@@ -221,9 +245,14 @@ class MaterialLearning:
                         and isinstance(q.get('explanation'), str) and q['explanation'].strip(), 'AI_INVALID_RESPONSE')
                 require(q['prompt'].strip() not in seen, 'DUPLICATE_QUIZ_QUESTION')
                 seen.add(q['prompt'].strip()); validate(q)
-                ident = node_id + '-q' + str(position); ids.append(ident)
+                difficulty=q.get('difficulty','待分级')
+                require(difficulty in ('简单','中等','困难','待分级'), 'AI_INVALID_DIFFICULTY')
+                if args.get('targetConcept'):require(difficulty == args['difficulty'], 'AI_INVALID_DIFFICULTY')
+                ident = (args.get('supplementKey') or node_id) + '-q' + str(position); ids.append(ident)
                 questions.append({k: q[k] for k in ('type', 'prompt', 'explanation', 'answer', 'options') if k in q} |
                                  {'id': ident, 'subject': concept['label'], 'sourceType': 'ai-material',
+                                  'difficulty': difficulty, 'difficultyReason': str(q.get('difficultyReason',''))[:500],
+                                  'sourceIds': refs, 'sourceDocumentId': doc['id'],
                                   'conceptId': node_id, 'materialId': args['materialId'], 'sourceRevision': args['revision'],
                                   'courseSubject': self.p.repo.require_course(source_scope)['name'],
                                   'createdAt': utc_now()})
@@ -231,6 +260,17 @@ class MaterialLearning:
                           'sourceIds': refs, 'questionIds': ids, 'locations': [{'page': s.get('page')} for s in selected if s['id'] in refs]})
         def save():
             self.current(args['owner'], args['requestCourse'], source_scope, args['documentId'], args['revision'])
+            if args.get('targetConcept'):
+                row=self.p.repo.read(scope,'artifact',args['materialId'])
+                saved=row['value']
+                node=next(n for n in saved['concepts'] if n['id']==args['targetConcept'])
+                existing={self.p.repo.read(scope,'question',qid)['value']['prompt'].strip() for qid in node['questionIds']}
+                require(not any(q['prompt'].strip() in existing for q in questions), 'DUPLICATE_QUIZ_QUESTION')
+                for q in questions:self.p.repo.put(scope,'question',q['id'],q,0)
+                node['questionIds'].extend(q['id'] for q in questions)
+                saved['coverage']['questions']+=len(questions)
+                self.p.repo.put(scope,'artifact',args['materialId'],saved,row['version'])
+                return {'materialId':args['materialId'],'questionIds':[q['id'] for q in questions]}
             for q in questions:
                 self.p.repo.put(scope, 'question', q['id'], q, 0)
             self.p.repo.put(scope, 'artifact', args['materialId'], {'kind': JOB, 'concepts': nodes,

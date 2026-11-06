@@ -188,7 +188,7 @@ function createPracticeView({store,client,toast=()=>{},navigate=()=>{}}={}){
                 </div>
                 ${status!=='pending'?'<span class="stitch-chip stitch-chip-'+status+'">'+STATUS_LABEL[status]+'</span>':''}
               </div>
-              <div class="practice-row-title font-headline-sm text-sm ${isSelected?'text-primary font-bold':'text-on-surface font-semibold'}">${e(q.title)}</div>
+              <div class="practice-row-title font-headline-sm text-sm ${isSelected?'text-primary font-bold':'text-on-surface font-semibold'}">${e(q.title)}${['h100-63','h100-53'].includes(q.id)?'<span class="stitch-chip">交互演示</span>':''}</div>
               <div class="practice-row-meta flex items-center gap-2 text-xs">
                 <span class="${q.difficulty==='简单'?'text-[#16a34a] font-semibold':q.difficulty==='中等'?'text-tertiary font-semibold':'text-error font-semibold'}">${e(q.difficulty)}</span>
               </div>
@@ -578,8 +578,7 @@ function createPracticeView({store,client,toast=()=>{},navigate=()=>{}}={}){
     root.querySelector('.practice-detail-pane').scrollTop=detailScroll;
     if(current()&&ui.category==='hot100'){
       const title=current().title||'';
-      const demo=/二分|搜索插入|搜索二维/.test(title)?'binary':/层序|岛屿|广度/.test(title)?'bfs':/有效的括号|最小栈|栈/.test(title)?'stack':null;
-      if(demo){const link=document.createElement('a');link.className='button button-outline';link.href='#space/algorithms/'+demo;link.textContent='查看相关算法机制演示（预设示例，非本题代码执行）';root.querySelector('.practice-detail-pane').prepend(link);}
+      if(['h100-63','h100-53'].includes(current()?.id)){const link=document.createElement('a');link.className='button button-outline';link.href='/algorithm-demo.html?question='+encodeURIComponent(current().id);link.target='_blank';link.rel='noopener';link.textContent='打开交互演示';root.querySelector('.practice-detail-pane').prepend(link);}
     }
     if(view==='review'&&globalThis.XueyaStudyQuiz){
       const keep=savedReview?.dataset.reviewArea===reviewArea()&&savedReview.dataset.bankVersion===client.version;

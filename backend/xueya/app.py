@@ -409,7 +409,7 @@ def create_app(config: Config | None = None, *, provider=None, start_jobs=True):
     async def static(request: Request, path: str):
         requested = "/"+path if path else "/index.html"
         shared = requested in PUBLIC_SHARED
-        frontend = requested in ("/index.html", "/sw.js") or bool(re.fullmatch(r"/(?:css/(?:[a-zA-Z0-9_-]+/)*[a-zA-Z0-9_-]+\.css|js/(?:[a-zA-Z0-9_-]+/)*[a-zA-Z0-9_-]+\.js|assets/[a-zA-Z0-9_-]+\.(?:svg|png|jpg|woff2))", requested))
+        frontend = requested in ("/index.html", "/algorithm-demo.html", "/sw.js") or bool(re.fullmatch(r"/(?:css/(?:[a-zA-Z0-9_-]+/)*[a-zA-Z0-9_-]+\.css|js/(?:[a-zA-Z0-9_-]+/)*[a-zA-Z0-9_-]+\.js|assets/[a-zA-Z0-9_-]+\.(?:svg|png|jpg|woff2))", requested))
         if not shared and not frontend:
             return PlainTextResponse("Not found", status_code=404)
         root = config.root if shared else config.root / "frontend"

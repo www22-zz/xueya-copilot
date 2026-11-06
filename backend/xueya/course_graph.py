@@ -74,6 +74,7 @@ class CourseGraph:
             edges.append({'source': 'course', 'target': doc['id'], 'relation': 'contains'})
         graph_items = list(ranges)
         for doc in documents:
+            if not doc['ready']:continue
             seed = self.p.repo.read(scope, 'artifact', doc['id'])
             if seed:
                 graph_items.append({'id': doc['id'], 'documentId': doc['id'], 'page': None,
@@ -85,7 +86,7 @@ class CourseGraph:
                 normalized = label_key(node['label'])
                 # Exact normalized titles only: no unreviewed semantic merging.
                 subject_name = next(d['subject'] for d in documents if d['id'] == item['documentId'])
-                key = 'concept-' + digest([subject_name, normalized])[:32]
+                key = node['id']  # Persisted relation, never a title-based identity
                 concept = concepts.setdefault(key, {'id': key, 'label': node['label'], 'kind': 'concept',
                                                      'references': [], 'questionIds': [], 'descriptions': []})
                 reference = {'materialId': item['id'], 'conceptId': node['id'], 'documentId': item['documentId'],
@@ -96,7 +97,7 @@ class CourseGraph:
                 for qid in node['questionIds']:
                     question = self.p.repo.read(scope, 'question', qid)
                     fingerprint = digest([subject_name, question['value'].get('type'), re.sub(r'\s+', '', unicodedata.normalize('NFKC',question['value']['prompt']))]) if question else qid
-                    if qid not in question_ids and fingerprint not in question_keys:
+                    if qid not in question_ids:
                         concept['questionIds'].append(qid)
                         question_ids.add(qid)
                         question_keys.add(fingerprint)

@@ -542,7 +542,7 @@
     } catch {}
   }
 
-  function createCoursesWorkspace({ state, store, toast, ask, render, navigate }) {
+  function createCoursesWorkspace({ state, store, toast, ask, render, navigate, host=null, subjects=null, embedded=false }) {
     let activeCourseId = null;
     let activeEpisodeId = null;
     let categoryFilter = 'all';
@@ -553,7 +553,8 @@
     const localVideosMap = {}; // key: "courseId:epId" -> { url, name }
 
     function getAllCourses() {
-      if(serverCurrent())return serverData.courses;
+      if(serverCurrent())return serverData.courses.filter(c=>!subjects||(c.verification==='verified-metadata'&&subjects.includes(c.subject)));
+      if(embedded)return [];
       const custom = getCustomCourses();
       return [...BUILTIN_COURSES.map(c=>({...c,platform:true,verification:'legacy-unverified'})), ...custom];
     }
@@ -624,16 +625,16 @@
                 <div class="flex flex-wrap items-center gap-2">
                   <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary font-label-md text-xs font-semibold">
                     <span class="material-symbols-outlined text-[15px]">terminal</span>
-                    CS 学科知识图谱引擎
+                    课程视频目录
                   </span>
                   <span class="inline-flex items-center gap-1.5 text-on-surface-variant font-code-sm text-xs">
                     <span class="w-2 h-2 rounded-full bg-secondary"></span>
-                    同步大纲: 2025 计算机 408 统考 & 顶尖名校体系
+                    课程总览与已核验分集分别展示
                   </span>
                 </div>
                 <div class="flex flex-col gap-1">
-                  <h1 class="font-display-lg text-2xl lg:text-3xl text-on-surface tracking-tight font-bold">计算机精品课程研修台</h1>
-                  <p class="font-body-md text-sm text-on-surface-variant">聚合顶级高校国家精品课程与前沿 AI 架构实践，构建严密、贯通底层的计算机认知范式。</p>
+                  <h1 class="font-display-lg text-2xl lg:text-3xl text-on-surface tracking-tight font-bold">配套视频课程</h1>
+                  <p class="font-body-md text-sm text-on-surface-variant">按课程和主题查找视频；课程总览前往原站，未核验信息会明确标注。</p>
                 </div>
 
                 <!-- Integrated Progress Metrics Strip -->
@@ -653,7 +654,7 @@
                       <span class="material-symbols-outlined text-[20px]">schedule</span>
                     </div>
                     <div class="flex flex-col">
-                      <span class="text-xs text-outline">累计已学课时</span>
+                      <span class="text-xs text-outline">手动标记完成</span>
                       <span class="text-lg text-on-surface font-bold tracking-tight">${stats.studiedEpisodes} <span class="text-xs font-normal text-on-surface-variant">/ ${stats.totalEpisodes} 课时</span></span>
                     </div>
                   </div>
@@ -676,11 +677,11 @@
                 <!-- Linear Progress Bar -->
                 <div class="flex flex-col gap-1 pt-1">
                   <div class="flex items-center justify-between text-xs text-on-surface-variant">
-                    <span>当前学期总规划履约度</span>
-                    <span class="font-code-sm text-outline font-medium">本周建议新增研习 ≥ 4.5 小时</span>
+                    <span>课程手动完成记录</span>
+                    <span class="font-code-sm text-outline font-medium">按自己的学习计划安排</span>
                   </div>
                   <div class="w-full h-2 rounded-full bg-surface-container-highest overflow-hidden">
-                    <div class="h-full bg-gradient-to-r from-primary to-secondary rounded-full transition-all duration-700" style="width: ${Math.max(4, stats.percentage)}%;"></div>
+                    <div class="h-full bg-gradient-to-r from-primary to-secondary rounded-full transition-all duration-700" style="width: ${stats.percentage}%;"></div>
                   </div>
                 </div>
               </div>
@@ -775,7 +776,7 @@
                     <div class="flex items-center justify-between pt-2 border-t border-outline-variant/20">
                       <div class="flex items-center gap-1.5 text-xs text-on-surface-variant">
                         <span class="material-symbols-outlined text-[16px]">person</span>
-                        <span class="truncate max-w-[120px]">${escapeHTML(c.instructor || '名校教研组')}</span>
+                        <span class="truncate max-w-[120px]">${escapeHTML(c.verification==='legacy-unverified'?'讲师待核验':c.instructor || '讲师信息未提供')}</span>
                       </div>
                       <button type="button" class="px-3.5 py-1.5 rounded-lg bg-primary text-on-primary font-semibold text-xs flex items-center gap-1 hover:bg-primary-container transition-all shadow-sm" data-enter-course="${escapeHTML(c.id)}">
                         <span>${percent > 0 ? (percent === 100 ? '复习课程' : `继续学习 (${percent}%)`) : '进入伴学播放'}</span>
@@ -832,13 +833,13 @@
                     ${escapeHTML(course.categoryName || '408 核心考点')}
                   </span>
                   <span class="px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm">
-                    ${escapeHTML(course.instructor || '名校公开课')} · ${escapeHTML(course.title)}
+                    ${escapeHTML(course.verification==='legacy-unverified'?'讲师待核验':course.instructor || '讲师信息未提供')} · ${escapeHTML(course.title)}
                   </span>
                 </div>
                 <div class="flex items-center gap-3 text-on-surface-variant font-body-sm text-body-sm mt-1">
                   <span class="flex items-center gap-1 font-code-sm text-code-sm text-primary font-semibold">
                     <span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
-                    ${escapeHTML(currentEp?.duration || '15:00')}
+                    ${escapeHTML(course.verification==='legacy-unverified'?'时长待核验':currentEp?.duration || '时长未提供')}
                   </span>
                   <span class="text-outline-variant">•</span>
                   <span class="truncate max-w-[600px]">${escapeHTML(currentEp?.summary || course.description)}</span>
@@ -980,7 +981,7 @@
                           <span class="w-6 h-6 rounded-lg ${isCurrent ? 'bg-primary text-on-primary' : 'bg-surface-container text-on-surface-variant'} flex items-center justify-center font-code-sm text-code-sm font-bold flex-shrink-0">${idx + 1}</span>
                           <div class="flex flex-col min-w-0">
                             <span class="font-label-md text-label-md font-semibold truncate ${isCurrent ? 'text-primary' : 'text-on-surface'}">${escapeHTML(ep.title)}</span>
-                            <span class="text-xs text-on-surface-variant">${escapeHTML(ep.duration || '15:00')}</span>
+                            <span class="text-xs text-on-surface-variant">${escapeHTML(course.verification==='legacy-unverified'?'时长待核验':ep.duration || '时长未提供')}</span>
                           </div>
                         </div>
                         <div class="flex items-center gap-1.5 flex-shrink-0 ml-2">
@@ -1223,19 +1224,20 @@
     function renderView() {
       const all = getAllCourses();
       const route=typeof location!=='undefined'?location.hash.split('/'):[];
-      if(route[2]&&all.some(c=>c.id===decodeURIComponent(route[2]))){activeCourseId=decodeURIComponent(route[2]);activeEpisodeId=decodeURIComponent(route[3]||'')||all.find(c=>c.id===activeCourseId).episodes[0]?.id;}
+      if(!embedded&&route[2]&&all.some(c=>c.id===decodeURIComponent(route[2]))){activeCourseId=decodeURIComponent(route[2]);activeEpisodeId=decodeURIComponent(route[3]||'')||all.find(c=>c.id===activeCourseId).episodes[0]?.id;}
       let activeCourse = null;
       if (activeCourseId) {
         activeCourse = all.find(c => c.id === activeCourseId);
       }
-      const restore=online()?'<p class="panel">课程与手动完成记录保存在当前账号。<button type="button" class="button button-small button-outline" data-import-local-courses>导入本账号的本机旧记录</button></p>':'';
+      const restore=online()&&!embedded?'<p class="panel">课程与手动完成记录保存在当前账号。<button type="button" class="button button-small button-outline" data-import-local-courses>导入本账号的本机旧记录</button></p>':'';
       const privateControl=activeCourse&&!activeCourse.platform&&online()?`<button type="button" class="button button-small button-outline" data-delete-private-course="${escapeHTML(activeCourse.id)}">删除本人私人课程</button>`:'';
       const status=activeCourse?`<p class="panel">${activeCourse.platform?'平台课程':'本人私人课程'} · ${activeCourse.verification==='verified-metadata'?'原站元信息已核对；播放能力以播放器为准':'原站标题、作者和分集尚未核验'}。完成状态是手动确认，不表示掌握。官方嵌入播放器不提供本站可读的真实进度。</p>`:'';
-      return restore+status+privateControl+(activeCourse ? renderPlayer(activeCourse) : renderCatalog()) + renderAddModal();
+      let contextBanner='';try{const ctx=JSON.parse(sessionStorage.getItem((window.XueyaDataKey||((k)=>k))('xueya-video-context'))||'null');if(ctx&&activeCourse?.id===ctx.courseId&&ctx.returnHash?.startsWith('#space/'))contextBanner=`<p class="panel">关联学习位置：${escapeHTML(ctx.label)} · 课程总览，尚未匹配精确分集。<a href="${escapeHTML(ctx.returnHash)}" data-video-learning-return>返回原学习位置</a></p>`;}catch{}
+      return contextBanner+restore+status+privateControl+(activeCourse ? renderPlayer(activeCourse) : renderCatalog()) + renderAddModal();
     }
 
     function mount() {
-      const container = document.getElementById('spaceContent');
+      const container = host || document.getElementById('spaceContent');
       if (!container) return;
       mountController?.abort();
       mountController = new AbortController();
@@ -1254,6 +1256,8 @@
         player.addEventListener('timeupdate',()=>{if(Date.now()-lastPosition>15000)savePosition();},listenerOptions);
       }
       container.addEventListener('click',async event=>{
+        if(!embedded&&typeof location!=='undefined'&&!location.hash.startsWith('#space/courses'))return;
+        if(event.target.closest('[data-video-learning-return]')){try{const ctx=JSON.parse(sessionStorage.getItem((window.XueyaDataKey||((k)=>k))('xueya-video-context')));sessionStorage.setItem((window.XueyaDataKey||((k)=>k))('xueya-material-return-tab'),ctx.returnTab||'corpus');}catch{}return;}
         const importButton=event.target.closest('[data-import-local-courses]');
         const deleteButton=event.target.closest('[data-delete-private-course]');
         if(!importButton&&!deleteButton)return;
@@ -1287,11 +1291,12 @@
       }
       if(typeof window!=='undefined'&&!mount._routeListener){
         mount._routeListener=true;window.addEventListener('hashchange',()=>{
-          if(!location.hash.startsWith('#space/courses'))serverData=null;
+          if(!location.hash.startsWith('#space/courses')){serverData=null;if(!embedded)mountController?.abort();}
         });
       }
+
       const route=typeof location!=='undefined'?location.hash.split('/'):[];
-      if(route[2]&&getAllCourses().some(c=>c.id===decodeURIComponent(route[2]))){
+      if(!embedded&&route[2]&&getAllCourses().some(c=>c.id===decodeURIComponent(route[2]))){
         activeCourseId=decodeURIComponent(route[2]);activeEpisodeId=decodeURIComponent(route[3]||'')||getAllCourses().find(c=>c.id===activeCourseId).episodes[0]?.id;
       }
 
@@ -1324,6 +1329,7 @@
 
       // Click delegations
       container.addEventListener('click', e => {
+        if(!embedded&&typeof location!=='undefined'&&!location.hash.startsWith('#space/courses'))return;
         // Switch source
         const srcBtn = e.target.closest('[data-switch-source]');
         if (srcBtn) {
@@ -1539,7 +1545,8 @@
     return {
       render: renderView,
       mount,
-      getAllCourses
+      getAllCourses,
+      unmount(){mountController?.abort();}
     };
   }
 

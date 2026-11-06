@@ -83,6 +83,16 @@ def install_study_space(app):
         authorize(request)
         return success(**app.state.material_learning.attendance(account_id(request),sign=True))
 
+    @router.get('/algorithm-demo/{question_id}')
+    async def algorithm_demo(request: Request, question_id: str):
+        # Same account authorization as the learning workspace; no model use.
+        authorize(request)
+        account_id(request)
+        from .algorithm_trace import trace
+        raw=request.query_params.get('sample','0')
+        require(raw.isdigit(), 'DEMO_SAMPLE_NOT_FOUND')
+        return success(demo=trace(question_id,int(raw)))
+
     @router.get('/materials')
     async def materials(request: Request):
         authorize(request)
@@ -116,6 +126,21 @@ def install_study_space(app):
             await probe()
         return success(**app.state.material_learning.corpus.submit(account_id(request),p.scope_user_id,
                        value.get('courseId','course-default'),value.get('subject',''),value.get('callLimit',10)))
+
+    @router.get('/materials/concept/{concept_id}')
+    async def concept_practice(request: Request, concept_id: str):
+        authorize(request)
+        from .concept_practice import read
+        return success(**read(app.state.material_learning, account_id(request), app.state.platform.scope_user_id,
+                              request.query_params.get('courseId','course-default'), concept_id))
+
+    @router.post('/materials/supplement')
+    async def supplement_concept(request: Request):
+        authorize(request)
+        from .concept_practice import supplement
+        value=await json_body(request,16384)
+        return success(job=supplement(app.state.material_learning, account_id(request), app.state.platform.scope_user_id,
+                                     value.get('courseId','course-default'), value))
 
     @router.post('/materials/prepare')
     async def prepare_material(request: Request):
@@ -214,6 +239,20 @@ def install_study_space(app):
         data = await json_body(request, 65536)
         plan = await service().generate_model_plan(account_id(request), app.state.provider, data)
         return success(plan=plan)
+
+    @router.post('/plan/{plan_id}/route')
+    async def prepare_route(request: Request, plan_id: str):
+        authorize(request)
+        from .learning_route import build
+        srv=service();account=account_id(request);scope=srv._scope(account)
+        with app.state.platform.db.transaction():
+            row=srv.repo.read(scope,'plan',plan_id)
+            require(row is not None,'PLAN_NOT_FOUND')
+            plan=row['value']
+            if not plan.get('learningRoute'):
+                plan['learningRoute']=build(srv,account,plan)
+                srv.repo.put(scope,'plan',plan_id,plan,row['version'])
+        return success(plan=srv.plan_view(account,plan))
 
     @router.post("/plan/adopt")
     async def adopt_plan(request: Request):

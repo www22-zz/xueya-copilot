@@ -15,12 +15,15 @@
     return value;
   }
 
-  async function mount(target, course, reference) {
+  async function mount(target, course, reference, directory=false) {
     const stamp = ++epoch;
     clearTimeout(timer);
     let data, signature = '', subject = '', filter = '', focusedDocument = '', selected = 'course', search = '', page = 0;
     let viewport, viewportKey = '', courses = [], videoError = false, submitting = false;
     let concepts = new Map(), children = new Map(), subjects = [];
+    const stateKey=(window.XueyaDataKey||((k)=>k))('course-graph-view:'+course);
+    try{const old=JSON.parse(sessionStorage.getItem(stateKey)||'{}');subject=old.subject||'';focusedDocument=old.focusedDocument||'';selected=old.selected||'course';page=old.page||0;viewport=old.viewport;viewportKey=old.viewportKey||'';}catch{}
+    const remember=()=>sessionStorage.setItem(stateKey,JSON.stringify({subject,focusedDocument,selected,page,viewport,viewportKey}));
     const alive = () => stamp === epoch && target.isConnected;
     target.innerHTML = '<p role="status">正在读取课程书架…</p>';
     const chapterNumber = text => {
@@ -43,7 +46,7 @@
     const pointsFor = docs => [...new Map(docs.flatMap(d => children.get(d.id) || []).map(n => [n.id, n])).values()];
     const questionCount = nodes => new Set(nodes.flatMap(n => n.questionIds)).size;
     const openDocument = id => { focusedDocument = id; selected = id; page = 0; search = ''; draw(); };
-    const chooseConcept = id => { selected = id; updateSelection(); drawDetail(); };
+    const chooseConcept = id => { selected = id; remember(); updateSelection(); drawDetail(); };
 
     function index() {
       concepts = new Map(data.nodes.filter(n => n.kind === 'concept').map(n => [n.id, n]));
@@ -93,6 +96,7 @@
     function draw() {
       if (!alive()) return;
       if (!subject) drawShelf(); else drawMap();
+      remember();
       target.insertAdjacentHTML('beforeend', coverage() + '<p data-cg-load-status role="status"></p>');
       target.querySelector('[data-cg-continue]').onclick = async event => {
         const button = event.currentTarget, message = target.querySelector('[data-cg-message]');
@@ -139,6 +143,7 @@
       target.querySelector('[data-cg-overview]').onclick = () => { focusedDocument = ''; selected = 'course'; page = 0; draw(); };
       target.querySelector('[data-cg-search]').oninput = event => { search = event.target.value; drawSearch(); };
       drawCanvas(); drawSearch(); drawDetail();
+      if(directory){const map=target.querySelector('.cg-map-area');map.innerHTML='<h3>章节与知识点目录</h3>'+docs.map(d=>`<details open><summary>${e(titleOf(d.name))}</summary>${(children.get(d.id)||[]).map(n=>`<button type="button" class="button button-outline" data-directory-node="${e(n.id)}">${e(n.label)} · ${n.questionIds.length}题</button>`).join('')||'<p>待补充资料或尚未生成题目</p>'}</details>`).join('');map.querySelectorAll('[data-directory-node]').forEach(b=>b.onclick=()=>chooseConcept(b.dataset.directoryNode));}
     }
     function drawSearch() {
       const box = target.querySelector('[data-cg-results]');
@@ -202,7 +207,7 @@
         ${!all.length ? '<p class="cg-map-notice">资料已就绪，知识点尚待生成。此处没有添加占位知识点。</p>' : overviewOnly ? '<p class="cg-map-notice">知识点较多，点击资料节点展开对应章节。</p>' : ''}
         ${doc && all.length > 24 ? `<div class="cg-map-pages"><button class="button button-outline" data-cg-prev ${!page ? 'disabled' : ''}>上一组</button><span>${page * 24 + 1}–${Math.min((page + 1) * 24, all.length)} / ${all.length}个知识点</span><button class="button button-outline" data-cg-next ${(page + 1) * 24 >= all.length ? 'disabled' : ''}>下一组</button></div>` : ''}`;
       const svg = target.querySelector('.cg-mindmap');
-      const apply = () => svg.setAttribute('viewBox', viewport.join(' '));
+      const apply = () => {svg.setAttribute('viewBox', viewport.join(' '));remember();};
       target.querySelectorAll('[data-cg-zoom]').forEach(b => b.onclick = () => {
         const factor = Number(b.dataset.cgZoom), size = viewport[2] * factor;
         if (size < base[2] / 5 || size > base[2] * 2) return;
@@ -244,8 +249,8 @@
           <button type="button" class="button button-blue" data-cg-practice ${node.questionIds.length ? '' : 'disabled'}>练习此知识点 →</button><p class="cg-muted">AI题目未经独立审校</p><h4>资料出处</h4><ul class="cg-source-list">${refs.map(r => `<li>${e(data.documents.find(d => d.id === r.documentId)?.name || '资料')}${r.page ? ' · 第' + e(r.page) + '页' : ''}</li>`).join('')}</ul><div data-cg-video></div>`;
         box.querySelector('[data-cg-practice]').onclick = () => {
           const questions = target.querySelector('[data-cg-questions]');
-          questions.innerHTML = `<div class="cg-quiz-heading"><h3>${e(node.label)} · 练习</h3><button type="button" class="button button-outline" data-cg-close-quiz>收起练习</button></div>` + node.questionIds.map(id => `<section class="study-quiz-card panel" data-quiz-card="${e(id)}"></section>`).join('');
-          window.XueyaStudyQuiz.mount(questions);
+          questions.innerHTML = '<button type="button" class="button button-outline" data-cg-close-quiz>返回知识图谱</button><div data-shared-practice></div>';
+          window.XueyaConceptPractice.mount(questions.querySelector('[data-shared-practice]'),node.id,course);
           questions.querySelector('[data-cg-close-quiz]').onclick = () => { questions.innerHTML = ''; box.querySelector('[data-cg-practice]').focus(); };
           questions.scrollIntoView({block:'start', behavior:'smooth'});
         };
@@ -268,8 +273,9 @@
       const box = target.querySelector('[data-cg-video]');
       if (!box) return;
       const matching = courses.filter(c => c.subject === subject && /^https?:\/\//i.test(c.sourceUrl || ''));
-      box.innerHTML = `<h4>相关视频课程</h4>${matching.map(c => `<a class="cg-video-link" href="${e(c.sourceUrl)}" target="_blank" rel="noopener noreferrer">${e(c.title)} ↗</a>`).join('') || `<p>${videoError ? '课程目录暂时无法读取。' : '暂无匹配的课程入口。'}</p>`}<p class="cg-muted">${matching.length ? '本科目课程总览，尚未定位到此知识点的具体分集。' : '没有匹配视频时，不添加占位链接。'}</p>`;
+      box.innerHTML = `<h4>相关视频课程</h4>${matching.map(c => `<a class="cg-video-link" href="#space/courses/${e(c.id)}/${e(c.episodes?.[0]?.id||'')}" data-concept-video="${e(c.id)}">${e(c.title)} ↗</a>`).join('') || `<p>${videoError ? '课程目录暂时无法读取。' : '暂无匹配的课程入口。'}</p>`}<p class="cg-muted">${matching.length ? '本科目课程总览，尚未定位到此知识点的具体分集。' : '没有匹配视频时，不添加占位链接。'}</p>`;
     }
+    target.addEventListener('click',event=>{const link=event.target.closest('[data-concept-video]');if(link)sessionStorage.setItem((window.XueyaDataKey||((k)=>k))('xueya-video-context'),JSON.stringify({courseId:link.dataset.conceptVideo,label:concepts.get(selected)?.label||subject,returnHash:location.hash,returnTab:directory?'graph':'corpus'}));});
     const videoPromise = window.XueyaPlatform.spaceFetch('/api/learning/space/courses').then(async response => {
       const value = await response.json(); if (!response.ok || !value.ok) throw Error('课程目录读取失败');
       if (alive()) { courses = value.courses || []; drawVideos(); }
