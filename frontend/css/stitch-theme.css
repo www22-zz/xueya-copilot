@@ -1365,7 +1365,34 @@ body.in-ask .learning-shortcuts {
 }
 
 .hot100-workbench .practice-detail-head {
-  display: block;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px 12px;
+}
+
+.hot100-detail-heading {
+  display: grid;
+  flex: 1 1 280px;
+  gap: 4px;
+  min-width: 0;
+}
+
+.hot100-detail-actions {
+  max-width: 100%;
+}
+
+.hot100-detail-actions a {
+  white-space: nowrap;
+}
+
+.hot100-workbench .hot100-detail-actions .practice-back {
+  flex-basis: auto;
+}
+
+@media (max-width: 720px) {
+  #spacePage:has(.hot100-workbench.is-fullscreen) .stitch-topbar {
+    visibility: hidden;
+  }
 }
 
 /* Dual Sub-pane Layout */

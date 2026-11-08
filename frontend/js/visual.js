@@ -35,17 +35,37 @@
     const connections=document.getElementById('knowledgeConnections');
     const points=[],count=820;
     for(let i=0;i<count;i++){const y=1-(i/(count-1))*2,r=Math.sqrt(1-y*y),a=i*Math.PI*(3-Math.sqrt(5));points.push({x:Math.cos(a)*r,y,z:Math.sin(a)*r});}
-    let width=0,height=0,angle=.5,frame=0,visible=false,paused=false,last=0,hovered=null,focused=null;
+    let width=0,height=0,dpr=1,angle=.5,frame=0,visible=false,paused=false,last=0,hovered=null,focused=null;
     let tiltX=0,tiltY=0,velocityX=0,velocityY=0,targetX=0,targetY=0,influence=0,influenceVelocity=0;
-    const mouse={x:0,y:0,inside:false};
+    const globe={x:0,y:0,radius:0,outline:null};
+    const globeSquash=.96,globeSkew=.1;
+    const mouse={x:0,y:0,overGlobe:false};
     const toggle=document.getElementById('motionToggle');
     const activeNode=()=>focused||hovered;
     const canAnimate=()=>visible&&!paused&&!reduced.matches&&!document.hidden;
 
+    function fadeSpotlight(){
+      if(!mouse.overGlobe)return;
+      mouse.overGlobe=false;
+      influenceVelocity=0;
+    }
+
+    function clearSpotlight(){
+      mouse.overGlobe=false;
+      influence=0;
+      influenceVelocity=0;
+    }
+
     function resize(){
       const rect=canvas.getBoundingClientRect();width=rect.width;height=rect.height;
-      const dpr=Math.min(devicePixelRatio||1,2);
+      dpr=Math.min(devicePixelRatio||1,2);
       canvas.width=Math.max(1,Math.round(width*dpr));canvas.height=Math.max(1,Math.round(height*dpr));
+      globe.x=width*.5;globe.y=height*.49;globe.radius=width*.31;
+      const circle=new Path2D();
+      circle.arc(0,0,globe.radius,0,Math.PI*2);
+      globe.outline=new Path2D();
+      globe.outline.addPath(circle,new DOMMatrix([1,globeSkew,0,globeSquash,globe.x,globe.y]));
+      clearSpotlight();
       ctx.setTransform(dpr,0,0,dpr,0,0);draw();
     }
 
@@ -83,12 +103,25 @@
     function draw(){
       if(width<1)return;ctx.clearRect(0,0,width,height);
       const dark=document.documentElement.dataset.theme==='dark';
-      const radius=width*.31,cx=width*.5,cy=height*.49;
+      const {radius,x:cx,y:cy,outline}=globe;
       const glow=ctx.createRadialGradient(cx-radius*.3,cy-radius*.3,0,cx,cy,radius*1.25);
       glow.addColorStop(0,dark?'rgba(133,157,236,.12)':'rgba(75,108,225,.14)');
       glow.addColorStop(.6,dark?'rgba(131,155,226,.05)':'rgba(90,122,232,.06)');
       glow.addColorStop(1,'rgba(150,165,241,0)');
       ctx.fillStyle=glow;ctx.fillRect(0,0,width,height);
+      const spotlight=paused||reduced.matches?0:influence;
+      if(spotlight>.01){
+        const spread=width*.21;
+        const halo=ctx.createRadialGradient(mouse.x,mouse.y,0,mouse.x,mouse.y,spread);
+        halo.addColorStop(0,dark?`rgba(213,240,255,${spotlight*.3})`:`rgba(142,190,255,${spotlight*.44})`);
+        halo.addColorStop(.42,dark?`rgba(142,194,255,${spotlight*.18})`:`rgba(131,173,255,${spotlight*.24})`);
+        halo.addColorStop(1,'rgba(151,172,255,0)');
+        ctx.save();
+        ctx.clip(outline);
+        ctx.fillStyle=halo;
+        ctx.fillRect(mouse.x-spread,mouse.y-spread,spread*2,spread*2);
+        ctx.restore();
+      }
       const rotation=angle+tiltX*.2,vertical=tiltY*.12;
       const projected=points.map(p=>{
         const x=p.x*Math.cos(rotation)+p.z*Math.sin(rotation);
@@ -96,20 +129,29 @@
         const y=p.y*Math.cos(vertical)-z*Math.sin(vertical);
         const depth=p.y*Math.sin(vertical)+z*Math.cos(vertical);
         const perspective=1+depth*.1;
-        const px=cx+x*radius*perspective,py=cy+(y*.96+x*.1)*radius*perspective;
+        const px=cx+x*radius*perspective,py=cy+(y*globeSquash+x*globeSkew)*radius*perspective;
         const displaced=motion.repel(px,py,mouse.x,mouse.y,width*.18,influence*width*.032*(depth+1)/2);
-        return{x:displaced.x,y:displaced.y,z:depth,highlight:displaced.influence*influence};
+        return{x:displaced.x,y:displaced.y,z:depth,highlight:displaced.influence*spotlight};
       }).sort((a,b)=>a.z-b.z);
       projected.forEach((p,i)=>{
         const alpha=(dark?.35:.28)+(p.z+1)*(dark?.28:.30)+p.highlight*.38;
-        ctx.fillStyle=`rgba(${dark?(p.highlight>.2?'210,225,255':p.z>0?'165,190,255':'125,150,225'):(p.highlight>.2?'20,45,145':p.z>0?'38,68,172':'65,92,182')},${Math.min(1,alpha)})`;
+        const particleColor=dark?(p.z>0?'165,190,255':'125,150,225'):(p.z>0?'38,68,172':'65,92,182');
         const r=(dark?.65:.78)+(p.z+1)*(dark?.55:.65)+p.highlight*.9;
+        if(p.highlight>.01){
+          ctx.fillStyle=dark?`rgba(170,217,255,${p.highlight*.28})`:`rgba(88,138,234,${p.highlight*.22})`;
+          ctx.beginPath();ctx.arc(p.x,p.y,r*(1+p.highlight*1.7),0,Math.PI*2);ctx.fill();
+        }
+        ctx.fillStyle=`rgba(${particleColor},${Math.min(1,alpha)})`;
         ctx.beginPath();ctx.arc(p.x,p.y,r,0,Math.PI*2);ctx.fill();
+        if(p.highlight>.01){
+          ctx.fillStyle=dark?`rgba(242,251,255,${p.highlight})`:`rgba(23,51,141,${p.highlight})`;
+          ctx.fill();
+        }
         if(p.z>.2&&i%6===0){
           for(let j=i+1;j<Math.min(i+12,projected.length);j++){
             const next=projected[j],dx=p.x-next.x,dy=p.y-next.y;
             if(dx*dx+dy*dy<width*width*.0022&&Math.abs(p.z-next.z)<.18){
-              const lineAlpha=(dark?.16:.24+p.highlight*.28)*p.z;
+              const lineAlpha=(dark?.16:.24)*p.z+p.highlight*.28;
               ctx.strokeStyle=dark?`rgba(165,192,255,${lineAlpha})`:`rgba(42,70,175,${lineAlpha})`;
               ctx.lineWidth=.75;
               ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(next.x,next.y);ctx.stroke();
@@ -124,7 +166,7 @@
       frame=0;if(!canAnimate())return;
       const dt=last?Math.min((time-last)/1000,.05):1/60;last=time;angle+=dt*.032;
       const sx=motion.spring(tiltX,velocityX,targetX,dt),sy=motion.spring(tiltY,velocityY,targetY,dt);
-      const si=motion.spring(influence,influenceVelocity,mouse.inside?1:0,dt);
+      const si=motion.spring(influence,influenceVelocity,mouse.overGlobe?1:0,dt,mouse.overGlobe?.3:.42);
       tiltX=sx.position;velocityX=sx.velocity;tiltY=sy.position;velocityY=sy.velocity;
       influence=si.position;influenceVelocity=si.velocity;draw();frame=requestAnimationFrame(tick);
     }
@@ -132,16 +174,24 @@
     function sync(){
       cancelAnimationFrame(frame);frame=0;last=0;
       universe.classList.toggle('motion-paused',paused||reduced.matches);
-      if(reduced.matches){tiltX=0;tiltY=0;targetX=0;targetY=0;influence=0;velocityX=0;velocityY=0;influenceVelocity=0;mouse.inside=false;}
+      if(!canAnimate())clearSpotlight();
+      if(reduced.matches){tiltX=0;tiltY=0;targetX=0;targetY=0;velocityX=0;velocityY=0;}
       draw();if(canAnimate())frame=requestAnimationFrame(tick);
     }
 
     universe.addEventListener('pointermove',event=>{
       if(event.pointerType!=='mouse'||!fine.matches||reduced.matches||paused)return;
-      const rect=canvas.getBoundingClientRect();mouse.x=event.clientX-rect.left;mouse.y=event.clientY-rect.top;
-      mouse.inside=true;targetX=Math.max(-1,Math.min(1,(mouse.x/width-.5)*2));targetY=Math.max(-1,Math.min(1,(mouse.y/height-.5)*2));
+      const rect=canvas.getBoundingClientRect();
+      const x=event.clientX-rect.left,y=event.clientY-rect.top;
+      if(ctx.isPointInPath(globe.outline,x*dpr,y*dpr)){
+        mouse.x=x;mouse.y=y;
+        mouse.overGlobe=true;
+      }else{
+        fadeSpotlight();
+      }
+      targetX=Math.max(-1,Math.min(1,(x/width-.5)*2));targetY=Math.max(-1,Math.min(1,(y/height-.5)*2));
     },{passive:true});
-    universe.addEventListener('pointerleave',()=>{mouse.inside=false;targetX=0;targetY=0;hovered=null;drawGraph();});
+    universe.addEventListener('pointerleave',()=>{fadeSpotlight();targetX=0;targetY=0;hovered=null;drawGraph();});
     for(const node of nodes){
       node.el.addEventListener('pointerenter',event=>{if(event.pointerType==='mouse'&&fine.matches){hovered=node.id;drawGraph();}});
       node.el.addEventListener('pointerleave',()=>{hovered=null;drawGraph();});
@@ -157,7 +207,7 @@
     new ResizeObserver(resize).observe(canvas);
     new IntersectionObserver(items=>{visible=items[0].isIntersecting;sync();},{threshold:.01}).observe(canvas);
     document.addEventListener('visibilitychange',sync);reduced.addEventListener('change',sync);
-    fine.addEventListener('change',()=>{mouse.inside=false;targetX=0;targetY=0;hovered=null;sync();});
+    fine.addEventListener('change',()=>{clearSpotlight();targetX=0;targetY=0;hovered=null;sync();});
     new MutationObserver(sync).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
     resize();sync();
   });

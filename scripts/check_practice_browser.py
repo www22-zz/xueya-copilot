@@ -79,6 +79,7 @@ def main():
                 expect(page.locator('.practice-row').first).to_be_visible()
                 assert page.locator('.wb-legacy').count() == 0
                 assert page.locator('.practice-code').count() == 0
+                assert page.locator('.hot100-workbench [data-note]').count() == 0
                 action('reveal').click()
                 expect(page.locator('.practice-code')).to_be_visible()
                 action('language').filter(has_text='Java').click()
@@ -118,8 +119,9 @@ def main():
                 action('clear-filters').first.click()
                 record('combined-search-fuzzy-random-master-completion-recall-reset')
                 # Save a note, immediately switch before the debounce, and prove it stays on the original question.
+                go('practice/exam408')
                 page.locator('.practice-row').first.click()
-                note_id = current_id()
+                note_id = page.locator('[data-note]').get_attribute('data-note')
                 page.locator('[data-note]').fill('**原题笔记**\n\n- 注意边界')
                 page.locator('.practice-row').nth(1).click()
                 page.wait_for_timeout(1400)
@@ -135,7 +137,7 @@ def main():
                 assert state()['notes'][note_id]['text'] == ''
                 record('note-switch-before-debounce-markdown-preview-clear-save')
                 # Correct and wrong objective attempts are exercised through the submit button.
-                action('category').filter(has_text='基础 100').click()
+                go('practice/foundation')
                 select_filter('type', 'single')
                 expect(page.locator('.practice-row')).to_have_count(50)
                 qid = current_id()

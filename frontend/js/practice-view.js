@@ -253,27 +253,25 @@ function createPracticeView({store,client,toast=()=>{},navigate=()=>{}}={}){
 
     return `
       <article class="practice-detail">
-        <header class="practice-detail-head flex flex-col gap-2 border-b border-surface-container pb-3">
-          <div class="flex flex-wrap items-start justify-between gap-3">
-            <div class="flex flex-col gap-1">
-              <h2 class="font-headline-lg text-xl md:text-2xl text-on-surface font-bold tracking-tight flex items-center gap-2">
-                <span>${e(num)}. ${e(q.title)}</span>
-              </h2>
-              <div class="flex flex-wrap items-center gap-2 font-body-sm text-xs text-on-surface-variant">
-                <span class="${q.difficulty==='简单'?'text-[#16a34a] font-semibold':q.difficulty==='中等'?'text-tertiary font-semibold':'text-error font-semibold'}">${e(q.difficulty)}难度</span>
-                <span>·</span>
-                <span>内存限制: 256 MB</span>
-                <span>·</span>
-                <span>时间限制: 1000 ms</span>
-              </div>
+        <header class="practice-detail-head border-b border-surface-container pb-3">
+          <div class="hot100-detail-heading">
+            <h2 class="font-headline-lg text-xl md:text-2xl text-on-surface font-bold tracking-tight flex items-center gap-2">
+              <span>${e(num)}. ${e(q.title)}</span>
+            </h2>
+            <div class="flex flex-wrap items-center gap-2 font-body-sm text-xs text-on-surface-variant">
+              <span class="${q.difficulty==='简单'?'text-[#16a34a] font-semibold':q.difficulty==='中等'?'text-tertiary font-semibold':'text-error font-semibold'}">${e(q.difficulty)}难度</span>
+              <span>·</span>
+              <span>内存限制: 256 MB</span>
+              <span>·</span>
+              <span>时间限制: 1000 ms</span>
             </div>
-            <div class="flex items-center gap-2">
-              <button class="w-8 h-8 rounded-full bg-surface-container-low hover:bg-surface-container text-on-surface-variant hover:text-primary flex items-center justify-center transition-colors border-0 cursor-pointer" title="加入错题本" type="button" data-action="mark-wrong">
-                <span class="material-symbols-outlined text-[18px]">bookmark_border</span>
-              </button>
-              ${q.leetcodeUrl?`<a class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-surface-container hover:bg-surface-container-high text-primary font-label-sm text-xs transition-colors" href="${e(q.leetcodeUrl)}" target="_blank" rel="noopener noreferrer"><span>在力扣打开</span><span class="material-symbols-outlined text-[14px]">open_in_new</span></a>`:''}
-              ${button('返回列表','back','', 'button-outline practice-back')}
-            </div>
+          </div>
+          <div class="hot100-detail-actions flex flex-wrap items-center gap-2">
+            <button class="w-8 h-8 rounded-full bg-surface-container-low hover:bg-surface-container text-on-surface-variant hover:text-primary flex items-center justify-center transition-colors border-0 cursor-pointer" title="加入错题本" type="button" data-action="mark-wrong">
+              <span class="material-symbols-outlined text-[18px]">bookmark_border</span>
+            </button>
+            ${q.leetcodeUrl?`<a class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-surface-container hover:bg-surface-container-high text-primary font-label-sm text-xs transition-colors" href="${e(q.leetcodeUrl)}" target="_blank" rel="noopener noreferrer"><span>在力扣打开</span><span class="material-symbols-outlined text-[14px]">open_in_new</span></a>`:''}
+            ${button('返回列表','back','', 'button-outline practice-back')}
           </div>
         </header>
 
@@ -456,8 +454,6 @@ function createPracticeView({store,client,toast=()=>{},navigate=()=>{}}={}){
           </div>
         </div>
 
-        ${noteBlock(q)}
-
         ${whiteboardOpen?`
           <section class="stitch-whiteboard-drawer" id="aiWhiteboardDrawer" aria-label="解题白板">
             <div class="flex items-center justify-between px-4 py-3 bg-surface-container-low border-b border-surface-container">
@@ -482,11 +478,6 @@ function createPracticeView({store,client,toast=()=>{},navigate=()=>{}}={}){
               <button class="px-3 py-1.5 border-b-2 font-label-md text-xs flex items-center gap-1.5 border-0 bg-transparent cursor-pointer ${whiteboardTab==='complexity'?'border-primary text-primary font-bold':'border-transparent text-on-surface-variant hover:text-on-surface'}" type="button" data-action="whiteboard-tab" data-tab="complexity">
                 <span class="material-symbols-outlined text-[15px]">insights</span>
                 <span>复杂度</span>
-              </button>
-              <button class="px-3 py-1.5 border-b-2 font-label-md text-xs flex items-center gap-1.5 transition-colors border-0 bg-transparent cursor-pointer ${whiteboardTab==='note'?'border-primary text-primary font-bold':'border-transparent text-on-surface-variant hover:text-on-surface'}" type="button" data-action="whiteboard-tab" data-tab="note">
-                <span class="material-symbols-outlined text-[15px]">edit_note</span>
-                <span>笔记</span>
-                <span class="w-1.5 h-1.5 rounded-full bg-[#22c55e]"></span>
               </button>
               <button class="px-3 py-1.5 border-b-2 font-label-md text-xs flex items-center gap-1.5 transition-colors border-0 bg-transparent cursor-pointer ${whiteboardTab==='hint'?'border-primary text-primary font-bold':'border-transparent text-on-surface-variant hover:text-on-surface'}" type="button" data-action="whiteboard-tab" data-tab="hint">
                 <span class="material-symbols-outlined text-[15px]">lightbulb</span>
@@ -520,11 +511,6 @@ function createPracticeView({store,client,toast=()=>{},navigate=()=>{}}={}){
                     <p class="text-xs text-on-surface-variant leading-relaxed">${e(q.pitfalls)}</p>
                   </div>
                 `:''}
-              `:whiteboardTab==='note'?`
-                <div class="flex flex-col gap-2">
-                  <span class="text-xs text-outline">随手记已与云端同步，在此编辑会自动更新草稿：</span>
-                  <textarea class="form-field practice-note-input" data-note="${e(q.id)}" rows="8" placeholder="记录你的思路与易错点">${e(store.hasDraft(q.id)?store.draft(q.id):(store.state.notes[q.id]?.text||''))}</textarea>
-                </div>
               `:/* hint */`
                 <div class="flex flex-col gap-2">
                   ${(q.hints||[]).map((h,i)=>`
