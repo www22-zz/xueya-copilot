@@ -1,5 +1,8 @@
 """Fixed resource identities, preview/adopt, event dedup and stale updates."""
 import copy
+from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
+
 import pytest
 
 from backend.xueya.common import AppError
@@ -7,9 +10,9 @@ from backend.xueya.study_resources import external_link, question_catalog
 from backend.xueya.study_space_service import StudySpaceService
 
 
-def plan(service):
+def plan(service, start_date='2026-11-02'):
     resource=next(r for r in question_catalog() if r['category']=='exam408')
-    draft=service.create_plan_draft('alice',{'goal':'复习计算机基础','startDate':'2026-11-02','daysCount':5,
+    draft=service.create_plan_draft('alice',{'goal':'复习计算机基础','startDate':start_date,'daysCount':5,
         'dailyMinutes':30,'restDays':[],'tasks':[
             {'title':'完成第一轮基础练习','minutes':30,'questionId':resource['questionId'],'phase':'基础'},
             {'title':'闭卷整理所学概念','minutes':45,'phase':'巩固'}]})
@@ -100,12 +103,15 @@ def test_adjustment_is_unpaid_draft_and_preserves_completed_identity(platform):
 
 
 def test_stale_preview_cannot_overwrite_completion_and_failed_defer_keeps_original(platform):
-    service=StudySpaceService(platform);current,_=plan(service)
+    tomorrow = datetime.now(ZoneInfo('Asia/Shanghai')).date() + timedelta(days=1)
+    service = StudySpaceService(platform)
+    current, _ = plan(service, tomorrow.isoformat())
     draft=service.adjust_plan_draft('alice',{'planId':current['id'],'expectedRevision':current['revision'],'dailyMinutes':60})
     first=current['days'][0]['tasks'][0]
     service.toggle_task('alice',current['id'],first['id'],True)
     with pytest.raises(AppError,match='REPLAN_SOURCE_CHANGED'):
         service.adopt_plan('alice',draft['id'],1,True,'stale-adopt')
     unchanged=copy.deepcopy(service.get_active_plan('alice'))
-    with pytest.raises(AppError):service.delay_task('alice',current['id'],first['id'],'2026-11-04',operation_id='invalid-defer')
+    with pytest.raises(AppError, match='TASK_ALREADY_COMPLETED'):
+        service.delay_task('alice', current['id'], first['id'], current['days'][2]['date'], operation_id='invalid-defer')
     assert service.get_active_plan('alice')==unchanged
