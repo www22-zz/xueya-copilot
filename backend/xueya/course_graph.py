@@ -104,6 +104,10 @@ class CourseGraph:
                 edge = {'source': item['documentId'], 'target': key, 'relation': 'contains'}
                 if edge not in edges:
                     edges.append(edge)
+        from .practice_catalog import workspace_catalog
+        from .graph_practice import attach_practice
+        catalog = workspace_catalog(self.m.app.state.practice_generation, account)
+        attach_practice(documents, concepts, edges, catalog['questions'])
         nodes.extend(concepts.values())
         done = sum(bool(r['saved']) for r in ranges)
         blocked = [{'id': r['id'], 'status': r['job']['status'], 'error': r['job'].get('error')}

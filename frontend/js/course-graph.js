@@ -44,9 +44,9 @@
       return a.name.localeCompare(b.name,'zh-CN',{numeric:true});
     });
     const pointsFor = docs => [...new Map(docs.flatMap(d => children.get(d.id) || []).map(n => [n.id, n])).values()];
-    const questionCount = nodes => new Set(nodes.flatMap(n => n.questionIds)).size;
+    const questionCount = nodes => new Set(nodes.flatMap(n => [...n.questionIds, ...(n.fixedQuestions || []).map(q => q.id)])).size;
     const openDocument = id => { focusedDocument = id; selected = id; page = 0; search = ''; draw(); };
-    const chooseConcept = id => { selected = id; remember(); updateSelection(); drawDetail(); };
+    const chooseConcept = id => { selected = id; remember(); updateSelection(); drawDetail(); target.querySelector('[data-cg-detail]')?.scrollIntoView({block:'nearest',behavior:'smooth'}); };
 
     function index() {
       concepts = new Map(data.nodes.filter(n => n.kind === 'concept').map(n => [n.id, n]));
@@ -137,7 +137,7 @@
       target.innerHTML = `<section class="cg-reader"><div class="cg-reader-heading"><button type="button" class="button button-outline" data-cg-back>← 返回书架</button><div><span class="cg-eyebrow">${e(subject)} / 知识图谱</span><h2>${e(doc ? titleOf(doc.name) : subject)}</h2></div><span class="cg-reader-count">${docs.length}份资料 · ${nodes.length}个知识点 · ${questionCount(nodes)}道题</span></div>
         <div class="cg-reader-layout"><div class="cg-map-area"><div class="cg-map-toolbar"><button class="button button-outline" data-cg-overview ${!doc ? 'disabled' : ''}>课程总览</button><button class="button button-outline" data-cg-zoom="0.8" aria-label="放大导图">＋</button><button class="button button-outline" data-cg-zoom="1.25" aria-label="缩小导图">−</button><button class="button button-outline" data-cg-fit>适应画布</button><label class="cg-search">查找知识点<input type="search" data-cg-search placeholder="输入名称" value="${e(search)}"></label></div>
         <div class="cg-search-results" data-cg-results></div><div class="cg-map" data-cg-map></div>
-        <p class="cg-map-legend"><span>● 课程 / 资料</span><span>○ 已提取知识点</span><span>点击节点查看详情 · 拖动画布 · 连线表示包含关系</span></p></div>
+        <p class="cg-map-legend"><span>● 课程 / 资料</span><span>○ 知识点与固定练习</span><span>点击节点查看详情 · 拖动画布 · 连线表示包含关系</span></p></div>
         <aside class="cg-detail" data-cg-detail aria-label="节点详情"></aside></div><div data-cg-questions></div></section>`;
       target.querySelector('[data-cg-back]').onclick = () => { const previous = subject; subject = ''; draw(); target.querySelectorAll('[data-cg-book]').forEach(b => { if (b.dataset.cgBook === previous) b.focus({preventScroll:true}); }); };
       target.querySelector('[data-cg-overview]').onclick = () => { focusedDocument = ''; selected = 'course'; page = 0; draw(); };
@@ -157,83 +157,54 @@
     }
 
     function drawCanvas() {
-      const docs = documents(), doc = docs.find(d => d.id === focusedDocument);
-      const all = doc ? children.get(doc.id) || [] : pointsFor(docs);
-      // Large courses expand one source at a time, instead of overlapping labels.
-      const overviewOnly = !doc && all.length > 40;
-      const items = doc ? all.slice(page * 24, (page + 1) * 24) : overviewOnly ? [] : all;
-      const positions = new Map(), edges = [], nodeRows = [];
-      const add = (id, label, kind, x, y, radius, count) => { const n = {id, label, kind, x, y, radius, count}; positions.set(id, n); nodeRows.push(n); };
-      const root = doc?.id || 'course';
-      add(root, doc ? titleOf(doc.name) : subject, 'root', 0, 0, 70, doc ? all.length + '个知识点' : docs.length + '份资料');
-      const radius = doc ? Math.max(210, items.length * 108 / (2 * Math.PI)) : overviewOnly ? Math.max(215, docs.length * 140 / (2 * Math.PI)) : Math.max(350, (items.length + docs.length) * 108 / (2 * Math.PI));
-      if (doc) items.forEach((n, i) => {
-        const angle = -Math.PI / 2 + i * 2 * Math.PI / items.length;
-        add(n.id, n.label, 'concept', Math.cos(angle) * radius, Math.sin(angle) * radius, 47, n.questionIds.length + '题'); edges.push([root, n.id]);
-      });
-      else {
-        const owned = new Set(), groups = docs.map(d => ({doc:d, nodes:items.filter(n => {
-          if (owned.has(n.id) || !children.get(d.id)?.some(c => c.id === n.id)) return false;
-          owned.add(n.id); return true;
-        })}));
-        const slots = groups.reduce((sum, g) => sum + Math.max(1, g.nodes.length) + 1, 0);
-        let offset = 0;
-        for (const group of groups) {
-          const weight = Math.max(1, group.nodes.length), angle = -Math.PI / 2 + (offset + weight / 2) / slots * 2 * Math.PI;
-          const innerRadius = overviewOnly ? radius : Math.max(195, radius * .51);
-          add(group.doc.id, titleOf(group.doc.name), 'document', Math.cos(angle) * innerRadius, Math.sin(angle) * innerRadius, 56, (children.get(group.doc.id)?.length || 0) + '个知识点');
-          edges.push(['course', group.doc.id]);
-          group.nodes.forEach((n, i) => {
-            const a = -Math.PI / 2 + (offset + i + .5) / slots * 2 * Math.PI;
-            add(n.id, n.label, 'concept', Math.cos(a) * radius, Math.sin(a) * radius, 47, n.questionIds.length + '题');
-          });
-          offset += weight + 1;
-        }
-        for (const edge of data.edges) if (positions.has(edge.source) && positions.has(edge.target) && edge.source !== 'course') edges.push([edge.source, edge.target]);
-      }
-      const extent = Math.max(290, radius + 95), base = [-extent, -extent, extent * 2, extent * 2];
-      const key = subject + '/' + focusedDocument + '/' + page + '/' + items.length;
-      if (viewportKey !== key) { viewport = base.slice(); viewportKey = key; }
-      const labels = n => {
-        const perLine = n.kind === 'root' ? 8 : n.kind === 'document' ? 7 : 6;
-        const chars = Array.from(n.label), rows = [];
-        for (let i = 0; i < Math.min(chars.length, perLine * 3); i += perLine) rows.push(chars.slice(i, i + perLine).join(''));
-        if (chars.length > perLine * 3) rows[2] = rows[2].slice(0, -1) + '…';
-        return rows.map((line, i) => `<tspan x="0" y="${-(rows.length - 1) * 8 - 5 + i * 16}">${e(line)}</tspan>`).join('');
+      const docs = documents();
+      if (!focusedDocument && docs.length) focusedDocument = docs[0].id;
+      const doc = docs.find(d => d.id === focusedDocument), all = children.get(doc?.id) || [];
+      const items = all.filter(n => !search || n.label.includes(search));
+      const width = 1250;
+      const height = Math.max(560, docs.length * 78 + 70, items.length * 62 + 70);
+      const topic = subject === '数据结构' ? '数据结构与算法' : subject;
+      const topicChars = Array.from(topic);
+      const topicLabel = topicChars.length > 9 ? topicChars.slice(0, 8).join('') + '…' : topic;
+      const rootX = 20, rootY = height / 2, rootWidth = 210, rootHeight = 82;
+      const chapterX = 300, chapterWidth = 290, leafX = 820;
+      const yDoc = i => (height - docs.length * 78) / 2 + i * 78 + 39;
+      const yLeaf = i => (height - items.length * 62) / 2 + i * 62 + 31;
+      const connect = (fromX, fromY, toX, toY) => {
+        const bend = (fromX + toX) / 2;
+        return `M${fromX} ${fromY} C${bend} ${fromY},${bend} ${toY},${toX} ${toY}`;
       };
-      target.querySelector('[data-cg-map]').innerHTML = `<svg class="cg-mindmap" viewBox="${viewport.join(' ')}" role="group" aria-label="${e(subject)}思维导图">
-        <g class="cg-edges">${edges.map(([a, b]) => { const from = positions.get(a), to = positions.get(b); return `<line x1="${from.x}" y1="${from.y}" x2="${to.x}" y2="${to.y}"/>`; }).join('')}</g>
-        ${nodeRows.map(n => `<g class="cg-node cg-node-${n.kind}" data-cg-node="${e(n.id)}" ${n.kind === 'concept' ? 'data-cg-concept="' + e(n.id) + '"' : ''} transform="translate(${n.x} ${n.y})" role="button" tabindex="0" aria-label="${e(n.label)}，${e(n.count)}" aria-pressed="${selected === n.id}"><title>${e(n.label)}</title><circle class="cg-node-ring" r="${n.radius + 5}"/><circle r="${n.radius}"/><text text-anchor="middle">${labels(n)}<tspan class="cg-node-count" x="0" y="${n.radius - 12}">${e(n.count)}</tspan></text></g>`).join('')}</svg>
-        ${!all.length ? '<p class="cg-map-notice">资料已就绪，知识点尚待生成。此处没有添加占位知识点。</p>' : overviewOnly ? '<p class="cg-map-notice">知识点较多，点击资料节点展开对应章节。</p>' : ''}
-        ${doc && all.length > 24 ? `<div class="cg-map-pages"><button class="button button-outline" data-cg-prev ${!page ? 'disabled' : ''}>上一组</button><span>${page * 24 + 1}–${Math.min((page + 1) * 24, all.length)} / ${all.length}个知识点</span><button class="button button-outline" data-cg-next ${(page + 1) * 24 >= all.length ? 'disabled' : ''}>下一组</button></div>` : ''}`;
-      const svg = target.querySelector('.cg-mindmap');
-      const apply = () => {svg.setAttribute('viewBox', viewport.join(' '));remember();};
-      target.querySelectorAll('[data-cg-zoom]').forEach(b => b.onclick = () => {
-        const factor = Number(b.dataset.cgZoom), size = viewport[2] * factor;
-        if (size < base[2] / 5 || size > base[2] * 2) return;
-        viewport = [viewport[0] + (viewport[2] - size) / 2, viewport[1] + (viewport[3] - size) / 2, size, size]; apply();
+      const activeChapterY = yDoc(docs.findIndex(d => d.id === doc?.id));
+      const paths = items.map((_, i) => connect(chapterX + chapterWidth, activeChapterY, leafX, yLeaf(i)));
+      target.querySelector('[data-cg-map]').innerHTML = `<div class="cg-nebula"><div class="cg-nebula-heading"><span>✦ 知识星轨</span><span>${e(topic)} · ${docs.length}份资料</span></div><svg class="cg-star-map" viewBox="0 0 ${width} ${height}" role="group" aria-label="${e(topic)}章节知识图谱">
+        <defs><linearGradient id="cg-rail"><stop stop-color="#ffd166"/><stop offset="1" stop-color="#38bdf8"/></linearGradient></defs>
+        <g class="cg-stars" aria-hidden="true">${Array.from({length:65},(_,i)=>`<circle cx="${(i*173+31)%width}" cy="${(i*97+17)%height}" r="${i%3===0?1.4:.7}"/>`).join('')}</g>
+        ${docs.map((d, i) => `<path class="cg-root-rail ${doc?.id===d.id ? 'is-active' : ''}" d="${connect(rootX + rootWidth, rootY, chapterX, yDoc(i))}"/>`).join('')}
+        ${paths.map(d=>`<path class="cg-star-rail" d="${d}"/><path class="cg-star-flow" d="${d}"/>`).join('')}
+        <g class="cg-star-root" transform="translate(${rootX} ${rootY - rootHeight / 2})" role="img" aria-label="${e(topic)}">
+          <title>${e(topic)}</title><rect width="${rootWidth}" height="${rootHeight}" rx="18"/>
+          <text x="${rootWidth / 2}" y="31" class="cg-star-sub" text-anchor="middle">课程主题</text>
+          <text x="${rootWidth / 2}" y="58" class="cg-star-root-title" text-anchor="middle">${e(topicLabel)}</text>
+        </g>
+        ${docs.map((d,i)=>`<g class="cg-chapter ${doc?.id===d.id?'is-active':''}" transform="translate(${chapterX} ${yDoc(i)-27})" tabindex="0" role="button" aria-label="${e(titleOf(d.name))}" aria-pressed="${doc?.id===d.id}" data-star-doc="${e(d.id)}"><rect width="${chapterWidth}" height="54" rx="15"/><text x="16" y="23">${e(titleOf(d.name).slice(0,24))}</text><text class="cg-star-sub" x="16" y="42">${children.get(d.id)?.length||0}个知识点</text><title>${e(d.name)}</title></g>`).join('')}
+        ${items.map((n,i)=>`<g class="cg-leaf" transform="translate(${leafX} ${yLeaf(i)-23})" tabindex="0" role="button" data-cg-node="${e(n.id)}" aria-label="${e(n.label)}，查看对应练习"><rect width="410" height="46" rx="13"/><circle cx="18" cy="23" r="4"/><text x="32" y="20">${e(n.label)}</text><text class="cg-star-sub" x="32" y="37">${(n.fixedQuestions||[]).length}道课程固定练习 · ${n.questionIds.length}道资料题 →</text></g>`).join('')}
+        </svg>${!items.length?'<p class="cg-star-empty">本章暂无已保存知识点或可匹配的固定练习。</p>':''}<p class="cg-star-footer">点击章节切换知识点 · 点击知识点打开对应题目 · 连线表示包含关系</p></div>`;
+      const bind = (selector, action) => target.querySelectorAll(selector).forEach(el => {
+        el.onclick = () => action(el);
+        el.onkeydown = ev => {if(ev.key==='Enter'||ev.key===' '){ev.preventDefault();action(el);}};
       });
-      target.querySelector('[data-cg-fit]').onclick = () => { viewport = base.slice(); apply(); };
-      target.querySelector('[data-cg-prev]')?.addEventListener('click', () => { page--; draw(); });
-      target.querySelector('[data-cg-next]')?.addEventListener('click', () => { page++; draw(); });
+      bind('[data-star-doc]', el => openDocument(el.dataset.starDoc));
+      bind('[data-cg-node]', el => chooseConcept(el.dataset.cgNode));
+      const svg = target.querySelector('.cg-star-map');
+      const base=[0,0,width,height], key=`${width}/${height}/${subject}/${focusedDocument}`;
+      if(viewportKey!==key){viewport=base.slice();viewportKey=key;}
+      const apply=()=>{svg.setAttribute('viewBox',viewport.join(' '));remember();};apply();
+      target.querySelectorAll('[data-cg-zoom]').forEach(b=>b.onclick=()=>{const f=Number(b.dataset.cgZoom);if(viewport[2]*f<300||viewport[2]*f>width*2)return;viewport=[viewport[0]+viewport[2]*(1-f)/2,viewport[1]+viewport[3]*(1-f)/2,viewport[2]*f,viewport[3]*f];apply();});
+      target.querySelector('[data-cg-fit]').onclick=()=>{viewport=base.slice();apply();};
       let drag;
-      const point = event => new DOMPoint(event.clientX, event.clientY).matrixTransform(svg.getScreenCTM().inverse());
-      svg.onpointerdown = event => { if (event.button !== 0 || event.target.closest('[data-cg-node]')) return; drag = point(event); svg.setPointerCapture(event.pointerId); };
-      svg.onpointermove = event => {
-        if (!drag) return;
-        const p = point(event); viewport[0] -= p.x - drag.x; viewport[1] -= p.y - drag.y; apply();
-      };
-      svg.onpointerup = svg.onpointercancel = () => { drag = null; };
-      svg.querySelectorAll('[data-cg-node]').forEach(node => {
-        const activate = () => {
-          const id = node.dataset.cgNode;
-          if (concepts.has(id)) chooseConcept(id);
-          else if (id === 'course' || id === focusedDocument) { selected = id; updateSelection(); drawDetail(); }
-          else openDocument(id);
-        };
-        node.onclick = activate;
-        node.onkeydown = event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); activate(); } };
-      });
+      svg.onpointerdown=ev=>{if(ev.button!==0||ev.target.closest('[role="button"]'))return;drag={x:ev.clientX,y:ev.clientY};svg.setPointerCapture(ev.pointerId);};
+      svg.onpointermove=ev=>{if(!drag)return;const scale=viewport[2]/svg.getBoundingClientRect().width;viewport[0]-=(ev.clientX-drag.x)*scale;viewport[1]-=(ev.clientY-drag.y)*scale;drag={x:ev.clientX,y:ev.clientY};apply();};
+      svg.onpointerup=svg.onpointercancel=()=>{drag=null;};
     }
     function updateSelection() {
       target.querySelectorAll('[data-cg-node]').forEach(n => n.setAttribute('aria-pressed', String(n.dataset.cgNode === selected)));
@@ -245,8 +216,8 @@
       const docs = documents(), node = concepts.get(selected), doc = docs.find(d => d.id === selected);
       if (node) {
         const refs = [...new Map(node.references.map(r => [r.documentId + '/' + r.page, r])).values()];
-        box.innerHTML = `<span class="cg-eyebrow">知识点</span><h3>${e(node.label)}</h3><p>${e(node.descriptions[0] || '暂无知识点说明。')}</p><div class="cg-detail-stat">${node.questionIds.length}<span>道关联练习</span></div>
-          <button type="button" class="button button-blue" data-cg-practice ${node.questionIds.length ? '' : 'disabled'}>练习此知识点 →</button><p class="cg-muted">AI题目未经独立审校</p><h4>资料出处</h4><ul class="cg-source-list">${refs.map(r => `<li>${e(data.documents.find(d => d.id === r.documentId)?.name || '资料')}${r.page ? ' · 第' + e(r.page) + '页' : ''}</li>`).join('')}</ul><div data-cg-video></div>`;
+        box.innerHTML = `<span class="cg-eyebrow">知识点</span><h3>${e(node.label)}</h3><p>${e(node.descriptions[0] || '暂无知识点说明。')}</p><div class="cg-detail-stat">${questionCount([node])}<span>道关联练习</span></div>
+          <button type="button" class="button button-blue" data-cg-practice ${node.questionIds.length ? '' : 'hidden disabled'}>打开资料生成题 →</button>${node.questionIds.length ? '<p class="cg-muted">资料生成题未经独立审校</p>' : ''}<h4>课程固定练习</h4><div class="cg-fixed-links">${(node.fixedQuestions||[]).map(q=>`<a class="cg-fixed-question" href="${e(q.url)}">${e(q.title)} ↗</a>`).join('')||'<p>暂无精确匹配的固定练习。</p>'}</div><h4>资料出处</h4><ul class="cg-source-list">${refs.map(r => `<li>${e(data.documents.find(d => d.id === r.documentId)?.name || '资料')}${r.page ? ' · 第' + e(r.page) + '页' : ''}</li>`).join('')}</ul><div data-cg-video></div>`;
         box.querySelector('[data-cg-practice]').onclick = () => {
           const questions = target.querySelector('[data-cg-questions]');
           questions.innerHTML = '<button type="button" class="button button-outline" data-cg-close-quiz>返回知识图谱</button><div data-shared-practice></div>';
@@ -257,7 +228,7 @@
       } else {
         const list = doc ? children.get(doc.id) || [] : pointsFor(docs);
         box.innerHTML = `<span class="cg-eyebrow">${doc ? '资料章节' : '课程总览'}</span><h3>${e(doc ? titleOf(doc.name) : subject)}</h3><p>${doc ? e(doc.name) : '这本课程书汇集当前可访问的同科资料。点击图中的资料展开章节，点击知识点查看说明和练习。'}</p>
-          <div class="cg-detail-stat">${list.length}<span>个已保存知识点 · ${questionCount(list)}题</span></div>
+          <div class="cg-detail-stat">${list.length}<span>个知识点 · ${questionCount(list)}题</span></div>
           ${doc ? `<div class="cg-detail-links">${list.map(n => `<button type="button" data-cg-detail-node="${e(n.id)}">${e(n.label)} <span>${n.questionIds.length}题 ↗</span></button>`).join('') || '<p>此资料尚无已保存知识点，题目生成后会显示在这里。</p>'}</div>` : `<h4>资料目录</h4><div class="cg-detail-links">${docs.map(d => `<button type="button" data-cg-document="${e(d.id)}">${e(titleOf(d.name))}<span>${children.get(d.id)?.length || 0}个知识点 ↗</span></button>`).join('')}</div>`}
           <div data-cg-video></div>`;
         box.querySelectorAll('[data-cg-document]').forEach(b => b.onclick = () => openDocument(b.dataset.cgDocument));

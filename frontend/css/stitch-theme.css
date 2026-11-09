@@ -1806,19 +1806,20 @@ body.in-space #spacePage:not([hidden]) { width: 100% !important; max-width: none
 /* ------------------------------------------------------------------------
    Global interaction feedback: hover highlight + a very slight scale.
    Applies to buttons, tabs, selectable rows/cards and button-like links.
+   SVG controls manage their own feedback because transforms position them.
    Disabled controls and reduced-motion users keep the plain state.
    ------------------------------------------------------------------------ */
 @media (hover:hover) and (pointer:fine){
   :is(button,[role="button"],[role="option"],[role="tab"],summary,
      .button,.text-link,.sidebar-nav-item,.practice-option,.practice-row,.session-item,
      .suggested-chip,.pw-chip,.pw-segment,.ew-btn,.hot100-status-btn,.filter-select-trigger,
-     .wrong-area-tabs a,.material-workflow .button,.pw-draft-actions .button) {
+     .wrong-area-tabs a,.material-workflow .button,.pw-draft-actions .button):where(:not(svg, svg *)) {
     transition: transform .16s ease, filter .16s ease, box-shadow .16s ease;
   }
   :is(button,[role="button"],[role="option"],[role="tab"],summary,
      .button,.text-link,.sidebar-nav-item,.practice-option,.practice-row,.session-item,
      .suggested-chip,.pw-chip,.pw-segment,.ew-btn,.hot100-status-btn,.filter-select-trigger,
-     .wrong-area-tabs a,.material-workflow .button,.pw-draft-actions .button):not(:disabled):not([aria-disabled="true"]):hover {
+     .wrong-area-tabs a,.material-workflow .button,.pw-draft-actions .button):where(:not(svg, svg *)):not(:disabled):not([aria-disabled="true"]):hover {
     transform: translateY(-1px) scale(1.018);
     filter: brightness(1.06);
     box-shadow: 0 6px 18px -10px rgba(53, 37, 205, .5);
@@ -1828,7 +1829,7 @@ body.in-space #spacePage:not([hidden]) { width: 100% !important; max-width: none
   :is(button,[role="button"],[role="option"],[role="tab"],summary,
      .button,.text-link,.sidebar-nav-item,.practice-option,.practice-row,.session-item,
      .suggested-chip,.pw-chip,.pw-segment,.ew-btn,.hot100-status-btn,.filter-select-trigger,
-     .wrong-area-tabs a,.material-workflow .button,.pw-draft-actions .button):hover {
+     .wrong-area-tabs a,.material-workflow .button,.pw-draft-actions .button):where(:not(svg, svg *)):hover {
     transform: none;
     filter: none;
   }

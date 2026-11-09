@@ -1,0 +1,27 @@
+/* Adapted from the user's Stitch four-chapter constellation design. */
+.cg-nebula{background:radial-gradient(ellipse at 15% 55%,#ffd16609,transparent 45%),radial-gradient(ellipse at 85% 45%,#38bdf810,transparent 50%),#070b14;color:#dce7f5;border:1px solid #253149;border-radius:18px;overflow:hidden}
+.cg-nebula-heading,.cg-star-footer{display:flex;justify-content:space-between;gap:16px;padding:16px 22px;color:#9aaec8;border-bottom:1px solid #253149;font-size:13px}
+.cg-nebula-heading span:first-child{color:#ffd166;letter-spacing:2px;font-weight:700}
+.cg-nebula svg.cg-star-map{width:100%;height:auto;min-height:520px;max-height:none;display:block;touch-action:none;overflow:visible;stroke:none;fill:none;aspect-ratio:auto}
+.cg-star-map text{fill:#dce7f5;stroke:none;font-size:13px;font-family:system-ui,'Microsoft YaHei',sans-serif}
+.cg-star-map .cg-star-sub{fill:#91a7c3;font-size:10px}
+.cg-stars circle{fill:#b8c9dc;opacity:.5}
+.cg-root-rail{fill:none;stroke:#ffd166;stroke-width:1.6;opacity:.38}
+.cg-root-rail.is-active{opacity:.95;filter:drop-shadow(0 0 4px #ffd16665)}
+.cg-star-root rect{fill:#262219;stroke:#ffd166;stroke-width:1.5;filter:drop-shadow(0 0 8px #ffd16642)}
+.cg-star-root .cg-star-root-title{fill:#ffe09a;font-size:21px;font-weight:700}
+.cg-star-rail{fill:none;stroke:url(#cg-rail);stroke-width:1.8;filter:drop-shadow(0 0 4px #38bdf85a)}
+.cg-star-flow{fill:none;stroke:#ffe7a1;stroke-width:2;stroke-dasharray:3 240;animation:cg-stream 8s linear infinite}
+.cg-chapter,.cg-leaf{cursor:pointer;outline:none}
+.cg-chapter rect,.cg-leaf rect{fill:#101827;stroke:#27364b;stroke-width:1}
+.cg-chapter.is-active rect{fill:#292719;stroke:#ffd166;filter:drop-shadow(0 0 7px #ffd16655)}
+.cg-leaf circle{fill:#68ddf4;filter:drop-shadow(0 0 4px #38bdf8)}
+.cg-leaf:hover rect,.cg-leaf:focus rect,.cg-leaf[aria-pressed=true] rect{stroke:#68ddf4;fill:#122b3c}
+.cg-chapter:hover:where(:not(.is-active)) rect{stroke:#6e819c}
+.cg-chapter:focus rect{stroke:#fff;stroke-width:2}
+.cg-star-footer{border:0;border-top:1px solid #253149;margin:0;font-size:12px}
+.cg-star-empty{padding:20px;color:#a9bdd6}
+.cg-fixed-links{display:grid;gap:8px}.cg-fixed-question{display:block;padding:12px;border:1px solid var(--border-color,#69788a);border-radius:10px;color:inherit;text-decoration:none}.cg-fixed-question:hover{background:#38bdf81a}
+@keyframes cg-stream{to{stroke-dashoffset:-486}}
+@media(prefers-reduced-motion:reduce){.cg-star-flow{animation:none}}
+@media(max-width:700px){.cg-nebula{overflow-x:auto}.cg-nebula .cg-star-map{min-width:850px;min-height:550px}.cg-nebula-heading{flex-wrap:wrap}.cg-star-footer{min-width:350px}}

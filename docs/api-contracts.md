@@ -576,3 +576,8 @@ POST /plan/adopt继续要求confirmed=true、业务expectedRevision及operationI
 - `POST /api/learning/space/quiz/attempts` 增加可选 `planId`、`nodeId`。服务端校验当前计划、节点、题目版本及资料可访问性；客户端不得将其他节点或计划的作答记到本节点。公开 attempt 增加 planId/nodeId 用于恢复同一上下文。
 - 路线完成以节点中全部固定题的有效提交为依据，缺题节点不能完成；重复作答不增加完成题数，错题不阻止完成。每天学习完成事件按计划/日期幂等保存为 study-completion，与旧 attendance 到访记录分离。
 - 阶段报告按 planId/nodeId/questionRevision 限定作答，首次正确率以首次作答的原始评阅为依据；争议、待评分和无法判定单独计数。重评不新增作答，其他阶段记录不混入；没有判定依据时 firstAccuracy=null。
+# 知识图谱固定练习链接（2026-11-09）
+
+`GET /api/learning/space/course-graph` 的 concept 节点新增 `fixedQuestions: [{id,title,url}]`，链接指向现有 `#space/practice/legacy/{id}`，复用课程固定题及原有作答记录。候选与当前账号 workspace 题库一致，不创建新 Question 或 Attempt。
+
+已就绪的栈与队列章节可附加 `sourceType: fixed-practice` 节点，由可见题库的 topic/subtopic 分组。此类节点不计入 AI 提取批次或生成题统计；`questionIds` 仍仅供现有资料题练习接口使用。无匹配题时 `fixedQuestions` 为空，不伪造题量或重试模型。
