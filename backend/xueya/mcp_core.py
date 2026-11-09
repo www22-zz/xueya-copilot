@@ -180,26 +180,43 @@ def course_registry(context=None):
 
 def platform_registry(platform, scope, *, context=None, reference=False, rag=None, learning=None):
     repo, registry = platform.repo, Registry()
+    from .rag_scope_adapter import ScopeAdapter
+    adapter = ScopeAdapter(platform, scope.user_id)
     registry.bound_scope = scope
     repo.require_course(scope)
 
     def library():
         if context is None:
-            return repo.all(scope, 'source')
+            return adapter.sources(rag, scope.course_id) if rag else repo.all(scope, 'source')
         result = []
         for source in context['library']:
-            row = repo.read(scope, 'source', source['id'])
-            if row:
-                result.append({**row['value'], **source})
+            try:
+                origin, original = adapter.resolve_source(source['id'], scope.course_id)
+                row = repo.read(origin, 'source', original)
+                if row:
+                    stored=row['value']
+                    selected=source.get('quote',stored.get('quote',''))
+                    require(isinstance(selected,str) and selected in stored.get('quote',''),'STALE_EVIDENCE')
+                    value={**stored,'version':row['version'],**source}
+                    if stored.get('documentRevision') is not None:
+                        # Legacy normalized context bounds quote to 1500 chars
+                        # and omits citation metadata. Restore the stored version
+                        # and the exact selected span before the final validation.
+                        offset=stored['quote'].find(selected)
+                        value.update(start=stored['start']+offset,end=stored['start']+offset+len(selected))
+                    result.append(value)
+            except AppError:
+                continue
         return result
 
     def read(a):
         source = next((s for s in library() if s["id"] == a["sourceId"]), None)
         require(source is not None, "SOURCE_NOT_FOUND")
         if rag and source.get('documentId'):
-            doc = repo.read(scope, 'document', source['documentId'])
+            origin, original = adapter.resolve_source(source['id'], scope.course_id)
+            doc = repo.read(origin, 'document', source['documentId'])
             if doc and doc['value'].get('activeArtifact'):
-                rag.read(scope, source['id'])
+                adapter.read(rag, source['id'], scope.course_id)
         return {"source": source}
 
     async def search(a):
@@ -208,10 +225,22 @@ def platform_registry(platform, scope, *, context=None, reference=False, rag=Non
             return {'sources': retrieve(a['query'], available)[:a.get('limit', 4)]}
         ids = {s['id']: s for s in available}
         documents = list({s['documentId'] for s in available if s.get('documentId')})
-        found = await rag.search(scope, a['query'], document_ids=documents if context is not None else None, limit=6, budget=9000)
+        found = await adapter.search(rag, scope.course_id, a['query'], document_ids=documents if context is not None else None, limit=6, budget=9000)
         hits = [ids[s['id']] for s in found['sources'] if s['id'] in ids]
         hits += [s for s in retrieve(a['query'], available) if s['id'] not in {h['id'] for h in hits}]
-        return {'sources': hits[:a.get('limit', 4)], 'warnings': found['warnings']}
+        current=[]
+        for source in hits:
+            try:
+                origin,original=adapter.resolve_source(source['id'],scope.course_id)
+                if source.get('documentRevision') is not None:
+                    adapter.validate_citation(rag,source,scope.course_id)
+                else:
+                    row=repo.read(origin,'source',original)
+                    require(row and row['value'].get('quote','').startswith(source.get('quote','')), 'STALE_EVIDENCE')
+            except AppError:
+                continue
+            current.append(source)
+        return {'sources': current[:a.get('limit', 4)], 'warnings': found['warnings']}
 
     registry.add("search_materials", obj({"query": string(4000), "limit": {"type": "integer", "minimum": 1, "maximum": 6}}, ["query"]), search)
     registry.add("read_source", obj({"sourceId": ID}, ["sourceId"]), read)

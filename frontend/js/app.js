@@ -9,6 +9,13 @@
   const icon=name=>`<span data-icon="${name}"></span>`;
   let storage;try{storage=window.localStorage;}catch{storage={getItem(){return null;},setItem(){throw new Error('STORAGE_UNAVAILABLE');}};}
   const store=window.XueyaWorkspaceStore.createStore({storage,learning:L}),state=store.state;
+  window.addEventListener('xueya:quiz-attempt',event=>{
+    const {messageId,questionId,attemptId}=event.detail;
+    for(const message of [...state.messages,...state.sessions.flatMap(session=>session.messages)]){
+      if(message.id===messageId&&message.artifacts?.quiz){message.artifacts.quiz.attemptIds||={};message.artifacts.quiz.attemptIds[questionId]=attemptId;}
+    }
+    persist();
+  });
   let agentRuns;
   window.XueyaPlatform?.attach({store,state,toast,render});
   const viewLearning=Object.create(L);
@@ -18,10 +25,20 @@
   function persist(){const saved=store.persist();$('#storageNotice')?.toggleAttribute('hidden',saved);if(!saved)toast(store.error);return saved;}
   let toastTimer;function toast(text){$('#toast').textContent=text;$('#toast').classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('#toast').classList.remove('show'),3500);}
   window.toast=toast;
+  window.XueyaAsk=ask;
+  window.addEventListener('xueya:course-completed',async event=>{
+    try{await window.XueyaPlatform.spaceFetch('/api/learning/space/plan/sync-course',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(event.detail)});}
+    catch(error){toast('课程记录已保存，计划同步未完成：'+error.message);}
+  });
   const workspace=window.XueyaWorkspace.createWorkspace({state,L:viewLearning,store,e,icon,persist,toast,render,sourceById,allSources,libraryService:window.XueyaLibrary});
   const {titles,renders,documentRows,currentQuestions}=workspace.enhance(window.XueyaViews.createViews({state,L:viewLearning,e,icon,sourceById}));
-  titles.knowledge='课程资料';renders.knowledge=()=>'';
+  titles.ask='AI 助手';titles.overview='工作台概览';titles.knowledge='个人参考资料';renders.knowledge=()=>'';
+  renders.overview=()=>window.XueyaOverview?window.XueyaOverview.render({state,store}):'';
   renders.practice=()=>'<div id="practiceModule"></div>';
+  titles.review='错题本';renders.review=()=>'<div id="practiceModule"></div>';
+  titles.materials='课程资料学习';renders.materials=()=>'<div id="materialLearning"></div>';
+  titles.algorithms='算法学习';renders.algorithms=()=>'<div id="algorithmLearning"></div>';
+  titles.exams='408考研学习';renders.exams=()=>'<div id="examLearning"></div>';
   const chatService=window.XueyaChat.createChatService();
   const experience=window.XueyaExperience?.create({state});
   let activeChat;
@@ -36,24 +53,77 @@
   const coursesUI=window.XueyaCourses?.create({state,store,toast,ask,render,navigate:hash=>{location.hash=hash;}});
   renders.courses=()=>coursesUI?coursesUI.render():'<div class="courses-empty">课程模块加载中…</div>';
   renders.analysis=()=>'<div class="view-heading"><div><h1>从练习，看见下一步。</h1><p>AI 学习分析 · 基于你的真实记录</p></div></div><div id="analysisModule"></div>';
-  const analysisLink=document.createElement('a');analysisLink.href='#space/analysis';analysisLink.dataset.view='analysis';analysisLink.textContent='学习分析';analysisLink.setAttribute('aria-label','AI 学习分析');document.querySelector('.space-nav').append(analysisLink);
+  // analysis link is in static HTML
+
   const workbench=window.XueyaPlatform?.available?window.XueyaWorkbench?.create({state,store,toast}):null;
   const libraryUI=window.XueyaPlatform?.available?window.XueyaLibraryWorkspace?.create({state,store,toast}):null;
   const knowledgeUI=window.XueyaKnowledgeBase?.create({state,store,toast,render});
   const materialLink=document.querySelector('[data-view="library"]');if(materialLink){materialLink.href='#space/knowledge';materialLink.dataset.view='knowledge';}
   const mediaUI=window.XueyaPlatform?.available?window.XueyaMediaWorkspace?.create({state,store,toast}):null;
+  let frameworkUI; titles.frameworks='知识框架历史';renders.frameworks=()=>'<div id="frameworkHistory"></div>';
+  let planSnapshot=null,planSnapshotAt=0,planRequest=null;
+  async function mountLearningShortcuts(){
+    if(state.view!=='review'||!window.XueyaPlatform?.available)return;
+    const view=state.view,node=document.createElement('aside');node.className='learning-shortcuts';
+    node.innerHTML='<a href="#space/analysis/plans" data-open-my-plan>我的计划</a><a href="#space/courses">继续学习课程</a><a href="#space/review">复习错题</a>';
+    $('#spaceContent').prepend(node);
+    try{
+      if(view==='ask'){
+        const summary=await window.XueyaPlatform.spaceFetch('/api/learning/space/today').then(r=>r.json());
+        if(!node.isConnected||state.view!==view)return;
+        if(summary.lastCourse){const link=node.querySelector('a[href="#space/courses"]');link.href=summary.lastCourse.url;link.textContent='继续：'+summary.lastCourse.title;}
+      }
+      if(Date.now()-planSnapshotAt>5000){
+        planRequest ||= window.XueyaPlatform.spaceFetch('/api/learning/space/plan/active').then(r=>r.json()).then(data=>{planSnapshot=data.plan;planSnapshotAt=Date.now();}).finally(()=>{planRequest=null;});
+        await planRequest;
+      }
+      if(!node.isConnected||state.view!==view)return;
+      const today=new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Shanghai'}).format(new Date());
+      const days=planSnapshot?.days||[];
+      const tasks=days.flatMap(day=>(day.tasks||[]).filter(t=>view==='ask'?day.date===today:day.date<=today&&t.kind==='review'&&!t.completed).map(t=>({...t,date:day.date})));
+      node.insertAdjacentHTML('afterbegin',`<strong>${view==='ask'?'今日任务':'到期与逾期的计划复习任务'}</strong><span>${planSnapshot?e(planSnapshot.title):'暂无执行计划'}</span>`);
+      if(tasks.length){
+        const list=document.createElement('div');list.className='shortcut-task-list';
+        list.innerHTML=tasks.map(t=>`<label><input type="checkbox" data-shortcut-task="${e(t.id)}" ${t.completed?'checked':''}>${e(t.title)} <small>${e(t.minutes)}分钟${t.date<today?' · 已逾期':''}</small></label>`).join('');
+        node.append(list);
+        list.onchange=async event=>{const input=event.target.closest('[data-shortcut-task]');if(!input)return;input.disabled=true;try{const response=await window.XueyaPlatform.spaceFetch('/api/learning/space/plan/task/toggle',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({planId:planSnapshot.id,taskId:input.dataset.shortcutTask,completed:input.checked,expectedRevision:planSnapshot.revision,operationId:'shortcut-'+input.dataset.shortcutTask+'-'+planSnapshot.revision+'-'+input.checked})});const value=await response.json();planSnapshot=value.plan;planSnapshotAt=Date.now();toast('已同步到我的计划');}catch(error){input.checked=!input.checked;toast(error.message);}finally{input.disabled=false;}};
+      }else if(view!=='ask'){node.insertAdjacentHTML('beforeend',`<small>没有到期的计划复习任务</small>`);}
+    }catch(error){if(node.isConnected)node.insertAdjacentHTML('beforeend',`<small>计划暂未读取：${e(error.message)}</small>`);}
+  }
   function render(){
-    analysisUI?.unmount();
+    window.XueyaMaterialLearning?.unmount();analysisUI?.unmount();frameworkUI?.unmount?.();
+    const inCenter=['exams','algorithms','materials','courses','practice','review','analysis','knowledge','frameworks'].includes(state.view);document.body.classList.toggle('learning-center',inCenter);document.querySelector('[data-ai-session-section]').hidden=state.view!=='ask';document.querySelector('.learning-center-nav').hidden=!inCenter;document.querySelectorAll('[data-area]').forEach(a=>a.setAttribute('aria-current',(a.dataset.area==='center')===inCenter?'page':'false'));
     practiceUI?.beforeRender();
     const prior=$('#chatThread'),sameSession=prior?.dataset.sessionId===state.sessionId,scrollTop=prior?.scrollTop||0,nearBottom=!prior||prior.scrollHeight-prior.scrollTop-prior.clientHeight<90;
     const pool=currentQuestions();if(state.quizIndex>=pool.length)state.quizIndex=0;
-    workspace.beforeRender();$('#spaceContent').innerHTML=renders[state.view]();$('#documentCount').textContent=window.XueyaWorkspaceAppearance.isOriginal()?state.documents.filter(d=>!d.superseded).length:Number.isInteger(state.documentCount)?state.documentCount:window.XueyaPlatform?.available?'…':state.documents.filter(d=>!d.superseded&&!d.archived).length;icons();workspace.afterRender();workbench?.prepare();libraryUI?.mount();workbench?.mount();experience?.mount();mediaUI?.mount();historyLayout?.mount();knowledgeUI?.mount();if(!window.XueyaWorkspaceAppearance.isOriginal())knowledgeUI?.refreshCount();const practiceModule=$('#practiceModule');if(practiceModule){if(state.view==='review')practiceUI?.mountReview(practiceModule);else practiceUI?.mountPractice(practiceModule,{page:location.hash.split('/')[2],category:({foundation:'basic',interview:'interview',legacy:'legacy',hot100:'hot100',exam408:'exam408'})[location.hash.split('/')[2]]});}
-    const thread=$('#chatThread');if(thread)thread.scrollTop=!sameSession||nearBottom?thread.scrollHeight:scrollTop;
+    workspace.beforeRender();$('#spaceContent').innerHTML=renders[state.view]();$('#documentCount').textContent=window.XueyaWorkspaceAppearance.isOriginal()?state.documents.filter(d=>!d.superseded).length:Number.isInteger(state.documentCount)?state.documentCount:window.XueyaPlatform?.available?'…':state.documents.filter(d=>!d.superseded&&!d.archived).length;icons();if(state.view==='exams')window.XueyaExamWorkspace.mount($('#examLearning'),location.hash.split('/')[2]);if(state.view==='algorithms')window.XueyaAlgorithmDemo.mount($('#algorithmLearning'),location.hash.split('/')[2]);if(state.view==='materials')window.XueyaMaterialLearning.mount($('#materialLearning'),state.courseId);workspace.afterRender();workbench?.prepare();libraryUI?.mount();workbench?.mount();experience?.mount();mediaUI?.mount();historyLayout?.mount();knowledgeUI?.mount();if(!window.XueyaWorkspaceAppearance.isOriginal())knowledgeUI?.refreshCount();const practiceModule=$('#practiceModule');if(practiceModule){if(state.view==='practice'&&location.hash.split('/')[2]==='ai')window.XueyaStudyQuiz?.directory(practiceModule,location.hash.split('/')[3],location.hash.split('/')[4]);else if(state.view==='review')practiceUI?.mountReview(practiceModule,{area:location.hash.split('/')[2]});else practiceUI?.mountPractice(practiceModule,{page:location.hash.split('/')[2],questionId:decodeURIComponent(location.hash.split('/')[3]||''),category:({foundation:'basic',interview:'interview',legacy:'legacy',hot100:'hot100',exam408:'exam408'})[location.hash.split('/')[2]]});}
+    if(['knowledge','courses','analysis','frameworks','practice'].includes(state.view)){
+      try{const context=JSON.parse(sessionStorage.getItem((window.XueyaDataKey||((key)=>key))('xueya-material-return'))||'null');if(context&&/^#space\/materials\//.test(context.hash))$('#spaceContent').insertAdjacentHTML('afterbegin',`<nav class="material-return" aria-label="学习位置"><a href="${e(context.hash)}">← 返回资料与知识点</a><span>${e(context.name)}</span><span>当前位置：${e(titles[state.view])}</span></nav>`);}catch{}
+    }
+    const thread=$('#chatThread');if(thread)thread.scrollTop=!state.messages.length?0:!sameSession||nearBottom?thread.scrollHeight:scrollTop;
     agentRuns?.refresh();
     if(state.view==='analysis')analysisUI?.mount($('#analysisModule'));
     if(state.view==='courses')coursesUI?.mount();
+    if(state.view==='overview')window.XueyaOverview?.mountListeners($('#spaceContent'),{ask,navigate:hash=>{location.hash=hash;}});
+    document.body.classList.toggle('in-ask', state.view === 'ask');
+    const stitchRecent=$('#stitchRecentSessions');
+    if(stitchRecent&&state.sessions){
+      if(typeof globalThis.XueyaWorkspaceSessionList==='function'){
+        stitchRecent.innerHTML=globalThis.XueyaWorkspaceSessionList();
+      }
+    }
+    const searchBox=$('#stitchSessionSearchBox');
+    if(searchBox){
+      searchBox.hidden=!Boolean(state.sessionSearchOpen||state.sessionQuery);
+    }
+    if(state.view==='frameworks'){frameworkUI ||= window.XueyaFramework.create({toast,navigate:hash=>{location.hash=hash;}});frameworkUI.mount($('#frameworkHistory'),location.hash.split('/')[2]);}
+    // Review navigation stays focused on the three learning areas.
+
+    window.XueyaStudyChat?.recover(state,persist,render);
+    window.XueyaStudyQuiz?.mount($('#chatThread'));window.XueyaStudyQuiz?.recover(state,persist,render);
   }
-  let initialRoute=true;function route(){const parts=location.hash.replace(/^#/,'').split('/');if(parts[0]==='space'&&parts[1]==='library'&&parts[2]!=='manage'&&window.XueyaPlatform?.available)parts[1]='knowledge';const space=parts[0]==='space';$('#homePage').hidden=space;$('#spacePage').hidden=!space;document.body.classList.toggle('in-space',space);if(space){state.view=titles[parts[1]]?parts[1]:'overview';$$('[data-view]').forEach(a=>{a.classList.toggle('active',a.dataset.view===state.view);a.dataset.view===state.view?a.setAttribute('aria-current','page'):a.removeAttribute('aria-current');});render();document.title=`${titles[state.view]} · 学涯 Copilot`;if(!initialRoute){scrollTo({top:0,behavior:'instant'});$('#spaceContent').focus({preventScroll:true});}}else{document.title='学涯 Copilot — 让知识，真正连起来';if(['possibilities','evidence','rhythm'].includes(parts[0]))requestAnimationFrame(()=>document.getElementById(parts[0]).scrollIntoView());else if(!initialRoute)scrollTo({top:0,behavior:'instant'});}initialRoute=false;}
+  let initialRoute=true;function route(){const parts=location.hash.replace(/^#/,'').split('/');if(parts[0]==='space'&&parts[1]==='algorithms'){parts[1]='practice';parts[2]='hot100';if(location.hash!=='#space/practice/hot100'){try{history.replaceState(null,'','#space/practice/hot100');}catch{}}}
+    if(parts[0]==='space'&&parts[1]==='library'&&parts[2]!=='manage'&&window.XueyaPlatform?.available)parts[1]='knowledge';const space=parts[0]==='space';$('#homePage').hidden=space;$('#spacePage').hidden=!space;document.body.classList.toggle('in-space',space);document.body.classList.toggle('in-ask',space&&state.view==='ask');if(space){state.view=titles[parts[1]]?parts[1]:'ask';const activeView=state.view==='practice'?({hot100:'algorithms',exam408:'exams',legacy:'materials',foundation:'materials',interview:'materials',ai:'materials'})[parts[2]]||'materials':state.view==='courses'?'materials':state.view;$$('[data-view]').forEach(a=>{a.classList.toggle('active',a.dataset.view===activeView);a.dataset.view===activeView?a.setAttribute('aria-current','page'):a.removeAttribute('aria-current');});render();document.title=`${titles[state.view]} · 学涯 Copilot`;if(!initialRoute){scrollTo({top:0,behavior:'instant'});$('#spaceContent').focus({preventScroll:true});}}else{document.title='学涯 Copilot — 让知识，真正连起来';if(['possibilities','evidence','rhythm'].includes(parts[0]))requestAnimationFrame(()=>document.getElementById(parts[0]).scrollIntoView());else if(!initialRoute)scrollTo({top:0,behavior:'instant'});}initialRoute=false;}
   function sourceById(id){return [...viewLearning.sources,...state.documents.flatMap(d=>d.chunks||[])].find(s=>s.id===id)||state.messages.flatMap(m=>m.sources||[]).find(s=>s.id===id)||(id?.startsWith('web-')?{id,title:'全网搜索网页',location:'互联网搜索',isWeb:true}:null);}
   function openSource(source){
     if(!source)return;
@@ -71,10 +141,10 @@
     const request={courseId:state.courseId,question:clean,mode:state.mode,sources,history,previousSources,previousAnswerKind,learning:{questions:[],records:[]},webSearch:Boolean(state.webSearch)};
     const courseDocuments=state.documents.filter(d=>d.remote&&!d.superseded&&!d.archived).map(d=>d.id);
     if(courseDocuments.length)request.documentIds=state.selectedDocuments.length?[...state.selectedDocuments]:courseDocuments;
-    try{const scope=JSON.parse(localStorage.getItem('xueya-c-learning:'+state.courseId+':scope:'+state.sessionId));if(Array.isArray(scope))request.documentIds=scope;else if(state.selectedDocuments.length)request.documentIds=[...state.selectedDocuments];}catch{}
+    try{const scope=JSON.parse(localStorage.getItem((window.XueyaDataKey||((key)=>key))('xueya-c-learning:'+state.courseId+':scope:'+state.sessionId)));if(Array.isArray(scope))request.documentIds=scope;else if(state.selectedDocuments.length)request.documentIds=[...state.selectedDocuments];}catch{}
     const ai={id:crypto.randomUUID(),role:'ai',text:'',reasoning:'',sources:[],engine:'正在回答',title:clean,createdAt:new Date().toISOString()};
     const controller=new AbortController();activeChat=controller;
-    state.draft='';state.followupIndex=null;state.pending=true;const userMessage={id:crypto.randomUUID(),role:'user',text:clean};const batch=workspace.takeAttachments(userMessage);state.messages.push(userMessage,ai);persist();
+    state.draft='';state.followupIndex=null;state.pending=true;const userMessage={id:crypto.randomUUID(),role:'user',text:clean,createdAt:new Date().toISOString()};const batch=workspace.takeAttachments(userMessage);state.messages.push(userMessage,ai);persist();
     if(state.view!=='ask')location.hash='space/ask';else render();
     const thinkStart=Date.now();
     let thinkingDuration=null,userScrolledUp=false,isProgrammaticScroll=false,scrollRafId=null;
@@ -108,7 +178,9 @@
     }
     try{
       const stream=batch.length?((input,options)=>workspace.imageChat(input,options,batch)):chatService.stream.bind(chatService);
-      const result=await stream(request,{workflow:true,signal:controller.signal,onUpdate(update){
+      const planning=!batch.length&&window.XueyaPlatform?.available?await window.XueyaStudyChat?.handle({question:clean,history:request.history,sessionId:state.sessionId,operationId:userMessage.id},{signal:controller.signal,onReference(reference){ai.artifacts={studyPlanning:reference};persist();}}):null;
+      const quiz=!planning&&!batch.length&&window.XueyaPlatform?.available?await window.XueyaStudyQuiz?.tryChat({question:clean,sessionId:state.sessionId,operationId:userMessage.id},{signal:controller.signal,onReference(reference){ai.artifacts={quiz:reference};persist();}}):null;
+      const result=planning||quiz||await stream(request,{workflow:true,signal:controller.signal,onUpdate(update){
         if(typeof update.answer==='string')ai.text=update.answer;
         if(update.progress)ai.progress=update.progress;
         if(typeof update.reasoning==='string')ai.reasoning=update.reasoning;
@@ -238,9 +310,6 @@
     $$('dialog').forEach(dialog=>dialog.addEventListener('click',event=>{if(event.target===dialog){const r=dialog.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)dialog.close();}}));
     function openSearch(){if($('#searchDialog').open)return;searchResults('');$('#searchInput').value='';$('#searchDialog').showModal();$('#searchInput').focus();}$('#searchTrigger').addEventListener('click',openSearch);$('#searchInput').addEventListener('input',event=>searchResults(event.target.value));
     document.addEventListener('keydown',event=>{if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='k'){event.preventDefault();openSearch();}});
-    const originalDemo=$('#demoContent').innerHTML;const demoViews={ask:originalDemo,practice:`<div class="demo-big-card"><small>用一道题，检验理解</small><h3>什么时候会退化为 O(n)？</h3><p>节点按顺序插入，且不进行平衡调整时，二叉搜索树可能退化成链。<br>理解树高，就理解了查找复杂度。</p><div class="demo-card-footer"><span>期中复习题 · p.8</span><span>${icon('check')} 把重点，练扎实</span></div></div><a class="demo-compose" href="#space/practice">去完成一组示例练习 ${icon('arrow')}</a>`};
-    function changeDemo(b){$$('[data-demo]').forEach(tab=>{tab.classList.toggle('active',tab===b);tab.setAttribute('aria-selected',String(tab===b));tab.tabIndex=tab===b?0:-1;});$('#demoPanel').setAttribute('aria-labelledby',b.id);$('#demoContent').innerHTML=demoViews[b.dataset.demo];icons();if(!matchMedia('(prefers-reduced-motion: reduce)').matches)$('#demoContent').animate([{opacity:.35,transform:'translateY(5px)'},{opacity:1,transform:'translateY(0)'}],{duration:220,easing:'cubic-bezier(.23,1,.32,1)'});}
-    $$('[data-demo]').forEach(b=>{b.addEventListener('click',()=>changeDemo(b));b.addEventListener('keydown',event=>{if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;event.preventDefault();const tabs=$$('[data-demo]'),index=tabs.indexOf(b),next=event.key==='Home'?0:event.key==='End'?2:(index+(event.key==='ArrowRight'?1:2))%3;changeDemo(tabs[next]);tabs[next].focus();});});
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mount,{once:true});else mount();
 })();

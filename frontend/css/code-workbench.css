@@ -1,0 +1,91 @@
+/* Hot100 code workbench: real execution console and AI complexity diagnosis.
+   Loaded after stitch-theme.css. Colours use the existing paper/blue tokens so
+   light and dark themes both work. */
+
+.code-run-spin{animation:code-run-spin 1s linear infinite}
+@keyframes code-run-spin{to{transform:rotate(360deg)}}
+
+.code-run-language-hint{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;
+  color:#8a5a00;background:#fff5d6;border:1px solid #f0d995;border-radius:999px;padding:3px 10px}
+html[data-theme=dark] .code-run-language-hint{color:#ffd897;background:#3a2f16;border-color:#6b5726}
+.code-run-language-hint-ok{color:#1c6b5a;background:#eaf7f2;border-color:#bfe0d6}
+html[data-theme=dark] .code-run-language-hint-ok{color:#9fe6d6;background:#173330;border-color:#2d615a}
+.code-run-refresh{border:0;background:transparent;color:inherit;text-decoration:underline;cursor:pointer;
+  font-size:11px;font-weight:700;padding:0 2px}
+.code-run-toolchain{display:inline-flex;align-items:center;gap:6px;font-size:10px;font-weight:700;letter-spacing:.02em}
+.code-run-toolchain-item{padding:1px 6px;border-radius:999px;border:1px solid transparent}
+.code-run-toolchain-item.is-ready{color:#1c6b5a;background:#eaf7f2;border-color:#bfe0d6}
+.code-run-toolchain-item.is-missing{color:#8a5a00;background:#fff5d6;border-color:#f0d995}
+html[data-theme=dark] .code-run-toolchain-item.is-ready{color:#9fe6d6;background:#173330;border-color:#2d615a}
+html[data-theme=dark] .code-run-toolchain-item.is-missing{color:#ffd897;background:#3a2f16;border-color:#6b5726}
+
+.code-run-button:disabled{opacity:.55;cursor:not-allowed;filter:saturate(.6)}
+
+.code-run-loading,.code-analysis-loading{display:flex;align-items:center;gap:8px;padding:14px;
+  border:1px dashed var(--line);border-radius:12px;color:var(--ink);font-size:12px;background:var(--mist)}
+.code-run-empty,.code-analysis-empty{display:flex;flex-direction:column;gap:6px;padding:12px;
+  border:1px dashed var(--line);border-radius:12px;background:var(--white);font-size:12px;color:var(--ink)}
+.code-run-empty p,.code-analysis-empty p{margin:0;line-height:1.7}
+.code-run-empty .text-outline,.code-analysis-empty .text-outline{color:var(--muted)}
+
+.code-run-error-panel,.code-analysis-error{display:flex;flex-direction:column;gap:6px;padding:12px;
+  border:1px solid #e4b3a8;border-left:4px solid #b42318;border-radius:12px;background:#fff5f3;font-size:12px;color:#7a271a}
+html[data-theme=dark] .code-run-error-panel,html[data-theme=dark] .code-analysis-error{background:#3a2020;border-color:#7a3b36;color:#ffd4cc}
+.code-run-error-panel strong,.code-analysis-error strong{font-size:13px}
+.code-run-error-panel p,.code-analysis-error p{margin:0;line-height:1.7}
+.code-run-error-panel small,.code-analysis-error small{font-size:11px;opacity:.8}
+
+.code-run-unsupported{display:flex;flex-direction:column;gap:6px;padding:12px;border:1px solid var(--line);
+  border-left:4px solid var(--blue);border-radius:12px;background:var(--mist);font-size:12px;color:var(--ink)}
+.code-run-unsupported p{margin:0;line-height:1.75}
+
+.code-run-summary{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700;padding:8px 12px;border-radius:10px}
+.code-run-summary .material-symbols-outlined{font-size:18px}
+.code-run-summary.is-pass{background:#eaf7f2;border:1px solid #bfe0d6;color:#1c6b5a}
+.code-run-summary.is-fail{background:#fff1ee;border:1px solid #e8bcb1;color:#a13b22}
+html[data-theme=dark] .code-run-summary.is-pass{background:#173330;border-color:#2d615a;color:#9fe6d6}
+html[data-theme=dark] .code-run-summary.is-fail{background:#3a2020;border-color:#7a3b36;color:#ffc9bd}
+
+.code-run-cases{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.code-run-case{padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--white)}
+.code-run-case.is-pass{border-left:3px solid #22a06b}
+.code-run-case.is-fail{border-left:3px solid #d14a2b}
+.code-run-case-head{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.code-run-case-state{font-size:11px;font-weight:700;padding:1px 8px;border-radius:999px}
+.code-run-case-state.is-pass{color:#1c6b5a;background:#eaf7f2}
+.code-run-case-state.is-fail{color:#a13b22;background:#fff1ee}
+html[data-theme=dark] .code-run-case-state.is-pass{color:#9fe6d6;background:#173330}
+html[data-theme=dark] .code-run-case-state.is-fail{color:#ffc9bd;background:#3a2020}
+.code-run-line{display:grid;grid-template-columns:40px minmax(0,1fr);gap:8px;padding:2px 0;font-size:12px;
+  font-family:var(--font-code,ui-monospace,SFMono-Regular,Consolas,monospace)}
+.code-run-line>span{color:var(--muted);font-weight:600}
+.code-run-line code{white-space:pre-wrap;overflow-wrap:anywhere;color:var(--ink)}
+.code-run-trace{margin:8px 0 0;padding:8px 10px;border-radius:8px;background:#1e1e2e;color:#f5c2c7;
+  font-size:11.5px;line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere;max-height:220px;overflow:auto}
+
+.code-run-stream{margin-top:8px;font-size:11.5px;color:var(--muted)}
+.code-run-stream summary{cursor:pointer;font-weight:600;color:var(--ink)}
+.code-run-stream pre{margin:6px 0 0;padding:8px 10px;border-radius:8px;background:#1e1e2e;color:#cbd5e1;
+  white-space:pre-wrap;overflow-wrap:anywhere;max-height:200px;overflow:auto}
+.code-run-sandbox-note{margin:10px 0 0;font-size:11px;line-height:1.6;color:var(--muted)}
+
+.code-analysis-result{display:flex;flex-direction:column;gap:10px}
+.code-analysis-heading{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:13px;color:var(--ink)}
+.code-analysis-heading .material-symbols-outlined{color:var(--blue)}
+.code-analysis-heading .text-outline{color:var(--muted);font-weight:400}
+.code-analysis-complexity{display:flex;flex-wrap:wrap;gap:14px;padding:10px 12px;border-radius:12px;
+  background:var(--mist);border:1px solid var(--line);font-size:12px;color:var(--ink)}
+.code-analysis-complexity strong{margin-left:4px;color:var(--blue);font-size:14px}
+.code-analysis-summary{margin:0;font-size:12px;line-height:1.8;color:var(--ink)}
+.code-analysis-risks{margin:0;padding-left:18px;font-size:12px;line-height:1.8;color:var(--ink)}
+.code-analysis-risks li{margin:2px 0}
+.code-analysis-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:2px}
+html[data-theme=dark] .code-run-empty,html[data-theme=dark] .code-analysis-empty,
+html[data-theme=dark] .code-run-case{background:#1d2635;color:var(--ink)}
+html[data-theme=dark] .code-run-loading,html[data-theme=dark] .code-analysis-loading,
+html[data-theme=dark] .code-run-unsupported,html[data-theme=dark] .code-analysis-complexity{background:#1d2635}
+
+/* The Hot100 action bar has many labelled buttons; keep each label on one line
+   and let the row wrap instead of squeezing buttons into vertical text. */
+.hot100-workbench .practice-detail button{white-space:nowrap}
+.hot100-workbench .practice-detail .justify-end{flex-wrap:wrap;justify-content:flex-end}

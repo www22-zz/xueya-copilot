@@ -106,8 +106,11 @@ def create_app(config: Config | None = None, *, provider=None, start_jobs=True):
         if platform:
             from .practice_analysis import PracticeAnalysis
             app.state.practice_analysis = PracticeAnalysis(platform, app.state.provider, config)
+            from .analysis_schedule import AnalysisSchedule
+            app.state.analysis_schedule=AnalysisSchedule(app.state.practice_analysis)
         if platform and start_jobs:
             platform.jobs.start()
+            app.state.analysis_schedule.start()
         async with AsyncExitStack() as resources:
             try:
                 if isinstance(app.state.provider, MimoProvider):
@@ -115,6 +118,7 @@ def create_app(config: Config | None = None, *, provider=None, start_jobs=True):
                 yield
             finally:
                 if platform:
+                    await app.state.analysis_schedule.stop()
                     await platform.close()
     app = FastAPI(title="学涯 Copilot API", version="2.0.0", lifespan=lifespan, docs_url=None, redoc_url=None)
     app.add_middleware(BudgetMiddleware, config=config)
@@ -123,6 +127,8 @@ def create_app(config: Config | None = None, *, provider=None, start_jobs=True):
     app.state.stop_token = None
     app.state.request_stop = None
     app.state.account = None
+    from .account_scope import AccountBoundaryMiddleware
+    app.add_middleware(AccountBoundaryMiddleware, host=app)
 
     @app.middleware("http")
     async def same_origin(request, call_next):
@@ -237,12 +243,14 @@ def create_app(config: Config | None = None, *, provider=None, start_jobs=True):
                 return {"ok": False, "error": code}
         normalize_request(value)
         iterator = agent.workflow(value) if task.startswith("agent") else agent.direct(value, stream=task.endswith("stream"))
+        from .rag_scope_adapter import public_api_projector
+        public = public_api_projector(app.state.platform, value.get('courseId') or 'course-default')
         if task.endswith("stream"):
             async def events():
                 try:
                     async with aclosing(iterator):
                         async for event in iterator:
-                            yield "data: "+dumps(event)+"\n\n"
+                            yield "data: "+dumps(public(event))+"\n\n"
                 except Exception as error:
                     code = ai_error_code(error, ('NO_SOURCES', 'EMPTY_QUESTION', 'AI_INVALID_RESPONSE'))
                     yield "data: "+dumps({"type": "error", "error": code})+"\n\n"
@@ -252,7 +260,7 @@ def create_app(config: Config | None = None, *, provider=None, start_jobs=True):
             async with aclosing(iterator):
                 async for event in iterator:
                     if event["type"] == "done":
-                        return {k: v for k, v in event.items() if k != "type"}
+                        return public({k: v for k, v in event.items() if k != "type"})
             raise AppError("AGENT_INCOMPLETE")
         try:
             return await connected_work(request, run())
@@ -261,9 +269,16 @@ def create_app(config: Config | None = None, *, provider=None, start_jobs=True):
             return {"ok": False, "error": code, "engine": "local-fallback"}
 
     async def platform_route(request, path):
+        result = await internal_platform_route(request, path)
+        if isinstance(result, dict):
+            from .rag_scope_adapter import public_api_value
+            return public_api_value(app.state.platform, result, request.query_params.get('courseId') or 'course-default')
+        return result
+
+    async def internal_platform_route(request, path):
         p = app.state.platform
         require(p is not None, "NOT_FOUND")
-        repo, db, user_id, method = p.repo, p.db, p.user_id, request.method
+        repo, db, user_id, method = p.repo, p.db, p.scope_user_id, request.method
         if path == "/bootstrap" and method == "GET":
             return success(token=app.state.token, schemaVersion="1.0", workspace=repo.get_workspace(user_id), courses=repo.courses(user_id), jobs=p.jobs.list(user_id), resources=p.resources.stats())
         require(secrets.compare_digest(request.headers.get("x-xueya-token", ""), app.state.token), "AUTH_REQUIRED")
@@ -308,6 +323,10 @@ def create_app(config: Config | None = None, *, provider=None, start_jobs=True):
             return success(documents=repo.all(scope(), "document"))
         if path == "/documents/original" and method == "GET":
             doc = p.document(scope(), query.get("documentId"))
+            from .rag_scope_adapter import is_platform_document
+            if is_platform_document(doc, scope()):
+                from fastapi.responses import JSONResponse
+                return JSONResponse({"ok": False, "error": "FORBIDDEN_PLATFORM_DOCUMENT"}, status_code=403)
             return Response(p.files.read(doc.get("fileHash")), media_type="application/octet-stream", headers={"Content-Disposition": "attachment; filename*=UTF-8''"+quote(doc["name"], safe="")})
         if path == "/documents/update" and method == "POST":
             require(type(value.get("version")) is int and value["version"] > 0, "INVALID_VERSION")
@@ -374,7 +393,8 @@ def create_app(config: Config | None = None, *, provider=None, start_jobs=True):
                 limit = int(query.get("limit", "20"))
             except ValueError as error:
                 raise AppError("INVALID_LIMIT") from error
-            return success(**repo.list(scope(), query.get("kind"), query.get("cursor"), limit))
+            from .rag_scope_adapter import public_api_value
+            return success(**public_api_value(p,repo.list(scope(), query.get("kind"), query.get("cursor"), limit),course_id))
         if path == "/audit" and method == "GET":
             return success(audits=[json.loads(r["data"]) for r in db.all("SELECT data FROM audits WHERE user_id=? AND course_id=? ORDER BY at DESC LIMIT 100", (user_id, scope().course_id))])
         if path == "/invocations" and method == "GET":
@@ -389,14 +409,27 @@ def create_app(config: Config | None = None, *, provider=None, start_jobs=True):
     async def static(request: Request, path: str):
         requested = "/"+path if path else "/index.html"
         shared = requested in PUBLIC_SHARED
-        frontend = requested in ("/index.html", "/sw.js") or bool(re.fullmatch(r"/(?:css/(?:[a-zA-Z0-9_-]+/)*[a-zA-Z0-9_-]+\.css|js/(?:[a-zA-Z0-9_-]+/)*[a-zA-Z0-9_-]+\.js|assets/[a-zA-Z0-9_-]+\.(?:svg|png|jpg|woff2))", requested))
+        frontend = requested in ("/index.html", "/algorithm-demo.html", "/sw.js") or bool(re.fullmatch(r"/(?:css/(?:[a-zA-Z0-9_-]+/)*[a-zA-Z0-9_-]+\.css|js/(?:[a-zA-Z0-9_-]+/)*[a-zA-Z0-9_-]+\.js|assets/[a-zA-Z0-9_-]+\.(?:svg|png|jpg|woff2))", requested))
         if not shared and not frontend:
             return PlainTextResponse("Not found", status_code=404)
         root = config.root if shared else config.root / "frontend"
         target = (root / requested.lstrip("/")).resolve()
         if not target.is_relative_to(root.resolve()) or not target.is_file():
             return PlainTextResponse("Not found", status_code=404)
-        return FileResponse(target, headers={"Cache-Control": "no-cache"})
+        suffix = target.suffix.lower()
+        media_types = {
+            ".woff2": "font/woff2", ".woff": "font/woff", ".svg": "image/svg+xml",
+            ".js": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8",
+            ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg",
+        }
+        media_type = media_types.get(suffix)
+        if suffix in (".woff2", ".woff"):
+            # Icon fonts are large (multi-MB) and stable. Cache them for a year and
+            # send the bytes in one response: per-64KiB chunking over localhost can
+            # take seconds on Windows, which left icon ligature names visible.
+            headers = {"Cache-Control": "public, max-age=31536000, immutable"}
+            return Response(content=target.read_bytes(), media_type=media_type or "font/woff2", headers=headers)
+        return FileResponse(target, media_type=media_type, headers={"Cache-Control": "no-cache"})
     if config.platform_enabled:
         from .rag_http import install_rag
         from .learning_integration import install_learning
@@ -414,4 +447,6 @@ def create_app(config: Config | None = None, *, provider=None, start_jobs=True):
         install_account(app)
         from .practice_api import install_practice
         install_practice(app)
+        from .study_space_api import install_study_space
+        install_study_space(app)
     return app

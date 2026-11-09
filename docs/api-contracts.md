@@ -1,5 +1,124 @@
 # 模块接口约定
 
+## 2026-11-09 学习工作台：代码运行、AI 复杂度和思维导图
+
+以下接口挂在既有学习路由下，使用同一登录 Cookie、`X-Xueya-Token` 和同源校验；分发出现在 `backend/xueya/workbench_api.py`，业务实现在 `backend/xueya/code_runner.py` 与 `backend/xueya/learning_map.py`。它们不替换任何既有接口。
+
+| 接口 | 行为 |
+| --- | --- |
+| `GET /api/learning/space/workbench/code/capabilities?refresh=1` | 返回本机评测能力快照 `{capabilities:{python,cpp,java}, languages, detectedAt}`。每个语言含 `available/path/version/label/reason`；检测方式为可执行文件查找 + 版本探测 + 最小程序编译/运行探针，结果缓存 300 秒，`refresh=1` 或“重新检测”按钮强制重探。不可用时返回明确原因，不回退成假能力。 |
+| `POST /api/learning/space/workbench/code/run` | `{questionId,language,code,caseIndex?}`。`python` 使用后端解释器；`cpp`/`java` 在检测到工具链时本地编译执行（临时目录、独立子进程、编译 20 秒/运行 5 秒超时、输出 64KiB 上限、最小环境变量），按题目 `samples` 的 `name = value` 字面量构造 ListNode/TreeNode 等参数并逐用例比对。返回逐用例 `input/expected/actual/passed/error/durationMs`、整体 `passed`、`compiler` 与 `sandbox` 说明。编译错误返回 `ok:true` 且 `passed:false` + 编译诊断，不伪造通过。语言不可用时返回 `supported:false` + 原因。设计类题（146/155/208/295）与环/随机指针/公共结点等特殊结构在编译语言中返回 `supported:false` 及原因。代码执行是本机单用户功能，不是强安全沙箱。 |
+| `POST /api/learning/space/workbench/code/analyze` | `{questionId,language,code}`，`code` 最长 20000 字符。复用主平台 `LearningHost.service(course).model`（API 并发许可、预算、调用账本、限流），返回真实时/空复杂度、结论、风险点与模型名。`AI_UNAVAILABLE/AI_TIMEOUT/AI_INVALID_RESPONSE` 等错误码原样返回，不自动重试。 |
+| `GET/POST /api/learning/space/workbench/map/tree` | GET `?planId=`；POST `{planId}` 或受限 `{draft}`（白名单字段、长度上限、不写库）。返回只读路线树 `{ok,tree}`：计划→阶段→任务组/知识点，节点带日期、时长、难度、完成状态、绑定题目数。跨账号/不存在统一 `PLAN_NOT_FOUND`。 |
+| `POST /api/learning/space/workbench/map/export`（别名 `xmind`） | 同一入参，返回 XMind Zen 工作簿 `.xmind` 附件（`content.json/metadata.json/manifest.json` + `content.xml` 兼容桩，ZIP_STORED），文件名用 `filename*=UTF-8''`。未在本机 XMind 客户端验证，界面同时提供 `.mm` 兜底，不声称客户端已验证。 |
+| `POST /api/learning/space/workbench/map/mm` | 同一入参，返回 FreeMind `.mm` XML 附件。 |
+
+前端同轮变更：侧栏“算法学习”直接打开 `#space/practice/hot100`（旧 `#space/algorithms` 自动重定向，仍归属 algorithms 视图标识）；408 页移除“课程视频”入口；课程资料学习的视频目录改为展示全部已核验课程总览，不再按已就绪资料学科过滤。均为前端路由/展示变化，未改动既有 HTTP 契约。
+
+## 2026-11-05 整门课程图谱
+
+- GET `/api/learning/space/course-graph?courseId=...&subject=...`：鉴权后返回当前可访问文档、课程/资料/知识点包含图、无原文引用位置、已存在questionIds、输入范围进度与unknown/failed批次；只读不提交。
+- POST `/api/learning/space/course-graph/continue`：`courseId,subject,callLimit`（整数1—50）、`confirmedExternal:true`。按预算提交未开始范围，返回jobIds/maximumCalls，不自动重放未知请求。服务器重建输入范围，不接受客户端sourceScope、原文或题目。 网络预检在权限/次数检查后、队列提交前执行：无密钥、无资料、非推理同origin GET；传输失败返回`AI_CONNECTION_FAILED`且不创建作业，HTTP根路径404可通过。不保证鉴权、模型响应质量或费用。
+- 既有Question/Attempt与阶段导图接口不替换；资料题增加courseSubject，阶段节点带真实questionIds及已验证存在的video资源。课程总览标识保留，不冒充精确分集。
+
+## 2026-11-04 资料学习与模拟考试
+
+以下接口统一使用 `/api/learning/space` 前缀、既有登录Cookie和 `X-Xueya-Token`。学习实体仍位于当前账号稳定的 `space:<learningOwner>/learning-space`，不能由客户端自报owner。来源资料仍回原Scope核验。
+
+| 接口 | 行为 |
+| --- | --- |
+| `GET /materials?courseId=…` | 只读列出本人全部活动课程资料及按该请求课程可访问的原公共范围；返回真实解析状态、ready、生成jobId/status/error、知识点、题目ID和截取覆盖统计，不返回原文。 |
+| `POST /materials/prepare` | `{documentId,sourceCourseId,courseId,public}`；public仅在可信公共owner内解析，不接受任意源owner。可信解析后按当前账号、源课程、文件哈希、内容修订去重，同一批次不自动重发。 |
+| `GET/POST /attendance` | 返回/记录Asia/Shanghai当天签到及历史，同日一次，不读客户端日期，不修改课程、计划或掌握度。 |
+| `GET /exams` | 本人试卷、组卷作业、408科目及原卷/解析原站索引。 |
+| `POST /exams` | `{mode:fixed或ai,subject,count:1..40,minutes:1..180,operationId}`；fixed返回session，ai返回持久job。模拟卷不是历年真题。 |
+| `GET /exams/{id}` | 本人试卷和serverNow；超时会确认交卷。未交卷不返回答案和解析。 |
+| `POST /exams/{id}/start` | `{expectedRevision}`；服务器记录startedAt/deadline。 |
+| `POST /exams/{id}/answers` | `{expectedRevision,answers:{questionId:选项下标}}`；只接受本卷题目和合法答案，过期不接受新答案。 |
+| `POST /exams/{id}/submit` | `{expectedRevision}`；评分与题目快照一致，重复交卷返回已存结果，不重复生成Attempt。 |
+
+题目新增 `multiple/boolean/fill`。多选答案为无重复下标数组，完全匹配计分；判断为严格bool；填空为逐空字符串数组，仅匹配保存的标准形式，否则 `pending-review` 且无score/correct。未作答fill仅投影blankCount，不返回标准答案。人工修正及复核继续保留评阅版本。聊天按明确题型提交相同服务。
+
+资料生成 `material-learning` 单次最多读取18,000字符，遵守本机输出预算，最多六知识点/24题；4096预算对应最多两点/8题。对部分截取明确标记，不声称全书覆盖。确认解析质量后自动触发私人资料生成；新页面每次加载会话最多自动准备20份已有资料，超出可明确点击准备。发布前重查权限/修订，拒绝大段原文输出；API失败沿用主队列保守unknown语义，不自动重放。
+
+资料题目保存 `materialId/conceptId`。计划资源可引用这些题目及同知识点阶段节点，保留真实ID。计划新增startDate/endDate/difficulty；视频关联只使用实际课程/章节ID，课程总览标注为总览而非精确分集。模型缺少说明字段时可由程序依据实际任务生成明确标注的排程说明，任务合法性验证不放宽。
+
+AI组卷候选经过科目筛选及数量限制。返回的ID必须存在于提供候选内且无重复；不足目标题数拒绝。超额合法候选由程序按科目轮选到精确配额，明确标为“AI推荐＋程序配额选编”，保存recommendedCount/selectedCount/method，不假称模型恰好遵从题量。
+
+原卷PDF目前提供原站链接，站内客观模拟卷单题等权，主观题仍走原分科参考评阅。新增四科MOOC为已核对元信息的官方课程总览链接，不宣称站内嵌入播放或逐分集播放已验收。
+
+## 2026-10-31 六份预置教材跨课程问答（已批准）
+
+用户明确批准仅[六份完整SHA256清单](contracts/public-preset-scope-map.md)。现有 `rag/search`、`knowledge/search`、问答内部来源及MCP `search_materials/read_source` 复用同一ScopeAdapter：本人当前课程+同课程原有公共兼容范围+其他预置课程中实际fileHash命中该清单的材料。仅枚举可信预置owner，不遍历其他账号私人库；文件名、isPlatform/sample、sourceFileHash声明均不能扩大跨课程范围。匿名旧单机调用维持原兼容范围。
+
+公开来源仍无quote，兼容增加服务端 `originCourseId/originCourseName`；它们描述实际原课程，不能相信客户端重标。`pub-…`别名绑定owner/course/source；同内容跨课程副本合并重复命中，各副本旧别名仍独立回原Scope核验。不同textHash/位置/正文不合并。documentIds/section过滤及原总字节预算、条数上限继续生效。
+
+`rag/validate`/检索末次检查按**请求课程**解析允许范围，再回实际原Scope执行原文档修订、fileHash、textHash、block/page、version及片段起止核验；不能用citation自报courseId将非清单材料升级为跨课程公共。停用/删除/撤回确认/哈希变化或等待期间权限变化均失效。MCP旧文本回退在返回前再次核验；旧归一化上下文缺失的版本号和截短位置从已存来源还原后校验，不关闭版本或原文断言。
+
+公共来源读取仍只返元信息；raw source ID、原文/导出及其他账号任务/历史权限不扩大。未做正式库迁移、资料复制或新索引；本轮结果来自隔离实际MD解析及受控回归，不代表本机五份PPT/真实向量已全部联调。
+
+## 2026-10-31 课程记录、多源报告与框架版本补充
+
+以下扩展继续使用可信会话、稳定 learningOwner、本机Host/同源及 bootstrap token，不相信客户端账号字段；不新建数据库。旧字段及兼容路径保留。
+
+| 方法/路径 | 请求、结果与约束 |
+| --- | --- |
+| GET `/api/learning/space/courses` | 平台目录+本人私人课，以及本人进度；原目录明确标记 legacy-unverified，不代表原站播放验收。 |
+| POST `/api/learning/space/courses/save` | `{course,expectedRevision,operationId}` → 私人课程。仅 custom- ID，可新建/更新本人课，不覆盖平台课；视频URL校验但不冒充内容核验。 |
+| POST `/api/learning/space/courses/delete` | `{courseId,expectedRevision,operationId}` → 软删除本人课程，历史事件/修订保留。 |
+| POST `/api/learning/space/courses/progress` | `{courseId,episodeId,completed?,seconds?,positionSource?,expectedRevision?,operationId}`。completed仅bool、手动确认；位置来源仅 html5-observed/user-position，不接受“官方iframe遥测”。完成与匹配的课程任务同事务同步，重复不新增事件。计划反向完成也更新课程；不应用到新的review实例。 |
+| GET `/api/learning/space/today` | 兼容新增 lastCourse，含账号内实际课程/章节续学链接与可获取的位置来源。 |
+| POST `/api/learning/space/quiz/fixed-attempt` | `{questionId,answer,operationId}` → Attempt；服务端读取原Hot100/408静态题与版本生成快照，主观评阅仍用共享版本链。无明确rubric仅反馈，原自评分开保留；不执行代码、不抓取PDF。忽略客户端score/rubric。 |
+| POST `/api/learning/space/framework/jobs` | generate `{subject,topic?,sessionId?,operationId}`；expand `{mode:expand,frameworkId,nodeId,expectedRevision,instruction,operationId}` → 持久job。扩展只在原revision应用新增概念分支，迟到冲突不覆盖人工编辑，不自动重发模型。 |
+| GET `/api/learning/space/framework/list` | 兼容增加 jobs；framework增加服务端revision。历史按学科/专题筛选不调用模型。 |
+| POST `/api/learning/space/framework/:id/patch` | 兼容增 expectedRevision、undo:true，撤销最近完整编辑/AI扩展，最多20步；不修改计划/课程/掌握度。冲突 FRAMEWORK_REVISION_CONFLICT。 |
+| GET `/api/practice/analysis/sources` | 本人会话元信息、调度设置与待分析候选；不跨账号取workspace。默认识别学习会话，可手动纳入/排除。 |
+| POST `/api/practice/analysis` | 原filters兼容增 includeConversations/Courses/Quizzes/Plans、excludedSessionIds、includedSessionIds。快照包含activitySources.counts/evidence/options/truncated，截止时固定；程序统计，模型引用questionIds/evidenceIds须在本快照内。无练习但有其他真实活动可分析，空记录拒绝。 |
+| POST `/api/practice/analysis/schedule` | `{enabled,periodDays:1..90,weekday:1..7,time,timezone,options?,expectedRevision,operationId,automaticExternalDispatch?,confirmedExternalDispatch?}`。外部自动默认关；首次开启须 confirmedExternalDispatch:true 并保存同意时间。周期/范围/停用持久化，设置冲突不覆盖。 |
+| POST `/api/practice/analysis/candidates/:id/submit` | `{confirmed:true}` 明确提交本人的固定候选快照，不读取新记录冒充旧快照。重复读取/重放返回原job，不重放unknown。 |
+
+新草稿记录 adoptionBase；竞争采用另一份草稿或原计划已变化时返回 PLAN_CURRENT_CHANGED（调整预览仍保留 REPLAN_SOURCE_CHANGED）。依赖任务key必须存在且无环，程序拓扑排序后按共享每日预算排程。
+
+调度只在本机进程运行时检查已初始化设置；未开启外部调用时不创建付费作业。开启后复用已有JobQueue/预算/许可/账本、一次尝试；同一证据快照去重，停机只合并一份实际窗口，历史报告不可变。failed/unknown不因下周/重启自动重发。默认外部关闭是本轮自动审批边界下的明确实现差异，不宣称满足“默认自动付费周报”。
+
+旧评阅缺题目快照的记录仍只读；没有批量改写历史评分。旧章节标题/作者/播放器真实核验及跨课程公共预置清单授权见交付说明，不能以目录ID合法代替内容验收。
+
+## 2026-10-31 测试分支账号资料兼容扩展
+
+本节优先于下文“多个账号共用当前空间”的历史说明。登录 Cookie 决定服务端账号；请求体 accountId/userId、`X-Xueya-Account` 均不能选择资料 owner。新增账号使用独立的持久资料/工作区/任务作用域，不自动继承 `local-user` 下归属未知的旧资料。旧未登录单机兼容调用保留原空间；已配置登录后仍必须先登录。`GET /api/account/status` 增加 `dataOwner`（稳定资料 owner）及 `sharedSpace:false`；改名保留该 owner。
+
+浏览器可附 `X-Xueya-Owner` 作为会话新鲜度条件；与当前 Cookie 的 owner 不符时返回 HTTP 409 / `ACCOUNT_CHANGED`，不执行请求。该字段不能用于授权。新客户端按 dataOwner 分隔浏览器工作区/同步队列，未知旧键需显式迁移，不能自动复制给各账号。
+
+上传、目录、原件、修订、实体、工作区、作业/事件、旧学习接口和 HTTP MCP 出口均沿用原路径/业务字段，但仅能访问本人作用域。公共预置源为管理员明确标记/哈希核对的旧资料，通过问答适配器聚合，不公开其他旧文件。公共 `id` 为稳定 `pub-…` 别名，服务端解析回原 Scope 验证；不会信任客户端 `scopeOrigin`。旧 citation 验证继续核对 documentRevision、fileHash、textHash、位置和 version。
+
+公开平台来源使用 `id/title/location/documentId/version/isPlatform` 等元信息，不含 quote；私人来源合法旧 quote 契约保留。JSON/SSE 对工具预览、claims、解析产物与历史输出统一投影。存在受保护来源时正文在最终核验后以兼容 content/done 发布；失败不发布分片原文，不把 verbatim-only 平台摘录伪装成成功回答。旧非问答生成接口不得使用受保护 RAG（`RAG_USE_CASE_FORBIDDEN`）。本节不更改 B 的解析/检索/索引/证据校验协议，也不声明完成了真实服务质量验收。
+
+## 2026-10-31 测试分支规划与小测闭环
+
+以下路径前缀均为 `/api/learning/space/`，沿用本机 Host、同源、Cookie 和 `X-Xueya-Token`。账号从会话解析；改名保留既有学习 namespace，不能通过改名或注册已保留的旧用户名接管历史记录。生成/评阅复用主平台 JobQueue、预算、并发与调用账本，每个付费作业一次尝试；GET/恢复不重新提交模型。
+
+| 方法/路径 | 请求与结果 |
+| --- | --- |
+| POST `chat/plan` | `{question,sessionId,operationId,history?,useDefaults?}` → `handled:false`，或 `status:collecting/conditions/missing/answer`，或 `status:queued/jobId`。规划概念解释不创建作业；缺项补问与用户选择默认分开。 |
+| POST `plan/generate` | `{goal,daysCount,dailyMinutes,restDays?,subjects?,title?,operationId}` → `{job}`。与聊天走同一种持久生成，实际完成后保存草稿和独立框架；`result` 为 `{planId,frameworkId,sessionId}`。 |
+| GET `jobs/:id`；POST `jobs/:id/cancel` | 仅本人学习空间作业；复用真实 queued/running/succeeded/failed/cancelled/unknown。没有自动付费 retry 接口。 |
+| GET `plan/list`、`plan/:id`、`plan/active` | 既有 plan DTO 兼容增加 `jobs`、`generationStatus`、`frameworkId`、`sessionId`、条件来源和 `completedHistory`。`framework-pending` 部分草稿可核对但不可采用。 |
+| POST `plan/adopt` | `{planId,expectedRevision,confirmed:true,operationId?}`。新客户端必带 operationId；相同回执重放，不同请求复用 ID 冲突。事务中只留一个当前计划。 |
+| POST `plan/adjust-preview` | `{planId,expectedRevision,dailyMinutes?,endDate?,startDate?,restDays?,operationId?}` → 新 `plan` 草稿与 `changePreview`；不调用模型，不直接替换当前计划。采用时再次核对来源计划 revision，变化返回 `REPLAN_SOURCE_CHANGED`。 |
+| POST `plan/task/toggle`、`plan/task/delay` | 旧字段兼容，新客户端加 `expectedRevision/operationId`。任务变更、事件及回执同一事务；重复完成不重复记事件，延期仍校验每日总预算/休息日/截止日期。 |
+| POST `plan/task/link` | `{planId,taskId,url,title?,expectedRevision,operationId}` → `{plan,resource}`。仅 http/https，无任意 HTML；用户提供、未做网站内容或可用性核验。 |
+| POST `chat/quiz` | `{question,sessionId,operationId}` → `handled:false`，或固定题 `questionIds`，或生成 `jobId`。主动命令才触发；唯一适合的固定单选优先，否则按主题生成，不能调用受保护 RAG。 |
+| POST `quiz/jobs` | `{subject,type:single/short,count?:1..5,sessionId?,operationId}` → `{job}`；全部题目结构通过后才发布，重复题干不作为成功题卡。 |
+| GET `quiz/list`、`quiz/question/:id` | 本人题目白名单视图/作答/作业；未作答题不含答案、rubric、解释。问题含服务器 revision；来源区分 fixed / ai-generated。 |
+| POST `quiz/attempts` | `{questionId,questionRevision,answer,operationId}` → `{attempt}`。原题/答案/rubric 快照由服务端保存；客观判定在服务端，主观原答案先保存再入评阅作业。客户端 score/correct 不作为评分依据。 |
+| GET `quiz/attempts/:id` | `{attempt}`，含原答案、题目版本、原题白名单快照、evaluations 与 effectiveEvaluation。queued 作业取消/失败后读取会对齐真实状态，不产生零分。 |
+| POST `quiz/attempts/:id/review` | `{expectedRevision,reason,operationId}` → 同一 attempt 的新评阅版本；客观仍按服务器答案复核，主观沿用原作答与标准调用模型，不新增 Attempt。 |
+| POST `quiz/attempts/:id/correct` | 同上，加 `correct:boolean`（客观）或 `score:number`（有 rubric 的主观）或 `disputed:true`。无 rubric 不接受凭空总分；人工来源不会伪装成 AI。 |
+
+`evaluations` 记录 source/status/createdAt/理由及可用的模型、时间、参考分/点评。有效结果按版本请求顺序取最新已完成或明确争议版本；迟到的早期 AI 结果不覆盖较新的人工修正。原评阅保留，失败、取消和未知结果不是错误/零分。旧形状评阅以 `legacy-assessment` 只读呈现，缺失题目版本保持 null，缺完整快照时不可复核；不把历史缺失补造成新模型评阅。
+
+原 `quiz/generate` 兼容同步题目生成；原 `quiz/grade` 的客观 `result` 保留，主观增加 queued/jobId 与 Attempt，后续用作业/Attempt 读取，不等待或伪造模型分数。新页面统一走上述持久路径。原 `/api/practice/bank/ops/state`、固定题 ID、原自评与笔记保留；本页较新补充已增加固定主观题主动评阅入口及小测多源分析，但没有批量补造旧评分版本。
+
 ## 2026-10-28 朗读与联网搜索补充
 
 `POST /api/tts` 使用本机 Host、同源校验及 `X-Xueya-Token`（从 `/api/platform/bootstrap` 获取）。请求为 `{text:string, voice?:string, courseId?:string}`；默认声音 `mimo_default`、课程 `course-default`，清理 Markdown 后最多朗读1000字。成功返回 `{ok:true,audio:"data:audio/wav;base64,...",model:string}`；未配置或合成失败返回 `{ok:false,error:string,fallback:true}`，客户端可使用浏览器朗读。非法输入及鉴权错误沿用公共错误响应。
@@ -422,3 +541,38 @@ generation摘要含 `{id,courseId,documentId,name,status,revision,jobId,complete
 网页资料问答的最终正文保留模型生成的完整 `answer`，不再用 `claims` 条目拼接替代。发布前将正文及其证据笔记在同一次来源核对中检查；正文不通过时不会用已通过的零散摘录冒充完整回答。SSE 在核对完成前仅报告工作进度，通过后沿用原 content/done 格式发布正文。`verification=reviewed-narrative` 表示整篇正文经过模型来源核对，不表示绝对正确；完全逐字的正文仍为 verbatim-only。
 
 自主兜底仍是一次独立、无课程证据包的请求，使用独立HTTP连接，避免承接异常的池内连接；不会重发原请求或循环调用。连接异常与超时分别记录错误类别，仅记录类别及异常类型，不记录密钥或请求正文。没有新付费在线验收。
+
+### 2026-11-05 计划生成连接检查与回执恢复补充
+
+- GET `/api/learning/space/plan/connectivity`：沿用本地Host/Origin、账号与X-Xueya-Token鉴权，向服务端配置的模型站点根路径发无密钥、无资料、非推理GET；`connected=true,inference=false,httpStatus`仅说明传输连接，不证明鉴权或生成质量。失败返回`AI_CONNECTION_FAILED`，不写模型调用账本。
+- POST `/api/learning/space/plan/generate`：相同账号与operationId已存在时先核验输入一致并返回原job；真正新作业先连接预检，失败零入队、零推理。worker也预检，连接变化时不重试未知调用。客户端丢回执应保留并复用原operationId，不用新编号重发同一次操作。
+- GET `/api/learning/space/plan/list`：失败/未知作业可扩展只读`diagnosticCode=AI_CONNECTION_FAILED`，来自同账号账本异常类名或作业错误码；旧status/error不改写，不公开异常正文或密钥，未知计费语义保留。
+
+### 2026-11-05 计划超时与输入上限
+
+计划作业服务端总限时270秒、单次规划请求120秒，仍取全局执行预算剩余值的较小者；仅服务端handler可配置作业时限，客户端Job DTO不接受timeout。其他作业默认90秒与其他学习生成默认60秒不扩大。新增只读诊断AI_PLAN_RESPONSE_TIMEOUT（兼容历史JOB_TIMEOUT），保留unknown计费、单次尝试与不自动重放语义。
+
+规划输入只发送有界题目代表元信息和所选科目的课程元信息；资源上限64知识点/12,000字符并标partial，完整题目仍保留原Question/题库。按输出预算给出maxTasks（4096token最多20项），不要求模型逐日展开。模型响应经过既有依赖、来源、日期、休息日和每日预算检查后才保存草稿；不以固定模板冒充成功的AI计划。
+
+### 2026-11-05 资料关联框架覆盖标记
+
+material-plan框架新增coverage：kind=material-linked、representedPhases/totalPhases、representedTasks/totalTasks、partial。任务数以sourceTaskId去重，跨日拆分不虚增；该覆盖只指当前计划的资源关联，不代表教材学术完整性。plan完成草稿保存frameworkCoverage副本供展示，旧记录缺失时仍可读。模型生成的标题/阶段/说明不得把当前原创/改编候选称为站内逐字真题；程序规范化展示表述，用户目标与原题引用不改写。
+
+### 2026-11-05 计划采用与导图失败隔离
+
+计划GET/list增加派生canAdopt、可选frameworkStatus=failed/frameworkError。framework-pending草稿仅在同账号生成作业已终止并释放租约，且检查点stage=framework、planId及输入account匹配时可采用；GET不修写数据、不再付费生成。运行中的未完成草稿仍拒绝采用。
+
+POST /plan/adopt继续要求confirmed=true、业务expectedRevision及operationId，保留事务、存储CAS、adoptionBase及单活跃计划规则。已保存有效计划的附属导图失败不再硬阻止采用；明确采用后持久化generationStatus=plan-ready-framework-failed，不修改原作业/账本或虚构frameworkId。再次提交同operationId返回原回执，不重复采用。业务revision与Repository version保持各自语义。
+
+
+### 2026-11-06 知识点练习、确定性演示与阶段路线（增量契约）
+
+既有 HTTP/SSE 入口和返回字段保留。下列接口继续使用本站 token、账号边界及学习空间存储。
+
+- `GET /api/learning/space/materials/concept/{conceptId}?courseId=course-default`：返回已保存 `concept`、`sourceRevision`、`groups`（简单/中等/困难/待分级）及本知识点补题作业 `jobs`。知识点必须属于当前可访问、可信解析且版本有效的资料；题目仅公开题干、选项、难度、分级理由和来源字段，不返回答案。
+- `POST /api/learning/space/materials/supplement`：输入 `conceptId`、`difficulty`、可选 `courseId`、`confirmedExternal:true`。复用 material-learning 作业；知识点/来源版本/难度构成幂等身份，一次最多4题，maxAttempts=1；相同身份的成功、失败和 unknown 均返回原作业，不自动重试。原题与记录保留，新题追加至原知识点。
+- `GET /api/learning/space/algorithm-demo/{questionId}?sample=0`：仅支持 h100-63、h100-53，返回原题样例、教学代码及确定性 `steps`。不存在的题目/样例显式拒绝，不使用模型；DFS保持二维四邻域。
+- 计划增加 `learningRoute`：完整计划 → phases → stages → nodes；节点保存题目 id/revision/sourceRevision、难度、日期、预算、缺题数和资源状态。新草稿创建时保存，GET只投影当前完成情况，不重新选题或调用模型。`POST /api/learning/space/plan/{planId}/route` 仅为无路线的历史计划整理一次现有资源，重复调用不替换题组。
+- `POST /api/learning/space/quiz/attempts` 增加可选 `planId`、`nodeId`。服务端校验当前计划、节点、题目版本及资料可访问性；客户端不得将其他节点或计划的作答记到本节点。公开 attempt 增加 planId/nodeId 用于恢复同一上下文。
+- 路线完成以节点中全部固定题的有效提交为依据，缺题节点不能完成；重复作答不增加完成题数，错题不阻止完成。每天学习完成事件按计划/日期幂等保存为 study-completion，与旧 attendance 到访记录分离。
+- 阶段报告按 planId/nodeId/questionRevision 限定作答，首次正确率以首次作答的原始评阅为依据；争议、待评分和无法判定单独计数。重评不新增作答，其他阶段记录不混入；没有判定依据时 firstAccuracy=null。

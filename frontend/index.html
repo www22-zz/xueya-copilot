@@ -4,7 +4,10 @@
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#fafbfe">
   <meta name="description" content="读懂课程资料，用固定题库刷题、巩固错题、随手记重点。学涯 Copilot，让每一次学习都有依据。">
   <title>学涯 Copilot — 让知识，真正连起来</title>
-  <link rel="icon" href="assets/mark.svg" type="image/svg+xml"><link rel="stylesheet" href="css/styles.css">
+  <link rel="icon" href="assets/mark.svg" type="image/svg+xml">
+  <!-- Icon font is multi-MB; start it before the render-blocking stylesheets. -->
+  <link rel="preload" href="assets/material-symbols-outlined.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="css/styles.css">
   <link rel="stylesheet" href="css/workbench.css"><link rel="stylesheet" href="css/workspace.css"><link rel="stylesheet" href="css/learning.css">
   <link rel="stylesheet" href="css/experience.css"><link rel="stylesheet" href="css/preferences.css"><link rel="stylesheet" href="css/theme-surfaces.css">
   <link rel="stylesheet" href="css/composer-input.css">
@@ -16,6 +19,32 @@
   <link rel="stylesheet" href="css/analysis.css">
   <link rel="stylesheet" href="css/ui-feedback.css">
   <link rel="stylesheet" href="css/courses.css">
+  <link rel="stylesheet" href="css/utilities.css">
+  <link rel="stylesheet" href="css/stitch-theme.css">
+  <link rel="stylesheet" href="css/exam-workbench.css">
+  <link rel="stylesheet" href="css/plan-workbench.css">
+  <link rel="stylesheet" href="css/library-workbench.css">
+  <link rel="stylesheet" href="css/code-workbench.css">
+  <noscript><style>html:not(.icons-ready) .material-symbols-outlined{visibility:visible}</style></noscript>
+  <script>
+  /* Runs after the stylesheets, so the @font-face is registered: reveal icon
+     ligatures only once the icon font is actually loaded (5 s fallback), so a
+     slow or failed font never shows raw names like "account_tree" as text. */
+  (function(){
+    var root=document.documentElement, started=Date.now();
+    function ready(){root.classList.add('icons-ready');}
+    if(document.fonts&&document.fonts.load){
+      document.fonts.load('24px "Material Symbols Outlined"').catch(function(){});
+      (function poll(){
+        var loaded=false;
+        try{loaded=document.fonts.check('24px "Material Symbols Outlined"');}catch(error){loaded=true;}
+        if(loaded||Date.now()-started>5000){ready();return;}
+        setTimeout(poll,80);
+      })();
+    }else{setTimeout(ready,1500);}
+  })();
+  </script>
+
   <script src="js/workspace-appearance.js" defer></script>
   <script src="js/pointer-original.js" defer></script>
   <script src="../shared/contracts/index.js" defer></script>
@@ -28,6 +57,8 @@
   <script src="../shared/agent/tasks.js" defer></script>
   <script src="js/services/library-service.js" defer></script>
   <script src="js/services/chat-service.js" defer></script>
+  <script src="js/study-chat.js" defer></script>
+  <script src="js/study-quiz.js" defer></script>
   <script src="js/state/workspace-store.js" defer></script>
   <script src="js/state/practice-store.js" defer></script>
   <script src="js/services/practice-client.js" defer></script>
@@ -49,6 +80,8 @@
   <script src="js/analysis-view.js" defer></script>
   <script src="js/motion.js" defer></script>
   <script src="js/visual.js" defer></script>
+  <script src="js/home-demo.js" defer></script>
+  <script src="js/home-practice.js" defer></script>
   <script src="js/pointer.js" defer></script>
   <script src="js/search-workspace.js" defer></script>
   <script src="js/media-workspace.js" defer></script>
@@ -61,21 +94,26 @@
   <script src="js/account.js" defer></script>
   <script src="js/chat-history-layout.js" defer></script>
   <script src="js/courses-workspace.js" defer></script>
+  <script src="js/learning-route.js" defer></script>
+  <script src="js/plan-view.js" defer></script>
+  <script src="js/plan-workbench.js" defer></script>
+  <script src="js/framework-view.js" defer></script>
+  <script src="js/concept-practice.js" defer></script>
+  <script src="js/course-graph.js" defer></script>
+  <script src="js/material-learning.js" defer></script>
+  <script src="js/algorithm-demo.js" defer></script>
+  <script src="js/exam-workspace.js" defer></script>
+  <script src="js/overview-view.js" defer></script>
   <script src="js/app.js" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#main">跳到主要内容</a>
-  <header class="site-header">
-    <a href="#home" class="brand" aria-label="学涯 Copilot 首页" title="回到首页"><img src="assets/mark.svg" alt="" width="32" height="32"><strong>学涯<span>Copilot</span></strong></a>
-    <nav class="site-nav" aria-label="网站导航"><a href="#possibilities">读懂你的资料</a><a href="#evidence">回到答案的出处</a><a href="#rhythm">把理解练扎实</a></nav>
-    <a class="button button-dark header-cta" href="#space/overview">进入学习空间 <span data-icon="arrow"></span></a>
-  </header>
   <main id="main">
     <div id="homePage">
       <section class="hero section-width">
         <div class="hero-copy">
           <div class="eyebrow hero-enter"><span class="small-star">✳</span> 和你一起，把知识学懂</div>
-          <h1 class="hero-enter">资料，读得懂。<br><span>知识，用得上。</span></h1>
+          <h1 class="hero-enter"><span class="hero-keyword">资料</span>，读得懂。<br><span class="hero-title-accent"><span class="hero-keyword">知识</span>，用得上。</span></h1>
           <p class="hero-description hero-enter">从讲义里的疑问，到自己的理解。<br>问一问，读原文，记重点，再练一次。</p>
           <div class="hero-actions hero-enter"><a class="button button-blue" href="#space/overview">开始学习 <span data-icon="arrow"></span></a><a class="text-link" href="#possibilities">看一段学习过程 <span data-icon="down"></span></a></div>
           <div class="hero-footnote hero-enter"><span class="mini-dot"></span> 课程资料有出处 · 学习记录在本地</div>
@@ -97,10 +135,22 @@
       <section id="possibilities" class="possibilities section-width section-space">
         <div class="section-heading reveal"><span class="eyebrow">FROM NOTES TO KNOWING</span><h2>不只把资料存下来。<br><span class="muted-title">把它，学成自己的。</span></h2><p>从一道课程问题开始，沿着引用读原文。<br>把读懂的重点留下来，再看看自己是否真的会用。</p></div>
         <div class="product-demo reveal">
-          <div class="demo-tabs" role="tablist" aria-label="体验学习流程"><button id="demoTabAsk" class="active" role="tab" aria-selected="true" aria-controls="demoPanel" data-demo="ask">问得明白</button><button id="demoTabPractice" role="tab" aria-selected="false" aria-controls="demoPanel" tabindex="-1" data-demo="practice">练得扎实</button><span class="demo-caption">一段真实的学习过程</span></div>
-          <div id="demoPanel" class="demo-panel" role="tabpanel" aria-labelledby="demoTabAsk">
+          <div class="demo-heading"><span>问得明白</span></div>
+          <div id="demoPanel" class="demo-panel">
             <div class="demo-sidebar"><span class="demo-course-icon" data-icon="tree"></span><strong>数据结构</strong><small>课程知识空间</small><div class="demo-file"><span data-icon="file"></span><span>第 3 章 · 树与二叉树<small>示例讲义 · 第 42 页</small></span></div><div class="demo-file"><span data-icon="file"></span><span>期中复习题<small>示例习题 · 第 8 页</small></span></div><div class="demo-library-status"><span class="mini-dot"></span> 资料准备好了</div></div>
-            <div class="demo-conversation" id="demoContent"><div class="demo-question">二叉搜索树的查找，为什么是 O(log n)？<span class="demo-avatar">你</span></div><div class="demo-answer"><span class="demo-spark" data-icon="spark"></span><div><strong>先看树的高度。</strong><p>每次比较后，只需要进入其中一棵子树。<br>在平衡的情况下，树高约为 log₂n，<br>所以查找的时间复杂度是 <b>O(log n)</b>。</p><div class="demo-source"><span data-icon="file"></span> 数据结构讲义 · p.42 <span data-icon="external"></span></div><span class="demo-answer-note">树退化成链时，最坏复杂度为 O(n)。</span></div></div><a href="#space/ask" class="demo-compose">试着问一个课程问题 <span data-icon="arrow"></span></a></div>
+            <div class="demo-conversation" id="demoContent">
+              <div class="demo-question"><span class="demo-question-text">二叉搜索树的查找，为什么是 O(log n)？</span><span class="demo-avatar">你</span></div>
+              <div class="demo-answer">
+                <span class="demo-spark" data-icon="spark"></span>
+                <div class="demo-answer-body">
+                  <span class="demo-thinking" aria-hidden="true">正在查阅讲义</span>
+                  <div class="demo-response"><strong>先看树的高度。</strong><p>每次比较后，只需要进入其中一棵子树。<br>在平衡的情况下，树高约为 log₂n，<br>所以查找的时间复杂度是 <b>O(log n)</b>。</p></div>
+                  <div class="demo-source"><span data-icon="file"></span> 数据结构讲义 · p.42 <span data-icon="external"></span></div>
+                  <span class="demo-answer-note">树退化成链时，最坏复杂度为 O(n)。</span>
+                </div>
+              </div>
+              <a href="#space/ask" class="demo-compose demo-input-preview" aria-label="试着问一个课程问题"><span class="demo-compose-label">试着问一个课程问题</span><span class="demo-draft" aria-hidden="true"></span><span data-icon="arrow"></span><span class="demo-pointer" aria-hidden="true"></span></a>
+            </div>
           </div>
         </div>
         <div class="feature-notes reveal"><div><span data-icon="layers"></span><strong>你的资料，你的语境</strong><p>围绕课程内容提问，减少来回查找。</p></div><div><span data-icon="link"></span><strong>知识之间，有了连接</strong><p>从一个概念出发，找到相关的重点。</p></div><div><span data-icon="bookmark"></span><strong>理解之后，再进一步</strong><p>保存卡片、动手练习，让知识留下来。</p></div></div>
@@ -111,21 +161,243 @@
       </section>
       <section id="rhythm" class="rhythm-section section-width section-space">
         <div class="rhythm-title reveal"><div><span class="eyebrow">MAKE IT YOUR OWN</span><h2>按你的节奏，<br>学得更扎实。</h2></div><p>读懂，只是开始。<br>把每一次理解，变成下一步的行动。</p></div>
-        <div class="rhythm-grid"><a class="rhythm-card card-practice reveal" href="#space/practice"><div class="rhythm-card-head"><span>练习与错题</span><span data-icon="external"></span></div><div class="practice-art"><div class="art-question">平衡树查找的时间复杂度是？</div><div class="art-option">A <span>O(n)</span></div><div class="art-option art-correct">B <span>O(log n)</span><span data-icon="check"></span></div><div class="art-success"><span class="mini-dot"></span> 理解，经过了验证。</div></div><h3>会了，还是以为会了？</h3><p>用一道练习检验理解。错过的重点，再学一次。</p></a>
-        </div>
+        <article id="practicePreview" class="home-practice-preview reveal">
+          <div class="preview-screen" role="img" aria-label="二分查找练习示例，展示从答错、重新作答到答对并标记已掌握的过程。">
+            <div class="practice-module preview-workbench" inert>
+              <div class="practice-toolbar">
+                <div class="practice-filters">
+                  <input type="search" placeholder="搜索题号、标题、题干、知识点">
+                  <select><option>全部科目</option></select>
+                  <select><option>全部难度</option></select>
+                  <select><option>全部题型</option></select>
+                  <select><option>全部知识点</option></select>
+                  <button type="button" class="button button-outline">清除筛选</button>
+                </div>
+                <div class="practice-modes"><button type="button" class="button button-outline">随机一题</button><span class="practice-sync">4 道示例题</span></div>
+              </div>
+              <div class="practice-split">
+                <aside class="practice-list-pane">
+                  <ul class="practice-list">
+                    <li class="practice-topic">数据结构与算法 · 查找</li>
+                    <li class="practice-row"><span class="practice-row-id">b-dsa-f01</span><span class="practice-row-title">二分查找最坏复杂度</span><span class="practice-row-meta">基础 · <span class="chip chip-pending">待刷</span></span></li>
+                    <li class="practice-row is-active" data-preview-question><span class="practice-row-id">b-dsa-s01</span><span class="practice-row-title">二分查找复杂度</span><span class="practice-row-meta">基础 · <span class="chip chip-pending" data-preview-status>待刷</span></span></li>
+                    <li class="practice-row"><span class="practice-row-id">b-dsa-s07</span><span class="practice-row-title">二分查找前提</span><span class="practice-row-meta">基础 · <span class="chip chip-pending">待刷</span></span></li>
+                    <li class="practice-topic">数据结构与算法 · 栈</li>
+                    <li class="practice-row"><span class="practice-row-id">b-dsa-f02</span><span class="practice-row-title">栈的进出顺序</span><span class="practice-row-meta">基础 · <span class="chip chip-pending">待刷</span></span></li>
+                  </ul>
+                </aside>
+                <div class="practice-detail" data-preview-detail>
+                  <header class="practice-detail-head"><h2>二分查找复杂度</h2><span class="chip chip-pending" data-preview-status>待刷</span><p class="practice-detail-meta">历史练习 · 数据结构与算法 · 基础 · 查找 / 二分查找 / 时间复杂度</p></header>
+                  <p class="practice-prompt">对一个长度为 n 的有序数组进行二分查找，最坏情况下需要比较的时间复杂度是多少？</p>
+                  <ul class="practice-options">
+                    <li><button type="button" class="practice-option">O(1)</button></li>
+                    <li><button type="button" class="practice-option">O(log n)</button></li>
+                    <li><button type="button" class="practice-option">O(n)</button></li>
+                    <li><button type="button" class="practice-option">O(n log n)</button></li>
+                  </ul>
+                  <button type="button" class="button button-blue" data-preview-submit disabled>提交答案</button>
+                  <div class="practice-actions">
+                    <button type="button" class="button button-blue" data-preview-master>已掌握</button>
+                    <button type="button" class="button button-outline">待巩固</button>
+                    <button type="button" class="button button-outline">加入错题本</button>
+                    <button type="button" class="button button-outline">下一题</button>
+                  </div>
+                  <p class="preview-feedback" data-preview-feedback></p>
+                </div>
+              </div>
+            </div>
+            <span class="preview-pointer" aria-hidden="true" hidden><svg viewBox="0 0 24 24"><path d="M4 2 4 19 8.5 14.5 12 22 15 20.5 11.5 13 18 13Z"></path></svg></span>
+          </div>
+          <a class="text-link preview-practice-link" href="#space/practice"><span>进入练习与错题</span><span data-icon="external"></span></a>
+        </article>
       </section>
       <section class="closing-section section-width reveal"><span class="closing-star">✳</span><span class="eyebrow">YOUR NEXT CHAPTER</span><h2>下一次豁然开朗，<br>从这里开始。</h2><a class="button button-blue" href="#space/overview">进入我的学习空间 <span data-icon="arrow"></span></a><p>无需注册 · 浏览器副本与可选本机持久化</p></section>
       <footer class="site-footer section-width"><a class="brand" href="#home"><img src="assets/mark.svg" alt="" width="28" height="28"><strong>学涯<span>Copilot</span></strong></a><span>让知识，真正连起来。</span><small>© 2026 学涯 Copilot</small><a href="#space/knowledge">开始整理资料 <span data-icon="arrow"></span></a></footer>
     </div>
-    <div id="spacePage" hidden>
-      <div class="workspace-main">
-      <div class="space-top section-width"><div class="course-context"><span class="course-symbol" data-icon="tree"></span><div><label class="sr-only" for="courseSelect">当前课程</label><select id="courseSelect" aria-label="当前课程"><option value="course-default">数据结构</option></select><small id="courseLabel">我的课程空间</small></div></div><div class="space-top-right"><span class="engine-status" id="engineStatus">正在连接</span><button id="searchTrigger" class="icon-button" type="button" aria-label="搜索资料与操作"><span data-icon="search"></span></button><button type="button" class="subtle-button" data-manage-courses>管理课程</button><button type="button" class="subtle-button" data-export-workspace>导出记录</button><span class="profile-avatar" aria-label="本地学习空间">学</span></div></div>
-      <nav class="space-nav section-width" aria-label="学习空间导航"><a href="#space/overview" data-view="overview">学习概览</a><a href="#space/ask" data-view="ask">问答</a><a href="#space/knowledge" data-view="knowledge">课程资料 <span id="documentCount">…</span></a><a href="#space/practice" data-view="practice">练习</a><a href="#space/review" data-view="review">复习</a><a href="#space/courses" data-view="courses">课程学习</a></nav>
-      <div id="activityBanner" class="activity-banner section-width" role="status" hidden><span id="activityLabel"></span><button type="button" class="button button-outline button-small" data-stop-practice>停止等待</button></div>
-      <div id="storageNotice" class="storage-notice section-width" role="alert" hidden><span>本次修改尚未保存。请先导出记录，避免关闭页面后丢失。</span><button type="button" class="button button-outline button-small" data-export-workspace>导出记录</button></div>
-      <div class="space-content section-width" id="spaceContent" tabindex="-1"></div>
-      <footer class="space-footer section-width" style="display:none!important;"><span><span class="mini-dot"></span> 浏览器保留副本</span><div class="workspace-footer-actions"><div id="workspaceServicesSlot"></div></div></footer>
+    <div id="spacePage" hidden class="stitch-ambient-bg relative min-h-screen">
+      <!-- Stitch Ambient Background Glows -->
+      <div class="pointer-events-none fixed inset-0 z-0 overflow-hidden">
+        <div class="absolute -top-36 left-1/4 h-[520px] w-[640px] rounded-full bg-primary-fixed/30 blur-3xl"></div>
+        <div class="absolute top-20 right-10 h-[480px] w-[540px] rounded-full bg-tertiary-fixed/25 blur-3xl"></div>
+        <div class="absolute top-1/2 left-10 h-[380px] w-[420px] rounded-full bg-secondary-fixed/20 blur-3xl"></div>
       </div>
+
+      <!-- Stitch Global Fixed Header -->
+      <header class="stitch-topbar">
+        <div class="h-16 w-full px-4 sm:px-6 flex items-center justify-between gap-4">
+          <!-- Left: Brand & Mobile Sidebar Toggle -->
+          <div class="stitch-header-brand flex items-center gap-3 min-w-[200px]">
+            <button id="stitchSidebarToggle" class="w-9 h-9 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors lg:hidden" type="button" aria-label="切换侧栏">
+              <span class="material-symbols-outlined text-[20px]">menu</span>
+            </button>
+            <a href="#space/overview" class="flex items-center gap-2.5">
+              <img src="assets/mark.svg" alt="学涯 Copilot" width="28" height="28" class="h-7 w-auto object-contain">
+              <div class="flex flex-col">
+                <div class="flex items-center gap-1.5">
+                  <span class="font-headline-sm text-sm text-on-surface font-semibold tracking-tight">学涯 Copilot</span>
+                  <span class="font-label-sm text-[10px] bg-primary-fixed text-primary px-1.5 py-0.2 rounded-full font-semibold">M3</span>
+                </div>
+                <span class="font-label-sm text-[11px] text-on-surface-variant leading-none">Study Workspace</span>
+              </div>
+            </a>
+          </div>
+
+          <!-- Center: Mode Switcher & Global Search Trigger -->
+          <div class="stitch-header-center flex items-center gap-3 flex-1 justify-center max-w-2xl">
+            <!-- Mode Switcher -->
+            <nav class="workspace-primary hidden md:flex items-center bg-surface-container-low px-1 py-1 rounded-full p-1 border border-outline-variant/30" aria-label="学习空间主模式">
+              <a href="#space/ask" data-area="assistant" data-view="ask" class="px-3.5 py-1.5 rounded-full font-label-md text-xs text-on-surface-variant hover:text-on-surface transition-all flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-[15px]">auto_awesome</span>
+                <span>AI 伴学助手</span>
+              </a>
+              <a href="#space/materials" data-area="center" data-view="courses" class="px-3.5 py-1.5 rounded-full font-label-md text-xs text-on-surface-variant hover:text-on-surface transition-all flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-[15px]">school</span>
+                <span>学习中心</span>
+              </a>
+            </nav>
+
+            <!-- Global Search Pill -->
+            <button id="searchTrigger" class="hidden sm:flex items-center bg-surface-container-low hover:bg-surface-container px-3.5 py-1.5 rounded-full w-64 text-on-surface-variant transition-colors border border-outline-variant/30 text-left" type="button" aria-label="全局搜索资料与操作">
+              <span class="material-symbols-outlined text-[16px] mr-2 text-outline">search</span>
+              <span class="font-body-sm text-xs flex-1 text-on-surface-variant truncate">搜索资料、笔记与操作…</span>
+              <kbd class="font-code-sm text-[10px] bg-surface-container-lowest text-on-surface-variant px-1.5 py-0.5 rounded shadow-sm border border-outline-variant/30">⌘K</kbd>
+            </button>
+          </div>
+
+          <!-- Right: Course Selector, Status, Profile & Controls -->
+          <div class="stitch-header-actions flex items-center gap-2 sm:gap-3 justify-end min-w-[200px]">
+            <!-- Course Context Select -->
+            <div class="course-context flex items-center gap-1.5 bg-surface-container-low px-2.5 py-1 rounded-xl border border-outline-variant/30">
+              <span class="material-symbols-outlined text-[18px] text-primary" data-icon="tree">school</span>
+              <div class="flex flex-col">
+                <label class="sr-only" for="courseSelect">当前课程</label>
+                <select id="courseSelect" aria-label="当前课程" class="bg-transparent text-xs font-semibold text-on-surface border-0 outline-none cursor-pointer pr-1">
+                  <option value="course-default">数据结构</option>
+                </select>
+                <small id="courseLabel" class="text-[10px] text-on-surface-variant leading-none">我的课程空间</small>
+              </div>
+            </div>
+
+            <!-- Engine Sync Status -->
+            <div class="hidden xl:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-container-low text-on-surface-variant text-[11px] border border-outline-variant/30">
+              <span class="w-2 h-2 rounded-full bg-secondary animate-pulse"></span>
+              <span id="engineStatus" class="engine-status">本地就绪</span>
+            </div>
+
+            <!-- Settings & Quick Actions -->
+            <div class="flex items-center gap-1">
+              <button type="button" class="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-manage-courses title="管理课程" aria-label="管理课程">
+                <span class="material-symbols-outlined text-[18px]">library_books</span>
+              </button>
+              <button type="button" class="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-export-workspace title="导出记录" aria-label="导出记录">
+                <span class="material-symbols-outlined text-[18px]">file_download</span>
+              </button>
+              <button type="button" class="w-8 h-8 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" data-open-settings title="系统设置" aria-label="系统设置">
+                <span class="material-symbols-outlined text-[18px]">settings</span>
+              </button>
+            </div>
+
+            <div class="h-5 w-px bg-surface-container-high hidden sm:block"></div>
+
+            <!-- User Profile Pill -->
+            <div class="flex items-center gap-2 pl-1 cursor-pointer" data-open-settings title="用户档案与偏好">
+              <div class="profile-avatar w-8 h-8 rounded-full bg-gradient-to-tr from-primary to-primary-container text-on-primary font-bold text-xs flex items-center justify-center shadow-sm ring-2 ring-primary-fixed">
+                学
+              </div>
+              <div class="hidden 2xl:flex flex-col text-left">
+                <span class="font-label-md text-xs font-semibold text-on-surface leading-tight">我的账号</span>
+                <span class="font-label-sm text-[10px] text-primary font-medium leading-tight">本地学习空间</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Stitch Global Left Sidebar -->
+      <aside id="stitchSidebar" class="stitch-sidebar flex flex-col justify-between py-4">
+        <div class="flex flex-col gap-4 px-3">
+          <!-- Sidebar Section 1: Core Modules -->
+          <div class="flex flex-col gap-1">
+            <div class="flex items-center justify-between px-3 py-1">
+              <span class="sidebar-section-title font-label-sm text-[11px] text-outline font-semibold tracking-wider uppercase">学习中心核心模块</span>
+              <button id="stitchSidebarCollapseBtn" class="text-on-surface-variant hover:text-on-surface transition-colors hidden lg:block" title="折叠/展开侧栏" type="button">
+                <span class="material-symbols-outlined text-[16px]">dock_to_right</span>
+              </button>
+            </div>
+            <nav class="space-nav learning-center-nav flex flex-col gap-1" aria-label="学习中心导航">
+              <a href="#space/materials" data-view="materials" class="sidebar-nav-item flex items-center gap-3 px-3 py-2 rounded-xl text-on-surface-variant"><span class="material-symbols-outlined">account_tree</span><span class="sidebar-text">课程资料学习</span></a>
+              <a href="#space/practice/hot100" data-view="algorithms" class="sidebar-nav-item flex items-center gap-3 px-3 py-2 rounded-xl text-on-surface-variant"><span class="material-symbols-outlined">code</span><span class="sidebar-text">算法学习</span></a>
+              <a href="#space/exams" data-view="exams" class="sidebar-nav-item flex items-center gap-3 px-3 py-2 rounded-xl text-on-surface-variant"><span class="material-symbols-outlined">quiz</span><span class="sidebar-text">408考研学习</span></a>
+              <a href="#space/review" data-view="review" class="sidebar-nav-item flex items-center gap-3 px-3 py-2 rounded-xl text-on-surface-variant"><span class="material-symbols-outlined">edit_note</span><span class="sidebar-text">错题本</span></a>
+            </nav>
+
+          </div>
+
+          <!-- Sidebar Section 2: Tools & Knowledge -->
+          <div class="flex flex-col gap-1 border-t border-outline-variant/20 pt-3">
+            <div class="px-3 py-1">
+              <span class="sidebar-section-title font-label-sm text-[11px] text-outline font-semibold tracking-wider uppercase">学习资料与框架</span>
+            </div>
+            <nav class="flex flex-col gap-1">
+              <a href="#space/knowledge" data-view="knowledge" class="sidebar-nav-item flex items-center justify-between px-3 py-2 rounded-xl text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all text-sm font-medium">
+                <div class="flex items-center gap-3 min-w-0">
+                  <span class="material-symbols-outlined text-[19px]">folder</span>
+                  <span class="sidebar-text truncate">个人参考资料</span>
+                </div>
+                <span id="documentCount" class="font-code-sm text-[11px] px-1.5 py-0.2 rounded bg-surface-container-high text-on-surface-variant">…</span>
+              </a>
+              <a href="#space/frameworks" data-view="frameworks" class="sidebar-nav-item flex items-center gap-3 px-3 py-2 rounded-xl text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all text-sm font-medium">
+                <span class="material-symbols-outlined text-[19px]">account_tree</span>
+                <span class="sidebar-text">知识框架历史</span>
+              </a>
+            </nav>
+          </div>
+
+          <!-- Sidebar Section 3: Recent AI Sessions -->
+          <div data-ai-session-section class="flex flex-col gap-1 border-t border-outline-variant/20 pt-3">
+            <div class="flex items-center justify-between px-3 py-1">
+              <span class="sidebar-section-title font-label-sm text-[11px] text-outline font-semibold tracking-wider uppercase">近期 AI 答疑</span>
+              <div class="flex items-center gap-1">
+                <button type="button" class="text-on-surface-variant hover:text-primary transition-colors p-1 rounded" data-toggle-session-search title="搜索历史对话" aria-label="搜索历史对话">
+                  <span class="material-symbols-outlined text-[16px]">search</span>
+                </button>
+                <button type="button" class="text-on-surface-variant hover:text-primary transition-colors p-1 rounded" data-new-session title="开启新对话" aria-label="开启新对话">
+                  <span class="material-symbols-outlined text-[16px]">add</span>
+                </button>
+              </div>
+            </div>
+            <div id="stitchSessionSearchBox" class="px-2 py-1" hidden>
+              <input class="w-full px-2.5 py-1 text-xs bg-surface-container-low border border-outline-variant/40 rounded-lg outline-none focus:border-primary text-on-surface placeholder:text-outline" id="sessionSearch" aria-label="搜索历史对话" placeholder="搜索标题与内容…">
+            </div>
+            <div id="stitchRecentSessions" class="session-list flex flex-col gap-0.5 overflow-y-auto max-h-[calc(100vh-380px)]"></div>
+          </div>
+        </div>
+
+        <!-- Sidebar Bottom Footer -->
+        <div class="px-3 pt-3 border-t border-outline-variant/20 flex flex-col gap-1">
+          <button type="button" class="sidebar-nav-item flex items-center gap-3 px-3 py-2 rounded-xl text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all text-sm font-medium w-full text-left" data-open-settings>
+            <span class="material-symbols-outlined text-[19px]">settings</span>
+            <span class="sidebar-text">系统设置</span>
+          </button>
+        </div>
+      </aside>
+
+      <!-- Stitch Main View Container -->
+      <div class="stitch-main-content relative z-10">
+        <div class="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div id="activityBanner" class="activity-banner mb-4" role="status" hidden>
+            <span id="activityLabel"></span>
+            <button type="button" class="button button-outline button-small" data-stop-practice>停止等待</button>
+          </div>
+          <div id="storageNotice" class="storage-notice mb-4" role="alert" hidden>
+            <span>本次修改尚未保存。请先导出记录，避免关闭页面后丢失。</span>
+            <button type="button" class="button button-outline button-small" data-export-workspace>导出记录</button>
+          </div>
+          <!-- Space Content Slot -->
+          <div class="space-content" id="spaceContent" tabindex="-1"></div>
+        </div>
+      </div>
+      <footer class="space-footer" style="display:none!important;"><div id="workspaceServicesSlot"></div></footer>
     </div>
   </main>
   <dialog id="sourceDialog" class="source-dialog" aria-label="资料原文"><div class="dialog-head"><span class="eyebrow">回到原文</span><button type="button" class="icon-button" data-close-dialog aria-label="关闭原文"><span data-icon="close"></span></button></div><div id="sourceContent"></div><div class="source-dialog-footer"><button class="button button-blue" type="button" id="sourceSave"><span data-icon="bookmark"></span> 保存为知识卡片</button></div></dialog>

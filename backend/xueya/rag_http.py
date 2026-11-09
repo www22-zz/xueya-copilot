@@ -87,16 +87,44 @@ def install_rag(app, *, service_factory=None):
         if operation == "search" and post:
             allowed = {"courseId", "query", "history", "newTopic", "documentIds", "section", "mode", "budget", "limit"}
             require(not set(value)-allowed and isinstance(value.get("history", []), list) and len(value.get("history", [])) <= 12 and type(value.get("newTopic", False)) is bool, "INVALID_SEARCH")
-            return success(evidence=await connected_work(request, rag.search(scope, value.get("query"), history=value.get("history", []), new_topic=value.get("newTopic", False),
-                            document_ids=value.get("documentIds"), section=value.get("section"), mode=value.get("mode", "hybrid"), budget=value.get("budget", 2000), limit=value.get("limit", 6))))
+            from .rag_scope_adapter import ScopeAdapter
+            adapter = ScopeAdapter(rag.p, scope.user_id)
+            evidence = await connected_work(request, adapter.search(rag, scope.course_id, value.get("query"), history=value.get("history", []), new_topic=value.get("newTopic", False),
+                            document_ids=value.get("documentIds"), section=value.get("section"), mode=value.get("mode", "hybrid"), budget=value.get("budget", 2000), limit=value.get("limit", 6)))
+            from .rag_scope_adapter import public_api_value
+            return success(evidence=public_api_value(rag.p,evidence,scope.course_id))
         if operation == "read" and not post:
-            return success(**rag.context(scope, q.get("sourceId")))
+            from .rag_scope_adapter import is_platform_source, public_source_projection
+            source_id = q.get("sourceId")
+            from .rag_scope_adapter import ScopeAdapter
+            adapter = ScopeAdapter(rag.p, scope.user_id)
+            origin, original = adapter.resolve_source(source_id, scope.course_id)
+            source = adapter.read(rag, source_id, scope.course_id)
+            doc = rag.document(origin, source.get('documentId'), active=True) if source.get('documentId') else None
+            if is_platform_source(source, origin, doc):
+                return success(source=public_source_projection(source, True), protected=True)
+            return success(**rag.context(origin, original))
         if operation == "validate" and post:
-            return success(valid=rag.validate(scope, value.get("citation")))
+            from .rag_scope_adapter import ScopeAdapter
+            adapter = ScopeAdapter(rag.p, scope.user_id)
+            citation = value.get("citation")
+            try:
+                valid = adapter.validate_citation(rag, citation, scope.course_id)
+            except Exception:
+                valid = False
+            return success(valid=valid)
         if operation == "export" and not post:
+            from .rag_scope_adapter import is_platform_document
+            doc = rag.document(scope, q.get("documentId"), active=True)
+            if is_platform_document(doc, scope):
+                return success(id=doc["id"], name=doc["name"], protected=True, chunks=[])
             return success(**rag.export(scope, q.get("documentId")))
         if operation == "original" and not post:
+            from .rag_scope_adapter import is_platform_document
+            from fastapi.responses import JSONResponse
             doc = rag.document(scope, q.get("documentId"), active=True)
+            if is_platform_document(doc, scope):
+                return JSONResponse({"ok": False, "error": "FORBIDDEN_PLATFORM_DOCUMENT"}, status_code=403)
             return Response(rag.p.files.read(doc["fileHash"]), media_type="application/octet-stream", headers={"Content-Disposition": "attachment; filename*=UTF-8''"+quote(doc["name"], safe="")})
         if operation == "correct" and post:
             require(type(value.get("version")) is int and value["version"] > 0, "INVALID_VERSION")

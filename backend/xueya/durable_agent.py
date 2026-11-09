@@ -40,7 +40,7 @@ class DurableAgent:
         return value
 
     def enqueue(self, run):
-        return self.p.jobs.submit(self.p.user_id, {'type': 'agent-step', 'courseId': run['courseId'],
+        return self.p.jobs.submit(self.p.scope_user_id, {'type': 'agent-step', 'courseId': run['courseId'],
             'resource': 'api', 'maxAttempts': 1, 'input': {'runId': run['id']},
             'idempotencyKey': 'agent-'+fingerprint([run['id'], run['revision']])})
 
@@ -50,7 +50,7 @@ class DurableAgent:
         return result
 
     def features(self, course):
-        bucket = int(fingerprint([self.p.user_id, course])[:8], 16) % 100
+        bucket = int(fingerprint([self.p.scope_user_id, course])[:8], 16) % 100
         enabled = self.config.agent_planning_enabled and self.config.agent_durable_enabled and bucket < self.config.agent_rollout_percent
         return {'durable': enabled, 'interactive': enabled and self.config.agent_interactive_enabled,
             'configured': bool(self.config.api_key)}
@@ -191,7 +191,7 @@ class DurableAgent:
         return self.public(run)
 
     async def recover(self):
-        for course in self.p.repo.courses(self.p.user_id):
+        for course in self.p.repo.courses(self.p.scope_user_id):
             if course['archived']:
                 continue
             for run in self.host.runs.all(course['id']):

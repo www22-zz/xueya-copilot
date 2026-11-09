@@ -6,7 +6,7 @@ function createViews(ctx,base){
   const heading=(title,description,actions='')=>`<div class="view-heading"><div><h1>${title}</h1><p>${description}</p></div><div class="heading-actions">${actions}</div></div>`;
   const citations=sources=>`<div class="citations">${(sources||[]).map(s=>{
     const isWeb=Boolean(s.isWeb||s.url||s.location?.startsWith('http')||s.id?.startsWith('web-'));
-    return `<button type="button" class="citation-chip ${isWeb?'citation-web':''}" data-citation="${e(s.id)}" title="${isWeb?'点击在新窗口打开网页：'+e(s.url||s.location):'点击查看课程资料原文'}">${isWeb?'🌐 ':icon('file')} ${e(s.title)} · ${e(s.location||'原文片段')}</button>`;
+    return `<button type="button" class="citation-chip ${isWeb?'citation-web':''}" data-citation="${e(s.id)}" title="${isWeb?'点击在新窗口打开网页：'+e(s.url||s.location):s.isPlatform?'查看公共资料来源与位置':'点击查看课程资料原文'}">${isWeb?'🌐 ':icon('file')} ${e(s.title)} · ${e(s.location||'原文片段')}${s.isPlatform&&s.originCourseName?' · '+e(s.originCourseName):''}</button>`;
   }).join('')}</div>`;
   const unavailable=label=>`<p class="capability-note">${e(label)}的这个入口尚未接通。可使用本页“进阶学习功能”中的对应操作；原有浏览器内容仍可使用。</p>`;
   const cartoonAvatarSvg = `<svg class="doubao-user-avatar" viewBox="0 0 100 100" width="36" height="36" aria-hidden="true"><defs><linearGradient id="dbAvatarBg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#6366f1"/><stop offset="100%" stop-color="#a855f7"/></linearGradient><linearGradient id="dbHoodie" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#3b82f6"/><stop offset="100%" stop-color="#2563eb"/></linearGradient><linearGradient id="dbHair" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#334155"/><stop offset="100%" stop-color="#1e293b"/></linearGradient></defs><circle cx="50" cy="50" r="50" fill="url(#dbAvatarBg)"/><path d="M22 92 C22 75 35 68 50 68 C65 68 78 75 78 92 Z" fill="url(#dbHoodie)"/><path d="M42 68 L50 82 L58 68 Z" fill="#ffffff" opacity="0.9"/><rect x="44" y="60" width="12" height="12" rx="3" fill="#fed7aa"/><ellipse cx="50" cy="46" rx="22" ry="24" fill="#ffedd5"/><ellipse cx="36" cy="51" rx="4.5" ry="2.5" fill="#f43f5e" opacity="0.4"/><ellipse cx="64" cy="51" rx="4.5" ry="2.5" fill="#f43f5e" opacity="0.4"/><path d="M45 54 Q50 60 55 54" stroke="#e11d48" stroke-width="2.5" stroke-linecap="round" fill="none"/><ellipse cx="38" cy="44" rx="3" ry="4" fill="#0f172a"/><circle cx="37" cy="42" r="1.2" fill="#ffffff"/><ellipse cx="62" cy="44" rx="3" ry="4" fill="#0f172a"/><circle cx="61" cy="42" r="1.2" fill="#ffffff"/><rect x="31" y="38" width="15" height="12" rx="4" fill="none" stroke="#0284c7" stroke-width="2"/><rect x="54" y="38" width="15" height="12" rx="4" fill="none" stroke="#0284c7" stroke-width="2"/><line x1="46" y1="44" x2="54" y2="44" stroke="#0284c7" stroke-width="2"/><path d="M28 42 C26 28 35 18 50 18 C65 18 74 28 72 42 C68 30 60 26 50 26 C40 26 32 30 28 42 Z" fill="url(#dbHair)"/><path d="M32 34 C38 28 46 32 48 38 C42 36 36 38 32 34 Z" fill="url(#dbHair)"/><path d="M50 18 Q53 10 60 12" stroke="#334155" stroke-width="2.5" stroke-linecap="round" fill="none"/></svg>`;
@@ -105,9 +105,34 @@ function createViews(ctx,base){
     `<button type="button" class="history-backdrop" data-history-close aria-label="关闭对话历史"></button>`;
   }
   function composer(){
+    const currentCourse = (state.courses || []).find(c => c.id === state.courseId);
+    const courseName = currentCourse?.name || '数据结构';
     const voice=ctx.getVoiceState?.()||{phase:'idle'},recording=voice.phase==='recording',voiceBusy=['requesting','recording','transcribing'].includes(voice.phase),locked=state.pending||voiceBusy;
-    const mic='<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="9" y="2" width="6" height="13" rx="3"/><path d="M5 10v2a7 7 0 0 0 14 0v-2M12 19v3"/></svg>';
-    return `<form id="chatForm" class="composer"><label class="sr-only" for="chatInput">输入课程问题</label><textarea id="chatInput" aria-label="输入课程问题" placeholder="问一个问题，或选择一条旧回答继续追问…" rows="3" maxlength="4000">${e(state.draft)}</textarea>${state.followupIndex!==null&&state.followupIndex!==undefined?`<div class="reply-context">正在追问：${e(state.messages[state.followupIndex]?.title||'指定回答')}${button('取消','data-cancel-followup')}</div>`:''}<div class="attachment-list">${getAttachments().map((a,i)=>`<div class="image-attachment">${a.file.type.startsWith('audio/')||/\.(wav|mp3)$/i.test(a.file.name)?`<audio controls preload="metadata" src="${e(a.url)}" aria-label="待提问语音：${e(a.file.name)}"></audio>`:a.file.type.startsWith('image/')?`<img src="${e(a.url)}" alt="待提问图片：${e(a.file.name)}">`:'<span class="composer-file-icon" aria-hidden="true">'+icon('file')+'</span>'}<span>${e(a.file.name)}</span><button type="button" data-remove-image="${i}" aria-label="移除附件 ${e(a.file.name)}" ${locked?'disabled':''}>×</button></div>`).join('')}</div><input id="imageInput" type="file" accept="image/png,image/jpeg,image/webp,.pdf,.docx,.txt,.md,.markdown" multiple hidden><input id="audioInput" type="file" accept="audio/wav,audio/mpeg,.wav,.mp3" hidden><div class="composer-bottom"><div class="composer-tools"><button type="button" class="composer-icon-button composer-add" data-add-images aria-label="添加文件或图片" title="添加文件或图片（PDF、Word、TXT、Markdown）" ${locked?'disabled':''}><span aria-hidden="true">＋</span></button><button type="button" class="composer-icon-button composer-mic ${recording?'is-recording':''}" data-add-audio aria-label="${recording?'停止录音并识别':voice.phase==='transcribing'?'正在识别语音':'开始录音'}" title="录音停止后识别为文字，核对后发送" aria-pressed="${recording}" ${state.pending||['requesting','transcribing'].includes(voice.phase)?'disabled':''}>${recording?'<span class="record-stop" aria-hidden="true"></span>':mic}</button><button type="button" class="composer-web ${state.webSearch?'is-active':''}" data-toggle-web-search aria-label="全网搜索" title="${state.webSearch?'全网搜索已开启（联网获取最新信息）':'开启全网搜索（联网获取最新信息）'}" aria-pressed="${Boolean(state.webSearch)}" ${locked?'disabled':''}>🌐 <span class="web-search-text">全网搜索</span></button><span class="composer-note">${state.pending?'正在处理，可随时停止':getAttachments().length&&!window.XueyaPlatform?.available?'启动本地服务后可发送附件':'Enter 发送 · Shift + Enter 换行'}</span></div>${state.pending?'<button class="stop-button" type="button" data-stop-chat>停止生成</button>':`<button class="send-button" type="submit" aria-label="发送问题" ${voiceBusy?'disabled':''}>${icon('arrow')}</button>`}</div>${voice.phase!=='idle'?`<div class="composer-voice-status" role="status"><span data-voice-status>${e(voice.phase==='requesting'?'请允许浏览器使用麦克风…':recording?'正在录音 · 停止后识别，核对后发送':voice.phase==='transcribing'?'正在识别语音，识别后可编辑文字…':voice.error)}</span>${voice.phase==='error'&&voice.canRetry?button('重试识别','data-retry-voice'):''}${button('取消','data-cancel-voice')}</div>`:''}</form>`;
+    const mic='<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="9" y="2" width="6" height="13" rx="3"/><path d="M5 10v2a7 7 0 0 0 14 0v-2M12 19v3"/></svg>';
+    const plusIcon='<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>';
+    const sendArrow='<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg>';
+    return `<form id="chatForm" class="composer">`+
+      `<label class="sr-only" for="chatInput">输入课程问题</label>`+
+      `<textarea id="chatInput" aria-label="输入课程问题" placeholder="问一个关于${e(courseName)}的问题，或选择一条旧回答继续追问…" rows="2" maxlength="4000">${e(state.draft)}</textarea>`+
+      (state.followupIndex!==null&&state.followupIndex!==undefined?`<div class="reply-context">正在追问：${e(state.messages[state.followupIndex]?.title||'指定回答')}${button('取消','data-cancel-followup')}</div>`:'')+
+      `<div class="attachment-list">${getAttachments().map((a,i)=>`<div class="image-attachment">${a.file.type.startsWith('audio/')||/\.(wav|mp3)$/i.test(a.file.name)?`<audio controls preload="metadata" src="${e(a.url)}" aria-label="待提问语音：${e(a.file.name)}"></audio>`:a.file.type.startsWith('image/')?`<img src="${e(a.url)}" alt="待提问图片：${e(a.file.name)}">`:'<span class="composer-file-icon" aria-hidden="true">'+icon('file')+'</span>'}<span>${e(a.file.name)}</span><button type="button" data-remove-image="${i}" aria-label="移除附件 ${e(a.file.name)}" ${locked?'disabled':''}>×</button></div>`).join('')}</div>`+
+      `<input id="imageInput" type="file" accept="image/png,image/jpeg,image/webp,.pdf,.docx,.txt,.md,.markdown" multiple hidden>`+
+      `<input id="audioInput" type="file" accept="audio/wav,audio/mpeg,.wav,.mp3" hidden>`+
+      `<div class="composer-bottom">`+
+        `<div class="composer-tools">`+
+          `<button type="button" class="composer-icon-button composer-add p-1.5 rounded-lg hover:bg-surface-container-low text-on-surface-variant hover:text-on-surface transition-colors" data-add-images aria-label="添加文件或图片" title="添加文件或图片（PDF、Word、TXT、Markdown）" ${locked?'disabled':''}>${plusIcon}</button>`+
+          `<button type="button" class="composer-icon-button composer-mic p-1.5 rounded-lg hover:bg-surface-container-low text-on-surface-variant hover:text-on-surface transition-colors ${recording?'is-recording':''}" data-add-audio aria-label="${recording?'停止录音并识别':voice.phase==='transcribing'?'正在识别语音':'开始录音'}" title="录音停止后识别为文字，核对后发送" aria-pressed="${recording}" ${state.pending||['requesting','transcribing'].includes(voice.phase)?'disabled':''}>${recording?'<span class="record-stop" aria-hidden="true"></span>':mic}</button>`+
+          `<button type="button" class="composer-web ${state.webSearch?'is-active':''}" data-toggle-web-search aria-label="全网 + 课程知识库混合检索" title="${state.webSearch?'全网搜索已开启（联网获取最新信息）':'开启全网搜索（联网获取最新信息）'}" aria-pressed="${Boolean(state.webSearch)}" ${locked?'disabled':''}>`+
+            `<span class="text-sm">🌐</span> <span class="web-search-text">全网 + 课程知识库混合检索</span>`+
+          `</button>`+
+        `</div>`+
+        `<div class="flex items-center gap-3">`+
+          `<span class="composer-note text-xs text-on-surface-variant hidden sm:inline">${state.pending?'正在生成，可随时停止':getAttachments().length&&!window.XueyaPlatform?.available?'启动本地服务后可发送附件':'Enter 发送 · Shift + Enter 换行'}</span>`+
+          (state.pending?`<button class="stop-button" type="button" data-stop-chat>停止生成</button>`:`<button class="send-button" type="submit" aria-label="发送问题" ${voiceBusy?'disabled':''}>${sendArrow}</button>`)+
+        `</div>`+
+      `</div>`+
+      (voice.phase!=='idle'?`<div class="composer-voice-status" role="status"><span data-voice-status>${e(voice.phase==='requesting'?'请允许浏览器使用麦克风…':recording?'正在录音 · 停止后识别，核对后发送':voice.phase==='transcribing'?'正在识别语音，识别后可编辑文字…':voice.error)}</span>${voice.phase==='error'&&voice.canRetry?button('重试识别','data-retry-voice'):''}${button('取消','data-cancel-voice')}</div>`:'')+
+    `</form>`;
   }
 
   const XueyaDailyCheckin = {
@@ -354,31 +379,17 @@ function createViews(ctx,base){
   }
 
   function getInitialCourseSuggestions(state) {
-    const list = [];
-    const docs = state.documents || [];
-    const docNames = docs.map(d => d.name).join(' ');
+    const list = [
+      { tag: '进阶', text: '继续深入探索上次学习: 「AVL 树与红黑树在插入和查找性能上有何差异？」' },
+      { tag: '复杂度', text: '二叉搜索树查找的时间复杂度为什么是 O(log n)？最坏情况如何退化？' },
+      { tag: '工程实践', text: '红黑树相比 AVL 树为什么在插入删除频繁时性能通常更好？' },
+      { tag: '平衡旋转', text: '平衡二叉树（AVL）失衡时如何判断进行单旋（LL/RR）和双旋（LR/RL）？' },
+      { tag: '核心原理', text: '哈夫曼树的构造规则与带权路径长度（WPL）如何计算？' },
+      { tag: '算法对比', text: '快速排序在什么特殊数据分布下会退化到 O(n²)？如何规避？' },
+      { tag: '底层机理', text: '虚拟内存分页管理中，快表（TLB）是如何加速地址转换的？' },
+      { tag: '网络协议', text: '为什么 TCP 握手需要三次，而挥手需要四次？TIME_WAIT 状态有何作用？' }
+    ];
 
-    if (/树|二叉/i.test(docNames) || state.courseId === 'course-default') {
-      list.push('二叉搜索树查找的时间复杂度为什么是 O(log n)？');
-      list.push('平衡二叉树（AVL）失衡时如何进行单旋和双旋？');
-      list.push('红黑树相比 AVL 树为什么在插入删除频繁时性能更好？');
-      list.push('哈夫曼树的构造规则与带权路径长度（WPL）如何计算？');
-    } else if (/系统|进程|内存/i.test(docNames)) {
-      list.push('进程与线程的核心区别及各自的内存模型是什么？');
-      list.push('虚拟内存分页管理中，快表（TLB）是如何加速地址转换的？');
-      list.push('死锁的四大必要条件是什么，有哪些常用的预防策略？');
-    } else if (/网络|TCP|HTTP/i.test(docNames)) {
-      list.push('为什么 TCP 握手需要三次，而挥手需要四次？');
-      list.push('TCP 拥塞控制机制（慢启动、拥塞避免、快重传）是如何协同工作的？');
-      list.push('HTTP/2 与 HTTP/3 在解决队头阻塞上有何不同策略？');
-    } else {
-      list.push('二叉搜索树的查找复杂度与二分查找有什么联系？');
-      list.push('快速排序在什么情况下会发生性能退化？');
-      list.push('如何用动态规划求解经典的 0-1 背包问题？');
-      list.push('哈希冲突时拉链法与开放寻址法各自适用的场景是什么？');
-    }
-
-    // Inspect history memory from past sessions
     const pastUserQuestions = (state.sessions || [])
       .filter(s => s.id !== state.sessionId)
       .flatMap(s => (s.messages || []).filter(m => m.role === 'user').map(m => m.text))
@@ -386,11 +397,14 @@ function createViews(ctx,base){
 
     if (pastUserQuestions.length) {
       const recent = pastUserQuestions[pastUserQuestions.length - 1];
-      if (recent && !list.includes(recent)) {
-        list.unshift(`继续深入探索上次学习的：「${recent.slice(0, 20)}」`);
+      if (recent && !list.some(item => item.text.includes(recent.slice(0, 15)))) {
+        list[0] = { tag: '进阶', text: `继续深入探索上次学习: 「${recent.slice(0, 26)}」` };
       }
     }
-    return list.slice(0, 4);
+
+    const offset = Number(state.suggestionOffset || 0) % list.length;
+    const rotated = [...list.slice(offset), ...list.slice(0, offset)];
+    return rotated.slice(0, 4);
   }
 
   function getSelectionQuestions(rawText) {
@@ -506,24 +520,100 @@ function createViews(ctx,base){
     const branchSvg='<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>';
     const regenSvg='<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>';
     const actionButtons=!isThinking&&!m.failed&&!m.cancelled?`<div class="message-actions doubao-action-bar" role="toolbar" aria-label="回答操作"><button type="button" class="action-icon-btn" data-copy-message="${index}" title="复制回答" aria-label="复制回答">${copySvg}</button><button type="button" class="action-icon-btn ${isReadingThis?'is-playing':''}" data-tts-read="${index}" title="${isReadingThis?'停止朗读':'语音朗读'}" aria-label="${isReadingThis?'停止朗读':'语音朗读'}">${ttsSvg}</button><button type="button" class="action-icon-btn ${myFeedback?.rating==='helpful'?'is-active is-helpful':''}" data-feedback="${index}" data-rating="helpful" title="赞" aria-label="赞">${thumbUpSvg}</button><button type="button" class="action-icon-btn ${myFeedback?.rating==='unhelpful'?'is-active is-unhelpful':''}" data-feedback="${index}" data-rating="unhelpful" title="踩" aria-label="踩">${thumbDownSvg}</button><button type="button" class="action-icon-btn" data-branch="${index}" title="新建分支（从此处开启新对话）" aria-label="新建分支（从此处开启新对话）">${branchSvg}</button><button type="button" class="action-icon-btn action-icon-warn ${myFeedback?.rating==='incorrect'?'is-active':''}" data-feedback="${index}" data-rating="incorrect" title="引用或内容有误（报错）" aria-label="引用或内容有误（报错）">${alertSvg}</button><button type="button" class="action-icon-btn" data-regenerate="${index}" title="重新生成" aria-label="重新生成">${regenSvg}</button></div>`:'';
-    const followupBlock = (!isThinking && !m.failed && !m.cancelled && m.text) ?
+    const followupBlock = (!isThinking && !m.failed && !m.cancelled && m.text && !m.artifacts?.studyPlanning && !m.artifacts?.quiz) ?
       `<div class="suggested-followup-box" data-parent-index="${index}"><div class="suggested-followup-title"><span class="suggested-spark">✦</span><span>用户可能会提问的问题：</span></div><div class="suggested-chips">${getFollowupQuestions(m, state).map(q => `<button type="button" class="suggested-chip" data-prompt="${e(q)}" title="点击直接向 Copilot 提问"><span>${e(q)}</span><span class="chip-arrow" aria-hidden="true">↗</span></button>`).join('')}</div></div>` : '';
-    return `<article class="message ai-message ${isThinking?'loading-message':''}" data-message-index="${index}"><div class="message-avatar">${icon('spark')}</div><div class="message-body"><div class="message-meta"><strong>学涯 Copilot</strong><span ${isThinking?'hidden':''}>${e(m.engine||'本地检索摘录')} · ${m.sources?.length||0} 个来源${Number.isFinite(m.timings?.totalMs)?' · '+(m.timings.totalMs/1000).toFixed(1)+' 秒':''}</span></div>${thinkingBlock}<div class="rich-content">${renderedBody}${isThinking&&m.text?'<span class="stream-cursor" aria-hidden="true"></span>':''}</div>${citations(m.sources)}${globalThis.XueyaAgentRuns?.markup(m,index,interactive)||''}${actionButtons}${followupBlock}</div></article>`;
+    return `<article class="message ai-message ${isThinking?'loading-message':''}" data-message-index="${index}"><div class="message-avatar">${icon('spark')}</div><div class="message-body"><div class="message-meta"><strong>学涯 Copilot</strong><span ${isThinking?'hidden':''}>${e(m.engine||'本地检索摘录')} · ${m.sources?.length||0} 个来源${Number.isFinite(m.timings?.totalMs)?' · '+(m.timings.totalMs/1000).toFixed(1)+' 秒':''}</span></div>${thinkingBlock}<div class="rich-content">${renderedBody}${isThinking&&m.text?'<span class="stream-cursor" aria-hidden="true"></span>':''}</div>${citations(m.sources)}${globalThis.XueyaStudyChat?.markup(m)||''}${globalThis.XueyaStudyQuiz?.markup(m)||''}${globalThis.XueyaAgentRuns?.markup(m,index,interactive)||''}${actionButtons}${followupBlock}</div></article>`;
   }
-  function explicitScope(){try{const v=JSON.parse(localStorage.getItem('xueya-c-learning:'+state.courseId+':scope:'+state.sessionId));return Array.isArray(v)?v:null;}catch{return null;}}
-  function chat(){
-    return `<div class="chat-history-toolbar"><button type="button" class="button button-outline button-small history-mobile-toggle" data-history-open aria-controls="chatHistoryPanel" aria-expanded="false">对话历史</button></div>`+
-      `<div class="workspace-chat">${sessions()}<div class="chat-main">`+
-        `<div class="chat-top-external-bar" role="toolbar" aria-label="快捷操作">`+
-          `<button type="button" class="sidebar-ext-btn sidebar-toggle-btn" data-toggle-sidebar title="收起/展开侧边栏" aria-label="收起/展开侧边栏"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="4" ry="4"/><line x1="9" y1="3" x2="9" y2="21"/></svg></button>`+
-          `<button type="button" class="sidebar-ext-btn sidebar-new-btn" data-new-session title="新对话" aria-label="开启新对话" ${state.pending?'disabled':''}><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>`+
-          `<button type="button" class="sidebar-ext-btn sidebar-ask-btn ${state.sidebarAskOpen?'is-active':''}" data-toggle-sidebar-ask title="打开/收起划词提问侧边栏" aria-label="打开/收起划词提问侧边栏"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><line x1="9" y1="10" x2="15" y2="10"/><line x1="12" y1="7" x2="12" y2="13"/></svg></button>`+
+  function explicitScope(){try{const v=JSON.parse(localStorage.getItem((window.XueyaDataKey||((key)=>key))('xueya-c-learning:'+state.courseId+':scope:'+state.sessionId)));return Array.isArray(v)?v:null;}catch{return null;}}
+  
+  function renderSessionListContent(){
+    const q = (state.sessionQuery || '').trim().toLowerCase();
+    const filtered = state.sessions.filter(s => {
+      if (!q) return true;
+      const fullText = (s.title + ' ' + (s.messages || []).map(m => m.text).join(' ')).toLowerCase();
+      return fullText.includes(q);
+    });
+    const activeSessions = filtered.filter(s => !s.archived);
+    const pinnedList = activeSessions.filter(s => s.pinned);
+    const recentList = activeSessions.filter(s => !s.pinned);
+    const archivedList = filtered.filter(s => s.archived);
+
+    return (activeSessions.length || archivedList.length) ? (
+      (pinnedList.length ? `<div class="stitch-session-group-title session-group-title">已置顶</div>${pinnedList.map(renderSessionItem).join('')}` : '') +
+      (recentList.length ? `<div class="stitch-session-group-title session-group-title">最近</div>${recentList.map(renderSessionItem).join('')}` : '') +
+      `<details class="session-group-archived" ${state.archivedOpen || archivedList.some(s=>s.id===state.sessionId)?'open':''}>`+
+        `<summary class="stitch-session-group-title session-group-title session-archived-summary" data-toggle-archived>`+
+          `<span class="archived-summary-left">${archiveIconSvg}<span>已归档 (${archivedList.length})</span></span>`+
+          `<span class="archived-arrow">▾</span>`+
+        `</summary>`+
+        `<div class="archived-session-list">`+
+          (archivedList.length ? archivedList.map(renderSessionItem).join('') : '<p class="panel-description panel-description-sm px-2 py-1 text-xs text-on-surface-variant">暂无已归档对话</p>')+
         `</div>`+
-        `<div class="chat-mode-tabs" role="group" aria-label="问答模式">${[['ask','资料问答'],['summarize','知识整理'],['quiz','开放练习']].map(([mode,label])=>`<button type="button" class="${mode===state.mode?'active':''}" aria-pressed="${mode===state.mode}" data-mode="${mode}">${label}</button>`).join('')}${button('新对话','data-clear-chat '+(state.pending?'disabled':''))}</div>`+
-        `<details class="scope-picker"><summary>资料范围：${explicitScope()!==null?explicitScope().length+' 份资料':state.selectedDocuments.length?state.selectedDocuments.length+' 份资料':'当前课程全部有效资料'}</summary><div>${state.documents.filter(d=>!d.superseded&&!d.archived).map(d=>`<label><input type="checkbox" data-scope="${e(d.id)}" ${(explicitScope()===null&&!state.selectedDocuments.length||state.selectedDocuments.includes(d.id))?'checked':''} ${state.pending?'disabled':''}>${e(d.name)}</label>`).join('')||'<p>请先添加资料。</p>'}</div></details>`+
-        `<div class="chat-thread" id="chatThread" data-session-id="${e(state.sessionId)}" tabindex="0" aria-label="对话记录" aria-live="polite" aria-busy="${state.pending}">${state.messages.length?state.messages.map(message).join(''):`<div class="chat-empty"><span class="chat-empty-symbol">${icon('spark')}</span><h2>从一个问题开始，走向真正理解。</h2><p>围绕课程资料与计算机核心知识点，学涯 Copilot 为你逐层剖析依据。</p><div class="chat-starter-suggested"><div class="starter-suggested-header"><span class="starter-spark">✦</span><span>猜你想问 · 根据课程与历史记忆推荐：</span></div><div class="starter-chips">${getInitialCourseSuggestions(state).map(q => `<button type="button" class="suggested-chip" data-prompt="${e(q)}" title="点击直接提问"><span>${e(q)}</span><span class="chip-arrow" aria-hidden="true">↗</span></button>`).join('')}</div></div><div class="chat-empty-links"><a class="text-link" href="#space/knowledge">整理课程资料 →</a><a class="text-link" href="#space/courses">进入课程视频学堂 →</a></div></div>`}</div>`+
-        composer()+
-      `</div>`+sidebarAskPanel()+`</div>`;
+      `</details>`
+    ) : '<p class="panel-description px-2 py-1 text-xs text-on-surface-variant">没有匹配的对话。</p>';
+  }
+  globalThis.XueyaWorkspaceSessionList = renderSessionListContent;
+function chat(){
+    const currentCourse = (state.courses || []).find(c => c.id === state.courseId);
+    const courseName = currentCourse?.name || '数据结构';
+    const suggestions = getInitialCourseSuggestions(state);
+
+    const emptyWorkbench = `<div class="chat-empty-workbench">`+
+      `<div class="chat-empty-glow-icon">`+
+        `<svg viewBox="0 0 24 24" width="28" height="28" fill="white">`+
+          `<path d="M12 2L14.4 9.6L22 12L14.4 14.4L12 22L9.6 14.4L2 12L9.6 9.6L12 2Z"/>`+
+        `</svg>`+
+      `</div>`+
+      `<h1 class="chat-empty-headline font-headline-lg">从一个问题开始，走向真正理解。</h1>`+
+      `<p class="chat-empty-subtitle">围绕课程资料与计算机核心知识点，学涯 Copilot 为你逐层剖析理论依据与底层机理。</p>`+
+      `<div class="chat-empty-suggest-card">`+
+        `<div class="chat-empty-card-head">`+
+          `<div class="flex items-center gap-2">`+
+            `<span class="w-2 h-2 rounded-full bg-indigo-600"></span>`+
+            `<span class="text-xs font-bold text-on-surface">猜你想问 · 根据课程进度与历史记忆推荐</span>`+
+          `</div>`+
+          `<button type="button" class="text-xs text-on-surface-variant hover:text-primary flex items-center gap-1.5 transition-colors cursor-pointer py-1 px-2 rounded-lg hover:bg-primary-fixed/50" data-refresh-suggestions title="换一批推荐问题">`+
+            `<span class="material-symbols-outlined text-[15px]">sync</span>`+
+            `<span>换一批</span>`+
+          `</button>`+
+        `</div>`+
+        `<div class="chat-empty-grid" id="starterSuggestionsGrid">`+
+          suggestions.map(item => `
+            <button type="button" class="suggest-card-item" data-prompt="${e(item.text)}" title="点击立即向 Copilot 提问">
+              <span class="suggest-tag">${e(item.tag)}</span>
+              <span class="suggest-text">${e(item.text)}</span>
+              <span class="suggest-arrow">↗</span>
+            </button>
+          `).join('')+
+        `</div>`+
+      `</div>`+
+      `<div class="chat-empty-sublinks">`+
+        `<a href="#space/knowledge"><span class="material-symbols-outlined text-[16px]">folder_open</span><span>整理当前课程资料 →</span></a>`+
+        `<span class="text-outline">|</span>`+
+        `<a href="#space/courses"><span class="material-symbols-outlined text-[16px]">play_circle</span><span>进入配套视频学堂 →</span></a>`+
+      `</div>`+
+    `</div>`;
+
+    return `<div class="workspace-chat"><div class="chat-main">`+
+      `<div class="chat-top-external-bar" role="toolbar" aria-label="快捷操作">`+
+        `<div class="flex items-center gap-3 text-xs whitespace-nowrap">`+
+          `<a href="#space/analysis/plans" class="font-semibold text-primary hover:underline">我的计划</a>`+
+          `<span class="text-outline">·</span>`+
+          `<a href="#space/courses" class="text-on-surface-variant hover:text-primary transition-colors">继续学习课程</a>`+
+          `<span class="text-outline">·</span>`+
+          `<a href="#space/review" class="text-on-surface-variant hover:text-primary transition-colors">复习错题本</a>`+
+        `</div>`+
+        `<div class="flex items-center gap-2 text-xs text-on-surface-variant whitespace-nowrap ml-auto">`+
+          `<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>`+
+          `<span class="hidden sm:inline">学涯 Copilot 研学工作台 · 知识库索引已就绪</span>`+
+          `<button type="button" class="sidebar-ask-btn ${state.sidebarAskOpen?'is-active':''} ml-2" data-toggle-sidebar-ask title="打开/收起划词提问侧边栏" aria-label="打开/收起划词提问侧边栏"><span class="material-symbols-outlined text-[15px]">side_navigation</span><span>划词提问</span></button>`+
+        `</div>`+
+      `</div>`+
+      `<div class="chat-thread" id="chatThread" data-session-id="${e(state.sessionId)}" tabindex="0" aria-label="对话记录" aria-live="polite" aria-busy="${state.pending}">`+
+        (state.messages.length ? state.messages.map(message).join('') : emptyWorkbench)+
+      `</div>`+
+      composer()+
+    `</div>`+sidebarAskPanel()+`</div>`;
   }
   function documentRows(query=''){
     const list=state.documents.filter(d=>(!globalThis.XueyaPlatform?.available||!d.remote)&&((d.name+' '+(d.tags||[]).join(' ')+' '+(d.chapter||'')).toLowerCase().includes(query.toLowerCase())));

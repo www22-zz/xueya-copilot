@@ -35,7 +35,7 @@ class LearningRepository:
 
     def operation_key(self, course, operation):
         self.p.scope(course)
-        return "learning:operation:"+fingerprint([self.p.user_id, course, operation])
+        return "learning:operation:"+fingerprint([self.p.scope_user_id, course, operation])
 
     async def get_operation(self, course, operation):
         row = self.p.db.one("SELECT value FROM meta WHERE key=?", (self.operation_key(course, operation),))
@@ -70,7 +70,7 @@ class StoredValues:
 
     def key(self, course, key):
         self.p.scope(course)
-        return "learning:"+self.namespace+":"+fingerprint([self.p.user_id, course, key])
+        return "learning:"+self.namespace+":"+fingerprint([self.p.scope_user_id, course, key])
 
     async def get(self, course, key):
         row = self.p.db.one("SELECT value FROM meta WHERE key=?", (self.key(course, key),))
@@ -167,16 +167,18 @@ class LearningHost:
         self.media_workspace = MediaWorkspace(self)
         from .durable_agent import DurableAgent
         self.dynamic = DurableAgent(self)
+        from .workbench_api import WorkbenchWorkspace
+        self.workbench = WorkbenchWorkspace(self)
 
     def service(self, course):
         scope = self.p.scope(course)
-        if course not in self.services:
+        if scope not in self.services:
             model = ScopedModel(self.app.state.provider, scope) if self.app.state.config.api_key else None
-            self.services[course] = LearningService(self.repo, runs=self.runs, model=model,
+            self.services[scope] = LearningService(self.repo, runs=self.runs, model=model,
                 model_id=self.app.state.config.model, checkpoint=self.checkpoints, verify_snapshot=self.verify_snapshot)
-        return self.services[course]
+        return self.services[scope]
 
-    async def sources(self, value, *, catalog=False, generation=True):
+    async def sources(self, value, *, catalog=False, generation=True, use_case='learning'):
         scope = self.p.scope(value["courseId"])
         selection = value.get("selection") or {}
         require(isinstance(selection, dict) and not set(selection)-{"documentIds", "section", "sourceIds"}, "INVALID_SELECTION")
@@ -201,6 +203,9 @@ class LearningHost:
             if selected is not None and source["id"] not in selected:
                 continue
             doc = documents.get(source.get("documentId"), {})
+            from .rag_scope_adapter import is_platform_document, is_platform_source
+            if generation and not catalog and use_case != 'answer':
+                require(not is_platform_source(source, scope, doc), 'RAG_USE_CASE_FORBIDDEN')
             result.append({**source, "courseId": scope.course_id, "documentId": source.get("documentId") or "legacy-"+source["id"], "version": str(source.get("documentRevision", doc.get("contentRevision", source["version"]))), "quote": source.get("quote", source.get("text", ""))})
         require(result, "NO_SOURCES")
         if catalog:
@@ -288,7 +293,7 @@ class LearningHost:
 
     async def enqueue(self, value):
         run = await self.service(value["courseId"]).workflow.get(value["courseId"], value["runId"])
-        return self.p.jobs.submit(self.p.user_id, {"type": "learning-chapter", "courseId": value["courseId"],
+        return self.p.jobs.submit(self.p.scope_user_id, {"type": "learning-chapter", "courseId": value["courseId"],
             "input": {"runId": value["runId"]}, "resource": "cpu", "maxAttempts": 1,
             "idempotencyKey": "learning-"+fingerprint([value["runId"], run["revision"]])})
 
@@ -316,9 +321,12 @@ class LearningHost:
         search_response = await self.search_workspace.dispatch(path, request, course)
         if search_response is not None:
             return search_response
+        workbench_response = await self.workbench.dispatch(path, request, course)
+        if workbench_response is not None:
+            return workbench_response
 
         async def context(_):
-            return {"courseId": course, "userId": self.p.user_id, "loadStudyContext": lambda: self.study_context(course), 'scopeStudyContext': self.scope_study_context}
+            return {"courseId": course, "userId": self.p.scope_user_id, "loadStudyContext": lambda: self.study_context(course), 'scopeStudyContext': self.scope_study_context}
 
         async def questions(value):
             result = []
@@ -328,7 +336,9 @@ class LearningHost:
                 result.append(row["value"])
             return result
 
-        handler = LearningHandler(self.service(course), context, self.sources, questions, self.previews, self.enqueue, self.validate_draft)
+        async def resolve_sources(value):
+            return await self.sources(value, use_case='answer' if path == 'answers' else 'learning')
+        handler = LearningHandler(self.service(course), context, resolve_sources, questions, self.previews, self.enqueue, self.validate_draft)
         return await handler.handle(path, request)
 
 
@@ -343,13 +353,16 @@ def install_learning(app):
             host.state.agent.learning = host.state.learning
             if host.state.learning:
                 learning = host.state.learning
-                for course in learning.p.repo.courses(learning.p.user_id):
-                    if course["archived"]:
-                        continue
-                    for row in learning.runs.all(course["id"]):
-                        if row.get("status") == "running" and row.get('kind') != 'dynamic-agent':
-                            await learning.service(course["id"]).workflow.recover(course["id"], row["id"], lease_expired=True)
-                await learning.dynamic.recover()
+                from .account_scope import bind_owner
+                for owner in learning.p.db.all('SELECT DISTINCT user_id FROM courses'):
+                    with bind_owner(owner['user_id']):
+                        for course in learning.p.repo.courses(owner['user_id']):
+                            if course['archived']:
+                                continue
+                            for row in learning.runs.all(course['id']):
+                                if row.get('status') == 'running' and row.get('kind') != 'dynamic-agent':
+                                    await learning.service(course['id']).workflow.recover(course['id'], row['id'], lease_expired=True)
+                        await learning.dynamic.recover()
             yield
 
     app.router.lifespan_context = lifespan

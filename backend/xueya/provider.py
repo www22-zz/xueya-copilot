@@ -44,6 +44,11 @@ class MimoProvider:
                     model_started = perf_counter()
                     timing.model_calls += 1
                 yield state
+            except Exception as error:
+                # Class names only: exception messages can contain provider URLs,
+                # headers or request data. Keep uncertain dispatches unknown.
+                state['errorType'] = type(error).__name__
+                raise
             finally:
                 if timing and model_started is not None:
                     timing.model_ms += (perf_counter()-model_started)*1000
@@ -59,6 +64,8 @@ class MimoProvider:
                             context.update(finishReason=state['finishReason'], usable=state['usable'], outputTokenLimit=output_limit,
                                 budget={'modelCalls': budget.models, 'toolCalls': budget.tools, 'reservedOutputTokens': budget.output,
                                         'reservedCny': str(budget.money), 'monetaryLimitEnabled': bool(budget.money_limit)})
+                            if state.get('errorType'):
+                                context['errorType'] = state['errorType']
                             self.platform.db.execute('UPDATE meta SET value=? WHERE key=?', (dumps(context), key))
                 finally:
                     if release:
@@ -69,6 +76,23 @@ class MimoProvider:
                                  limits=httpx.Limits(max_connections=self.config.api_slots,
                                                     max_keepalive_connections=self.config.api_slots, keepalive_expiry=60),
                                  headers={'Authorization': 'Bearer '+self.config.api_key, 'Content-Type': 'application/json'})
+
+    async def probe_connectivity(self):
+        """Non-inference origin GET with no credentials or user content.
+
+        A 404 on the origin is normal; this only proves transport connectivity,
+        not authentication, generation quality, billing or API availability.
+        """
+        from urllib.parse import urlsplit
+        parsed = urlsplit(self.config.base_url)
+        require(parsed.scheme in ('http', 'https') and parsed.netloc and not parsed.username
+                and not parsed.password, 'AI_INVALID_BASE_URL')
+        try:
+            async with httpx.AsyncClient(timeout=5, follow_redirects=False, transport=self.transport) as client:
+                response = await client.get(parsed.scheme+'://'+parsed.netloc+'/')
+                return {'connected': True, 'httpStatus': response.status_code, 'inference': False}
+        except httpx.HTTPError as error:
+            raise AppError('AI_CONNECTION_FAILED') from error
 
     @asynccontextmanager
     async def connection_pool(self):

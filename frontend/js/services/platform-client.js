@@ -3,7 +3,7 @@
 'use strict';
 if(location.protocol==='file:')return;
 let bootstrap,token='',etag=0,enabled=false,conflict=false,restoring=false,timer,context,chain=Promise.resolve();
-const KEY='xueya-copilot-workspace-v3',MARK='xueya-platform-sync-v1',PENDING='xueya-platform-pending-v1';
+let KEY='xueya-copilot-workspace-v3',MARK='xueya-platform-sync-v1',PENDING='xueya-platform-pending-v1';
 async function request(path,{method='GET',body,signal,headers={}}={}){
   const response=await fetch('/api/platform'+path,{method,headers:{...(token?{'X-Xueya-Token':token}:{}),...(body!==undefined&&!((body instanceof Blob))?{'Content-Type':'application/json'}:{}),...headers},body:body===undefined?undefined:body instanceof Blob?body:JSON.stringify(body),signal});
   if(path.startsWith('/documents/original')){if(!response.ok)throw new Error('原件下载失败');return{blob:await response.blob()};}
@@ -55,7 +55,7 @@ function attach(ctx){
   button.onclick=safe(async()=>{dialog.showModal();status(enabled?conflict?'同步冲突；请先导出浏览器备份':'自动同步已启用，修改会保留浏览器和本地服务副本':'目前保存在浏览器。迁移会保留原数据和备份，不会清空浏览器。');const jobs=(await request('/jobs')).jobs;$('platformJobs').replaceChildren();for(const job of jobs){const row=document.createElement('div');row.textContent=job.type+' · '+job.status+' · '+(job.error||'');for(const [label,endpoint] of ['queued','running','cancelling'].includes(job.status)?[['取消','cancel']]:['failed','cancelled'].includes(job.status)?[['重试','retry']]:[]){const b=document.createElement('button');b.textContent=label;b.type='button';b.className='subtle-button';b.onclick=safe(async()=>{await request('/jobs/'+endpoint,{method:'POST',body:{id:job.id}});row.textContent+=' · 已提交'+label;});row.append(b);}$('platformJobs').append(row);}});
   $('platformClose').onclick=()=>dialog.close();
   $('platformBackup').onclick=()=>download('xueya-browser-backup.json',{workspace:workspace(),raw:raw()});
-  function raw(){return Object.fromEntries(['xueya-copilot-state-v1','xueya-copilot-state-v2',KEY,PENDING].map(key=>[key,localStorage.getItem(key)]));}
+  function raw(){return Object.fromEntries([(window.XueyaDataKey||((k)=>k))('xueya-copilot-state-v1'),(window.XueyaDataKey||((k)=>k))('xueya-copilot-state-v2'),KEY,PENDING].map(key=>[key,localStorage.getItem(key)]));}
   $('platformPreview').onclick=safe(async()=>{preview=(await request('/migration/preview',{method:'POST',body:{workspace:workspace(),raw:raw()}})).preview;$('platformPreviewText').textContent=JSON.stringify(preview.counts,null,2)+(preview.expectedVersion?'\n本地服务已有数据；确认将以当前浏览器完整版本替换，原服务版本会保留备份。':'\n将建立本地服务副本。');$('platformApply').hidden=false;});
   $('platformApply').onclick=safe(async()=>{const result=await request('/migration/apply',{method:'POST',body:{id:preview.id,hash:preview.hash}});etag=result.version;enabled=true;conflict=false;mark();localStorage.removeItem(PENDING);$('platformApply').hidden=true;
     let originals=0,missing=0;const cache=globalThis.XueyaFileCache.createCache();
@@ -65,6 +65,13 @@ function attach(ctx){
   window.addEventListener('xueya:workspace-save',changed);if(enabled&&localStorage.getItem(PENDING))void flush().catch(()=>{});
 }
 window.XueyaPlatform={
+  async spaceFetch(path,options={}){
+    if(!bootstrap)throw Object.assign(new Error('服务未连接，请刷新页面重试。'),{code:'SERVICE_UNAVAILABLE'});
+    if(!path.startsWith('/api/learning/space/'))throw new Error('无效的学习空间接口');
+    const response=await fetch(path,{...options,headers:{...options.headers,'X-Xueya-Token':token}});
+    if(!response.ok){let data;try{data=await response.clone().json();}catch{}throw Object.assign(new Error(data?.error||'学习操作未完成'),{code:data?.error});}
+    return response;
+  },
   async ragRequest(path,body,{signal}={}){await ensureCourse(body.courseId);return request('/rag/'+path,{method:'POST',body,signal});},
   async learningRequest(path,{courseId='course-default',method='GET',body,signal,headers={}}={}){
     if(!bootstrap)throw Object.assign(new Error('请先启动本地服务，再刷新页面使用学习功能。'),{code:'SERVICE_UNAVAILABLE'});
@@ -75,6 +82,6 @@ window.XueyaPlatform={
   },
   get available(){return Boolean(bootstrap);},
   get isRestoring(){return restoring;},
-  async initialize(){try{bootstrap=await request('/bootstrap',{signal:AbortSignal.timeout(3000)});token=bootstrap.token;let marker;try{marker=JSON.parse(localStorage.getItem(MARK));}catch{}enabled=!!marker?.enabled;etag=marker?.version||0;if(enabled&&bootstrap.workspace&&!localStorage.getItem(PENDING)){localStorage.setItem(KEY,JSON.stringify(bootstrap.workspace.data));etag=bootstrap.workspace.version;mark();}if(!window.XueyaWorkspaceBackend)window.XueyaWorkspaceBackend=adapter;}catch{bootstrap=null;}},attach,flush
+  async initialize(){try{const scoped=window.XueyaDataKey||((key)=>key);KEY=scoped('xueya-copilot-workspace-v3');MARK=scoped('xueya-platform-sync-v1');PENDING=scoped('xueya-platform-pending-v1');bootstrap=await request('/bootstrap',{signal:AbortSignal.timeout(3000)});token=bootstrap.token;let marker;try{marker=JSON.parse(localStorage.getItem(MARK));}catch{}enabled=Boolean(window.XueyaDataOwner)||!!marker?.enabled;etag=marker?.version||0;if(enabled&&bootstrap.workspace&&!localStorage.getItem(PENDING)){localStorage.setItem(KEY,JSON.stringify(bootstrap.workspace.data));etag=bootstrap.workspace.version;mark();}if(!window.XueyaWorkspaceBackend)window.XueyaWorkspaceBackend=adapter;}catch{bootstrap=null;}},attach,flush
 };
 })();

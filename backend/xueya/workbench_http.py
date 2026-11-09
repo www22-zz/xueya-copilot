@@ -26,7 +26,7 @@ def capabilities(app):
              'connectionVerified': False, 'configurationPrefix': prefix,
              'note': '已有配置；尚无本中心的真实连接验证' if configured else '未配置；可在 .env 中配置并重启'}
             for name, label, configured, model, prefix in values]
-    recent = app.state.platform.db.all("SELECT i.status,i.at,m.value FROM invocations i JOIN meta m ON m.key='invocation-context:'||i.id WHERE i.user_id=? ORDER BY i.at DESC LIMIT 1000", (app.state.platform.user_id,))
+    recent = app.state.platform.db.all("SELECT i.status,i.at,m.value FROM invocations i JOIN meta m ON m.key='invocation-context:'||i.id WHERE i.user_id=? ORDER BY i.at DESC LIMIT 1000", (app.state.platform.scope_user_id,))
     for capability in result:
         name = capability['id']
         provider = getattr(rag, name, None)
@@ -48,10 +48,10 @@ SAFE_LOCAL_JOBS = frozenset(('rag-parse', 'parse-document', 'library-web-import'
 
 
 def task_projection(p, learning, course, all_courses=False):
-    courses = {c['id']: c for c in p.repo.courses(p.user_id)}
+    courses = {c['id']: c for c in p.repo.courses(p.scope_user_id)}
     require(course in courses, 'COURSE_NOT_FOUND')
-    jobs = p.jobs.list(p.user_id) if all_courses else [p.jobs.get(r['id'], p.user_id) for r in p.db.all(
-        'SELECT id FROM jobs WHERE user_id=? AND course_id=? ORDER BY created_at DESC LIMIT 100', (p.user_id, course))]
+    jobs = p.jobs.list(p.scope_user_id) if all_courses else [p.jobs.get(r['id'], p.scope_user_id) for r in p.db.all(
+        'SELECT id FROM jobs WHERE user_id=? AND course_id=? ORDER BY created_at DESC LIMIT 100', (p.scope_user_id, course))]
     tasks = []
     for j in jobs:
         safe_retry = j['resource'] == 'cpu' and j['type'] in SAFE_LOCAL_JOBS and j['status'] in ('failed', 'cancelled')
@@ -73,7 +73,7 @@ def task_projection(p, learning, course, all_courses=False):
                                     'updatedAt': run.get('updatedAt'), 'destination': 'overview'})
     rows = p.db.all('SELECT id,course_id,status,usage_json,billing_status,at FROM invocations WHERE user_id=? '+
                     ('' if all_courses else 'AND course_id=? ')+ 'ORDER BY at DESC LIMIT 100',
-                    (p.user_id,) if all_courses else (p.user_id, course))
+                    (p.scope_user_id,) if all_courses else (p.scope_user_id, course))
     calls = []
     for row in rows:
         usage = json.loads(row['usage_json']) if row['usage_json'] else None
@@ -114,12 +114,12 @@ def install_workbench(app):
         if operation == 'tasks' and request.method == 'GET':
             return success(**task_projection(p, app.state.learning, course, request.query_params.get('scope') == 'all'))
         if operation == 'task-action' and request.method == 'POST':
-            job = p.jobs.get(value.get('id'), p.user_id)
+            job = p.jobs.get(value.get('id'), p.scope_user_id)
             require(job and job['courseId'] == course, 'JOB_NOT_FOUND')
             require(value.get('action') in ('cancel', 'retry'), 'INVALID_TASK_ACTION')
             if value['action'] == 'retry':
                 require(job['resource'] == 'cpu' and job['type'] in SAFE_LOCAL_JOBS and job['status'] in ('failed', 'cancelled'), 'JOB_NOT_SAFE_TO_RETRY')
-            job = (p.jobs.cancel if value['action'] == 'cancel' else p.jobs.retry)(job['id'], p.user_id)
+            job = (p.jobs.cancel if value['action'] == 'cancel' else p.jobs.retry)(job['id'], p.scope_user_id)
             return success(id=job['id'], status=job['status'])
         require(False, 'NOT_FOUND')
 

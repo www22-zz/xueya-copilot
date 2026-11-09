@@ -26,11 +26,14 @@ def instant(text):
         return None
 
 
-def build_snapshot(catalog, events, state, options, now=None):
+def build_snapshot(catalog, events, state, options, now=None, window_start=None):
     options = filters(options)
     now = now or datetime.now(timezone.utc)
     midnight = now.astimezone(CST).replace(hour=0, minute=0, second=0, microsecond=0)
     start = midnight - timedelta(days=options['days'] - 1) if options['days'] else None
+    if window_start is not None:
+        require(isinstance(window_start,datetime) and window_start.tzinfo is not None and window_start<=now,'INVALID_ANALYSIS_RANGE')
+        start=window_start
     previous = start - timedelta(days=options['days']) if start else None
     def source(q):
         return q.get('bankSource') or ('legacy' if q.get('generated') or q.get('curated') or q['category'] != 'hot100' else 'algorithm')
@@ -169,14 +172,17 @@ SYSTEM = '''你是学涯的AI学习分析师。只依据提供的真实快照，
 问题ID只能从questions中选取。说明依据和限制。建议关联具体题目，用户可以直接去练习。避免复述全部题库。
 面向学生用自然语言解释，不在正文展示内部字段名或题目ID；以题目名称和知识点描述依据。题目ID只放在questionIds数组中。
 返回纯JSON对象：{"title":"简短报告标题","summary":"整体分析，最多500字",
-"findings":[{"kind":"weakness或progress或pattern或coverage","title":"结论","detail":"依据和解释，最多600字","questionIds":["真实题目ID"]}],
-"recommendations":[{"title":"下一步行动","reason":"优先原因与具体方法，最多500字","questionIds":["真实题目ID"]}],
+"findings":[{"kind":"weakness或progress或pattern或coverage","title":"结论","detail":"依据和解释，最多600字","questionIds":["真实题目ID"],"evidenceIds":[]}],
+"recommendations":[{"title":"下一步行动","reason":"优先原因与具体方法，最多500字","questionIds":["真实题目ID"],"evidenceIds":[]}],
 "limitations":["本次分析的限制"]}。
 findings最多8项，recommendations为1到5项，每项questionIds最多5个，limitations最多5项。所有文本为普通文本，不输出HTML。'''
 
 
 def report_messages(snapshot):
-    return [{'role': 'system', 'content': SYSTEM}, {'role': 'user', 'content': dumps(snapshot)}]
+    extra=''
+    if snapshot.get('activitySources'):
+        extra='\nactivitySources为真实对话、课程确认、计划操作和小测快照，程序counts不得改写。AI参考分、人工修正、主观自评不混入客观正确率。没有练习时可基于其他活动作限定分析。每条recommendation必须有非空questionIds或非空evidenceIds；questionIds为空时，evidenceIds必须包含activitySources.evidence中的真实id，即使建议是积累样本，也须关联其观察依据。字段evidenceIds必须写进JSON。未提供的掌握度、视频观看时长不得虚构。'
+    return [{'role': 'system', 'content': SYSTEM+extra}, {'role': 'user', 'content': dumps(snapshot)}]
 
 
 def validate_report(content, snapshot):
@@ -186,6 +192,7 @@ def validate_report(content, snapshot):
         require(False, 'ANALYSIS_INVALID_RESPONSE')
     require(isinstance(result, dict), 'ANALYSIS_INVALID_RESPONSE')
     allowed = {q['id'] for q in snapshot['questions']}
+    evidence={e['id'] for e in snapshot.get('activitySources',{}).get('evidence',[])}
 
     def text(value, limit):
         require(isinstance(value, str) and 0 < len(value.strip()) <= limit, 'ANALYSIS_INVALID_RESPONSE')
@@ -200,13 +207,16 @@ def validate_report(content, snapshot):
             ids = item.get('questionIds')
             require(isinstance(ids, list) and len(ids) <= 5 and all(isinstance(i, str) and i in allowed for i in ids), 'ANALYSIS_INVALID_REFERENCE')
             row = {'title': text(item.get('title'), 100), 'questionIds': list(dict.fromkeys(ids))}
+            refs=item.get('evidenceIds',[])
+            require(isinstance(refs,list) and len(refs)<=5 and all(isinstance(i,str) and i in evidence for i in refs),'ANALYSIS_INVALID_REFERENCE')
+            if refs:row['evidenceIds']=list(dict.fromkeys(refs))
             field = 'detail' if key == 'findings' else 'reason'
             row[field] = text(item.get(field), 1200)
             if key == 'findings':
                 require(item.get('kind') in ('weakness', 'progress', 'pattern', 'coverage'), 'ANALYSIS_INVALID_RESPONSE')
                 row['kind'] = item['kind']
             else:
-                require(ids, 'ANALYSIS_INVALID_REFERENCE')
+                require(ids or refs, 'ANALYSIS_INVALID_REFERENCE')
             checked.append(row)
         return checked
     limitations = result.get('limitations')

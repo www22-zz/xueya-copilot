@@ -1,21 +1,25 @@
 # 学涯 Copilot：AI 学习空间架构与实施规格
 
+> 2026-11-04产品变更以[资料学习新方案](material-learning-update.md)为准，覆盖本文件“上传不自动出题”等冲突条款。以下历史规格与不冲突的权限、持久化及验证约定继续保留。
+
 > 日期：2026-10-31（Asia/Shanghai）
 >
 > 对象：接手实现的 Agent、项目维护者与 RAG 对接人员
 >
 > 状态：根据用户逐项确认的需求整理；本文是实施依据，不代表功能已经实现。
 >
+> RAG 对齐版本：本地与远端 main `b651dd9`，已包含 RAG 更新 `60481a2`、PR #21 的整合，以及课程/侧栏修复 `7155817`。本次按实际源码更新接入要求，不重新设计检索核心。
+>
 > 实施目标：沿用现有视觉与主平台，完成 AI 助手和学习中心的功能重组、数据联动及新增能力。
 
 ## 1. 实施 Agent 先读
 
-1. 阅读根目录 `AGENTS.md`、`README.md`、`docs/delivery/FINAL-DELIVERY.md`、`docs/api-contracts.md` 和 `docs/contracts/learning-services.md`，再核对当前源码。交付文档中的历史检查结果不是本次验收结果。
-2. 从最新 `main` 建立 `codex/` 任务分支；优先使用合适的现有工作区，必要时隔离实现。不得覆盖其他人的未提交修改。本规格编写时，当前工作区存在课程与侧栏等未提交实现，不能将其当成已经进入 `main` 的能力，也不能清除它们。
+1. 阅读根目录 `AGENTS.md`、`README.md`、`docs/delivery/FINAL-DELIVERY.md`、`docs/api-contracts.md`、`docs/contracts/learning-services.md`，以及本次新增对齐依据 `docs/contracts/mineru-qwen.md`、`materials/stack-queue/README.md`，再核对当前源码。交付文档中的历史检查结果不是本次验收结果。
+2. 从最新 `main` 建立 `codex/` 任务分支；优先使用合适的现有工作区，必要时隔离实现。不得覆盖其他人的未提交修改。本次核对时工作区干净，课程、侧栏与原规格已经合入 `b651dd9`；这与初稿时存在未提交代码的状态不同。实施前重新检查，不能回退到旧 main 或重复整合已合入的功能。
 3. 统一生产入口为 `backend/xueya/server.py`；学习领域放在 `backend/agent/`，平台接入经 `backend/xueya/learning_integration.py` 及现有接入模块完成。后端、后端测试、CLI、新增验证脚本使用 Python，前端继续 HTML/CSS/JavaScript。
 4. 所有 AI 推理使用外部 API。复用现有 Provider、SQLite、Repository、JobQueue、权限、预算、并发许可、取消和模型账本。禁止引入本地模型、GPU/CUDA、Node 后端桥接、第二套数据库或独立模型调用账本。
 5. 保持既有 HTTP/SSE 契约、历史记录、原题 ID、回归测试和兼容实现。新增能力采用适配层或兼容扩展；不能直接重定义旧字段、删除旧测试或运行历史清理脚本来迁就新界面。
-6. RAG 资料整理、切分、索引、召回和重排由用户的队友负责。本 Agent 只实现约定的问答对接、权限与公开投影边界，不重写其检索系统，不自行联系队友。
+6. 用户已拉取并检查队友的 RAG 更新。复用现有 `RagService`、问答生成/审核和一次性通用兜底；本 Agent 负责新产品的身份/资源策略适配、用途限制、公开投影和功能接线，不重写检索系统，不自行联系队友。现有 RAG 功能可用不代表本规格要求的账号私有库及黑盒边界已经完成，差异见第 3.5—3.8 节。
 7. **课程与视频的实际查找、核验，由实施 Agent 完成。** 本文只确定覆盖要求与接入方式，不指定最终视频清单。不得将未经核实的标题、讲师、分集、时长包装成真实课程。
 8. `.env` 密钥不得打印、提交或发送到浏览器。开发默认使用隔离数据和受控模型/搜索/播放器测试。真实付费 API 验收必须另有用户明确授权的预算，不自动付费重试。不得擅自合并、强推或操作私人数据库。
 9. 本文的“必须”是已确认需求或必要的一致性约束；第 16 节列出的工程默认值允许在不改变产品范围的前提下调整，并记录最终实现。无需就每个组件名、内部字段名或文件拆分重新询问用户。
@@ -89,7 +93,7 @@ AI 助手（默认首页）
 2. 检索成功但没有有效依据时，以通用知识回答，清楚标记依据范围；不可编造资料出处。
 3. 检索异常与“没有命中”是不同状态。异常可按问答策略降级到通用知识，但必须如实提示参考服务暂不可用；不能伪报“已检索且没有资料”。
 4. 有资料参考同时补充通用知识时，区分来源支持的内容与补充解释。资料冲突或不足时保留不确定性。
-5. 没有可用 LLM、调用失败或结果不完整时显示未完成。不能将检索原文直接包装成成功答案，也不能把半段流式输出存成正式完成结果。
+5. 依赖 LLM 的回答在没有可用模型、调用失败或结果不完整时显示未完成。不能将检索原文直接包装成成功答案，也不能把半段流式输出存成正式完成结果。保留现有有依据、明确标注的确定性队列计算兼容路径；它不属于本地 AI 推理，也不能伪装为已完成的模型回答。
 6. 允许显示简要来源名称、真实章节/页码等元信息；不存在的位置不能推测。来源名称面向用户，不暴露内部路径、供应商密钥或后台实现。
 
 ### 3.3 黑盒保护与旧契约的兼容
@@ -100,7 +104,7 @@ AI 助手（默认首页）
 - 检查 bootstrap/workspace、source/sourceDetails/sourceObjects、SSE、历史消息、缓存、静态资源及导出中是否夹带受保护 `quote`、chunks 或全文。公开示例须明确标记，不能把受保护库打包进前端 JS。
 - 服务端内部可保留原文、版本、引用和审核证据；公开 DTO 只投影允许展示的元信息。已完成回答和报告不应因后续资料更新而伪装使用新版本。
 - `docs/api-contracts.md` 中旧 Source 包含 `quote`，这与新平台库公开策略存在边界差异。**不得直接删掉旧契约字段，或将全部旧调用偷偷改成另一种结构。** 新界面使用新增/扩展的公开来源投影；旧接口继续支持其合法旧用途与可访问来源，但对受保护平台正文执行服务端权限限制。
-- 既有 `/api/ai*`、`/api/agent*`、`/api/learning/*` 的来源、预览或历史路径，不能成为新受保护库的旁路。若联调需要改变共享契约，由实现 Agent 明确变更范围和兼容测试，不修改队友检索算法。
+- 既有 `/api/ai*`、`/api/agent*`、`/api/learning/*`、`/api/platform/rag/*`、`/api/platform/knowledge/*`、资料读取与通用实体/作业结果接口，不能成为新受保护库的旁路。若联调需要改变共享契约，由实现 Agent 明确变更范围和兼容测试，不修改队友检索算法。
 
 ### 3.4 与 RAG 队友的对接合同
 
@@ -109,14 +113,111 @@ AI 助手（默认首页）
 | 项目 | 要求 |
 | --- | --- |
 | 请求 | question、服务端确认的账号身份、允许学科/来源范围、useCase=answer、取消信号与追踪 ID |
-| 检索状态 | hits / no_hit / unavailable，能区分缺少依据与服务故障 |
+| 检索状态 | 现有 `rag-1` 使用 evidence_found / insufficient / conflict，并独立返回 warnings 与 supportChecked=false；新产品可在适配层归一化，但不改旧结果结构，不能将降级警告直接等同于无命中 |
 | 内部命中 | 稳定 source/document ID、版本、可读内容、真实定位与所有权信息，仅服务端消费 |
 | 公开来源 | opaque source ID、展示名称、可用定位、版本/来源类型等白名单元信息，不含正文 |
 | 权限 | 公共平台范围 + 当前账号私人范围；身份不能取自模型参数或任意客户端 accountId |
 | 版本 | 上传处理与更新状态清楚；新回答用有效版本，历史引用保留快照，不静默错绑 |
 | 用途 | 仅问答端可调用；其他学习工具用课程/题库元数据与实际用户记录 |
 
-未完成真实 RAG 联调时使用受控适配器验证合同，交付中标记联调状态，不能用 mock 成功宣称检索质量通过。
+现有检索已在主平台接通，不要把它当作等待重建的空接口。新产品的权限/投影适配仍需单独联调和验收；受控验证不能冒充真实模型、向量质量或线上内容验收。
+
+### 3.5 当前 RAG 实现地图：先读再接线
+
+以下为 `b651dd9` 源码事实；后续 main 更新时按代码复核，不依赖旧文档猜测：
+
+| 范围 | 现有文件与职责 |
+| --- | --- |
+| 主程序接线 | `backend/xueya/app.py`、`backend/xueya/rag_http.py`、`backend/xueya/knowledge_base.py`：同一 FastAPI 宿主及 lifespan 中安装 RAG/知识库，不新增服务入口 |
+| 资料生命周期 | `backend/xueya/rag_service.py`：upload、parse/OCR/index 作业，修订原子发布，sources/read/validate、删除/修订后的证据和索引失效 |
+| 结构化解析 | `backend/xueya/rag_parse.py`、`backend/xueya/prepared_pdf.py`：段落/标题/代码/表格/公式块、原页与选页、内容偏移及哈希 |
+| 外部服务 | `backend/xueya/rag_moark.py`：MinerU 单页提交与任务回执、Qwen 文本向量；`backend/xueya/rag_api.py`：外部调用与主平台许可/账本 |
+| 检索 | `backend/xueya/rag_search.py`、`RagService.search`：词法、精确余弦向量、RRF 融合、可选重排、追问改写、定义/比较及章节依据保护、有界证据压缩 |
+| 问答编排 | `backend/xueya/agent.py`、`backend/xueya/fast_qa.py`：普通问答快路径、复杂只读工具流程、证据读取、生成、校验和流式发布 |
+| 正文与引用审核 | `backend/agent/answer_policy.py`、`backend/agent/evidence.py`、`backend/xueya/evidence_review.py`：短引用别名、quoteId、逐字依据恢复、论断与整篇正文联合核验 |
+| 通用知识兜底 | `backend/xueya/rag_fallback.py`：开关控制、一次独立无证据请求、resetAnswer、来源清空与中断状态 |
+| 有限队列核算 | `backend/xueya/queue_calculation.py`：单文档范围内按已读取规则核算；模型已配置时作为生成校验输入，最终仍走正文与证据审核 |
+| 前端已有消费 | `frontend/js/services/chat-service.js`、`frontend/js/workspace-controller.js`、`frontend/js/knowledge-base.js`：来源对象、流式重置、通用回答追问标记、上传复核等 |
+| 共享资料和导入工具 | `materials/stack-queue/README.md`、`scripts/import_stack_queue_markdown.py`、`scripts/import_validated_vector_cache.py`：自编 Markdown、隔离导入及已有向量缓存的严格校验 |
+| 对接说明 | `docs/contracts/mineru-qwen.md`、`docs/rag-integration.md`、`docs/contracts/knowledge-base.md`、`docs/contracts/pdf-knowledge.md`、`docs/api-contracts.md` |
+
+### 3.6 入库、检索及证据链必须保留的机制
+
+**入库与修订：**
+
+- 支持 TXT/Markdown/PDF/DOCX/PPTX；自编 Markdown 可直接解析，不需要 OCR。`materials/stack-queue/栈与队列知识库.md` 是共享内容文件，不是已经导入当前数据库的证明。
+- 新 UI 的 `review=1` 进入校正/确认生命周期，`knowledgeReview.confirmedRevision` 必须与 `contentRevision` 一致。未确认的当前修订不能出现在 sources/read/index/Agent 选择中；编辑、OCR 或重新解析后需重新确认。
+- 现有 `reviewed(doc)` 对没有 knowledgeReview 的历史/自编 Markdown 保持兼容；不要批量补入待确认标记让已有可用库突然消失，也不要将编译/规则验证自动改称人工全文审校。迁移门禁应显式设计，并保留原状态和内容修订。
+- 原始解析、修订和来源定位保留；重发布时退出旧 source，并使旧向量身份失效。不能为新 UI 直接写 chunks 绕过 `_publish`、read/validate、reviewed 和版本检查。
+- Markdown 来源依章节定位，页码可为 null；不能把分段序号或标题序号伪造成 PDF 页码。代码、公式、表格保持完整块，不因前端展示截断而改变服务端依据。
+- MinerU 对显式选择的一批原页逐页提交，保留任务 ID、缓存和原始响应，未知提交不自动重提；已知任务恢复只查询原任务。OCR、重索引是独立、可能付费的运维操作，不能因用户打开页面或“修复资料”而自动运行。
+- Qwen 当前接入的是文本向量，不代表已经完成图片向量或完整多模态 RAG。身份包含 provider/model/revision/adapter/dimension，变化时旧索引不能冒充新索引。
+
+**检索合同：**
+
+- `RagService.search(scope, query, history=..., document_ids=..., section=..., mode=..., budget=..., limit=...)` 是复用端口；scope 必须由可信服务端适配层构造。
+- 当前默认 hybrid、budget=2000、limit=6；budget 单位为 UTF-8 字节，不是精确 Token 数。不能为新页面无上限放大证据包，也不能把浏览器预览当完整来源。
+- `lexical` 使用本地词法规则；向量检索在当前模型身份已有有效索引时调用外部 query embedding；向量缓存保存在同一 SQLite entities 中，余弦检索在本地 CPU 完成，不是本地模型推理。RRF 融合和可选 rerank 不另建向量服务。
+- EMBEDDING_UNAVAILABLE、VECTOR_INDEX_UNAVAILABLE、VECTOR_API_UNAVAILABLE 等警告可能伴随仍有效的词法命中。保留 sources 和降级说明；不能一见警告就丢弃有效资料、伪报纯通用回答。
+- `status=conflict` 保留冲突状态，`supportChecked=false` 仅表示检索未完成语义支持审核，不是回答已经正确。原文/位置校验与结论语义审核是两个步骤。
+- 每次外部 await 后重新读取有效来源，避免删除/修订期间“复活”旧证据。read/validate 检查来源 ID、documentRevision、fileHash/textHash、页/块、偏移、原文及 version，不能为跨账号聚合删除这些检查。
+
+**回答合同：**
+
+- 保留“组织完整中文正文 → 论断与正文一批核验 → 发布最终正文”的现有流程。`claims` 是后台证据笔记，不能重新拼成页面上的原文清单，也不能用仅修改系统提示词来取代审核链。
+- 短 `citeN`、quoteId 与 quoteSpans 仅对本次可信证据包有效；不得跨请求缓存别名或让客户端提供原文来获得审核通过。
+- 引用重排应保护 Markdown 代码块、C++ 数组下标与内联引用；不要在新 UI 中用全局正则删除所有方括号内容。
+- `answerStatus`、`verification`、`engine`、`workflow`、`toolCalls` 等真实语义保留。`done` / `ok=true` 本身不足以证明回答完整，须结合 answerStatus/partial 判断。
+- 现有只读 Agent 的 planRevision/工具步骤，以及客户端“AI 学习规划”旧标签，不是第 8 节的可执行 StudyPlan。新规划工具应按用途提前路由，不能把旧只读工具步骤当成用户已采用的日程。
+
+### 3.7 一次通用兜底：保留已验证能力，限制适用范围
+
+- 开关为 `AI_RAG_GENERAL_FALLBACK`，`Config` 默认关闭；用户提供的当前配置明确为 1。文档不能通过读取/打印真实 `.env` 来展示密钥或宣称 API 已在线验收。
+- 对资料不足、生成/核验失败以及实现中列出的可兜底原因，现有 `with_general_fallback`/`stream_general_fallback` 最多发起一次不同的通用回答请求。普通问答保留该行为，不叠加第二层前端重试。
+- 新请求不带当前材料包，保留正常问题和有界对话上下文；“不带材料”不代表此前对话文本必然没有知识内容。清空 sources/sourceDetails/sourceObjects/claims，标记未使用知识库证据，保留 fallback.reason/attempts/sameRequestReplayed=false。
+- 通过 `workflow.resetAnswer=true` 清除先前部分资料答案，避免与通用答案拼接。失败或中断可以保留已收到正文，但必须带 answerStatus=unavailable/partial 等状态，不能存成成功资料回答。
+- 独立请求当前上限90秒、使用独立连接，但仍共用原运行预算、并发资源和账本，不额外赠送模型次数或成本预算。保留原失败/unknown 调用记录，不能将它改成成功或认为没有扣费。
+- 权限拒绝、资料失效、预算耗尽、用户取消、等待用户/确认等，不通过通用兜底绕过；两次都失败就停止。
+- 这与“重放同一个未知付费请求”不同。本规格继续禁止后者；不删除现有一次独立问答兜底，也不把它推广到评分、复核、规划、自动分析、OCR/索引的循环自动调用。
+- 旧非流式/兼容入口及学习领域 workflow 不一定都走同一 wrapper。新 AI 首页必须接上实际已安装的问答链路，验证 HTTP 与 SSE 行为，不复制一条弱化的“先检索再直接问模型”旁路。
+
+### 3.8 当前实现与新产品之间的待补边界
+
+这些是新产品要求的适配工作，不应描述为队友检索算法未实现：
+
+| 当前事实 | 新实现要求 |
+| --- | --- |
+| `Platform.user_id` 默认 local-user；资料 HTTP 和 Agent 多处通过 `p.scope(courseId)` 读取 | 实现可信账号与资料所有权策略：公共预置 + 当前账号私人补充。现有 course 过滤不等于不同登录账号的私人库隔离，不能仅修改前端 accountId |
+| RagService 本身接受 Repository Scope，但现有宿主通常传共享作用域 | 通过策略/适配层分别在原所有者作用域读取公共及私人证据，再组合给同一问答；保持原始作用域映射用于 read/validate。不要全局改共享 p.user_id、重写历史数据归属或放宽 COURSE_MISMATCH |
+| 现有服务返回原文 sourceDetails/sourceObjects/claims、工具结果和读取/导出正文 | 构建内部证据与公开来源两种 DTO，投影覆盖每个流事件、toolCalls.data/preview、run/checkpoint/result/history 和旧读取路径，不仅处理最终 sources |
+| `chat-service.js` 旧 normalize 要求来源有 quote，引用点击默认打开原文 | 新界面增加只含公开元信息的来源解析与来源信息视图；仍能展示引用数量/定位。保留合法旧来源兼容，不能因没有 quote 就丢光来源，也不能点击平台来源打开内部正文 |
+| 新上传支持待确认，旧调用/直接上传仍可不经过 review；旧自动出题 hook 仍存在但受 legacy 开关控制 | 私人补充和预置资料保持原复核/版本语义；新产品上传显式不触发资料出题，不仅依赖“当前开关恰好关闭” |
+| legacy `mode=quiz`、practice/topics/questions、学习包/旧图谱服务仍可基于资料运行 | 保留旧兼容实现和历史对象；新小测/规划/分析/知识框架注册独立用途，不拿共享 RAG 原文作输入，也不能把所有旧工具直接开放给新 Agent |
+| 私人数据库、已确认修订与真实向量缓存不在 Git 中 | 先检查已有导入及索引身份；缺失时报告准备状态和安全初始化选项，不自动重导入、替换、归档私人资料或付费重建索引 |
+
+聚合实现须至少满足：内部来源键包含 owner scope + 原 sourceId，公共展示 ID 与原始定位映射仅由服务端管理；公共/私人文档的 read/validate 分别回到原 Scope；不能通过改写 fileHash、version 或 courseId 伪造归属。新 StudyPlan/知识框架的跨学科关联也不能破坏旧单课程验证。
+
+分作用域检索后，最终证据包仍受同一次请求的全局字节预算、来源数量和模型/成本预算约束；不能因公共库和私人库各搜一次就将允许输入翻倍或创建额外预算。保留来源冲突与降级信息，最终发布前逐来源复核有效性。
+
+旧 local-user 下的所有资料不能一律划为平台公共库。平台资料应有明确的受维护清单、来源/哈希及可核对的归属；仅凭文件名或存在于本机不能证明可共享。无法证明归属的旧资料保留在原兼容空间，按显式迁移规则处理，不能在新增账号后自动公开。
+
+接口投影和权限限制在宿主入口、资源策略或新适配层落实。若确实需要修改共享 RAG 合同，先记录具体源码位置、受影响旧调用、兼容方案与验收用例，再与用户沟通；不要顺手替换检索、合并其他分支或联系队友。
+
+### 3.9 当前服务配置与本次核对范围
+
+用户提供并要求同步的本机配置如下；此处只列非敏感配置，真实密钥仅在 `.env`，不在文档、提示词、示例配置或测试夹具中：
+
+| 项目 | 配置 |
+| --- | --- |
+| 数据保护 | XUEYA_DATA_DIR=.xueya-data；XUEYA_AUTO_IMPORT_DEMO=0；XUEYA_PRESERVE_LEGACY_DATA=1 |
+| OCR | provider=moark-mineru；base_url=https://api.moark.com/v1；model=MinerU2.5-Pro；revision=1；timeout=60秒 |
+| 文本向量 | provider=moark-qwen；base_url=https://api.moark.com/v1；model=Qwen3-VL-Embedding-2B；dimension=2048；revision=1 |
+| 聊天 | base_url=https://api.xiaomimimo.com/v1；model=mimo-v2.6-flash |
+| 问答运行 | AI_RUN_MAX_MODEL_CALLS=16；AI_RAG_GENERAL_FALLBACK=1；其他预算/价格等既有设置保留 |
+
+- 配置已写入本机忽略的 `.env`，不代表运行中进程已经热更新，也不代表远端模型可用、账户有额度或索引已就绪。本次不重启用户服务、不导入/索引正式资料、不做真实付费调用。
+- 仓库配置加载通过 `setdefault` 从 `.env` 补充缺失环境项。测试仅删除进程里的 API_KEY 不够：必须在隔离测试进程显式置空 MIMO_API_KEY、RAG_OCR_API_KEY、RAG_EMBEDDING_API_KEY、RAG_RERANK_API_KEY、TAVILY_API_KEY 等真实服务入口，并使用临时 Config.root/data_dir 和受控 transport；禁止通过修改用户 `.env` 来隔离测试。
+- 本次只核对源码/合同、配置落盘和受控协议行为。MinerU/Qwen、通用兜底、正文发布、已有向量缓存专项共39项通过，未发起未模拟 HTTP 请求。不将历史真实评测或受控通过冒充本次真实模型质量、全量回归或黑盒/账号隔离已完成。
 
 ## 4. 课程学习
 
@@ -392,7 +493,7 @@ AI 助手（默认首页）
 | 浏览器 | 页面、表单、题卡、播放器嵌入、导图编辑、状态显示与精确跳转 | 权限裁定、客户端权威判分、伪造学习统计 |
 | Agent/学习领域 | 意图识别、结构化生成、知识解释、评阅、基于快照分析 | 自报执行成功、跨账号查数据、直接更改库或随意执行网页指令 |
 | 平台接入 | 身份/作用域、资源解析、作业、事务、版本、预算、幂等、调度 | 第二套独立存储或模型账本 |
-| RAG 适配 | 问答所需的检索合同、私有范围、内部证据/公开来源投影 | 用 RAG 出题、排程、生成分析或直接构建导图 |
+| RAG 适配 | 复用现有 RagService/问答审核链，在其外完成可信私有范围与内部证据/公开来源投影 | 重写队友的检索实现，或用 RAG 出题、排程、生成分析及直接构建导图 |
 | Search 适配 | 复用既有 MCP 搜索，为自主学习资源查找返回真实链接 | 未授权联系外部人员、抓取/执行任意网页指令 |
 | 视频适配 | 官方播放器/接口与结构化课程元信息 | 自托管、镜像、非官方解析、虚构播放遥测 |
 
@@ -426,6 +527,7 @@ AI 助手（默认首页）
 - SSE 可以兼容扩展或使用新工具事件适配层；不要把新版交互题卡/规划 JSON 直接混进旧 content 文本，让旧解析器损坏。
 - 新产物建议以 artifactRef（kind/id/revision/status）引用；文字流与持久产物各自有明确完成信号。done 前断流、格式损坏、取消或迟到响应，不得产生重复题卡或覆盖新状态。
 - 列表与只读恢复不调用 LLM；打开报告、框架、题目或计划历史不产生隐含重新生成。
+- 复用 `sourceDetails/sourceObjects` 的旧客户端需要与公开元信息 DTO 同步适配；保留 `answerStatus/verification/fallback/resetAnswer/partial` 等状态，不能把新图卡工具输出接到旧 mode=quiz 或只读 planRevision 上。
 - 使用已有请求/输出上限并按新能力有界扩展，显式处理输入裁剪；验证模型 JSON、真实资源 ID、评分范围和计划约束，不执行模型 HTML/JS。
 - job/input、网页、笔记、题目、用户上传内容都作为数据，不能提升为系统指令、账号身份或写入确认。
 - 付费结果未知时保留 unknown/待核对，幂等 key 只能防本站重复提交，不能宣称供应商绝不会重复扣费。
@@ -434,8 +536,8 @@ AI 助手（默认首页）
 
 每阶段可独立验证，但不能把中间阶段当成已完成整份首版要求。
 
-1. **基线与映射**：核对 main/工作区改动、数据归属、现有路由与契约；保留基线记录，制定兼容升级和恢复方法。
-2. **平台边界**：建立可靠账号解析、资源权限、公开来源投影和 RAG adapter；用受控接口完成黑盒与用途隔离测试。
+1. **基线与映射**：从至少包含 `b651dd9` 的当前主线核对实际工作区、数据归属、现有路由与契约；先建立新版 RAG 回归基线与测试隔离，制定兼容升级和恢复方法。
+2. **平台边界**：在既有 RagService/问答审核链外建立可靠账号解析、资源权限、公开来源投影和用途适配；先通过工具事件、历史及旧 API 的黑盒旁路用例，禁止用更换检索系统完成新产品权限。
 3. **导航与资源目录**：重组 AI 首页和学习中心四项结构；个人/平台课程、知识点映射与官方播放器接入；移除上传自动出题触发。
 4. **练习与评阅**：统一聊天题卡和练习服务；新增有界 AI 小测、主观评阅、复核/订正及来源标记；保留固定题和旧进度。
 5. **计划执行**：结构化需求、Search 资源匹配、约束排程、草稿/采用/版本、任务与课程/复习同步；完成“我的计划”和首页今日任务。
@@ -443,7 +545,7 @@ AI 助手（默认首页）
 7. **综合分析与定时补报**：多源事件快照、依据/限制、报告追问、每周调度、设置、去重、补报与未知结果处理。
 8. **内容与验收**：查找/核实正式视频，按覆盖补题；执行全量回归和端到端闭环，更新最终接口、用户指南与交付限制。
 
-涉及共享 RAG 合同未就绪时，先通过 adapter/mock 并行完成自身能力；明确列为待联调项，不能更换队友实现或伪称真实联调已完成。
+既有 RAG 服务和问答能力已接通，禁止将第 2 步演变成重写队友算法。新账号策略或公开投影合同尚未完成时，可用受控适配器验证上层功能，但必须列为未交付边界，不得用页面效果代替权限验收。
 
 ## 14. 验收标准
 
@@ -457,6 +559,10 @@ AI 助手（默认首页）
 | RAG-02 | 读取受保护正文 | 新旧 API、预览、SSE、导出、缓存/静态包均不暴露平台正文；只隐藏按钮不算通过 |
 | RAG-03 | 有命中、无命中、异常 | 有命中为整理讲解并有真实元来源；无命中通用知识不编来源；异常与无命中可区分；LLM 失败明确未完成 |
 | RAG-04 | 上传、停用、删除 | 状态真实，未完成不可检索；退出检索后新回答不再使用；不会自动创建题目 |
+| RAG-05 | 已有正文和降级能力回归 | 核验后的完整正文保留，claims不当正文；短引用/quoteId和代码下标有效；向量降级有词法证据时保留有效命中 |
+| RAG-06 | 独立通用兜底和中断 | 开关生效；最多一次不同请求、共用预算、旧unknown不改；来源清空、resetAnswer清除旧内容；部分结果标记未完成，权限/取消/预算/失效不绕过 |
+| RAG-07 | 修订与混合作用域 | 当前确认门槛、删除/更新后的证据失效、索引身份匹配保留；公共+私人合并后逐来源回原Scope核验，不移除版本/权限断言 |
+| RAG-08 | 原文公开旁路与新客户端 | 每条工具事件、toolCalls预览、run/checkpoint/history与旧API均过滤正文；公开来源没有quote时仍能显示正确数量与简要定位 |
 | COURSE-01 | 平台课程与个人课程 | 标记清楚，本人私人课可管理，其他账号不能取得；迁移不把共享旧缓存复制到所有账号 |
 | COURSE-02 | 播放真实课程 | 官方播放器/接口站内播放、由对方 CDN 提供；课程标题与真实分集相符，不依赖自托管或第三方解析 |
 | COURSE-03 | 完成与计划同步 | 手动确认一次后，课程和匹配任务同步；重复点击/刷新不重复计数；新复习实例不会被旧完成状态误完成 |
@@ -497,6 +603,9 @@ python -m backend.xueya.mcp_server --check
 - 保留并运行适用的既有浏览器回归：`tests/e2e/browser.js`、`workspace.js`、`platform.js`，以及现有课程、练习、分析、问答、会话等专项验证。新增验证脚本使用 Python。
 - 新增有业务意义的测试覆盖：账号权限、来源投影、单一当前计划并发采用、跨学科总预算、事件去重、评分版本/纠正、不同来源的视频进度能力、调度补报和未知结果。
 - 调度与日期测试使用可控制时钟，不依赖真实等待一周。模型、Search 与播放器自动测试使用受控上游，验证超时、取消、迟到响应和恢复路径。
+- 新版 RAG 受控专项至少保留并运行：`tests/python/test_moark_rag.py`、`tests/python/test_rag_general_fallback.py`、`tests/python/test_narrative_answers.py`、`tests/python/test_validated_vector_cache.py`，并结合 `tests/python/test_stack_queue_grounding.py`、`tests/python/test_queue_calculation.py`、`tests/python/test_prepared_pdf.py`、`tests/python/test_rag.py` 及对应前端 streaming 回归。
+- 上述命令必须在隔离根目录/数据目录与显式空真实服务密钥的测试进程执行。现有 HTTP fixture 使用临时 root；新增 fixture 不能改回默认读取项目 `.env`。按第 3.9 节处理 `setdefault` 读取路径，并对未注入 mock 的 HTTP transport 设 fail-closed 保护，避免仅运行测试就产生真实费用。
+- Windows 下若用自定义 Python 包装 pytest，使用磁盘上的正常 `.py` 入口和 `if __name__ == '__main__'` 保护；不要从标准输入调用 pytest 后再让解析进程 spawn，避免 `<stdin>` 无法恢复造成伪失败。标准 `python -m pytest` 入口不受此特定限制。
 - 桌面/手机、深浅主题完成关键闭环浏览器验证。第三方真实官方播放器另做实际人工/浏览器播放核验，不能把受控 iframe 测试当成官方课程可用性验证。
 - 记录实际执行命令、结果、未执行项及原因。没有真实付费授权就只做受控模型验证，并明确这不等于真实内容质量、评分质量或学习收益验收。
 - 发现既有失败时用未改基线复现并记录，不删除测试、不将本轮未跑的历史检查计为通过。
@@ -539,3 +648,5 @@ python -m backend.xueya.mcp_server --check
 - [x] 两个规划入口、首页与“我的计划”共用服务和持久对象。
 - [x] 已确认需求、工程默认值、现有基础和待实现能力明确区分。
 - [x] 包含接口边界、实现顺序、数据兼容、失败处理与可执行验收标准。
+- [x] 已按 `b651dd9` 的真实 RAG 机制更新，区分共享课程存储与账号私有库，保留已有正文审核、一次兜底、复核门槛和索引身份校验。
+- [x] 测试隔离覆盖本机已配置真实服务的情况，未将用户提供的密钥写入文档或提示词。

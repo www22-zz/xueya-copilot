@@ -44,8 +44,12 @@ const outputDirectory=path.join(root,'test-results/browser');
     await expandLegacyRecords(page);
     await page.goto(base+'/');
     assert.equal(await page.locator('.hero h1').innerText(),'资料，读得懂。\n知识，用得上。');
-    await page.getByRole('tab',{name:'记得牢固'}).click();
-    assert.match(await page.locator('#demoContent').innerText(),/练习/);
+    assert.equal(await page.locator('.demo-heading').innerText(),'问得明白');
+    const preview=page.locator('#practicePreview');
+    assert.notEqual(await preview.locator('.preview-workbench').getAttribute('inert'),null);
+    await preview.locator('[data-preview-detail]').scrollIntoViewIfNeeded();
+    await page.waitForFunction(()=>['complete','static'].includes(document.querySelector('#practicePreview .preview-screen').dataset.playback));
+    assert.match(await preview.locator('[data-preview-feedback]').innerText(),/回答正确/);
     await page.getByRole('link',{name:'进入学习空间',exact:true}).click();
     await page.locator('#spacePage').waitFor({state:'visible'});
 

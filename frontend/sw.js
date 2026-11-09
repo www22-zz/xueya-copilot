@@ -1,12 +1,13 @@
 /* Cache only the public application shell. API responses and account data are never cached here. */
 'use strict';
-const CACHE='xueya-public-shell-20261029-practice-entries-v5';
+const CACHE='xueya-public-shell-20261109-ui-round2-v20';
 self.addEventListener('install',event=>event.waitUntil((async()=>{
   const response=await fetch('./',{cache:'reload'});
   if(!response.ok)throw Error('Shell unavailable');
   const html=await response.clone().text(),cache=await caches.open(CACHE);
   await cache.put(new URL('./',self.location).href,response);
   const paths=[...html.matchAll(/(?:src|href)="([^"#]+\.(?:js|css|svg))"/g)].map(match=>new URL(match[1],self.location).href);
+  paths.push(new URL('assets/material-symbols-outlined.woff2',self.location).href);
   await cache.addAll([...new Set(paths.filter(url=>new URL(url).origin===self.location.origin))]);
   await self.skipWaiting();
 })()));

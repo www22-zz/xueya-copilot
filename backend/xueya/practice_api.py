@@ -27,7 +27,7 @@ def install_practice(app):
         if account is not None and account.record():
             require(account.authorized(request), 'AUTH_REQUIRED')
             record = account.current(request)
-            return (record or {}).get('username') or 'local'
+            return (record or {}).get('learningOwner') or (record or {}).get('username') or 'local'
         return 'local'
 
     def store() -> PracticeState:
@@ -120,8 +120,37 @@ def install_practice(app):
     @router.post('/analysis')
     async def create_analysis(request: Request):
         authorize(request)
-        value = await json_body(request, 4096)
+        value = await json_body(request, 16384)
         return success(job=app.state.practice_analysis.submit(account_id(request), value))
+
+    @router.get('/analysis/sources')
+    async def analysis_sources(request: Request):
+        authorize(request)
+        from .analysis_sources import sessions
+        account=account_id(request)
+        return success(sessions=[{k:r[k] for k in ('id','title','courseId','learningRelated','updatedAt')} for r in sessions(app.state.platform,account)],
+            settings=app.state.analysis_schedule.read(account),candidates=app.state.analysis_schedule.listing(account))
+
+    @router.post('/analysis/schedule')
+    async def analysis_schedule(request: Request):
+        authorize(request)
+        return success(settings=app.state.analysis_schedule.update(account_id(request),await json_body(request,16384)))
+
+    @router.post('/analysis/candidates/{candidate_id}/submit')
+    async def candidate_analysis(request: Request,candidate_id: str):
+        authorize(request)
+        value=await json_body(request,4096)
+        require(value.get('confirmed') is True,'CONFIRMATION_REQUIRED')
+        account=account_id(request);analysis=app.state.practice_analysis;scope=analysis.scope(account)
+        from .common import identifier
+        with app.state.platform.db.transaction():
+            row=app.state.platform.repo.read(scope,'artifact',identifier(candidate_id))
+            require(row and row['value'].get('kind')=='analysis-candidate','ANALYSIS_NOT_FOUND')
+            candidate=row['value']
+            job=analysis.submit(account,{**candidate['snapshot']['filters'],'idempotencyKey':'candidate-'+candidate['fingerprint'][:48]},captured=candidate['snapshot'])
+            candidate.update(status='submitted',jobId=job['id'])
+            app.state.platform.repo.put(scope,'artifact',candidate_id,candidate,row['version'])
+        return success(job=job)
 
     @router.get('/analysis/reports/{report_id}')
     async def read_analysis(request: Request, report_id: str):

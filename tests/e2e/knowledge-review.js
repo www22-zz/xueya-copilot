@@ -27,7 +27,7 @@ const path=require('node:path');
  });
  await page.addScriptTag({path:path.resolve('frontend/js/knowledge-base.js')});
  await page.evaluate(()=>{window.kb=window.XueyaKnowledgeBase.create({state:{view:'knowledge',courseId:'course-default'},store:{courses:[{id:'course-default',name:'测试课程'}],persist(){}},toast:t=>{throw Error(t)},render(){}});window.kb.mount();});
- await page.getByRole('button',{name:'查看资料',exact:true}).click();
+ await page.getByRole('button',{name:/查看资料|收起资料列表/}).first().click();
  await page.getByText('仅收录原PDF第 82—84、86 页 · 原件共 324 页',{exact:true}).waitFor();
  await page.getByRole('button',{name:'校正与确认'}).click();
  await page.locator('#kbReviewText').fill('树是有限结点的集合。');
