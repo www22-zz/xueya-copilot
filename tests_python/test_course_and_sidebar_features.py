@@ -41,7 +41,8 @@ def assert_learning_navigation(html):
     sidebar.feed(html)
     assert [(href, view, label.strip()) for href, view, label in sidebar.links] == [
         ('#space/materials', 'materials', '课程资料学习'),
-        ('#space/algorithms', 'algorithms', '算法学习'),
+        # 2026-11-09: 点击“算法学习”直接进入 Hot100 刷题工作台，仍保留 algorithms 视图标识。
+        ('#space/practice/hot100', 'algorithms', '算法学习'),
         ('#space/exams', 'exams', '408考研学习'),
         ('#space/review', 'review', '错题本'),
     ]

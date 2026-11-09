@@ -167,6 +167,8 @@ class LearningHost:
         self.media_workspace = MediaWorkspace(self)
         from .durable_agent import DurableAgent
         self.dynamic = DurableAgent(self)
+        from .workbench_api import WorkbenchWorkspace
+        self.workbench = WorkbenchWorkspace(self)
 
     def service(self, course):
         scope = self.p.scope(course)
@@ -319,6 +321,9 @@ class LearningHost:
         search_response = await self.search_workspace.dispatch(path, request, course)
         if search_response is not None:
             return search_response
+        workbench_response = await self.workbench.dispatch(path, request, course)
+        if workbench_response is not None:
+            return workbench_response
 
         async def context(_):
             return {"courseId": course, "userId": self.p.scope_user_id, "loadStudyContext": lambda: self.study_context(course), 'scopeStudyContext': self.scope_study_context}

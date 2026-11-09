@@ -20,7 +20,10 @@ async def main(args=None):
     options = parser.parse_args(args)
     config, command = load_config(), options.command
     if command == "doctor":
-        print(json.dumps({"python": sys.version.split()[0], "pythonSupported": sys.version_info >= (3, 11), "sqlite": sqlite3.sqlite_version, "dataDir": str(config.data_dir), "model": config.model, "apiConfigured": bool(config.api_key), "inference": "external-api-only", "pythonRequired": True, "gpuRequired": False}, ensure_ascii=False, indent=2))
+        from . import judge_toolchain
+        judge = judge_toolchain.detect(force=True)
+        print(json.dumps({"python": sys.version.split()[0], "pythonSupported": sys.version_info >= (3, 11), "sqlite": sqlite3.sqlite_version, "dataDir": str(config.data_dir), "model": config.model, "apiConfigured": bool(config.api_key), "inference": "external-api-only", "pythonRequired": True, "gpuRequired": False,
+                          "codeEvaluation": {"languages": judge["languages"], "detail": judge["capabilities"]}}, ensure_ascii=False, indent=2))
         require(sys.version_info >= (3, 11), "PYTHON_VERSION_UNSUPPORTED")
         return
     if command == "restore":

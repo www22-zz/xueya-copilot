@@ -1,5 +1,20 @@
 # 模块接口约定
 
+## 2026-11-09 学习工作台：代码运行、AI 复杂度和思维导图
+
+以下接口挂在既有学习路由下，使用同一登录 Cookie、`X-Xueya-Token` 和同源校验；分发出现在 `backend/xueya/workbench_api.py`，业务实现在 `backend/xueya/code_runner.py` 与 `backend/xueya/learning_map.py`。它们不替换任何既有接口。
+
+| 接口 | 行为 |
+| --- | --- |
+| `GET /api/learning/space/workbench/code/capabilities?refresh=1` | 返回本机评测能力快照 `{capabilities:{python,cpp,java}, languages, detectedAt}`。每个语言含 `available/path/version/label/reason`；检测方式为可执行文件查找 + 版本探测 + 最小程序编译/运行探针，结果缓存 300 秒，`refresh=1` 或“重新检测”按钮强制重探。不可用时返回明确原因，不回退成假能力。 |
+| `POST /api/learning/space/workbench/code/run` | `{questionId,language,code,caseIndex?}`。`python` 使用后端解释器；`cpp`/`java` 在检测到工具链时本地编译执行（临时目录、独立子进程、编译 20 秒/运行 5 秒超时、输出 64KiB 上限、最小环境变量），按题目 `samples` 的 `name = value` 字面量构造 ListNode/TreeNode 等参数并逐用例比对。返回逐用例 `input/expected/actual/passed/error/durationMs`、整体 `passed`、`compiler` 与 `sandbox` 说明。编译错误返回 `ok:true` 且 `passed:false` + 编译诊断，不伪造通过。语言不可用时返回 `supported:false` + 原因。设计类题（146/155/208/295）与环/随机指针/公共结点等特殊结构在编译语言中返回 `supported:false` 及原因。代码执行是本机单用户功能，不是强安全沙箱。 |
+| `POST /api/learning/space/workbench/code/analyze` | `{questionId,language,code}`，`code` 最长 20000 字符。复用主平台 `LearningHost.service(course).model`（API 并发许可、预算、调用账本、限流），返回真实时/空复杂度、结论、风险点与模型名。`AI_UNAVAILABLE/AI_TIMEOUT/AI_INVALID_RESPONSE` 等错误码原样返回，不自动重试。 |
+| `GET/POST /api/learning/space/workbench/map/tree` | GET `?planId=`；POST `{planId}` 或受限 `{draft}`（白名单字段、长度上限、不写库）。返回只读路线树 `{ok,tree}`：计划→阶段→任务组/知识点，节点带日期、时长、难度、完成状态、绑定题目数。跨账号/不存在统一 `PLAN_NOT_FOUND`。 |
+| `POST /api/learning/space/workbench/map/export`（别名 `xmind`） | 同一入参，返回 XMind Zen 工作簿 `.xmind` 附件（`content.json/metadata.json/manifest.json` + `content.xml` 兼容桩，ZIP_STORED），文件名用 `filename*=UTF-8''`。未在本机 XMind 客户端验证，界面同时提供 `.mm` 兜底，不声称客户端已验证。 |
+| `POST /api/learning/space/workbench/map/mm` | 同一入参，返回 FreeMind `.mm` XML 附件。 |
+
+前端同轮变更：侧栏“算法学习”直接打开 `#space/practice/hot100`（旧 `#space/algorithms` 自动重定向，仍归属 algorithms 视图标识）；408 页移除“课程视频”入口；课程资料学习的视频目录改为展示全部已核验课程总览，不再按已就绪资料学科过滤。均为前端路由/展示变化，未改动既有 HTTP 契约。
+
 ## 2026-11-05 整门课程图谱
 
 - GET `/api/learning/space/course-graph?courseId=...&subject=...`：鉴权后返回当前可访问文档、课程/资料/知识点包含图、无原文引用位置、已存在questionIds、输入范围进度与unknown/failed批次；只读不提交。

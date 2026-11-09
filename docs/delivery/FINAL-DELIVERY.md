@@ -1,5 +1,121 @@
 # 学涯 Copilot 最终交付说明
 
+## 2026-11-09 合并 main 前复核
+
+用户授权将最新本地工作台改动合并推送至main。此次实际复核：全量Python 937通过、23失败；与干净761a5e6快照复测的23项失败逐项比较，集合完全相同，无新增失败。原有失败仍保留，不标为全绿；报告见忽略目录test-results/pre-main-20261109.xml及pre-main-baseline.xml。前端50项通过；临时数据库隔离服务HTTP检查30项通过（含Python/C++/Java运行、xmind/mm导出）；10页桌面/手机浏览器检查0页面错误、0控制台错误、0横向溢出。首次浏览器启动因系统临时目录权限失败，指定工作区临时目录后通过。本轮付费模型调用0次。未纳入密钥、私人数据库、测试产物或原有materials/stitch_design本地资料。
+
+
+## 2026-11-09 追加：界面五项修正（聊天消息底色、个性化学习架构、资料页收敛、悬停反馈）
+
+按用户截图反馈处理五项界面问题，均为前端改动，不需要改后端契约。
+
+1. **聊天用户消息前的深色方块**：根因是深色主题把 `var(--mist)` 背景加在了 `.user-message` 整行容器上，气泡右对齐后左侧容器背景露出。现在 `.message.user-message` 强制透明，只保留气泡渐变；浏览器实测行背景 `rgba(0,0,0,0)`、气泡渐变正常（`test-results/round2-ui/chat-dark.png`）。
+2. **个性化学习草稿重构**：草稿从“标题+长段文字+扁平列表”改为 **Hero 概览 + 双栏架构**——Hero 显示标题/目标/难度/周期和四个真实统计（学习日、任务、绑定题目、未绑定）；左栏为**阶段路线**（编号节点卡片、日期、任务组/知识点计数）和**每日排期**（日期块 + 预算 + 任务数，可展开任务明细）；右栏为**计划信息、说明与覆盖、下一步操作**（采用/查看/导出/兜底下载/路线树预览）。移除了重复的“已载入草稿”通栏提示（改为草稿本身表达），并适配深浅主题与 1100/640px 断点（`test-results/round2-ui/plan-dark.png`）。
+3. **删除“知识点与练习”标签页**：课程资料学习导航只保留 课程书架与知识图谱 / 视频目录 / 个性化学习 / 上传与管理 / 课程固定练习 / 每日签到；原页内知识点图谱区块一并移除，旧深链 `#space/materials/graph` 自动落到课程书架，避免死链。
+4. **去掉冗余页头**：课程资料学习、错题本两页移除大标题和说明段落，标签/分类选项直接上移；保留 `visually-hidden` 的 h1 维持可访问性大纲。
+5. **全局悬停反馈**：按钮、标签、选项行、可点卡片等统一增加轻微上浮放大（`translateY(-1px) scale(1.018)`）、亮度提升与柔和阴影，约 160ms 过渡；`:disabled` 与“减少动态效果”系统设置下自动关闭，不影响键盘与触控可用性。
+
+验证：node 语法与 `scripts.check_js_balance` 通过；前端 9 个测试文件 50 项全过；隔离服务浏览器检查 0 控制台/页面错误，截图证据在 `test-results/round2-ui/`（plan 深浅色、materials、review、chat-dark、hover）。
+
+## 2026-11-09 追加：首屏图标“乱码”与图标字体加载修复
+
+用户反馈打开页面时经常先看到 `account_tree`、`code`、`search` 等图标名文字，过一段时间才恢复。定位为 Material Symbols 本地字体（约 4MB）加载完成前，图标连字按普通文本渲染；并非编码或后端乱码。
+
+原因与修复：
+
+- 字体由 `FileResponse` 按 64KB 分块、`Cache-Control: no-cache`、`Content-Type: application/octet-stream` 返回，首次/重新校验时传输与字体解析偏慢；现在字体改为单次响应、`font/woff2`、`Cache-Control: public, max-age=31536000, immutable`，浏览器第二次起直接使用本地缓存。其他静态资源仍为 `no-cache` 以便更新。
+- `index.html` 在样式表之前 `<link rel="preload" as="font">` 图标字体，提前开始加载。
+- 图标默认隐藏：`html:not(.icons-ready) .material-symbols-outlined{visibility:hidden}`；样式表之后的小脚本轮询 `document.fonts.check`，字体真正可用后加 `.icons-ready` 再显示，5 秒兜底避免永久隐藏。这样字体慢或失败时不会把图标名当文字闪出来；无 JavaScript 时由 `<noscript>` 样式恢复显示。
+- 验证：正常加载 `icons-ready=true / fontcheck=true`；阻断字体请求时 0.8 秒图标保持隐藏（不乱码）、5 秒后兜底显示；10 页截图 0 控制台错误、0 横向溢出，图标显示正常。字体端点响应头确认 `font/woff2` + `immutable`。
+
+仍未做的是把 4MB 图标字体子集化（可进一步降到几百 KB）；本轮以加载顺序、缓存与隐藏策略解决体验问题，不删除既有图标。
+
+## 2026-11-09 追加：C++/Java 本地编译执行与自动工具链探测
+
+针对“评委/用户机器不一定安装 gcc/JDK”的场景，本轮把 Hot100 代码台从“仅 Python”扩展为**按本机能力自动启用 Python / C++ / Java**，并对缺编译器的情况做明确降级而不是报错。此前同日交付中的“仅 Python 支持在线运行”限制由本节替代。
+
+### 一、工具链探测（先回答“会不会自动检测”）
+
+- 新增 `backend/xueya/judge_toolchain.py`：分别探测 Python、g++、javac+java。检测不是只看 PATH，而是三步：可执行文件查找（`shutil.which` + 常见安装路径兜底）→ 版本探测（`g++ --version`、`javac -version`）→ 最小程序编译并运行探针。任何一步失败都返回可读原因。
+- 支持 `XUEYA_GPP_PATH` / `XUEYA_JAVAC_PATH` / `XUEYA_JAVA_PATH` 覆盖；结果缓存 300 秒，`GET /api/learning/space/workbench/code/capabilities?refresh=1` 或页面“重新检测”强制重探。
+- `python -m backend.xueya.judge_toolchain --probe` 可单独查看；`python -m backend.xueya.cli doctor` 的输出增加 `codeEvaluation` 段。
+- 本次在本机探测结果：Python 3.13.9、g++ 16.2.0（MinGW-W64）、JDK 21.0.12.1 全部可用；缺少编译器时页面显示原因（如“未检测到 javac（JDK 编译器）”），Python 与其余功能不受影响。
+
+### 二、C++/Java 真实编译执行
+
+- 新增 `backend/xueya/judge_compiled.py`：从官方题解解析方法签名，按样例 `name = value` 生成各语言字面量与 ListNode/TreeNode 构造代码，编译后再由父进程逐用例比较（比较逻辑与 Python 相同）。C++ 使用 `g++ -std=c++17 -O0`；Java 使用 `javac -encoding UTF-8` + `java -cp`（`-Xmx256m`）；编译 20 秒、运行 5 秒超时，stdout/stderr 各 64KiB 上限，临时目录、独立进程、最小环境变量，运行结束清理。Windows 上通过编译器目录加入子进程 PATH 解决 MinGW 运行时 DLL；Linux 另加 `LD_LIBRARY_PATH`。
+- `code_runner.py` 抽出与语言无关的 `build_cases()`；`run_code` 按探测结果分派；`--self-check` 支持 `--languages python,cpp,java`；响应新增 `language`、`compiler`，编译错误在 `error` 中明确标注。
+- 新增 `GET /api/learning/space/workbench/code/capabilities`；`POST .../code/run` 对已检测语言真实执行。前端 Hot100 页新增能力徽标（Python 3 / C++ 17 (g++) / Java 21 ✓ 或 —），未检测到的语言选项禁用并显示原因，提供“重新检测”；编译失败、运行失败、超时分别显示真实诊断；语言可用时运行按钮不再限制 Python。
+
+### 三、自测与验收
+
+- 100 题官方参考解自测（结果文件 `test-results/selfcheck-cpp.json`、`selfcheck-java.json`，均为 UTF-16 由 PowerShell 重定向产生）：
+  - **C++：90/100 支持，支持的 90 题全部通过（100%）**
+  - **Java：90/100 支持，支持的 90 题全部通过（100%）**
+  - 两边不支持集合一致：4 道设计类题（146/155/208/295）、环/随机指针/公共结点/树节点引用（141/142/138/160/236）、链表数组（23）。均返回明确原因，不伪造通过。
+- 新增 `tests_python/test_judge_compiled.py`（20 项，含探测、签名解析、字面量、计划构建、路由、真实执行、编译错误、缺编译器降级），并更新原 `test_code_runner.py` 中“C++/Java 一律不支持”的旧断言为“按本机能力：可用则真实通过、不可用则明确原因”。`pytest tests_python/test_judge_compiled.py tests_python/test_code_runner.py` → 39 passed。
+- 全量 Python：**933 passed, 23 failed, 4 skipped**（共 960 项；23 项与同日早先记录完全一致，已在干净 HEAD 复现，属本机既有环境/日期问题，非本轮引入）。前端 9 个测试文件 50 项全过。
+- HTTP 冒烟 `scripts/check_workbench_http.py`（隔离服务 + 临时账号）→ **31/31 通过**，覆盖 capabilities、Python/C++/Java 三种语言真实运行与 C++ 编译错误。
+- 浏览器实测（隔离临时库）：Hot100 切换 C++、Java 后“运行代码”均显示“全部通过 3/3”，页面显示真实编译器版本；整体交互流程 **8/8 步通过、0 页面错误、0 控制台错误**。截图见 `test-results/ui-flow/hot100-cpp.png`、`hot100-java.png`；页面截图检查 `scripts/check_redesign_browser.py` 10 页 0 问题。
+- 重启前备份 `.xueya-backups/before-code-langs-20261109`（25 文件），统一 Python 入口重启后健康检查 200。
+
+### 四、限制
+
+- 执行器仍是**本机单用户便利执行器，不是安全沙箱**；用户代码可访问本机文件/网络，不应把服务暴露到非 localhost。
+- C++/Java 每次运行含编译，端到端约 1–3 秒；本轮未做编译缓存。
+- 设计类题、环/随机指针/公共结点、链表数组（#23）仍不支持编译语言，只支持 Python 或查看题解。
+- 本轮只在 Windows 本机完成真实编译验收；Linux/macOS 按 `shutil.which` + `LD_LIBRARY_PATH` 实现，未在真实 Linux 上验收。
+- 编译器缺失时不是“功能坏了”，而是明确提示“未检测到”，安装后点“重新检测”即可启用。
+
+## 2026-11-09 学习工作台六项改造：408、视频目录、个性化学习与思维导图、资料库、Hot100 运行
+
+本轮按用户 2026-11-09 的六点要求实施，全部在 `codex/test-learning-space-20261031` 工作区完成，未合并、未推送、未改 `.env`；私人数据库通过 `.xueya-backups/before-workbench-20261109`（25 文件）备份后，于 13:19 正常停止并重启统一 Python 入口，健康检查 200。
+
+### 一、408 课程视频并入视频目录
+
+课程资料学习 → 视频目录不再按“已就绪资料的学科”过滤，直接展示全部 11 门已核验课程总览（原来在 408 页的“课程视频”入口即指向同一目录，因过滤在无就绪资料时为空）。408 页移除“课程视频”入口。浏览器截图确认视频目录列出 11 门课程。
+
+### 二、408 页面重构与全屏模拟考试
+
+按图2 重做 `frontend/js/exam-workspace.js`（整体重写）与 `frontend/css/exam-workbench.css`：工作台 hero、真实统计（我的模拟卷 / 可用科目 / 原卷外部链接 / 预测估分显示“—未接入”）、双卡片（自主练习 → `#space/practice/exam408`；模拟考试 → 弹窗）、可折叠原卷与解析、我的试卷列表。弹窗选择科目/题量 1–40/时长 1–180/固定或 AI 组卷，`operationId` 幂等，fixed 直接进入试卷，AI 轮询真实作业状态。试卷页为沉浸式全屏（隐藏顶栏侧栏，仅本视图）：服务端权威倒计时、题号导航、逐题自动保存、右上“退出考试”（未交卷退出需确认且不丢已保存答案）、底部“交卷并评分”二次确认，交卷后显示得分与逐题解析。浏览器实测：fixed 组卷 → 开始 → 逐题作答自动保存 → 交卷评分全流程通过（1440px 截图 `test-results/ui-flow/exam-*.png`）。
+
+### 三、个性化学习工作台与 XMind 路线导出
+
+新增 `frontend/js/plan-workbench.js` + `frontend/css/plan-workbench.css`（替换占位模块）：左侧目标表单（学科/专题胶囊可留空、难度三档、起止日期与持续天数联动、计划名称、学习目标、15–480 分钟滑块、固定休息日、生成/取消重置），右侧只显示程序可计算的真实估算并注明“程序估算，实际以模型结果为准”。提交复用既有 `POST /plan/generate` durable job（幂等、轮询、刷新续传、失败不自动重试），成功后展示草稿的阶段/每日排期/真实资源绑定/“未绑定本地题目”标注，并提供采用与查看入口。
+
+新增 `backend/xueya/learning_map.py`（经 `backend/xueya/workbench_api.py` 分发）：只读当前账号计划生成路线树，输出 XMind Zen 工作簿 `.xmind`（ZIP：`content.json`/`metadata.json`/`manifest.json` + `content.xml` 兼容桩）、FreeMind `.mm` 兜底和站内 SVG 预览。**未在真实 XMind 客户端验证打开**，界面明确标注并提供 `.mm` 兜底。真实调用验证：隔离临时库用本机已配置模型生成 1 份草稿（5 个可学习日、3 阶段、5 任务），成功下载 `.xmind`（8119 字节，49 个 topic，`content.json` 结构校验通过）。
+
+### 四、上传与管理页重做
+
+重写 `frontend/js/knowledge-base.js` 界面层并新增 `frontend/css/library-workbench.css`，保留全部既有动作与 API：资料库切换/同步状态、真实资料列表（格式/大小/章节/切片/页数/解析/向量状态，接口未返回的显示“—”）、知识库规模统计（未配置能力显示未配置，不编造 tokens 或评分）、检索与解析配置、以及新的“测试知识库检索（RAG 召回调试）”。检索复用真实 `POST /api/platform/knowledge/search`：关键词模式不调用外部服务，向量/混合/重排需显式确认外部调用；接口固定 8 条与 0.25 阈值，界面标为只读，不做伪参数。浏览器实测关键词检索返回真实空态（0 命中、22ms、预算 0/8000 字节）且不伪造结果。
+
+### 五、算法学习直达 Hot100
+
+侧栏“算法学习”链接改为 `#space/practice/hot100`，旧 `#space/algorithms` 自动重定向并保留 `algorithms` 视图高亮；页面不再先经过旧演示页。`tests_python/test_course_and_sidebar_features.py` 的四导航契约同步更新为新地址。
+
+### 六、Hot100 真实运行与 AI 复杂度诊断
+
+新增 `backend/xueya/code_runner.py`：`workbench/code/run` 在临时目录用独立子进程真实执行 Python（`-I -B`、5 秒超时、stdout/stderr 64KiB、最小环境变量），按题库示例构造 ListNode/TreeNode 等参数并逐用例比对；语法错误、错误答案、C++/Java、4 道设计类题均如实返回失败/不支持，不伪造通过。对全部 100 道 Hot100 用官方参考解自测：**96 道支持（96%），支持的 96 道全部通过样例**（原题库 #2 两数相加第 3 例 output 笔误已修正为 `[8,9,9,0,1]`）。`workbench/code/analyze` 复用主平台模型调用链路（并发许可、预算、账本、限流），真实返回时空复杂度与风险点；无密钥返回 `AI_UNAVAILABLE`，不自动重试。前端删除 4ms/92.4%/10.2MB 等假数据，改为真实逐用例结果、真实耗时和按代码指纹缓存的 AI 分析。浏览器实测运行两数之和：3/3 用例通过、耗时 169.37ms，页面显示逐例输入/预期/实际。
+
+### 验证
+
+- 全量后端（完整权限环境，`.venv/Scripts/python.exe -m pytest -q`）：**913 passed, 23 failed, 4 skipped**（共 940 项）。23 项失败在干净的 `761a5e6` worktree 用同一命令复现出完全相同集合（C 参考代码编译 10、资料练习 4、队列计算 5、日期敏感计划 1、平台快照 1、跨课程 1、Hot100 文本评阅 1），属本机既有环境/日期问题，不是本轮改动引入；本轮新增 30 个测试（19 code_runner + 11 learning_map）全部通过。沙箱内 `tmp_path` 权限问题用仅验证用的 `-p tmpfix2 --basetemp` 复跑时结果不可信（插件语义与 pytest 不同），最终以完整权限下的普通 `pytest -q` 为准。
+- 前端：`node scripts/test.js --frontend` 在本沙箱因 Node 子进程 spawn EPERM 无法整体运行，改为逐个直跑 `tests/unit` + `tests/integration` 共 9 个文件，**50 项全部通过**。
+- 新增 HTTP 冒烟 `scripts/check_workbench_http.py`：**26/26 项通过**（静态资源、鉴权、真实运行 3/3 用例、语法错误如实失败、C++ 不支持、xmind/zip 结构、.mm、缺失计划 404）。
+- 新增页面截图检查 `scripts/check_redesign_browser.py`：5 个页面 × 桌面/390px 共 10 张，**0 控制台错误、0 页面错误、0 横向溢出**。
+- 新增交互流程检查（隔离临时账号）：**5/5 步通过、0 页面错误、0 控制台错误**——Hot100 真实运行、fixed 模拟考试创建/计时/作答/交卷评分、xmind 下载、关键词检索真实空态。证据在 `test-results/redesign-shots/` 与 `test-results/ui-flow/`。
+- 真实模型调用（仅隔离临时库，不触碰正式账号数据）：4 次、合计 7803 tokens——1 次复杂度诊断（484 tokens，返回真实 O(n)/O(n) 与风险点）、3 次计划生成。其中第 1 次计划生成模型返回未通过任务校验（`INVALID_PLAN_TASKS`），按既有边界不自动重试并记入账本；第 2 次成功生成 5 日 3 阶段草稿并完成独立框架。正式 4173 服务未用于任何付费测试。
+- 备份 `.xueya-backups/before-workbench-20261109`（25 文件）；正式服务已重启加载新后端，健康检查 200。
+
+### 已知限制
+
+- Hot100 在线运行仅支持 Python；C++/Java 与 4 道设计类题明确提示不支持。执行器是本机单用户功能，不是强安全沙箱，用户代码仍可能访问本机文件/网络，不应暴露到非 localhost。
+- `.xmind` 为 XMind Zen 兼容 ZIP 结构，未在本机真实 XMind 客户端打开验证；已提供 `.mm` 与站内 SVG 预览。
+- 个性化学习依赖模型输出通过程序校验；首次真实尝试即遇到任务格式拒绝，属既有模型质量边界，页面如实显示失败且不自动重试。
+- 资料库检索的 Top-K 与相似度阈值由既有接口固定（8 条 / 0.25），前端标注为只读，不提供伪参数。
+- 截图与交互验收使用隔离临时数据库与临时账号，正式私人资料与作答未用于本轮验收。
+- 既有 23 项失败与 C 编译器相关的 10 项校验仍未修复，与本轮改动无关，保留原状态不隐去。
+
 ## 2026-11-06 演示页面404运行修复
 
 用户正式页面打开岛屿演示返回Not found。定位4173端口仍为旧后端进程，旧静态白名单不含新增algorithm-demo.html。确认活动作业0，CLI备份至.xueya-backups/before-demo-restart-20261106（25文件）并安全停止，以统一Python入口重新启动。正式地址的演示HTML、JS、CSS及健康检查均返回200。无需修改演示算法；账号鉴权继续保留，未调用付费模型。此前“未重启正式服务”记录为该轮交付状态，本节记录后续实际切换。

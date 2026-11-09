@@ -6,6 +6,10 @@
   font-display: block;
   src: url('../assets/material-symbols-outlined.woff2') format('woff2');
 }
+/* Icon ligature names ("account_tree") are real text until the font loads; hide
+   them so a slow first paint never shows garbled icon names. index.html adds
+   .icons-ready as soon as the font resolves (with a timeout fallback). */
+html:not(.icons-ready) .material-symbols-outlined{visibility:hidden}
 /* Stitch Theme - Google Material You (M3) Design System for Xueya Copilot */
 
 :root {
@@ -425,6 +429,9 @@ body.in-ask .learning-shortcuts {
   align-self: flex-end !important;
   max-width: min(720px, 85%) !important;
   margin-left: auto !important;
+  /* The dark theme placed a surface tint on the row container; right-aligning the
+     bubble left that tint visible as a grey block behind it. Keep the row clear. */
+  background: transparent !important;
 }
 
 .message.user-message .message-body {
@@ -1792,3 +1799,37 @@ body.in-space #spacePage:not([hidden]) { width: 100% !important; max-width: none
 @media(max-width:650px){.learning-route{padding:14px}.route-mindmap{flex-direction:column;gap:12px}.route-concepts{width:100%}.route-stop:after{display:none}.route-path{gap:8px}.route-heading{align-items:flex-start;flex-direction:column}}
 
 #spacePage .study-plan-container .learning-route h3,#spacePage .study-plan-container .learning-route h4{color:#e4edff}#spacePage .study-plan-container .learning-route .route-node-detail h3{color:var(--stitch-on-surface,#172033)}
+
+/* Screen-reader-only headings keep the page outline without the redundant visual header. */
+.visually-hidden{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0 0 0 0)!important;white-space:nowrap!important;border:0!important}
+
+/* ------------------------------------------------------------------------
+   Global interaction feedback: hover highlight + a very slight scale.
+   Applies to buttons, tabs, selectable rows/cards and button-like links.
+   Disabled controls and reduced-motion users keep the plain state.
+   ------------------------------------------------------------------------ */
+@media (hover:hover) and (pointer:fine){
+  :is(button,[role="button"],[role="option"],[role="tab"],summary,
+     .button,.text-link,.sidebar-nav-item,.practice-option,.practice-row,.session-item,
+     .suggested-chip,.pw-chip,.pw-segment,.ew-btn,.hot100-status-btn,.filter-select-trigger,
+     .wrong-area-tabs a,.material-workflow .button,.pw-draft-actions .button) {
+    transition: transform .16s ease, filter .16s ease, box-shadow .16s ease;
+  }
+  :is(button,[role="button"],[role="option"],[role="tab"],summary,
+     .button,.text-link,.sidebar-nav-item,.practice-option,.practice-row,.session-item,
+     .suggested-chip,.pw-chip,.pw-segment,.ew-btn,.hot100-status-btn,.filter-select-trigger,
+     .wrong-area-tabs a,.material-workflow .button,.pw-draft-actions .button):not(:disabled):not([aria-disabled="true"]):hover {
+    transform: translateY(-1px) scale(1.018);
+    filter: brightness(1.06);
+    box-shadow: 0 6px 18px -10px rgba(53, 37, 205, .5);
+  }
+}
+@media (prefers-reduced-motion: reduce){
+  :is(button,[role="button"],[role="option"],[role="tab"],summary,
+     .button,.text-link,.sidebar-nav-item,.practice-option,.practice-row,.session-item,
+     .suggested-chip,.pw-chip,.pw-segment,.ew-btn,.hot100-status-btn,.filter-select-trigger,
+     .wrong-area-tabs a,.material-workflow .button,.pw-draft-actions .button):hover {
+    transform: none;
+    filter: none;
+  }
+}

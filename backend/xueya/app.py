@@ -416,7 +416,20 @@ def create_app(config: Config | None = None, *, provider=None, start_jobs=True):
         target = (root / requested.lstrip("/")).resolve()
         if not target.is_relative_to(root.resolve()) or not target.is_file():
             return PlainTextResponse("Not found", status_code=404)
-        return FileResponse(target, headers={"Cache-Control": "no-cache"})
+        suffix = target.suffix.lower()
+        media_types = {
+            ".woff2": "font/woff2", ".woff": "font/woff", ".svg": "image/svg+xml",
+            ".js": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8",
+            ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg",
+        }
+        media_type = media_types.get(suffix)
+        if suffix in (".woff2", ".woff"):
+            # Icon fonts are large (multi-MB) and stable. Cache them for a year and
+            # send the bytes in one response: per-64KiB chunking over localhost can
+            # take seconds on Windows, which left icon ligature names visible.
+            headers = {"Cache-Control": "public, max-age=31536000, immutable"}
+            return Response(content=target.read_bytes(), media_type=media_type or "font/woff2", headers=headers)
+        return FileResponse(target, media_type=media_type, headers={"Cache-Control": "no-cache"})
     if config.platform_enabled:
         from .rag_http import install_rag
         from .learning_integration import install_learning
