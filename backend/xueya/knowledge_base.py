@@ -187,6 +187,8 @@ def install_knowledge_base(app):
         if operation == 'create' and post:
             return success(base=kb.create(value))
         scope = kb.p.scope(value.get('courseId') or q.get('courseId') or 'course-default')
+        if operation == 'index-plan' and not post:
+            return success(plan=kb.rag.index_plan(scope, q.get('documentId')))
         if operation == 'review-confirm' and post:
             require(value.get('confirmed') is True, 'CONFIRMATION_REQUIRED')
             require(type(value.get('version')) is int, 'INVALID_VERSION')

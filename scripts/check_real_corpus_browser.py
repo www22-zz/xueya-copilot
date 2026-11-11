@@ -56,6 +56,9 @@ def main():
                 browser.call('Emulation.setDeviceMetricsOverride', width=1440, height=1000, deviceScaleFactor=1, mobile=False)
                 browser.call('Page.navigate', url=base+'/#space/knowledge')
                 browser.wait('document.querySelectorAll(".kb-document").length === 1')
+                assert browser.evaluate('document.querySelectorAll("#kbSearch,.lw-probe,[data-kb=jump-search]").length') == 0
+                assert browser.evaluate('document.querySelectorAll("#knowledgeWorkspace a[href=\\\"#space/library/manage\\\"],#lwConfigBody,[aria-labelledby=lwConfigTitle]").length') == 0
+                assert browser.evaluate('!!document.querySelector("[data-kb=toggle-upload]") && !!document.querySelector("[data-kb=toggle-list]") && !!document.querySelector("#lwScaleBody")')
                 assert browser.evaluate('document.querySelector("#kbBase option:checked").textContent') == '栈与队列知识库'
                 stale_write = browser.evaluate('''(async()=>{const b=await(await fetch('/api/platform/bootstrap')).json();const headers={'Content-Type':'application/json','X-Xueya-Token':b.token};const c=await(await fetch('/api/platform/courses',{method:'POST',headers,body:JSON.stringify({id:'course-default',name:'数据结构'})})).json();const w=await(await fetch('/api/platform/workspace',{headers})).json();const value=w.workspace.data;value.courses.find(c=>c.id==='course-default').name='数据结构';const saved=await(await fetch('/api/platform/workspace',{method:'PUT',headers,body:JSON.stringify({workspace:value,expectedVersion:w.workspace.version})})).json();return {course:c.courses.find(c=>c.id==='course-default').name,workspace:saved.workspace.data.courses.find(c=>c.id==='course-default').name};})()''')
                 assert stale_write == {'course': '栈与队列知识库', 'workspace': '栈与队列知识库'}, stale_write
@@ -65,14 +68,18 @@ def main():
                 assert browser.evaluate('document.querySelector("#lwScaleBody").textContent.includes("1 / 1")')
                 assert '期中复习题 2024.pdf' not in browser.evaluate('document.querySelector("#kbDocuments").textContent')
                 assert '待解析' not in browser.evaluate('document.querySelector("#lwSyncText").textContent')
+                browser.click('[data-kb=index]')
+                browser.wait('!!document.querySelector("#kbIndexConfirm")')
+                assert browser.evaluate('document.querySelector("#kbDialog").textContent.includes("Qwen3-VL-Embedding-2B")')
+                assert browser.evaluate('document.querySelector("#kbDialog").textContent.includes("可复用 178 条已有向量，0 条需要计算")')
+                assert not browser.evaluate('document.querySelector("#kbIndexConfirm").checkValidity()')
+                browser.screenshot(out/'index-confirmation.png')
+                browser.click('#kbDialog [data-kb=close]')
                 browser.screenshot(out/'catalog-desktop.png')
-                browser.fill('#kbQuery', '循环队列')
-                browser.click('#kbSearch button[type=submit]')
-                browser.wait('!!document.querySelector(".kb-result")')
+                retrieval = browser.evaluate('''(async()=>{const b=await(await fetch('/api/platform/bootstrap')).json();const r=await fetch('/api/platform/knowledge/search',{method:'POST',headers:{'Content-Type':'application/json','X-Xueya-Token':b.token},body:JSON.stringify({courseId:'course-default',query:'循环队列',mode:'lexical'})});const v=await r.json();return {ok:v.ok,hits:v.evidence?.sources?.length};})()''')
+                assert retrieval['ok'] and retrieval['hits'] > 0
                 scope_check = browser.evaluate('''(async()=>{const b=await(await fetch('/api/platform/bootstrap')).json(); const r=await fetch('/api/platform/rag/search',{method:'POST',headers:{'Content-Type':'application/json','X-Xueya-Token':b.token},body:JSON.stringify({courseId:'course-default',query:'KMP',mode:'lexical',budget:3000,limit:6})});const v=await r.json();return {ok:v.ok,hits:v.evidence?.sources?.length};})()''')
                 assert scope_check == {'ok': True, 'hits': 0}, scope_check
-                browser.evaluate('document.querySelector("#kbResults").scrollIntoView()')
-                browser.screenshot(out/'lexical-retrieval.png')
                 browser.reload()
                 browser.wait('document.querySelectorAll(".kb-document").length === 1')
                 assert browser.evaluate('document.querySelector("#kbBase option:checked").textContent') == '栈与队列知识库'

@@ -7,7 +7,7 @@
 
 普通 `git clone` / `git pull` 会取得本目录，不需要 Git LFS。新电脑复制根目录 `.env.example` 为 `.env` 后启动项目、注册本机账号，首次打开会通过现有 CPU 解析和 FileStore/SQLite 自动接入这一个文件并导入已有向量。不会重新调用模型计算 178 个片段的向量；重复启动不重复导入，用户归档后的资料不会自动恢复。已有其他资料历史的课程不会被本资料包覆盖。`XUEYA_AUTO_IMPORT_STACK=0` 可关闭自动接入。
 
-没有模型密钥时可以使用关键词检索。要使用向量/混合检索，在每台电脑的 `.env` 填写自己的 `RAG_EMBEDDING_API_KEY`，并保留与缓存匹配的设置：
+语义查询仍需配置外部向量服务密钥。后端优先读取本机 `.env` 的非空 `RAG_EMBEDDING_API_KEY`，否则可读取单独安全配置的本机 `.env.team-embedding`；设置 `XUEYA_SHARED_EMBEDDING=0` 可禁用后者。真实密钥不随仓库分发，仓库只提供 `.env.team-embedding.example` 空密钥模板。没有密钥时仍可用关键词检索，已有文档向量保留。模型设置与缓存匹配如下：
 
 ```dotenv
 RAG_EMBEDDING_PROVIDER=moark-qwen

@@ -105,6 +105,28 @@ def test_archive_excluded_and_retry_failed_parse(client):
     assert catalog(client, course)['summary']['documents'] == 1  # Failed file remains visible.
 
 
+def test_index_plan_uses_configured_service_without_calling_it_and_is_scoped(client):
+    from backend.xueya.rag_api import ApiSettings
+    from backend.xueya.rag_moark import QwenEmbeddingProvider
+    rag = client.app.state.rag
+    rag.embedding = QwenEmbeddingProvider(client.platform, ApiSettings(
+        key='synthetic-never-sent', model='Qwen3-VL-Embedding-2B', dimension=2048,
+        base_url='https://api.moark.com/v1'))
+    a, b = create(client, 'plan-a'), create(client, 'plan-b')
+    result = upload(client, a).json()
+    assert wait(client, result['job'])['status'] == 'succeeded'
+    params = {'courseId': a, 'documentId': result['documentId']}
+    response = client.get('/api/platform/knowledge/index-plan', params=params, headers=client.platform_headers)
+    assert response.status_code == 200
+    plan = response.json()['plan']
+    assert plan['model'] == 'Qwen3-VL-Embedding-2B' and plan['requiresExternal']
+    assert plan['cachedVectors'] == 0 and plan['missingVectors'] == plan['sourceCount'] > 0
+    assert 'synthetic-never-sent' not in response.text
+    assert client.get('/api/platform/knowledge/index-plan', params={**params, 'courseId': b}, headers=client.platform_headers).status_code == 404
+    assert client.get('/api/platform/knowledge/index-plan', params=params).status_code == 403
+    assert not client.platform.db.one('SELECT id FROM invocations')
+
+
 @pytest.mark.parametrize('name,chapter', [('week14 第7.4章图.pptx', '第7.4章'), ('week5_字符串.pptx', '第5周'), ('讲义.pptx', '')])
 def test_explicit_filename_labels(name, chapter):
     assert infer_chapter(name) == chapter

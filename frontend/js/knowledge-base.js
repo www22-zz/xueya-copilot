@@ -73,12 +73,6 @@ window.XueyaKnowledgeBase={create({state,store,toast,render}){
    <div><dt>向量索引</dt><dd>${caps.embedding?embedded.length+' / '+embeddable.length:'未配置'}</dd></div>
   </dl>${formats.length?`<p class="lw-formats" aria-label="资料格式构成">${formats.map(([kind,count])=>`<span class="lw-chip">${KINDS[kind]} ${count}</span>`).join('')}</p>`:''}<p class="lw-hint">切片数是当前可用于检索的原文片段数。接口未返回字符数或 token 数，因此这里不展示这两项。</p>`;
  }
- function configBody(){
-  const caps=data?.capabilities||{};
-  const rows=[['关键词检索',true,'本地规则，不调用外部服务'],['向量化服务（Embedding）',!!caps.embedding,caps.embedding?(caps.embeddingModel||'已配置'):''],['重排（Rerank）',!!caps.rerank,caps.rerank?'已配置':''],['文字识别（OCR）',!!caps.ocr,caps.ocr?(caps.ocrModel||'已配置'):'']];
-  const all=caps.embedding&&caps.rerank&&caps.ocr;
-  return `<ul class="lw-config-list">${rows.map(([label,ok,text])=>`<li><span>${e(label)}</span><strong class="${ok?'lw-on':'lw-off'}">${ok?'已配置':'未配置'}</strong>${text?`<small>${e(text)}</small>`:''}</li>`).join('')}</ul>${all?'':'<p class="lw-hint">未配置的能力不会发起外部调用。需要向量、重排或文字识别时，请在本机 .env 按需填写 RAG_EMBEDDING_API_KEY、RAG_RERANK_API_KEY、RAG_OCR_API_KEY 及对应的 _MODEL 后重启服务。</p>'}`;
- }
  function paintPanels(){
   const sync=syncState();
   const wrap=$('#lwSync');if(wrap)wrap.dataset.tone=sync.tone;
@@ -86,7 +80,6 @@ window.XueyaKnowledgeBase={create({state,store,toast,render}){
   const at=$('#lwSyncAt');if(at)at.textContent=syncedAt?'更新于 '+syncedAt:'';
   const overview=$('#lwOverviewStats');if(overview)overview.innerHTML=overviewStats();
   const scale=$('#lwScaleBody');if(scale)scale.innerHTML=scaleBody();
-  const config=$('#lwConfigBody');if(config)config.innerHTML=configBody();
  }
  async function api(path,value,options={}){
   if(!token){const r=await fetch('/api/platform/bootstrap');if(!r.ok)throw Error('请启动本地服务并登录后使用知识库');token=(await r.json()).token;}
@@ -214,11 +207,16 @@ window.XueyaKnowledgeBase={create({state,store,toast,render}){
  function refocus(){if(!focusTarget)return;const target=document.querySelector(focusTarget);focusTarget='';if(target&&target.offsetParent!==null)target.focus({preventScroll:true});}
  async function action(action,id,el){const g=epoch,idCourse=course;let ownsBusy=false;
   try{
-   if(action==='close'){reader.close();return;}if(action==='jump-search'){$('#kbSearchHeading')?.scrollIntoView({behavior:'instant',block:'start'});$('#kbSearchHeading')?.focus({preventScroll:true});return;}
+   if(action==='close'){reader.close();return;}
    if(action==='toggle-list'){listOpen=!listOpen;draw();return;}if(action==='toggle-upload'){uploadOpen=!uploadOpen;draw();return;}
    if(action==='refresh'){if(loading){toast('正在刷新，请稍候');return;}if(el){el.disabled=true;el.textContent='刷新中…';}loadError='';await load();if(valid(g)){if(loadError){notice=loadError;}else{syncedAt=fmtTime(new Date());notice='资料目录已刷新 · '+syncedAt;}draw();}return;}
    if(action==='create'){dialog('新建知识库','<form id="kbCreate"><label class="form-field">知识库名称<input name="name" maxlength="60" required placeholder="例如：数据结构与算法"></label><label class="form-field">说明<textarea name="description" maxlength="4000" rows="3"></textarea></label><p>创建独立课程范围，已有资料与私人记录会保留。</p><button class="button button-blue button-small">确认创建</button></form>');return;}
    if(busy)throw Error('请等待当前操作完成');
+   if(action==='index'){
+    const r=await api('knowledge/index-plan?'+new URLSearchParams({courseId:idCourse,documentId:id}));if(!valid(g))return;
+    const p=r.plan;
+    dialog('建立向量索引',`<p>将使用已配置的向量化服务：<strong>${e(p.model)}</strong>。</p><p>当前 ${n(p.sourceCount)} 个片段，可复用 ${n(p.cachedVectors)} 条已有向量，${n(p.missingVectors)} 条需要计算。</p><p>${p.requiresExternal?'缺失片段会发送给上述服务，可能产生费用。':'已有向量全部匹配，预计直接复用缓存，无需重新计算文档向量。'}</p><form id="kbIndexConfirm"><input type="hidden" name="documentId" value="${e(id)}"><input type="hidden" name="version" value="${n(p.version)}"><label><input type="checkbox" name="confirmedExternal" required>确认建立索引；如有缺失片段，允许使用上述已配置 API</label><button class="button button-blue" type="submit">确认建立索引</button></form>`);return;
+   }
    if(action==='demo-retry'){busy=true;ownsBusy=true;await api('knowledge/demo-retry',{courseId:idCourse,confirmed:true});if(valid(g)){notice='正在重新准备演示资料。';await load(false);}return;}
    if(action==='visual-review'){
     const response=await api('knowledge/visual-pack?'+new URLSearchParams({courseId:idCourse,documentId:id}));if(!valid(g))return;visualPack=response.pack;visualPreview=null;
@@ -286,8 +284,10 @@ window.XueyaKnowledgeBase={create({state,store,toast,render}){
  document.addEventListener('change',event=>{if(event.target.id==='kbReviewBlock'){const b=reviewArtifact?.blocks.find(block=>block.id===event.target.value);if(b)$('#kbReviewText').value=b.text;}});
  document.addEventListener('input',event=>{if(event.target.id==='kbFilter'){filter=event.target.value;rows();}if(event.target.id==='kbUploadChapter')uploadChapter=event.target.value;if(event.target.id==='kbQuery')query=event.target.value;});
  document.addEventListener('submit',async event=>{
-  const f=event.target;if(!['kbSearch','kbCreate','kbVisualForm','kbCorrection','kbReviewConfirm','kbOcrBatch'].includes(f.id))return;event.preventDefault();if(busy)return;const g=epoch,id=course,v=Object.fromEntries(new FormData(f));busy=true;const submit=f.querySelector('button');submit.disabled=true;
-  try{if(f.id==='kbCorrection'){
+  const f=event.target;if(!['kbSearch','kbCreate','kbVisualForm','kbCorrection','kbReviewConfirm','kbOcrBatch','kbIndexConfirm'].includes(f.id))return;event.preventDefault();if(busy)return;const g=epoch,id=course,v=Object.fromEntries(new FormData(f));busy=true;const submit=f.querySelector('button');submit.disabled=true;
+  try{if(f.id==='kbIndexConfirm'){
+    await api('knowledge/process',{courseId:id,documentId:v.documentId,version:Number(v.version),action:'index',idempotencyKey:uid(),confirmedExternal:v.confirmedExternal==='on'});if(!valid(g))return;reader.close();notice='已使用当前配置提交索引任务，优先复用已有向量缓存。';await load(false);
+   }else if(f.id==='kbCorrection'){
     const r=await api('rag/correct',{courseId:id,documentId:reviewDoc.id,version:reviewDoc.version,blockId:v.blockId,replacement:v.replacement,reason:v.reason});if(!valid(g))return;await load(false);busy=false;await action('review',reviewDoc.id);
    }else if(f.id==='kbReviewConfirm'){
     await api('knowledge/review-confirm',{courseId:id,documentId:reviewDoc.id,version:reviewDoc.version,confirmed:true});if(!valid(g))return;reader.close();notice='当前修订已确认。可建立向量索引，或先使用关键词检索。';await load(false);
@@ -329,7 +329,7 @@ window.XueyaKnowledgeBase={create({state,store,toast,render}){
      <div class="lw-sync" id="lwSync" data-tone="${sync.tone}" role="status" aria-live="polite"><span class="lw-sync-dot" aria-hidden="true"></span><span id="lwSyncText">${e(sync.text)}</span><small id="lwSyncAt">${syncedAt?'更新于 '+e(syncedAt):''}</small></div>
     </div>
     <ul class="lw-overview-stats" id="lwOverviewStats">${overviewStats()}</ul>
-    <div class="lw-overview-actions">${button(uploadOpen?'收起上传':'上传资料','toggle-upload')}${button(listOpen?'收起资料列表':'查看资料','toggle-list')}<a class="text-link" href="#space/library/manage">管理与查看全部资料 →</a><button type="button" class="lw-link-button" data-kb="jump-search">跳至检索调试</button></div>
+    <div class="lw-overview-actions">${button(uploadOpen?'收起上传':'上传资料','toggle-upload')}${button(listOpen?'收起资料列表':'查看资料','toggle-list')}</div>
    </section>
    <div class="lw-layout">
     <div class="lw-main">
@@ -341,33 +341,16 @@ window.XueyaKnowledgeBase={create({state,store,toast,render}){
       <div id="kbUploadProgress" aria-live="polite"></div>
      </section>
      <section class="panel lw-docs" ${listOpen?'':'hidden'} aria-labelledby="lwDocsTitle">
-      <div class="lw-section-head"><div><h2 id="lwDocsTitle">资料列表 <span class="lw-badge" id="lwDocsCount"></span></h2><p class="lw-hint">文件名、格式、大小、解析与索引状态均来自接口真实字段；接口未返回的项以“—”标出。</p></div><a class="text-link" href="#space/library/manage">阅读与版本管理 →</a></div>
+      <div class="lw-section-head"><div><h2 id="lwDocsTitle">资料列表 <span class="lw-badge" id="lwDocsCount"></span></h2><p class="lw-hint">文件名、格式、大小、解析与索引状态均来自接口真实字段；接口未返回的项以“—”标出。</p></div></div>
       <div class="kb-filters lw-filters"><label class="form-field">章节<select id="kbChapter">${chapterOptions()}</select></label><label class="form-field">筛选文件<input id="kbFilter" type="search" value="${e(filter)}" placeholder="按文件名筛选"></label></div>
       <div id="kbDocuments" class="lw-doc-list"></div>
-      <details class="kb-advanced lw-advanced"><summary>高级处理设置</summary><label><input id="kbPaidConfirm" type="checkbox">确认下一次向量索引或文字识别调用外部 API，可能产生费用</label></details>
+       <details class="kb-advanced lw-advanced"><summary>高级处理设置</summary><label><input id="kbPaidConfirm" type="checkbox">确认下一次文字识别调用外部 API，可能产生费用</label></details>
      </section>
     </div>
     <aside class="lw-side" aria-label="知识库统计与配置">
      <section class="panel lw-card" aria-labelledby="lwScaleTitle"><div class="lw-card-head"><h2 id="lwScaleTitle">知识库规模</h2><span class="lw-chip">实时</span></div><div id="lwScaleBody">${scaleBody()}</div></section>
-     <section class="panel lw-card" aria-labelledby="lwConfigTitle"><div class="lw-card-head"><h2 id="lwConfigTitle">检索与解析配置</h2></div><div id="lwConfigBody">${configBody()}</div></section>
     </aside>
    </div>
-   <section class="panel kb-search lw-probe" aria-labelledby="kbSearchHeading">
-    <div class="lw-probe-head"><div><h2 id="kbSearchHeading" tabindex="-1">测试知识库检索（RAG 召回调试）</h2><p>调用当前资料库的真实检索接口，核对排名、得分、来源与命中片段。结果只来自已解析并确认的原文。</p></div><span class="lw-badge">当前资料库</span></div>
-    <form id="kbSearch" class="lw-probe-form">
-     <label class="form-field lw-probe-query">检索问题<input id="kbQuery" name="query" required maxlength="4000" autocomplete="off" value="${e(query)}" placeholder="例如：为什么栈是后进先出？"></label>
-     <div class="lw-probe-params">
-      <label class="form-field">检索方式<select id="kbMode" name="mode">${MODES.map(([value,label])=>{const supported=modeReady(value);return `<option value="${value}" ${supported?'':'disabled'} ${value===searchMode?'selected':''}>${e(label)}${supported?'':'（未配置）'}</option>`;}).join('')}</select></label>
-      <label class="form-field">返回条数<select disabled aria-describedby="lwProbeHelp"><option>8 条（接口固定）</option></select></label>
-      <label class="form-field">相似度阈值<select disabled aria-describedby="lwProbeHelp"><option>≥ 0.25（接口固定）</option></select></label>
-     </div>
-     <p class="lw-hint" id="lwProbeHelp">当前检索接口固定返回最多 8 条、向量相似度下限 0.25；Top-K 与阈值需服务端开放参数后才能调整，这里不做伪设置。</p>
-     ${caps.embedding?'':'<p class="lw-hint">向量与重排服务未配置，当前只能执行关键词检索。需要启用时请在本机 .env 配置 RAG_EMBEDDING_API_KEY 与 RAG_EMBEDDING_MODEL（重排另需 RAG_RERANK_API_KEY 与 RAG_RERANK_MODEL）后重启服务。</p>'}
-     <label class="kb-api-confirm lw-confirm" ${searchMode==='lexical'?'hidden':''}><input type="checkbox" name="confirmedExternal" ${searchMode!=='lexical'?'required':''}>确认将问题发送给外部向量或重排服务，可能产生费用</label>
-     <div class="lw-probe-actions"><button class="button button-blue" type="submit">执行检索</button><span class="lw-hint">关键词检索不调用外部服务；向量、混合与重排检索会使用已配置的外部服务。</span></div>
-    </form>
-    <div id="kbResults" class="lw-results" role="region" aria-live="polite" aria-label="检索结果"></div>
-   </section>
   </div>`;
   const setValue=(selector,value)=>{const field=$(selector);if(field)field.value=value;};
   setValue('#kbMode',searchMode);setValue('#kbUploadChapter',uploadChapter);setValue('#kbFilter',filter);setValue('#kbChapter',chapter);

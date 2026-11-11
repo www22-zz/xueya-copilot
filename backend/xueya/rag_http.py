@@ -19,14 +19,30 @@ from .rag_service import RagService
 from .rag_moark import MinerUProvider, QwenEmbeddingProvider
 
 
-def configured_service(platform, root):
-    env = dict(os.environ)
-    file = root / ".env"
+SHARED_EMBEDDING_FIELDS = (
+    'RAG_EMBEDDING_API_KEY', 'RAG_EMBEDDING_PROVIDER', 'RAG_EMBEDDING_MODEL',
+    'RAG_EMBEDDING_BASE_URL', 'RAG_EMBEDDING_DIMENSION', 'RAG_EMBEDDING_REVISION',
+    'RAG_EMBEDDING_TIMEOUT_SECONDS',
+)
+
+
+def read_env_file(file):
+    values = {}
     if file.exists():
         for line in file.read_text(encoding="utf-8-sig").splitlines():
             if "=" in line and not line.lstrip().startswith("#"):
                 key, value = line.split("=", 1)
-                env.setdefault(key.strip(), value.strip().strip("\"'"))
+                values.setdefault(key.strip(), value.strip().strip("\"'"))
+    return values
+
+
+def configured_service(platform, root):
+    env = {**read_env_file(root / '.env'), **os.environ}
+    # Optional team credentials are provisioned separately and stay outside Git.
+    # Use the whole provider group, so a blank local template cannot mix providers.
+    if not env.get('RAG_EMBEDDING_API_KEY') and env.get('XUEYA_SHARED_EMBEDDING', '1') != '0':
+        shared = read_env_file(root / '.env.team-embedding')
+        env.update({key: shared[key] for key in SHARED_EMBEDDING_FIELDS if key in shared})
     def settings(prefix, default_url, dimension=1024):
         key, model = env.get(prefix+"_API_KEY", ""), env.get(prefix+"_MODEL", "")
         if not key or not model:

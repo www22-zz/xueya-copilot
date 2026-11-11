@@ -581,3 +581,9 @@ POST /plan/adopt继续要求confirmed=true、业务expectedRevision及operationI
 `GET /api/learning/space/course-graph` 的 concept 节点新增 `fixedQuestions: [{id,title,url}]`，链接指向现有 `#space/practice/legacy/{id}`，复用课程固定题及原有作答记录。候选与当前账号 workspace 题库一致，不创建新 Question 或 Attempt。
 
 已就绪的栈与队列章节可附加 `sourceType: fixed-practice` 节点，由可见题库的 topic/subtopic 分组。此类节点不计入 AI 提取批次或生成题统计；`questionIds` 仍仅供现有资料题练习接口使用。无匹配题时 `fixedQuestions` 为空，不伪造题量或重试模型。
+
+# 建立向量索引前的只读预览（2026-11-12）
+
+`GET /api/platform/knowledge/index-plan?courseId=...&documentId=...` 复用现有账号及课程权限，返回 `{ok:true,plan:{documentId,version,model,sourceCount,cachedVectors,missingVectors,requiresExternal}}`。数量按与当前模型身份、片段文本哈希和维度匹配的有效缓存统计，缓存与缺失数量按去重后的片段计算。此接口不调用模型、不修改索引、不返回密钥或正文。跨课程文档返回 404，缺少会话令牌返回 403；未配置向量服务返回既有 `EMBEDDING_UNAVAILABLE`。
+
+页面展示计划后，通过既有 `POST /api/platform/knowledge/process` 提交 `{courseId,documentId,version,action:'index',idempotencyKey,confirmedExternal:true}`。现有版本校验、外部调用确认、缓存优先和作业账本保持。预览不预留缓存，实际执行时再次校验；期间被更换的资料返回版本冲突。

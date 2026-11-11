@@ -296,6 +296,26 @@ class RagService:
     def _cache_id(identity, text):
         return "vec-"+digest({"identity": identity, "text": text})[:56]
 
+    def index_plan(self, scope, document_id):
+        doc = self.document(scope, document_id, active=True)
+        require(self.embedding is not None, 'EMBEDDING_UNAVAILABLE')
+        identity = self.embedding.identity
+        sources = self.sources(scope, document_ids=[document_id])
+        unique = {self._cache_id(identity, s['quote']): s['quote'] for s in sources}
+        cached = 0
+        for key, text in unique.items():
+            row = self.repo.read(scope, 'vector', key)
+            if not row or row['value'].get('identity') != identity or row['value'].get('textHash') != digest(text):
+                continue
+            try:
+                normalize(row['value'].get('values'), identity['dimension'])
+                cached += 1
+            except AppError:
+                pass
+        return {'documentId': document_id, 'version': doc['version'], 'model': identity['model'],
+                'sourceCount': len(sources), 'cachedVectors': cached, 'missingVectors': len(unique)-cached,
+                'requiresExternal': cached < len(unique)}
+
     async def index_job(self, scope, args, *, progress, checkpoint, commit):
         doc = self._job_doc(scope, args, "rag-index", paid=True)
         require(self.embedding is not None, "NOT_SENT")

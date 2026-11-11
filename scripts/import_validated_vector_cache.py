@@ -57,7 +57,7 @@ async def promote(p, rag, scope, document_id, cache, provenance, *, expected_ide
             previous = p.repo.read(scope, 'vector', key, include_deleted=True)
             p.repo.put(scope, 'vector', key, row, previous['version'] if previous else 0)
     before = p.db.one('SELECT count(*) n FROM invocations')['n']
-    job = rag.submit(scope, 'rag-index', document_id, 'validated-cache-'+doc['fileHash'], expected_version=doc['version'])
+    job = rag.submit(scope, 'rag-index', document_id, 'validated-cache-'+digest({'file':doc['fileHash'],'document':document_id,'version':doc['version']})[:40], expected_version=doc['version'])
     p.jobs.stopped = False
     # Cache promotion can target a logged-in account, not only legacy local-user.
     deadline = time.monotonic()+300
