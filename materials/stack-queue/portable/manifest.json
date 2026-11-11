@@ -1,0 +1,19 @@
+{
+  "schema": "portable-stack-queue-v1",
+  "materialSha256": "7a36da9a2a222b39d22c13a720f587f7f2d21073dbfbcccc9b2769c222d0652a",
+  "cacheSha256": "9aa69ea8996b1425fcfabd58b08d71220012848a60cad0c24945d15fa1f11414",
+  "compressedSha256": "b7d88f50f1f465983b7d04f86d6cc3e26dce70f50b11d7fd5b6a713216170926",
+  "sourceCount": 178,
+  "identity": {
+    "provider": "https://api.moark.com/v1",
+    "model": "Qwen3-VL-Embedding-2B",
+    "revision": "1",
+    "adapter": "moark-qwen-text-v2",
+    "dimension": 2048,
+    "normalized": true,
+    "documentTask": "text",
+    "queryTask": "text"
+  },
+  "uncompressedBytes": 11512084,
+  "vectorFile": "vectors.json.gz"
+}

@@ -35,6 +35,7 @@ function createStore({storage,learning:L,accountId=globalThis.XueyaDataOwner||''
     const result={...defaults(),...value};
     for(const key of ['cards','bank','records','notes','plan','plans','planHistory','graph','chapters','reviewLog','quizDraft','corrections','examRun','quizFilter','quizPool','quizIndex'])delete result[key];
     for(const field of ['documents','messages','sessions','libraryTags','mediaResults','feedback'])if(!Array.isArray(result[field]))result[field]=[];
+    result.documents=result.documents.filter(d=>d&&!(d.status==='示例已索引'&&!d.fileHash&&!d.chunks?.length&&L.documents.some(s=>s.id===d.id&&s.name===d.name)));
     result.sessions=result.sessions.filter(s=>s&&typeof s.id==='string'&&Array.isArray(s.messages));
     if(!result.sessions.length)result.sessions=[{id:id(),title:String(result.messages.find(m=>m.role==='user')?.text||'新的对话').slice(0,40),messages:clone(result.messages),createdAt:now()}];
     result.sessionId=result.sessions.some(s=>s.id===result.sessionId)?result.sessionId:result.sessions[0].id;
@@ -46,10 +47,10 @@ function createStore({storage,learning:L,accountId=globalThis.XueyaDataOwner||''
     result.sessions.find(s=>s.id===result.sessionId).messages=clone(result.messages);
     return result;
   }
-  const initial=normalize(legacy||{documents:[...L.documents,...(old?.documents||[]).filter(d=>!L.documents.some(s=>s.id===d.id)).map(d=>({...d,status:'内容待解析',meta:'旧版资料记录 · 请重新选择原件'}))]});
-  let courses=Array.isArray(workspace?.courses)&&workspace.courses.length?workspace.courses:[{id:'course-default',name:'数据结构',archived:false,data:initial}];
+  const initial=normalize(legacy||{documents:(old?.documents||[]).filter(d=>!L.documents.some(s=>s.id===d.id&&s.name===d.name)).map(d=>({...d,status:'内容待解析',meta:'旧版资料记录 · 请重新选择原件'}))});
+  let courses=Array.isArray(workspace?.courses)&&workspace.courses.length?workspace.courses:[{id:'course-default',name:'个人参考资料',archived:false,data:initial}];
   courses=courses.filter(c=>c&&typeof c.id==='string'&&typeof c.name==='string').map(c=>({...c,data:normalize(c.data)}));
-  if(!courses.length)courses=[{id:'course-default',name:'数据结构',archived:false,data:initial}];
+  if(!courses.length)courses=[{id:'course-default',name:'个人参考资料',archived:false,data:initial}];
   let activeId=courses.some(c=>c.id===workspace?.activeId&&!c.archived)?workspace.activeId:(courses.find(c=>!c.archived)||courses[0]).id;
   const state={...normalize(courses.find(c=>c.id===activeId).data),courseId:activeId,mode:'ask',view:'overview',pending:false,selected:null,submitted:false,draft:'',activeSource:null,libraryQuery:'',cardQuery:'',bankSelected:[],followupIndex:null};
   function snapshot(){const output={};for(const field of fields)output[field]=state[field];output.mediaResults=(state.mediaResults||[]).map(({audioURL,...result})=>result);return clone(output);}
@@ -79,7 +80,8 @@ function createStore({storage,learning:L,accountId=globalThis.XueyaDataOwner||''
   }
   function adoptCourse(course){
     if(!course||typeof course.id!=='string'||typeof course.name!=='string'||course.archived)return false;
-    if(courses.some(c=>c.id===course.id))return true;
+    const existing=courses.find(c=>c.id===course.id);
+    if(existing){if(existing.name!==course.name){existing.name=course.name;return persist();}return true;}
     courses.push({id:course.id,name:course.name,archived:false,data:normalize()});return persist();
   }
   function newSession(){if(state.pending)return false;sync();const session={id:id(),title:'新的对话',messages:[],scopeDocumentIds:[],createdAt:now()};state.sessions.unshift(session);state.sessionId=session.id;state.messages=[];state.selectedDocuments=[];state.draft='';state.followupIndex=null;persist();return session;}

@@ -107,6 +107,9 @@ def test_no_evidence_does_not_call_model_and_plan_never_writes():
 def test_stored_workflow_ignores_forged_quotes_and_records_run(platform, workspace):
     p = platform
     p.repo.save_workspace(p.user_id, workspace)
+    # Evidence is an explicit test fixture; empty real workspaces no longer seed it.
+    for source in SOURCES:
+        p.repo.put(p.scope(), 'source', source['id'], source)
     provider = FakeProvider()
     result = asyncio.run(collect(Agent(provider, p).workflow({"question": "二叉搜索树的查找复杂度", "sources": [{"id": "source-1", "quote": "伪造原文", "title": "伪造"}]})))[-1]
     assert result["sources"] == ["source-1"] and result["runId"]

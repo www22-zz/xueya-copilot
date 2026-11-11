@@ -11,6 +11,7 @@ from fastapi import APIRouter, Request
 from .common import digest, identifier, require
 from .jobs import TERMINAL
 from .document_limits import document_limit
+from .document_catalog import is_demo_placeholder
 
 
 def infer_chapter(name):
@@ -94,8 +95,11 @@ class KnowledgeBase:
                 latest[document_id] = {k: j[k] for k in ('id', 'type', 'status', 'progress', 'error', 'updatedAt')}
         documents = []
         for doc in self.p.repo.all(scope, 'document'):
-            if doc.get('superseded'):
+            if doc.get('superseded') or is_demo_placeholder(doc):
                 continue
+            original_available = False
+            if doc.get('fileHash'):
+                original_available = self.p.files.path(doc['fileHash']).is_file()
             quality_summary = doc.get('quality') or {}
             pages = quality_summary.get('pages', [])
             review = {'totalPages': len(pages), 'pendingPages': [p['number'] for p in pages if p.get('needsOcr')],
@@ -107,15 +111,17 @@ class KnowledgeBase:
                           partialImages=sum(bool(r.get('partial')) for r in image_reviews),
                           unreadableImages=sum(r['kind'] == 'unreadable' for r in image_reviews))
             documents.append({**{k: doc.get(k) for k in ('id', 'name', 'chapter', 'version', 'contentRevision', 'kind', 'size', 'status', 'indexStatus', 'archived', 'quality')},
+                              'originalAvailable': original_available,
                               'review': review, 'ocrPreparation': doc.get('ocrPreparation'), 'pageSelection': doc.get('pageSelection'),
                               'knowledgeReview': doc.get('knowledgeReview'), 'reviewReady': self.rag.reviewed(doc),
-                              'sourceCount': len(doc.get('chunks', [])), 'task': latest.get(doc['id']),
+                              'sourceCount': len(doc.get('chunks', [])) if original_available else 0, 'task': latest.get(doc['id']),
                               'vectorReady': bool(self.rag.embedding and doc.get('embeddingIdentity') == self.rag.embedding.identity and doc.get('indexStatus') == 'ready')})
         active = [d for d in documents if not d['archived']]
         return {'documents': sorted(documents, key=lambda d: (d.get('chapter') or '', d['name'])),
                 'summary': {'documents': len(active), 'sources': sum(d['sourceCount'] for d in active),
                             'processing': sum(bool(d['task'] and d['task']['status'] not in TERMINAL) for d in active),
-                            'needsReview': sum(bool(d.get('quality', {}) and d['quality'].get('warnings')) for d in active)},
+                            'needsReview': sum(bool(d.get('quality', {}) and d['quality'].get('warnings')) for d in active),
+                            'missingOriginals': sum(not d['originalAvailable'] for d in active)},
                 'capabilities': self.capabilities(),
                 **({'demoImport': self.demo.status()} if self.demo and self.demo.config.auto_import_demo
                    and scope.course_id == 'course-default' and self.demo.status() else {})}
@@ -144,6 +150,8 @@ def install_knowledge_base(app):
     async def lifespan(host):
         async with previous(host):
             host.state.knowledge = KnowledgeBase(host)
+            from .portable_knowledge import PortableKnowledge
+            host.state.portable_knowledge = PortableKnowledge(host.state.knowledge, host.state.config)
             from .practice_generation import PracticeGeneration
             host.state.practice_generation = PracticeGeneration(host)
             def analysis_catalog(account):

@@ -57,7 +57,9 @@ python -m venv .venv
 4. 使用练习与错题页完成题目、查看解析并记录复习；服务端高级学习能力按实际入口和配置开放。
 5. 在设置中查看本机账号、任务、用量和服务数据。账号共用本机服务，但私人资料、工作区和任务按登录账号隔离，不跨电脑自动同步。旧共享空间中归属未知的资料不会自动分配给新账号。
 
-新数据目录首次启动会自动准备仓库内 17 份数据结构课件；进入知识库查看进度。已有资料历史的目录不会重复导入，可用 `XUEYA_AUTO_IMPORT_DEMO=0` 关闭。课件、图片补录及手动导入见 [共享资料包](materials/data-structures-algorithms/README.md)。私人数据库不随 Git 同步。
+当前产品知识库仅基于 [栈与队列知识库.md](materials/stack-queue/栈与队列知识库.md)。其他课件、教材和知识库保留为磁盘资料，暂不接入产品。课件包默认不自动导入（`XUEYA_AUTO_IMPORT_DEMO=0`）；显式本机接入使用 `scripts.sync_local_knowledge`，只选择该 Markdown。私人数据库不随 Git 同步。
+
+仓库另提供[可分发向量资料包](materials/stack-queue/portable/README.md)：首次启动并进入新账号会自动解析这份 Markdown、导入已有的 178 条向量，无需重新向量化文档。复制 `.env.example` 为 `.env`，填写自己的 `MIMO_API_KEY` 与 `RAG_EMBEDDING_API_KEY` 即可分别使用模型问答与语义检索；Embedding 模型/维度默认匹配随附缓存。缺密钥时关键词检索仍可用，向量缓存保留。`XUEYA_AUTO_IMPORT_STACK=0` 可关闭自动安装。共享的只有教学文件和已验证向量，私人账号、聊天、密钥和运行数据库继续仅存本机。
 
 知识库支持最大64MiB的PDF；扫描教材须先完成文字识别，之后才能预览并确认替换旧PPT资料。OCR每次仅处理显式选择的一批，不会自动调用整本教材；未配置服务时显示待识别。接口、当前扫描教材准备状态及限制见 [PDF教材换库](docs/contracts/pdf-knowledge.md)。
 

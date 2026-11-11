@@ -280,7 +280,9 @@ def create_app(config: Config | None = None, *, provider=None, start_jobs=True):
         require(p is not None, "NOT_FOUND")
         repo, db, user_id, method = p.repo, p.db, p.scope_user_id, request.method
         if path == "/bootstrap" and method == "GET":
-            return success(token=app.state.token, schemaVersion="1.0", workspace=repo.get_workspace(user_id), courses=repo.courses(user_id), jobs=p.jobs.list(user_id), resources=p.resources.stats())
+            portable = getattr(app.state, 'portable_knowledge', None)
+            prepared = await portable.ensure(user_id) if portable else None
+            return success(token=app.state.token, schemaVersion="1.0", workspace=repo.get_workspace(user_id), courses=repo.courses(user_id), jobs=p.jobs.list(user_id), resources=p.resources.stats(), **({'portableKnowledge': prepared} if prepared else {}))
         require(secrets.compare_digest(request.headers.get("x-xueya-token", ""), app.state.token), "AUTH_REQUIRED")
         binary = path in ("/documents/upload", "/documents/import-original")
         value = {}
@@ -320,7 +322,8 @@ def create_app(config: Config | None = None, *, provider=None, start_jobs=True):
             saved = repo.put(scope(), "document", doc["id"], {**doc, "fileHash": file["hash"], "size": file["size"], "originalAvailable": True}, doc["version"])
             return success(document={**saved["value"], "version": saved["version"]})
         if path == "/documents" and method == "GET":
-            return success(documents=repo.all(scope(), "document"))
+            from .document_catalog import is_demo_placeholder
+            return success(documents=[d for d in repo.all(scope(), "document") if not is_demo_placeholder(d)])
         if path == "/documents/original" and method == "GET":
             doc = p.document(scope(), query.get("documentId"))
             from .rag_scope_adapter import is_platform_document

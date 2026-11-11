@@ -1,9 +1,10 @@
 import hashlib
 import json
+import asyncio
 
 import pytest
 
-from backend.xueya.common import AppError, digest
+from backend.xueya.common import AppError, digest, Scope
 from backend.xueya.rag_api import ApiSettings
 from backend.xueya.rag_moark import QwenEmbeddingProvider
 from backend.xueya.rag_service import RagService
@@ -12,10 +13,20 @@ from test_rag import completed
 
 
 @pytest.mark.asyncio
-async def test_cache_requires_exact_source_identity_and_promotes_without_network(platform, tmp_path):
+@pytest.mark.parametrize('owner', ['local-user', 'account-cached-vectors'])
+async def test_cache_requires_exact_source_identity_and_promotes_without_network(platform, tmp_path, owner):
     rag = RagService(platform)
-    scope = platform.scope()
-    done = await completed(platform, rag.upload(scope, '# 规则\n\n栈遵循后进先出。'.encode(), 'rules.md', 'rules'))
+    platform.repo.ensure_course(owner, {'id': 'course-default', 'name': '缓存恢复测试'})
+    scope = Scope(user_id=owner, course_id='course-default')
+    job = rag.upload(scope, '# 规则\n\n栈遵循后进先出。'.encode(), 'rules.md', 'rules')
+    platform.jobs.stopped = False
+    for _ in range(500):
+        await platform.jobs.tick()
+        done = platform.jobs.get(job['id'], owner)
+        if done['status'] in ('succeeded', 'failed'):
+            break
+        await asyncio.sleep(.01)
+    assert done['status'] == 'succeeded'
     doc_id = done['result']['documentId']
     doc = rag.document(scope, doc_id)
     identity = QwenEmbeddingProvider(platform, ApiSettings(model='Qwen3-VL-Embedding-2B', dimension=2048,

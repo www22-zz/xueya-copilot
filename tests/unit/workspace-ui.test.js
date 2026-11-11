@@ -8,6 +8,24 @@ const {createService,normalizeDocument}=require('../../frontend/js/services/work
 function storage(initial={}){const data=new Map(Object.entries(initial));return{getItem:key=>data.get(key)||null,setItem:(key,value)=>data.set(key,value),data};}
 function setup(initial={}){let counter=0;const disk=storage(initial),store=createStore({storage:disk,learning:L,id:()=>String(++counter)});return{disk,store};}
 
+test('server course names replace stale labels without losing local conversations',()=>{
+  const {store}=setup();store.state.messages.push({role:'user',text:'保留对话'});
+  const sessionId=store.state.sessionId;
+  assert.ok(store.adoptCourse({id:'course-default',name:'栈与队列知识库'}));
+  assert.equal(store.courses[0].name,'栈与队列知识库');
+  assert.equal(store.state.sessionId,sessionId);
+  assert.equal(store.state.messages[0].text,'保留对话');
+});
+
+test('fresh and migrated workspaces do not count fixture names as uploaded files',()=>{
+  const fresh=setup().store;
+  assert.deepEqual(fresh.state.documents,[]);
+  assert.equal(fresh.courses[0].name,'个人参考资料');
+  const real={id:'real',name:'真实笔记.md',chunks:[{text:'笔记正文'}]};
+  const migrated=setup({[LEGACY]:JSON.stringify({documents:[...L.documents,real]})}).store;
+  assert.deepEqual(migrated.state.documents,[real]);
+});
+
 test('account workspaces preserve unknown legacy data without sharing conversations',()=>{
   const orphan=JSON.stringify({version:3,activeId:'course-default',courses:[{id:'course-default',name:'旧空间',data:{messages:[{role:'user',text:'unknown legacy private'}]}}]});
   const disk=storage({[KEY]:orphan});

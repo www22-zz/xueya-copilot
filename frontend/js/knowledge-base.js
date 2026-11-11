@@ -36,24 +36,26 @@ window.XueyaKnowledgeBase={create({state,store,toast,render}){
   const docs=(data.documents||[]).filter(d=>!d.archived);
   const pendingPages=docs.reduce((total,d)=>total+n(d.review?.pendingPages?.length),0);
   const embeddable=docs.filter(d=>n(d.sourceCount)>0),embedded=embeddable.filter(d=>d.vectorReady);
-  const unparsed=docs.filter(d=>!n(d.sourceCount)).length;
+  const unparsed=docs.filter(d=>!n(d.sourceCount)&&d.originalAvailable!==false&&!d.contentRevision&&!d.review?.pendingPages?.length).length;
   const parts=[];
   if(['preparing','running'].includes(data.demoImport?.status))parts.push('演示课件准备中');
   if(n(s.processing))parts.push(n(s.processing)+' 个任务处理中');
   if(unparsed)parts.push(unparsed+' 份待解析');
+  if(n(s.missingOriginals))parts.push(n(s.missingOriginals)+' 份记录缺少原件');
+  if(!docs.length)parts.push('暂无资料');
   if(pendingPages)parts.push(pendingPages+' 页待文字识别');
   if(n(s.needsReview))parts.push(n(s.needsReview)+' 份待复核');
   if(caps.embedding&&embeddable.length&&embedded.length===embeddable.length)parts.push('全量嵌入完成');
   else if(!caps.embedding)parts.push('向量未配置');
   if(!parts.length)parts.push('资料目录已同步');
   const busyState=['preparing','running'].includes(data.demoImport?.status)||n(s.processing)>0;
-  const warn=parts.some(part=>/待解析|待文字识别|待复核|未配置/.test(part));
+  const warn=parts.some(part=>/待解析|待文字识别|待复核|未配置|缺少原件/.test(part));
   return {tone:busyState?'busy':warn?'warn':'ok',text:parts.join(' · ')};
  }
  function overviewStats(){
   const s=data?.summary||{};
   const docs=(data?.documents||[]).filter(d=>!d.archived);
-  const searchable=docs.filter(d=>n(d.sourceCount)>0&&d.reviewReady!==false).length;
+  const searchable=docs.filter(d=>n(d.sourceCount)>0&&d.originalAvailable!==false&&d.reviewReady!==false).length;
   return `<li><strong>${n(s.documents)}</strong><span>资料份数</span></li><li><strong>${n(s.sources)}</strong><span>原文切片</span></li><li><strong>${searchable}</strong><span>可检索</span></li><li><strong>${n(s.needsReview)}</strong><span>待复核</span></li>`;
  }
  function scaleBody(){
@@ -73,7 +75,7 @@ window.XueyaKnowledgeBase={create({state,store,toast,render}){
  }
  function configBody(){
   const caps=data?.capabilities||{};
-  const rows=[['关键词检索',true,'本地规则，不调用外部服务'],['向量索引（Embedding）',!!caps.embedding,caps.embedding?(caps.embeddingModel||'已配置'):''],['重排（Rerank）',!!caps.rerank,caps.rerank?'已配置':''],['文字识别（OCR）',!!caps.ocr,caps.ocr?(caps.ocrModel||'已配置'):'']];
+  const rows=[['关键词检索',true,'本地规则，不调用外部服务'],['向量化服务（Embedding）',!!caps.embedding,caps.embedding?(caps.embeddingModel||'已配置'):''],['重排（Rerank）',!!caps.rerank,caps.rerank?'已配置':''],['文字识别（OCR）',!!caps.ocr,caps.ocr?(caps.ocrModel||'已配置'):'']];
   const all=caps.embedding&&caps.rerank&&caps.ocr;
   return `<ul class="lw-config-list">${rows.map(([label,ok,text])=>`<li><span>${e(label)}</span><strong class="${ok?'lw-on':'lw-off'}">${ok?'已配置':'未配置'}</strong>${text?`<small>${e(text)}</small>`:''}</li>`).join('')}</ul>${all?'':'<p class="lw-hint">未配置的能力不会发起外部调用。需要向量、重排或文字识别时，请在本机 .env 按需填写 RAG_EMBEDDING_API_KEY、RAG_RERANK_API_KEY、RAG_OCR_API_KEY 及对应的 _MODEL 后重启服务。</p>'}`;
  }
@@ -120,7 +122,7 @@ window.XueyaKnowledgeBase={create({state,store,toast,render}){
  async function load(full=true){
   if(loading)return;loading=true;const g=epoch,id=course;
   try{
-   if(full){bases=(await api('knowledge/bases')).bases;if(!valid(g))return;const local=store.courses.find(c=>c.id===id);if(!bases.some(c=>c.id===id)&&local){await api('courses',{id,name:local.name});bases=(await api('knowledge/bases')).bases;}}
+   if(full){bases=(await api('knowledge/bases')).bases;if(!valid(g))return;const local=store.courses.find(c=>c.id===id);if(!bases.some(c=>c.id===id)&&local){await api('courses',{id,name:local.name});bases=(await api('knowledge/bases')).bases;}for(const base of bases)store.adoptCourse(base);}
    const next=await api('knowledge/catalog?'+new URLSearchParams({courseId:id}));if(!valid(g))return;
    if(data&&JSON.stringify(data.documents.map(d=>[d.id,d.version,d.archived]))!==JSON.stringify(next.documents.map(d=>[d.id,d.version,d.archived])))results=null;
    data=next;state.documentCount=n(data.summary?.documents);countCourse=id;countAt=Date.now();syncedAt=fmtTime(new Date());loadError='';store.persist();
@@ -135,7 +137,8 @@ window.XueyaKnowledgeBase={create({state,store,toast,render}){
  }
  function statsFacts(d){
   const pages=d.kind==='pdf'||d.kind==='pptx'?n(d.review?.totalPages):null;
-  return [['格式',kindLabel(d.kind)],['大小',fmtSize(d.size)],['章节',d.chapter||'—'],['切片',n(d.sourceCount)],['页数',pages?pages+(d.kind==='pptx'?' 页幻灯片':' 页'):'—'],['解析',d.task&&!['succeeded','failed','cancelled','unknown'].includes(d.task.status)?labels[d.task.status]:d.task&&['failed','cancelled','unknown'].includes(d.task.status)?labels[d.task.status]:statusText(d)],['向量索引',d.vectorReady?'就绪':data?.capabilities?.embedding?'未建立':'未配置']];
+  const vectorLabel=d.vectorReady?'就绪':d.indexStatus==='ready'?(data?.capabilities?.embedding?'已有缓存，当前模型不匹配':'已有缓存，服务未配置'):data?.capabilities?.embedding?'未建立':'未配置';
+  return [['格式',kindLabel(d.kind)],['大小',fmtSize(d.size)],['章节',d.chapter||'—'],['切片',n(d.sourceCount)],['页数',pages?pages+(d.kind==='pptx'?' 页幻灯片':' 页'):'—'],['解析',d.task&&!['succeeded','failed','cancelled','unknown'].includes(d.task.status)?labels[d.task.status]:d.task&&['failed','cancelled','unknown'].includes(d.task.status)?labels[d.task.status]:statusText(d)],['向量索引',vectorLabel]];
  }
  function docRow(d){
   const task=d.task,active=task&&!['succeeded','failed','cancelled','unknown'].includes(task.status);
@@ -153,10 +156,10 @@ window.XueyaKnowledgeBase={create({state,store,toast,render}){
     ${d.review?.blankPages.length?`<small>已核对 ${d.review.blankPages.length} 个空白页</small>`:''}
     ${d.ocrPreparation?`<small class="kb-warning">${e(d.ocrPreparation.notice)} · 可随时查看原PDF</small>`:''}
     ${d.pageSelection?`<small class="kb-page-selection">${e(pageSelectionText(d))}</small>`:''}
-    <small>${d.reviewReady===false?'待校正与确认：当前修订尚未用于检索':'当前修订可用于检索'}</small>
+    <small>${d.originalAvailable===false?'原件缺失：请重新上传，当前记录不计为可检索资料':!d.sourceCount?'暂无可检索正文':d.reviewReady===false?'待校正与确认：当前修订尚未用于检索':'当前修订可用于检索'}</small>
    </div>
    <div class="kb-row-actions lw-doc-actions">
-    ${button('查看原文','read',d.id)}
+    ${d.protected?'<small>平台预置资料：可用于问答，正文与原件受保护</small>':button('查看原文','read',d.id)}
     ${button('用于问答','chat',d.id,d.sourceCount&&d.reviewReady!==false?'':'disabled')}
     ${button('校正与确认','review',d.id,d.sourceCount?'':'disabled')}
     ${active?button('取消任务','cancel',task.id):`<details><summary>处理</summary>${task&&['failed','cancelled'].includes(task.status)&&['rag-parse','rag-visual-apply'].includes(task.type)?button('重试本地处理','retry',task.id):''}${d.kind==='pptx'?button('图片文字补录','visual-review',d.id):''}${button('重新解析','parse',d.id)}${button('建立向量索引','index',d.id,data?.capabilities?.embedding&&d.reviewReady!==false?'':'disabled')}${button('选择识别页（最多20页）','ocr-select',d.id,data?.capabilities?.ocr&&d.kind==='pdf'&&d.review?.pendingPages.length?'':'disabled')}${d.kind==='pdf'&&data.documents.some(old=>old.kind==='pptx'&&!old.archived)?button('用此PDF替换旧PPT','replace-ppt',d.id,d.sourceCount&&!d.review?.pendingPages.length?'':'disabled'):''}</details>`}

@@ -1,3 +1,5 @@
 materials/data-structures-algorithms/ppt/*.pptx binary
 materials/data-structures-algorithms/*.json text eol=lf
 materials/stack-queue/*.md text eol=lf
+materials/stack-queue/portable/*.json text eol=lf
+materials/stack-queue/portable/*.gz binary

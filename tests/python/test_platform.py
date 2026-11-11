@@ -12,7 +12,7 @@ from backend.xueya.actions import ActionAuthority
 from backend.xueya.backup import create_backup, restore_backup
 from backend.xueya.common import AppError, Scope, dumps
 from backend.xueya.database import Database
-from backend.xueya.learning import build_plan, memory_cards, wrong_questions
+from backend.xueya.learning import SOURCES, build_plan, memory_cards, wrong_questions
 from backend.xueya.platform import Platform
 
 
@@ -111,6 +111,7 @@ def test_confirmation_atomic_idempotent_and_cas_fences_old_browser(platform, wor
 def test_question_and_plan_share_confirmation_pipeline(platform, workspace, kind, after):
     p = platform
     p.repo.save_workspace(p.user_id, workspace)
+    p.repo.put(p.scope(), 'source', SOURCES[0]['id'], SOURCES[0])
     preview = prepare(p, kind, "item-1", after)
     p.authority.confirm(p.scope(), preview)
     assert p.authority.apply(p.scope(), preview["actionId"])["version"] == 1
@@ -121,6 +122,7 @@ def test_question_and_plan_share_confirmation_pipeline(platform, workspace, kind
 def test_changed_source_expiry_cancel_scope_and_uncertainty(platform, workspace):
     p = platform
     p.repo.save_workspace(p.user_id, workspace)
+    p.repo.put(p.scope(), 'source', SOURCES[0]['id'], SOURCES[0])
     preview = prepare(p, after={"title": "引用", "content": "原文内容", "sourceIds": ["source-1"]})
     p.authority.confirm(p.scope(), preview)
     old = p.repo.read(p.scope(), "source", "source-1")
