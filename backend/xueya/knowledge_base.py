@@ -11,6 +11,7 @@ from fastapi import APIRouter, Request
 from .common import digest, identifier, require
 from .jobs import TERMINAL
 from .document_limits import document_limit
+from .document_catalog import is_demo_placeholder
 
 
 def infer_chapter(name):
@@ -20,6 +21,14 @@ def infer_chapter(name):
         return '第' + match[1] + '章'
     match = re.search(r'week\s*(\d+)', name, re.I)
     return '第' + match[1] + '周' if match else ''
+
+
+def filename_chapter(name):
+    return name.rsplit('.', 1)[0].strip() or name
+
+
+def document_chapter(doc):
+    return (doc.get('chapter') or '').strip() or filename_chapter(doc['name'])
 
 
 class KnowledgeBase:
@@ -53,25 +62,38 @@ class KnowledgeBase:
         require(isinstance(name, str) and not name.startswith('~$'), 'TEMPORARY_FILE_FORBIDDEN')
         require(not any(c in name for c in ('/', '\\', '\x00')), 'INVALID_FILE_NAME')
         require(isinstance(chapter, str) and len(chapter) <= 200, 'INVALID_CHAPTER')
-        chapter = chapter.strip() or infer_chapter(name)
+        default_chapter = not chapter.strip()
+        chapter = chapter.strip() or filename_chapter(name)
         signature = digest({'name': name, 'chapter': chapter, 'bytes': hashlib.sha256(buffer).hexdigest(), **({'review': True} if review else {})})
+        legacy_signature = digest({'name': name, 'chapter': infer_chapter(name), 'bytes': hashlib.sha256(buffer).hexdigest(), **({'review': True} if review else {})}) if default_chapter else None
         key = identifier(key)
         with self.p.db.transaction():
             receipt_id = 'knowledge-import-' + digest(key)[:40]
-            prior = self.p.repo.read(scope, 'artifact', receipt_id)
-            require(not prior or prior['value']['signature'] == signature, 'IDEMPOTENCY_CONFLICT')
+            prior = self.p.repo.read(scope, 'artifact', receipt_id, include_deleted=True)
+            require(not prior or prior['value']['signature'] in (signature, legacy_signature), 'IDEMPOTENCY_CONFLICT')
             # Same file+name+chapter is one import, even across browser and CLI keys.
-            job = self.rag.upload(scope, buffer, name, 'knowledge-file-'+signature)
+            job_key = 'knowledge-file-'+signature
+            if legacy_signature:
+                legacy_job = self.p.db.one("SELECT input FROM jobs WHERE user_id=? AND course_id=? AND type='rag-parse' AND idempotency_key=?", (scope.user_id, scope.course_id, 'knowledge-file-'+legacy_signature))
+                if legacy_job and self.p.repo.read(scope, 'document', json.loads(legacy_job['input'])['documentId']):
+                    signature = legacy_signature
+                    job_key = 'knowledge-file-'+signature
+            while old_job := self.p.db.one("SELECT input FROM jobs WHERE user_id=? AND course_id=? AND type='rag-parse' AND idempotency_key=?", (scope.user_id, scope.course_id, job_key)):
+                old_document = json.loads(old_job['input'])['documentId']
+                if self.p.repo.read(scope, 'document', old_document):
+                    break
+                job_key = 'knowledge-file-'+digest({'signature': signature, 'afterDeleted': old_document})
+            job = self.rag.upload(scope, buffer, name, job_key)
             payload = json.loads(self.p.db.one('SELECT input FROM jobs WHERE id=?', (job['id'],))['input'])
             doc = self.rag.document(scope, payload['documentId'])
             if 'knowledgeImportSignature' in doc:
-                require(doc['knowledgeImportSignature'] == signature, 'IDEMPOTENCY_CONFLICT')
+                require(doc['knowledgeImportSignature'] in (signature, legacy_signature), 'IDEMPOTENCY_CONFLICT')
             else:
                 self.library.annotate(scope, job, {'chapter': chapter, 'knowledgeImportSignature': signature,
                                                  'origin': {'type': 'local-file', 'fileName': name},
                                                  **({'knowledgeReview': {'confirmedRevision': None}} if review else {})})
-            if not prior:
-                self.p.repo.put(scope, 'artifact', receipt_id, {'kind': 'knowledge-import-receipt', 'signature': signature, 'documentId': doc['id']}, 0)
+            if not prior or prior['value']['documentId'] != doc['id']:
+                self.p.repo.put(scope, 'artifact', receipt_id, {'kind': 'knowledge-import-receipt', 'signature': signature, 'documentId': doc['id']}, prior['version'] if prior else 0)
             return {'job': job, 'documentId': doc['id']}
 
     def capabilities(self):
@@ -94,8 +116,11 @@ class KnowledgeBase:
                 latest[document_id] = {k: j[k] for k in ('id', 'type', 'status', 'progress', 'error', 'updatedAt')}
         documents = []
         for doc in self.p.repo.all(scope, 'document'):
-            if doc.get('superseded'):
+            if doc.get('superseded') or is_demo_placeholder(doc):
                 continue
+            original_available = False
+            if doc.get('fileHash'):
+                original_available = self.p.files.path(doc['fileHash']).is_file()
             quality_summary = doc.get('quality') or {}
             pages = quality_summary.get('pages', [])
             review = {'totalPages': len(pages), 'pendingPages': [p['number'] for p in pages if p.get('needsOcr')],
@@ -107,15 +132,17 @@ class KnowledgeBase:
                           partialImages=sum(bool(r.get('partial')) for r in image_reviews),
                           unreadableImages=sum(r['kind'] == 'unreadable' for r in image_reviews))
             documents.append({**{k: doc.get(k) for k in ('id', 'name', 'chapter', 'version', 'contentRevision', 'kind', 'size', 'status', 'indexStatus', 'archived', 'quality')},
+                              'chapter': document_chapter(doc), 'originalAvailable': original_available,
                               'review': review, 'ocrPreparation': doc.get('ocrPreparation'), 'pageSelection': doc.get('pageSelection'),
                               'knowledgeReview': doc.get('knowledgeReview'), 'reviewReady': self.rag.reviewed(doc),
-                              'sourceCount': len(doc.get('chunks', [])), 'task': latest.get(doc['id']),
+                              'sourceCount': len(doc.get('chunks', [])) if original_available else 0, 'task': latest.get(doc['id']),
                               'vectorReady': bool(self.rag.embedding and doc.get('embeddingIdentity') == self.rag.embedding.identity and doc.get('indexStatus') == 'ready')})
         active = [d for d in documents if not d['archived']]
         return {'documents': sorted(documents, key=lambda d: (d.get('chapter') or '', d['name'])),
                 'summary': {'documents': len(active), 'sources': sum(d['sourceCount'] for d in active),
                             'processing': sum(bool(d['task'] and d['task']['status'] not in TERMINAL) for d in active),
-                            'needsReview': sum(bool(d.get('quality', {}) and d['quality'].get('warnings')) for d in active)},
+                            'needsReview': sum(bool(d.get('quality', {}) and d['quality'].get('warnings')) for d in active),
+                            'missingOriginals': sum(not d['originalAvailable'] for d in active)},
                 'capabilities': self.capabilities(),
                 **({'demoImport': self.demo.status()} if self.demo and self.demo.config.auto_import_demo
                    and scope.course_id == 'course-default' and self.demo.status() else {})}
@@ -144,6 +171,8 @@ def install_knowledge_base(app):
     async def lifespan(host):
         async with previous(host):
             host.state.knowledge = KnowledgeBase(host)
+            from .portable_knowledge import PortableKnowledge
+            host.state.portable_knowledge = PortableKnowledge(host.state.knowledge, host.state.config)
             from .practice_generation import PracticeGeneration
             host.state.practice_generation = PracticeGeneration(host)
             def analysis_catalog(account):
@@ -179,6 +208,12 @@ def install_knowledge_base(app):
         if operation == 'create' and post:
             return success(base=kb.create(value))
         scope = kb.p.scope(value.get('courseId') or q.get('courseId') or 'course-default')
+        if operation == 'index-plan' and not post:
+            return success(plan=kb.rag.index_plan(scope, q.get('documentId')))
+        if operation == 'remove' and post:
+            require(value.get('confirmed') is True, 'CONFIRMATION_REQUIRED')
+            require(type(value.get('version')) is int and value['version'] > 0, 'INVALID_VERSION')
+            return success(**kb.rag.remove(scope, value.get('documentId'), value['version']))
         if operation == 'review-confirm' and post:
             require(value.get('confirmed') is True, 'CONFIRMATION_REQUIRED')
             require(type(value.get('version')) is int, 'INVALID_VERSION')
@@ -208,7 +243,7 @@ def install_knowledge_base(app):
             chapter = value.get('chapter', '')
             require(isinstance(chapter, str) and len(chapter) <= 200, 'INVALID_CHAPTER')
             if chapter:
-                chapter_ids = {d['id'] for d in kb.p.repo.all(scope, 'document') if d.get('chapter') == chapter and not d.get('archived') and not d.get('superseded')}
+                chapter_ids = {d['id'] for d in kb.p.repo.all(scope, 'document') if document_chapter(d) == chapter and not d.get('archived') and not d.get('superseded')}
                 require(ids is None or isinstance(ids, list) and all(isinstance(i, str) for i in ids), 'INVALID_DOCUMENT_IDS')
                 ids = sorted(chapter_ids if ids is None else chapter_ids.intersection(ids))
             return success(evidence=await connected_work(request, kb.rag.search(scope, value.get('query'), document_ids=ids,

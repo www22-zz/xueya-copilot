@@ -6,6 +6,8 @@ disabled, so a missing cache entry cannot become an unnoticed billable request.
 """
 import hashlib
 import json
+import asyncio
+import time
 
 import httpx
 
@@ -13,7 +15,6 @@ from backend.xueya.common import digest, require
 from backend.xueya.rag_api import ApiSettings
 from backend.xueya.rag_moark import QwenEmbeddingProvider
 from backend.xueya.rag_search import normalize
-from scripts.import_prepared_pdf import finish
 
 
 async def promote(p, rag, scope, document_id, cache, provenance, *, expected_identity):
@@ -56,9 +57,19 @@ async def promote(p, rag, scope, document_id, cache, provenance, *, expected_ide
             previous = p.repo.read(scope, 'vector', key, include_deleted=True)
             p.repo.put(scope, 'vector', key, row, previous['version'] if previous else 0)
     before = p.db.one('SELECT count(*) n FROM invocations')['n']
-    job = rag.submit(scope, 'rag-index', document_id, 'validated-cache-'+doc['fileHash'], expected_version=doc['version'])
+    job = rag.submit(scope, 'rag-index', document_id, 'validated-cache-'+digest({'file':doc['fileHash'],'document':document_id,'version':doc['version']})[:40], expected_version=doc['version'])
     p.jobs.stopped = False
-    done = await finish(p, job)
+    # Cache promotion can target a logged-in account, not only legacy local-user.
+    deadline = time.monotonic()+300
+    while time.monotonic() < deadline:
+        await p.jobs.tick()
+        done = p.jobs.get(job['id'], scope.user_id)
+        if done['status'] in ('succeeded', 'failed', 'cancelled', 'unknown'):
+            require(done['status'] == 'succeeded', 'CACHE_PROMOTION_FAILED:'+str(done['error']))
+            break
+        await asyncio.sleep(.05)
+    else:
+        raise RuntimeError('CACHE_PROMOTION_TIMEOUT')
     require(done['result']['computed'] == 0 and done['result']['cached'] == len(needed), 'CACHE_PROMOTION_NOT_OFFLINE')
     require(p.db.one('SELECT count(*) n FROM invocations')['n'] == before, 'CACHE_PROMOTION_NOT_OFFLINE')
     return {'documentId': document_id, 'identity': identity, 'sourceCount': len(sources), 'cachedVectors': len(needed),

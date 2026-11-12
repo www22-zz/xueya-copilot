@@ -19,10 +19,14 @@ from .common import AppError, Scope, require
 from .rag_service import RagService
 
 
-# Exact six-file cross-course allowlist approved by the user on 2026-10-31.
+# Product scope narrowed to the selected Markdown by the user on 2026-11-10.
 # Flags/filenames alone retain only their existing same-course permissions.
 KNOWN_PLATFORM_HASHES = frozenset({
     "7a36da9a2a222b39d22c13a720f587f7f2d21073dbfbcccc9b2769c222d0652a",
+})
+# Retired presets remain protected in historical records; they are not added to
+# the active cross-course allowlist by retaining their former protection.
+PROTECTED_PLATFORM_HASHES = KNOWN_PLATFORM_HASHES | frozenset({
     "7fbd8a0444096282daf0b2d68904aa89c70144e1525134db0979be31ed9bfd29",
     "6da65496b85208708df00d7213ec3074cb535e36e9eefa03de220438ba946b42",
     "5702f159d19a3e88a17049ff691fdaf26ca8fdd6650269d24d39d2f5a89b6504",
@@ -45,7 +49,7 @@ def is_platform_document(doc: Dict[str, Any], scope: Optional[Scope] = None) -> 
     if scope and is_platform_scope(scope):
         return True
     file_hash = doc.get("fileHash") or doc.get("sourceFileHash")
-    if file_hash and file_hash in KNOWN_PLATFORM_HASHES:
+    if file_hash and file_hash in PROTECTED_PLATFORM_HASHES:
         return True
     return False
 
@@ -60,7 +64,7 @@ def is_platform_source(source: Dict[str, Any], scope: Optional[Scope] = None, do
     if scope and is_platform_scope(scope):
         return True
     file_hash = source.get("fileHash")
-    if file_hash and file_hash in KNOWN_PLATFORM_HASHES:
+    if file_hash and file_hash in PROTECTED_PLATFORM_HASHES:
         return True
     return False
 
@@ -180,7 +184,17 @@ def public_api_projector(platform, course_id="course-default"):
         if (isinstance(key, str) and key in docs
                 or isinstance(item.get('fileHash'), str) and item['fileHash'] in hashes
                 or isinstance(item.get('sourceFileHash'), str) and item['sourceFileHash'] in hashes):
-            return {**{field: item[field] for field in ('ok', 'id', 'name', 'title', 'version', 'status', 'archived', 'createdAt', 'updatedAt') if field in item},
+            # Catalog facts are public metadata, not protected source text.
+            # Retaining only identity made parsed presets look like empty files.
+            metadata = {name: project(item[name], name) for name in (
+                'kind', 'size', 'chapter', 'contentRevision', 'indexStatus',
+                'originalAvailable', 'reviewReady', 'sourceCount', 'vectorReady') if name in item}
+            if isinstance(item.get('review'), dict):
+                metadata['review'] = {name: value for name, value in item['review'].items()
+                                      if name in ('totalPages', 'reviewedImages', 'partialImages', 'unreadableImages') and type(value) is int
+                                      or name in ('pendingPages', 'transcribedPages', 'blankPages', 'supplementedPages')
+                                      and isinstance(value, list) and all(type(n) is int for n in value)}
+            return {**{field: item[field] for field in ('ok', 'id', 'name', 'title', 'version', 'status', 'archived', 'createdAt', 'updatedAt') if field in item}, **metadata,
                     'isPlatform': True, 'protected': True, **({'chunks': []} if 'chunks' in item else {})}
         # Evidence-only artifacts do not carry a source id on the outer object.
         if isinstance(item.get('documentId'), str) and item['documentId'] in docs and any(k in item for k in ('blocks', 'pages', 'chunks', 'text', 'quote')):
@@ -279,7 +293,7 @@ class ScopeAdapter:
                        and not any(d.get(k) for k in ('archived', 'deleted', 'superseded'))]
 
     def public_libraries(self, course_id):
-        """Same-course compatibility plus exactly six approved cross-course files.
+        """Same-course compatibility plus the single approved cross-course file.
 
         Only the trusted legacy public owner is enumerated. Account uploads,
         sourceFileHash claims, isPlatform flags and filenames cannot expand the

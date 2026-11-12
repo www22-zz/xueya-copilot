@@ -18,6 +18,7 @@ class Config:
     api_slots: int = 2
     platform_enabled: bool = True
     auto_import_demo: bool = False
+    auto_import_stack: bool = False
     preserve_legacy_data: bool = False
     rag_general_fallback: bool = False
     tool_timeout: float = 5.0
@@ -76,7 +77,8 @@ def load_config() -> Config:
                   base_url=env.get("MIMO_BASE_URL", Config.base_url), model=env.get("MIMO_MODEL", Config.model),
                   api_slots=max(1, min(8, int(env.get("API_MAX_CONCURRENT", 2)))),
                   platform_enabled=env.get("XUEYA_PLATFORM_ENABLED", "1") != "0",
-                  auto_import_demo=env.get('XUEYA_AUTO_IMPORT_DEMO', '1') == '1',
+                  auto_import_demo=env.get('XUEYA_AUTO_IMPORT_DEMO', '0') == '1',
+                  auto_import_stack=env.get('XUEYA_AUTO_IMPORT_STACK', '1') == '1',
                   preserve_legacy_data=env.get('XUEYA_PRESERVE_LEGACY_DATA', '0') == '1',
                   rag_general_fallback=env.get('AI_RAG_GENERAL_FALLBACK', '0') == '1',
                   tool_timeout=max(.05, min(60, float(env.get("MCP_TOOL_TIMEOUT_MS", 5000))/1000)),

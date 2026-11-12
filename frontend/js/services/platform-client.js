@@ -48,6 +48,7 @@ async function adopt(){
 }
 function attach(ctx){
   context=ctx;if(!bootstrap)return;
+  if(bootstrap.portableKnowledge?.status==='failed')ctx.toast('内置知识库接入未完成：'+bootstrap.portableKnowledge.error+'。请核对资料包后重启服务。');
   const button=document.createElement('button');button.type='button';button.className='subtle-button';button.id='platformData';button.textContent='本地数据';document.querySelector('.space-top-right')?.append(button);
   const dialog=document.createElement('dialog');dialog.id='platformDialog';dialog.className='source-dialog';dialog.setAttribute('aria-label','本地数据与任务');dialog.innerHTML='<div class="dialog-head"><strong>本地数据与任务</strong><button type="button" class="subtle-button" id="platformClose">关闭</button></div><div class="bank-dialog-body"><p id="platformStatus"></p><div class="dialog-actions"><button type="button" class="button button-outline button-small" id="platformBackup">导出浏览器备份</button><button type="button" class="button button-blue button-small" id="platformPreview">预览迁移到本地服务</button><button type="button" class="button button-outline button-small" id="platformRestore">使用服务端版本</button></div><pre id="platformPreviewText" style="white-space:pre-wrap;max-height:230px;overflow:auto"></pre><button type="button" class="button button-blue button-small" id="platformApply" hidden>确认迁移并启用同步</button><hr><h3>后台任务</h3><div id="platformJobs"></div><p id="platformError" role="alert"></p></div>';
   document.body.append(dialog);const $=id=>document.getElementById(id);let preview;
@@ -82,6 +83,6 @@ window.XueyaPlatform={
   },
   get available(){return Boolean(bootstrap);},
   get isRestoring(){return restoring;},
-  async initialize(){try{const scoped=window.XueyaDataKey||((key)=>key);KEY=scoped('xueya-copilot-workspace-v3');MARK=scoped('xueya-platform-sync-v1');PENDING=scoped('xueya-platform-pending-v1');bootstrap=await request('/bootstrap',{signal:AbortSignal.timeout(3000)});token=bootstrap.token;let marker;try{marker=JSON.parse(localStorage.getItem(MARK));}catch{}enabled=Boolean(window.XueyaDataOwner)||!!marker?.enabled;etag=marker?.version||0;if(enabled&&bootstrap.workspace&&!localStorage.getItem(PENDING)){localStorage.setItem(KEY,JSON.stringify(bootstrap.workspace.data));etag=bootstrap.workspace.version;mark();}if(!window.XueyaWorkspaceBackend)window.XueyaWorkspaceBackend=adapter;}catch{bootstrap=null;}},attach,flush
+  async initialize(){try{const scoped=window.XueyaDataKey||((key)=>key);KEY=scoped('xueya-copilot-workspace-v3');MARK=scoped('xueya-platform-sync-v1');PENDING=scoped('xueya-platform-pending-v1');bootstrap=await request('/bootstrap',{signal:AbortSignal.timeout(15000)});token=bootstrap.token;let marker;try{marker=JSON.parse(localStorage.getItem(MARK));}catch{}enabled=Boolean(window.XueyaDataOwner)||!!marker?.enabled;etag=marker?.version||0;if(enabled&&bootstrap.workspace&&!localStorage.getItem(PENDING)){localStorage.setItem(KEY,JSON.stringify(bootstrap.workspace.data));etag=bootstrap.workspace.version;mark();}if(!window.XueyaWorkspaceBackend)window.XueyaWorkspaceBackend=adapter;}catch{bootstrap=null;}},attach,flush
 };
 })();

@@ -82,25 +82,35 @@
     }
 
     async function adopt(planId, expectedRevision) {
-      if (!confirm('确认将此草稿设定为当前执行计划吗？原有计划将自动转入历史。')) return;
+      if(loading)return;
       try {
         loading = true;
         render();
+        const listing=await(await window.XueyaPlatform.spaceFetch('/api/learning/space/plan/list')).json();
+        if(!listing.ok)throw Error(listing.error||'SERVICE_UNAVAILABLE');
+        const current=listing.active||null;
+        if(current?.id===planId){toast('采用成功');await loadPlans();return;}
+        const latest=(listing.drafts||[]).find(p=>p.id===planId);
+        if(!latest)throw Error('PLAN_NOT_DRAFT');
+        if(latest.revision!==expectedRevision)throw Error('PLAN_REVISION_CONFLICT');
+        if(!confirm('确认采用“'+(latest.title||'这份草稿')+'”为当前执行计划吗？'+(current?'\n当前计划“'+(current.title||'未命名计划')+'”将转入历史，学习记录保留。':'')))return;
+        const expectedCurrent=current?{id:current.id,revision:current.revision}:null;
         const headers = { 'Content-Type': 'application/json' };
         const res = await window.XueyaPlatform.spaceFetch('/api/learning/space/plan/adopt', {
           method: 'POST',
           headers,
-          body: JSON.stringify({ planId, expectedRevision, confirmed: true, operationId:'adopt-'+planId+'-'+expectedRevision })
+          body: JSON.stringify({ planId, expectedRevision, confirmed: true, expectedCurrent, operationId:'adopt-'+planId+'-'+expectedRevision+'-'+(current?current.id+'-'+current.revision:'none') })
         });
         const data = await res.json();
         if (data.ok) {
-          toast('已成功采用为当前执行计划！');
+          toast('采用成功');
           await loadPlans();
         } else {
-          toast('采用失败：' + (data.error || '版本冲突'));
+          throw Error(data.error||'PLAN_REVISION_CONFLICT');
         }
-      } catch {
-        toast('网络异常，请重试');
+      } catch(error) {
+        const message={PLAN_CURRENT_CHANGED:'当前执行计划刚刚发生变化，本次未替换。请再次点击采用并核对。',PLAN_REVISION_CONFLICT:'草稿已更新，请刷新后重新核对。',PLAN_NOT_DRAFT:'该草稿的状态已变化，请刷新后核对。'}[error.code||error.message]||errorText(error.code||error.message);
+        toast('采用未完成：'+message);
       } finally {
         loading = false;
         render();

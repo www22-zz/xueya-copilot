@@ -1,4 +1,4 @@
-"""Only the six explicitly approved identities can cross legacy public courses.
+"""Only the selected stack/queue Markdown can cross legacy public courses.
 
 Real CPU parsing of the approved Markdown, not a forged fileHash or a mock RAG.
 No migration/indexing of the developer's private library and no external API.
@@ -45,11 +45,16 @@ def library(tmp_path,http_root):
         yield app,client,original,document,alice
 
 
-def test_allowlist_is_exactly_the_approved_manifest_plus_markdown():
-    manifest=json.loads((ROOT/'materials/data-structures-algorithms/manifest.json').read_text(encoding='utf-8'))
-    approved={d['sha256'] for d in manifest['documents'][:5]}
-    approved.add(hashlib.sha256(MATERIAL.read_bytes()).hexdigest())
-    assert len(approved)==6 and KNOWN_PLATFORM_HASHES==approved
+def test_allowlist_is_only_the_selected_markdown():
+    assert KNOWN_PLATFORM_HASHES == {hashlib.sha256(MATERIAL.read_bytes()).hexdigest()}
+
+
+def test_retired_ppt_identities_remain_protected_without_being_active_presets():
+    from backend.xueya.rag_scope_adapter import is_platform_document
+    manifest = json.loads((ROOT/'materials/data-structures-algorithms/manifest.json').read_text('utf-8'))
+    for doc in manifest['documents'][:5]:
+        assert doc['sha256'] not in KNOWN_PLATFORM_HASHES
+        assert is_platform_document({'fileHash': doc['sha256']})
 
 
 def test_two_accounts_search_and_read_public_metadata_at_actual_origin(library):

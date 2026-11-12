@@ -9,7 +9,7 @@ window.XueyaKnowledgeBase={create({state,store,toast,render}){
  const BLOCKS={paragraph:'正文',heading:'标题',table:'表格',code:'代码',formula:'公式',list:'列表',image:'图片'};
  const MODES=[['lexical','关键词（本地规则）'],['hybrid','关键词＋向量'],['vector','向量'],['rerank','向量＋重排']];
  const SEARCH_WARNINGS={EMBEDDING_UNAVAILABLE:'向量服务未配置，本次使用关键词检索',VECTOR_INDEX_UNAVAILABLE:'尚未为当前模型建立向量索引，本次使用关键词检索',RERANK_UNAVAILABLE:'重排服务未配置或不可用，已保留融合排序',VECTOR_API_UNAVAILABLE:'向量调用未完成，请到任务与用量核对',RERANK_API_UNAVAILABLE:'重排调用未完成，请到任务与用量核对',RERANK_BUDGET_EXCEEDED:'候选文字超过重排预算，已保留融合排序'};
- let listOpen=true,uploadOpen=false;
+ let listOpen=true,uploadDialog=null,pendingFiles=[],uploadMessage='',uploadError=false;
  let course='',epoch=0,data=null,bases=[],timer=null,loading=false,busy=false,reader=null,chapter='',filter='',query='',results=null,notice='',token='',uploadChapter='',searchMode='lexical',externalConfirmed=false,paidConfirmed=false;
  let uploadState=null,searching=false,searchError=null,searchErrorCode='',lastSearchMode='lexical',syncedAt='',focusTarget='',loadError='';
  let visualPreview=null,visualPack=null,replacementPreview=null,reviewDoc=null,reviewArtifact=null;
@@ -36,24 +36,26 @@ window.XueyaKnowledgeBase={create({state,store,toast,render}){
   const docs=(data.documents||[]).filter(d=>!d.archived);
   const pendingPages=docs.reduce((total,d)=>total+n(d.review?.pendingPages?.length),0);
   const embeddable=docs.filter(d=>n(d.sourceCount)>0),embedded=embeddable.filter(d=>d.vectorReady);
-  const unparsed=docs.filter(d=>!n(d.sourceCount)).length;
+  const unparsed=docs.filter(d=>!n(d.sourceCount)&&d.originalAvailable!==false&&!d.contentRevision&&!d.review?.pendingPages?.length).length;
   const parts=[];
   if(['preparing','running'].includes(data.demoImport?.status))parts.push('演示课件准备中');
   if(n(s.processing))parts.push(n(s.processing)+' 个任务处理中');
   if(unparsed)parts.push(unparsed+' 份待解析');
+  if(n(s.missingOriginals))parts.push(n(s.missingOriginals)+' 份记录缺少原件');
+  if(!docs.length)parts.push('暂无资料');
   if(pendingPages)parts.push(pendingPages+' 页待文字识别');
   if(n(s.needsReview))parts.push(n(s.needsReview)+' 份待复核');
   if(caps.embedding&&embeddable.length&&embedded.length===embeddable.length)parts.push('全量嵌入完成');
   else if(!caps.embedding)parts.push('向量未配置');
   if(!parts.length)parts.push('资料目录已同步');
   const busyState=['preparing','running'].includes(data.demoImport?.status)||n(s.processing)>0;
-  const warn=parts.some(part=>/待解析|待文字识别|待复核|未配置/.test(part));
+  const warn=parts.some(part=>/待解析|待文字识别|待复核|未配置|缺少原件/.test(part));
   return {tone:busyState?'busy':warn?'warn':'ok',text:parts.join(' · ')};
  }
  function overviewStats(){
   const s=data?.summary||{};
   const docs=(data?.documents||[]).filter(d=>!d.archived);
-  const searchable=docs.filter(d=>n(d.sourceCount)>0&&d.reviewReady!==false).length;
+  const searchable=docs.filter(d=>n(d.sourceCount)>0&&d.originalAvailable!==false&&d.reviewReady!==false).length;
   return `<li><strong>${n(s.documents)}</strong><span>资料份数</span></li><li><strong>${n(s.sources)}</strong><span>原文切片</span></li><li><strong>${searchable}</strong><span>可检索</span></li><li><strong>${n(s.needsReview)}</strong><span>待复核</span></li>`;
  }
  function scaleBody(){
@@ -71,12 +73,6 @@ window.XueyaKnowledgeBase={create({state,store,toast,render}){
    <div><dt>向量索引</dt><dd>${caps.embedding?embedded.length+' / '+embeddable.length:'未配置'}</dd></div>
   </dl>${formats.length?`<p class="lw-formats" aria-label="资料格式构成">${formats.map(([kind,count])=>`<span class="lw-chip">${KINDS[kind]} ${count}</span>`).join('')}</p>`:''}<p class="lw-hint">切片数是当前可用于检索的原文片段数。接口未返回字符数或 token 数，因此这里不展示这两项。</p>`;
  }
- function configBody(){
-  const caps=data?.capabilities||{};
-  const rows=[['关键词检索',true,'本地规则，不调用外部服务'],['向量索引（Embedding）',!!caps.embedding,caps.embedding?(caps.embeddingModel||'已配置'):''],['重排（Rerank）',!!caps.rerank,caps.rerank?'已配置':''],['文字识别（OCR）',!!caps.ocr,caps.ocr?(caps.ocrModel||'已配置'):'']];
-  const all=caps.embedding&&caps.rerank&&caps.ocr;
-  return `<ul class="lw-config-list">${rows.map(([label,ok,text])=>`<li><span>${e(label)}</span><strong class="${ok?'lw-on':'lw-off'}">${ok?'已配置':'未配置'}</strong>${text?`<small>${e(text)}</small>`:''}</li>`).join('')}</ul>${all?'':'<p class="lw-hint">未配置的能力不会发起外部调用。需要向量、重排或文字识别时，请在本机 .env 按需填写 RAG_EMBEDDING_API_KEY、RAG_RERANK_API_KEY、RAG_OCR_API_KEY 及对应的 _MODEL 后重启服务。</p>'}`;
- }
  function paintPanels(){
   const sync=syncState();
   const wrap=$('#lwSync');if(wrap)wrap.dataset.tone=sync.tone;
@@ -84,7 +80,6 @@ window.XueyaKnowledgeBase={create({state,store,toast,render}){
   const at=$('#lwSyncAt');if(at)at.textContent=syncedAt?'更新于 '+syncedAt:'';
   const overview=$('#lwOverviewStats');if(overview)overview.innerHTML=overviewStats();
   const scale=$('#lwScaleBody');if(scale)scale.innerHTML=scaleBody();
-  const config=$('#lwConfigBody');if(config)config.innerHTML=configBody();
  }
  async function api(path,value,options={}){
   if(!token){const r=await fetch('/api/platform/bootstrap');if(!r.ok)throw Error('请启动本地服务并登录后使用知识库');token=(await r.json()).token;}
@@ -120,7 +115,7 @@ window.XueyaKnowledgeBase={create({state,store,toast,render}){
  async function load(full=true){
   if(loading)return;loading=true;const g=epoch,id=course;
   try{
-   if(full){bases=(await api('knowledge/bases')).bases;if(!valid(g))return;const local=store.courses.find(c=>c.id===id);if(!bases.some(c=>c.id===id)&&local){await api('courses',{id,name:local.name});bases=(await api('knowledge/bases')).bases;}}
+   if(full){bases=(await api('knowledge/bases')).bases;if(!valid(g))return;const local=store.courses.find(c=>c.id===id);if(!bases.some(c=>c.id===id)&&local){await api('courses',{id,name:local.name});bases=(await api('knowledge/bases')).bases;}for(const base of bases)store.adoptCourse(base);}
    const next=await api('knowledge/catalog?'+new URLSearchParams({courseId:id}));if(!valid(g))return;
    if(data&&JSON.stringify(data.documents.map(d=>[d.id,d.version,d.archived]))!==JSON.stringify(next.documents.map(d=>[d.id,d.version,d.archived])))results=null;
    data=next;state.documentCount=n(data.summary?.documents);countCourse=id;countAt=Date.now();syncedAt=fmtTime(new Date());loadError='';store.persist();
@@ -135,7 +130,8 @@ window.XueyaKnowledgeBase={create({state,store,toast,render}){
  }
  function statsFacts(d){
   const pages=d.kind==='pdf'||d.kind==='pptx'?n(d.review?.totalPages):null;
-  return [['格式',kindLabel(d.kind)],['大小',fmtSize(d.size)],['章节',d.chapter||'—'],['切片',n(d.sourceCount)],['页数',pages?pages+(d.kind==='pptx'?' 页幻灯片':' 页'):'—'],['解析',d.task&&!['succeeded','failed','cancelled','unknown'].includes(d.task.status)?labels[d.task.status]:d.task&&['failed','cancelled','unknown'].includes(d.task.status)?labels[d.task.status]:statusText(d)],['向量索引',d.vectorReady?'就绪':data?.capabilities?.embedding?'未建立':'未配置']];
+  const vectorLabel=d.vectorReady?'就绪':d.indexStatus==='ready'?(data?.capabilities?.embedding?'已有缓存，当前模型不匹配':'已有缓存，服务未配置'):data?.capabilities?.embedding?'未建立':'未配置';
+  return [['格式',kindLabel(d.kind)],['大小',fmtSize(d.size)],['章节',d.chapter||'—'],['切片',n(d.sourceCount)],['页数',pages?pages+(d.kind==='pptx'?' 页幻灯片':' 页'):'—'],['解析',d.task&&!['succeeded','failed','cancelled','unknown'].includes(d.task.status)?labels[d.task.status]:d.task&&['failed','cancelled','unknown'].includes(d.task.status)?labels[d.task.status]:statusText(d)],['向量索引',vectorLabel]];
  }
  function docRow(d){
   const task=d.task,active=task&&!['succeeded','failed','cancelled','unknown'].includes(task.status);
@@ -153,14 +149,15 @@ window.XueyaKnowledgeBase={create({state,store,toast,render}){
     ${d.review?.blankPages.length?`<small>已核对 ${d.review.blankPages.length} 个空白页</small>`:''}
     ${d.ocrPreparation?`<small class="kb-warning">${e(d.ocrPreparation.notice)} · 可随时查看原PDF</small>`:''}
     ${d.pageSelection?`<small class="kb-page-selection">${e(pageSelectionText(d))}</small>`:''}
-    <small>${d.reviewReady===false?'待校正与确认：当前修订尚未用于检索':'当前修订可用于检索'}</small>
+    <small>${d.originalAvailable===false?'原件缺失：请重新上传，当前记录不计为可检索资料':!d.sourceCount?'暂无可检索正文':d.reviewReady===false?'待校正与确认：当前修订尚未用于检索':'当前修订可用于检索'}</small>
    </div>
    <div class="kb-row-actions lw-doc-actions">
-    ${button('查看原文','read',d.id)}
+    ${d.protected?'<small>平台预置资料：可用于问答，正文与原件受保护</small>':button('查看原文','read',d.id)}
     ${button('用于问答','chat',d.id,d.sourceCount&&d.reviewReady!==false?'':'disabled')}
     ${button('校正与确认','review',d.id,d.sourceCount?'':'disabled')}
     ${active?button('取消任务','cancel',task.id):`<details><summary>处理</summary>${task&&['failed','cancelled'].includes(task.status)&&['rag-parse','rag-visual-apply'].includes(task.type)?button('重试本地处理','retry',task.id):''}${d.kind==='pptx'?button('图片文字补录','visual-review',d.id):''}${button('重新解析','parse',d.id)}${button('建立向量索引','index',d.id,data?.capabilities?.embedding&&d.reviewReady!==false?'':'disabled')}${button('选择识别页（最多20页）','ocr-select',d.id,data?.capabilities?.ocr&&d.kind==='pdf'&&d.review?.pendingPages.length?'':'disabled')}${d.kind==='pdf'&&data.documents.some(old=>old.kind==='pptx'&&!old.archived)?button('用此PDF替换旧PPT','replace-ppt',d.id,d.sourceCount&&!d.review?.pendingPages.length?'':'disabled'):''}</details>`}
    </div>
+   <div class="lw-doc-footer"><button type="button" class="kb-delete-button" data-kb="delete" data-id="${e(d.id)}">删除</button></div>
   </article>`;
  }
  function rows(){
@@ -211,11 +208,23 @@ window.XueyaKnowledgeBase={create({state,store,toast,render}){
  function refocus(){if(!focusTarget)return;const target=document.querySelector(focusTarget);focusTarget='';if(target&&target.offsetParent!==null)target.focus({preventScroll:true});}
  async function action(action,id,el){const g=epoch,idCourse=course;let ownsBusy=false;
   try{
-   if(action==='close'){reader.close();return;}if(action==='jump-search'){$('#kbSearchHeading')?.scrollIntoView({behavior:'instant',block:'start'});$('#kbSearchHeading')?.focus({preventScroll:true});return;}
-   if(action==='toggle-list'){listOpen=!listOpen;draw();return;}if(action==='toggle-upload'){uploadOpen=!uploadOpen;draw();return;}
+   if(action==='close'){reader.close();return;}
+   if(action==='toggle-list'){listOpen=!listOpen;draw();return;}
+   if(action==='toggle-upload'){openUploadDialog();return;}
+   if(action==='upload-close'){uploadDialog?.close();return;}
+   if(action==='upload-remove'){if(!busy){pendingFiles.splice(Number(id),1);uploadMessage='';renderUploadSelection();}return;}
    if(action==='refresh'){if(loading){toast('正在刷新，请稍候');return;}if(el){el.disabled=true;el.textContent='刷新中…';}loadError='';await load();if(valid(g)){if(loadError){notice=loadError;}else{syncedAt=fmtTime(new Date());notice='资料目录已刷新 · '+syncedAt;}draw();}return;}
    if(action==='create'){dialog('新建知识库','<form id="kbCreate"><label class="form-field">知识库名称<input name="name" maxlength="60" required placeholder="例如：数据结构与算法"></label><label class="form-field">说明<textarea name="description" maxlength="4000" rows="3"></textarea></label><p>创建独立课程范围，已有资料与私人记录会保留。</p><button class="button button-blue button-small">确认创建</button></form>');return;}
    if(busy)throw Error('请等待当前操作完成');
+   if(action==='delete'){
+    const d=data.documents.find(d=>d.id===id);if(!d)throw Error('资料已更新，请刷新后再操作');
+    dialog('删除资料',`<p>是否确认删除该资料？对应的向量索引将一同删除。</p><p><strong>${e(d.name)}</strong></p><form id="kbDeleteConfirm"><input type="hidden" name="documentId" value="${e(id)}"><input type="hidden" name="version" value="${n(d.version)}"><div class="kb-delete-actions">${button('取消','close')}<button type="submit" class="kb-delete-button">确认删除</button></div></form>`);return;
+   }
+   if(action==='index'){
+    const r=await api('knowledge/index-plan?'+new URLSearchParams({courseId:idCourse,documentId:id}));if(!valid(g))return;
+    const p=r.plan;
+    dialog('建立向量索引',`<p>将使用已配置的向量化服务：<strong>${e(p.model)}</strong>。</p><p>当前 ${n(p.sourceCount)} 个片段，可复用 ${n(p.cachedVectors)} 条已有向量，${n(p.missingVectors)} 条需要计算。</p><p>${p.requiresExternal?'缺失片段会发送给上述服务，可能产生费用。':'已有向量全部匹配，预计直接复用缓存，无需重新计算文档向量。'}</p><form id="kbIndexConfirm"><input type="hidden" name="documentId" value="${e(id)}"><input type="hidden" name="version" value="${n(p.version)}"><label><input type="checkbox" name="confirmedExternal" required>确认建立索引；如有缺失片段，允许使用上述已配置 API</label><button class="button button-blue" type="submit">确认建立索引</button></form>`);return;
+   }
    if(action==='demo-retry'){busy=true;ownsBusy=true;await api('knowledge/demo-retry',{courseId:idCourse,confirmed:true});if(valid(g)){notice='正在重新准备演示资料。';await load(false);}return;}
    if(action==='visual-review'){
     const response=await api('knowledge/visual-pack?'+new URLSearchParams({courseId:idCourse,documentId:id}));if(!valid(g))return;visualPack=response.pack;visualPreview=null;
@@ -256,14 +265,55 @@ window.XueyaKnowledgeBase={create({state,store,toast,render}){
    if(valid(g)){notice='操作已提交，任务状态将自动刷新。';results=null;await load(false);}
   }catch(error){if(g===epoch)toast(error.message);}finally{if(ownsBusy)busy=false;}
  }
+ function openUploadDialog(){
+  if(!uploadDialog){
+   uploadDialog=document.createElement('dialog');uploadDialog.id='kbUploadDialog';uploadDialog.className='kb-upload-dialog';
+   uploadDialog.setAttribute('aria-labelledby','kbUploadTitle');uploadDialog.setAttribute('aria-describedby','kbUploadIntro');
+   uploadDialog.innerHTML=`<header class="kbu-header"><div><span class="kbu-eyebrow">个人资料库</span><h2 id="kbUploadTitle">上传学习资料</h2></div><button type="button" class="kbu-close" data-kb="upload-close" aria-label="关闭上传窗口">×</button></header>
+    <form id="kbUploadForm"><p id="kbUploadIntro">选择文件并核对，点击“开始上传”后加入个人资料库。</p>
+     <label class="kbu-picker"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4m-4 4 4-4 4 4M4 16v4h16v-4"/></svg><strong>选择文件</strong><span>支持多选，选择后可先核对文件</span><input id="kbFiles" type="file" multiple autofocus accept=".pdf,.pptx,.docx,.txt,.md" aria-label="选择要上传的学习资料" aria-describedby="kbUploadLimits"></label>
+     <p id="kbUploadLimits" class="kbu-hint">PDF ≤ 64 MB · PPTX / DOCX ≤ 10 MB · TXT / Markdown ≤ 1 MB</p>
+     <div id="kbUploadSelection" class="kbu-selection" aria-live="polite"></div>
+     <label class="kbu-field">所属章节 <span>选填</span><input id="kbUploadChapter" maxlength="200" placeholder="留空时，使用文件名作为章节（不含扩展名）"></label>
+     <p class="kbu-hint">上传后先解析，校正并确认后可用于问答。文字识别与向量索引需另行操作。</p>
+     <div id="kbUploadProgress" aria-live="polite"></div><p id="kbUploadMessage" role="status" aria-live="polite"></p>
+     <footer class="kbu-footer"><button type="button" class="button button-outline" data-kb="upload-close" id="kbUploadCancel">取消</button><button type="submit" class="button button-blue" id="kbUploadStart" disabled>开始上传</button></footer></form>`;
+   document.body.append(uploadDialog);
+   uploadDialog.addEventListener('close',()=>$('#kbUploadToggle')?.focus({preventScroll:true}));
+  }
+  $('#kbUploadChapter').value=uploadChapter;renderUploadSelection();renderUploadProgress();
+  if(!uploadDialog.open)uploadDialog.showModal();
+ }
+ function uploadFileError(file){
+  const extension=file.name.split('.').pop().toLowerCase();
+  if(!['pdf','pptx','docx','txt','md'].includes(extension))return file.name+'：不支持此格式';
+  if(file.name.startsWith('~$'))return file.name+'：请选择原文件，勿选择 Office 临时文件';
+  const limit=extension==='pdf'?67108864:['txt','md'].includes(extension)?1048576:10485760;
+  return file.size>limit?file.name+'：超过 '+fmtSize(limit)+' 大小限制':file.size===0?file.name+'：文件为空':'';
+ }
+ function chooseUploadFiles(files){
+  if(busy)return;
+  const invalid=files.map(uploadFileError).filter(Boolean);
+  uploadMessage=invalid.join('；');uploadError=invalid.length>0;
+  for(const file of files){if(!uploadFileError(file)&&!pendingFiles.some(f=>f.name===file.name&&f.size===file.size&&f.lastModified===file.lastModified))pendingFiles.push(file);}
+  renderUploadSelection();
+ }
+ function renderUploadSelection(){
+  if(!uploadDialog)return;
+  $('#kbUploadSelection').innerHTML=pendingFiles.length?`<strong>已选择 ${pendingFiles.length} 个文件</strong><ul>${pendingFiles.map((f,i)=>`<li><div><span>${e(f.name)}</span><small>${e(fmtSize(f.size))}</small></div><button type="button" data-kb="upload-remove" data-id="${i}" aria-label="移除 ${e(f.name)}" ${busy?'disabled':''}>移除</button></li>`).join('')}</ul>`:'';
+  $('#kbFiles').disabled=busy;$('#kbUploadChapter').disabled=busy;
+  $('#kbUploadStart').disabled=busy||!pendingFiles.length;$('#kbUploadStart').textContent=uploadState?'上传中…':'开始上传';
+  $('#kbUploadCancel').textContent=uploadState?'关闭窗口':!pendingFiles.length&&uploadMessage&&!uploadError?'完成':'取消';
+  $('#kbUploadMessage').textContent=uploadMessage;$('#kbUploadMessage').dataset.error=String(uploadError);
+ }
  function renderUploadProgress(){
   const target=$('#kbUploadProgress');if(!target)return;
   if(!uploadState){target.innerHTML='';return;}
-  target.innerHTML=`<div class="lw-upload-status" role="status" aria-live="polite"><strong>正在上传 ${Math.min(uploadState.done+1,uploadState.total)} / ${uploadState.total}</strong><span>${e(uploadState.current||'准备中…')}</span><progress max="${uploadState.total}" value="${uploadState.done}" aria-label="上传进度"></progress></div>`;
+  target.innerHTML=`<div class="lw-upload-status" role="status" aria-live="polite"><strong>正在上传 ${Math.min(uploadState.done+1,uploadState.total)} / ${uploadState.total}</strong><span>${e(uploadState.current||'准备中…')}</span><progress max="${uploadState.total}" value="${uploadState.done}" aria-label="上传进度"></progress><small>可关闭窗口，上传会继续；请勿关闭页面。</small></div>`;
  }
  async function upload(files){
   if(busy||!files?.length)return;const g=epoch,id=course,ch=$('#kbUploadChapter')?.value??uploadChapter;uploadChapter=ch;busy=true;
-  uploadState={done:0,total:files.length,current:''};notice='正在上传课件…';draw();renderUploadProgress();
+  uploadState={done:0,total:files.length,current:''};notice='正在上传资料…';uploadMessage='';uploadError=false;draw();renderUploadSelection();renderUploadProgress();
   try{
    for(const file of files){
     if(!valid(g))break;
@@ -274,17 +324,24 @@ window.XueyaKnowledgeBase={create({state,store,toast,render}){
     await api('knowledge/upload?'+new URLSearchParams({courseId:id,name:file.name,chapter:ch,review:'1'}),file,{headers:{'Idempotency-Key':key}});
     uploadState.done++;
    }
-   notice='上传完成。解析后请完成必要的校正与确认，随后将自动准备资料题目；可在课程资料学习查看图谱和练习。向量索引用于问答，不是出题的必要条件。';
-  }catch(error){notice='本批上传已停止：'+error.message+'。已接收的资料保留；重新选择同一批文件不会重复导入。';}
-  finally{uploadState=null;busy=false;if(valid(g)){draw();await load(false);}}
+   notice='上传完成。解析后，请在个人资料列表中校正并确认资料。';
+   if(valid(g)){pendingFiles=[];uploadMessage='已上传 '+files.length+' 个文件。可关闭窗口，在个人资料列表中查看解析状态。';}
+  }catch(error){if(valid(g)){pendingFiles=files.slice(uploadState.done);uploadError=true;uploadMessage='上传未完成：'+error.message+'。已接收的文件保留，剩余文件可重试。';notice=uploadMessage;}}
+  finally{uploadState=null;busy=false;if(valid(g)){renderUploadSelection();draw();await load(false);}}
  }
  document.addEventListener('click',event=>{const b=event.target.closest('[data-kb]');if(b){event.preventDefault();rememberFocus(b);void action(b.dataset.kb,b.dataset.id,b);}});
- document.addEventListener('change',event=>{const t=event.target;if(t.id==='kbFiles')void upload([...t.files]);if(t.id==='kbBase')void select(t.value);if(t.id==='kbChapter'){chapter=t.value;results=null;rows();showResults();}if(t.id==='kbPaidConfirm')paidConfirmed=t.checked;if(t.name==='confirmedExternal'&&t.closest('#kbSearch'))externalConfirmed=t.checked;if(t.id==='kbMode'){searchMode=t.value;const label=$('.kb-api-confirm');if(label){label.hidden=t.value==='lexical';const input=label.querySelector('input');if(input)input.required=t.value!=='lexical';}}});
+ document.addEventListener('change',event=>{const t=event.target;if(t.id==='kbFiles'){chooseUploadFiles([...t.files]);t.value='';}if(t.id==='kbBase')void select(t.value);if(t.id==='kbChapter'){chapter=t.value;results=null;rows();showResults();}if(t.id==='kbPaidConfirm')paidConfirmed=t.checked;if(t.name==='confirmedExternal'&&t.closest('#kbSearch'))externalConfirmed=t.checked;if(t.id==='kbMode'){searchMode=t.value;const label=$('.kb-api-confirm');if(label){label.hidden=t.value==='lexical';const input=label.querySelector('input');if(input)input.required=t.value!=='lexical';}}});
  document.addEventListener('change',event=>{if(event.target.id==='kbReviewBlock'){const b=reviewArtifact?.blocks.find(block=>block.id===event.target.value);if(b)$('#kbReviewText').value=b.text;}});
  document.addEventListener('input',event=>{if(event.target.id==='kbFilter'){filter=event.target.value;rows();}if(event.target.id==='kbUploadChapter')uploadChapter=event.target.value;if(event.target.id==='kbQuery')query=event.target.value;});
  document.addEventListener('submit',async event=>{
-  const f=event.target;if(!['kbSearch','kbCreate','kbVisualForm','kbCorrection','kbReviewConfirm','kbOcrBatch'].includes(f.id))return;event.preventDefault();if(busy)return;const g=epoch,id=course,v=Object.fromEntries(new FormData(f));busy=true;const submit=f.querySelector('button');submit.disabled=true;
-  try{if(f.id==='kbCorrection'){
+  if(event.target.id==='kbUploadForm'){event.preventDefault();if(!busy)void upload([...pendingFiles]);return;}
+  const f=event.target;if(!['kbSearch','kbCreate','kbVisualForm','kbCorrection','kbReviewConfirm','kbOcrBatch','kbIndexConfirm','kbDeleteConfirm'].includes(f.id))return;event.preventDefault();if(busy)return;const g=epoch,id=course,v=Object.fromEntries(new FormData(f));busy=true;const submit=f.querySelector('button[type=submit]')||f.querySelector('button');submit.disabled=true;
+  try{if(f.id==='kbDeleteConfirm'){
+    await api('knowledge/remove',{courseId:id,documentId:v.documentId,version:Number(v.version),confirmed:true});if(!valid(g))return;
+    state.documents=state.documents.filter(d=>d.id!==v.documentId);state.selectedDocuments=(state.selectedDocuments||[]).filter(docId=>docId!==v.documentId);store.persist();reader.close();notice='资料及对应的向量索引已删除。';results=null;await load(false);
+   }else if(f.id==='kbIndexConfirm'){
+    await api('knowledge/process',{courseId:id,documentId:v.documentId,version:Number(v.version),action:'index',idempotencyKey:uid(),confirmedExternal:v.confirmedExternal==='on'});if(!valid(g))return;reader.close();notice='已使用当前配置提交索引任务，优先复用已有向量缓存。';await load(false);
+   }else if(f.id==='kbCorrection'){
     const r=await api('rag/correct',{courseId:id,documentId:reviewDoc.id,version:reviewDoc.version,blockId:v.blockId,replacement:v.replacement,reason:v.reason});if(!valid(g))return;await load(false);busy=false;await action('review',reviewDoc.id);
    }else if(f.id==='kbReviewConfirm'){
     await api('knowledge/review-confirm',{courseId:id,documentId:reviewDoc.id,version:reviewDoc.version,confirmed:true});if(!valid(g))return;reader.close();notice='当前修订已确认。可建立向量索引，或先使用关键词检索。';await load(false);
@@ -304,67 +361,32 @@ window.XueyaKnowledgeBase={create({state,store,toast,render}){
  function draw(){
   const root=$('#knowledgeWorkspace');if(!root)return;
   const s=data?.summary||{documents:0,sources:0,processing:0,needsReview:0},caps=data?.capabilities||{};
-  const sync=syncState();
   const modeReady=value=>value==='lexical'||(value==='rerank'?!!caps.embedding&&!!caps.rerank:!!caps.embedding);
   if(!MODES.some(mode=>mode[0]===searchMode&&modeReady(mode[0])))searchMode='lexical';
-  const allBases=[...bases,...store.courses.filter(c=>!c.archived&&!bases.some(b=>b.id===c.id))];
   root.innerHTML=`<div class="lw-page">
    <header class="view-heading lw-heading">
     <div class="lw-heading-copy">
-     <nav class="lw-breadcrumb" aria-label="位置"><a href="#space/materials">课程资料</a><span aria-hidden="true">/</span><span aria-current="page">课程资料库</span></nav>
-     <h1>课程资料库</h1>
+     <nav class="lw-breadcrumb" aria-label="位置"><a href="#space/materials">课程资料学习</a><span aria-hidden="true">/</span><span aria-current="page">个人资料库</span></nav>
+     <h1>个人资料库</h1>
      <p>上传并管理课程资料，为 AI 伴学与问答提供可追溯上下文。</p>
     </div>
     <div class="heading-actions lw-heading-actions">${button('刷新状态','refresh')}<button type="button" class="button button-blue button-small" data-kb="create">新建资料库</button></div>
    </header>
    <div id="kbNotice" class="lw-notice" role="status" aria-live="polite">${e(notice||(!data?'正在加载知识库…':''))}${demoNotice()}</div>
    <div id="kbPracticeGeneration" class="practice-generation lw-generation" role="status" aria-live="polite"></div>
-   <section class="panel lw-overview" aria-label="资料库概览">
-    <div class="lw-overview-scope">
-     <label class="form-field lw-field">当前挂载资料库<select id="kbBase">${allBases.map(c=>`<option value="${e(c.id)}" ${c.id===course?'selected':''}>${e(c.name)}</option>`).join('')}</select></label>
-     <p class="lw-hint">资料库与课程范围一致，问答、练习与学习记录共用同一范围。</p>
-     <div class="lw-sync" id="lwSync" data-tone="${sync.tone}" role="status" aria-live="polite"><span class="lw-sync-dot" aria-hidden="true"></span><span id="lwSyncText">${e(sync.text)}</span><small id="lwSyncAt">${syncedAt?'更新于 '+e(syncedAt):''}</small></div>
-    </div>
-    <ul class="lw-overview-stats" id="lwOverviewStats">${overviewStats()}</ul>
-    <div class="lw-overview-actions">${button(uploadOpen?'收起上传':'上传资料','toggle-upload')}${button(listOpen?'收起资料列表':'查看资料','toggle-list')}<a class="text-link" href="#space/library/manage">管理与查看全部资料 →</a><button type="button" class="lw-link-button" data-kb="jump-search">跳至检索调试</button></div>
-   </section>
    <div class="lw-layout">
     <div class="lw-main">
-     <section class="panel kb-import lw-import" ${uploadOpen?'':'hidden'} aria-labelledby="lwImportTitle">
-      <div class="lw-import-copy"><h2 id="lwImportTitle">添加学习资料</h2><p>PDF 最大 64MB · PPTX、DOCX 最大 10MB · TXT、Markdown 最大 1MB。上传后先解析并进入人工复核，确认文字后可建立向量索引。</p></div>
-      <label class="form-field lw-field">所属章节<input id="kbUploadChapter" maxlength="200" value="${e(uploadChapter)}" placeholder="可选；留空时识别文件名中的章节或周次"></label>
-      <input id="kbFiles" type="file" multiple accept=".pdf,.pptx,.docx,.txt,.md" aria-label="选择要上传的课程资料" ${busy?'disabled':''}>
-      <small>上传不触发出题；OCR、向量索引与重排需要单独确认，未配置时不会调用外部服务。</small>
-      <div id="kbUploadProgress" aria-live="polite"></div>
-     </section>
      <section class="panel lw-docs" ${listOpen?'':'hidden'} aria-labelledby="lwDocsTitle">
-      <div class="lw-section-head"><div><h2 id="lwDocsTitle">资料列表 <span class="lw-badge" id="lwDocsCount"></span></h2><p class="lw-hint">文件名、格式、大小、解析与索引状态均来自接口真实字段；接口未返回的项以“—”标出。</p></div><a class="text-link" href="#space/library/manage">阅读与版本管理 →</a></div>
+      <div class="lw-section-head"><div><h2 id="lwDocsTitle">个人资料列表 <span class="lw-badge" id="lwDocsCount"></span></h2><p class="lw-hint">文件名、格式、大小、解析与索引状态均来自接口真实字段；接口未返回的项以“—”标出。</p></div><button id="kbUploadToggle" type="button" class="lw-upload-button" data-kb="toggle-upload" aria-haspopup="dialog" aria-controls="kbUploadDialog"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4m-4 4 4-4 4 4M4 16v4h16v-4"/></svg><span>资料上传</span></button></div>
       <div class="kb-filters lw-filters"><label class="form-field">章节<select id="kbChapter">${chapterOptions()}</select></label><label class="form-field">筛选文件<input id="kbFilter" type="search" value="${e(filter)}" placeholder="按文件名筛选"></label></div>
       <div id="kbDocuments" class="lw-doc-list"></div>
-      <details class="kb-advanced lw-advanced"><summary>高级处理设置</summary><label><input id="kbPaidConfirm" type="checkbox">确认下一次向量索引或文字识别调用外部 API，可能产生费用</label></details>
+       <details class="kb-advanced lw-advanced"><summary>高级处理设置</summary><label><input id="kbPaidConfirm" type="checkbox">确认下一次文字识别调用外部 API，可能产生费用</label></details>
      </section>
     </div>
     <aside class="lw-side" aria-label="知识库统计与配置">
      <section class="panel lw-card" aria-labelledby="lwScaleTitle"><div class="lw-card-head"><h2 id="lwScaleTitle">知识库规模</h2><span class="lw-chip">实时</span></div><div id="lwScaleBody">${scaleBody()}</div></section>
-     <section class="panel lw-card" aria-labelledby="lwConfigTitle"><div class="lw-card-head"><h2 id="lwConfigTitle">检索与解析配置</h2></div><div id="lwConfigBody">${configBody()}</div></section>
     </aside>
    </div>
-   <section class="panel kb-search lw-probe" aria-labelledby="kbSearchHeading">
-    <div class="lw-probe-head"><div><h2 id="kbSearchHeading" tabindex="-1">测试知识库检索（RAG 召回调试）</h2><p>调用当前资料库的真实检索接口，核对排名、得分、来源与命中片段。结果只来自已解析并确认的原文。</p></div><span class="lw-badge">当前资料库</span></div>
-    <form id="kbSearch" class="lw-probe-form">
-     <label class="form-field lw-probe-query">检索问题<input id="kbQuery" name="query" required maxlength="4000" autocomplete="off" value="${e(query)}" placeholder="例如：为什么栈是后进先出？"></label>
-     <div class="lw-probe-params">
-      <label class="form-field">检索方式<select id="kbMode" name="mode">${MODES.map(([value,label])=>{const supported=modeReady(value);return `<option value="${value}" ${supported?'':'disabled'} ${value===searchMode?'selected':''}>${e(label)}${supported?'':'（未配置）'}</option>`;}).join('')}</select></label>
-      <label class="form-field">返回条数<select disabled aria-describedby="lwProbeHelp"><option>8 条（接口固定）</option></select></label>
-      <label class="form-field">相似度阈值<select disabled aria-describedby="lwProbeHelp"><option>≥ 0.25（接口固定）</option></select></label>
-     </div>
-     <p class="lw-hint" id="lwProbeHelp">当前检索接口固定返回最多 8 条、向量相似度下限 0.25；Top-K 与阈值需服务端开放参数后才能调整，这里不做伪设置。</p>
-     ${caps.embedding?'':'<p class="lw-hint">向量与重排服务未配置，当前只能执行关键词检索。需要启用时请在本机 .env 配置 RAG_EMBEDDING_API_KEY 与 RAG_EMBEDDING_MODEL（重排另需 RAG_RERANK_API_KEY 与 RAG_RERANK_MODEL）后重启服务。</p>'}
-     <label class="kb-api-confirm lw-confirm" ${searchMode==='lexical'?'hidden':''}><input type="checkbox" name="confirmedExternal" ${searchMode!=='lexical'?'required':''}>确认将问题发送给外部向量或重排服务，可能产生费用</label>
-     <div class="lw-probe-actions"><button class="button button-blue" type="submit">执行检索</button><span class="lw-hint">关键词检索不调用外部服务；向量、混合与重排检索会使用已配置的外部服务。</span></div>
-    </form>
-    <div id="kbResults" class="lw-results" role="region" aria-live="polite" aria-label="检索结果"></div>
-   </section>
   </div>`;
   const setValue=(selector,value)=>{const field=$(selector);if(field)field.value=value;};
   setValue('#kbMode',searchMode);setValue('#kbUploadChapter',uploadChapter);setValue('#kbFilter',filter);setValue('#kbChapter',chapter);
@@ -372,6 +394,6 @@ window.XueyaKnowledgeBase={create({state,store,toast,render}){
   if($('#kbPaidConfirm'))$('#kbPaidConfirm').checked=paidConfirmed;
   rows();showResults();generationRows();renderUploadProgress();refocus();
  }
- return {refreshCount,mount(){clearTimeout(timer);epoch++;loading=false;if(course!==state.courseId){course=state.courseId;data=null;results=null;chapter='';filter='';query='';notice='';syncedAt='';uploadState=null;searchError=null;searching=false;reader?.close();}if(state.view!=='knowledge')return;if(location.protocol==='file:'){$('#spaceContent').innerHTML='<div class="panel"><h1>知识库</h1><p>请通过本机服务打开，离线预览不能读取知识库。</p></div>';return;}const root=document.createElement('div');root.id='knowledgeWorkspace';$('#spaceContent').append(root);draw();void load();}};
+ return {refreshCount,mount(){clearTimeout(timer);epoch++;loading=false;if(course!==state.courseId){course=state.courseId;pendingFiles=[];uploadMessage='';uploadChapter='';data=null;results=null;chapter='';filter='';query='';notice='';syncedAt='';uploadState=null;searchError=null;searching=false;reader?.close();}uploadDialog?.close();if(state.view!=='knowledge')return;listOpen=true;if(location.protocol==='file:'){$('#spaceContent').innerHTML='<div class="panel"><h1>知识库</h1><p>请通过本机服务打开，离线预览不能读取知识库。</p></div>';return;}const root=document.createElement('div');root.id='knowledgeWorkspace';$('#spaceContent').append(root);draw();void load();}};
 }};
 })();

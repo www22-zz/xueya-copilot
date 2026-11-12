@@ -21,6 +21,56 @@
   max-width: 100%;
 }
 
+/* Upload stays outside the workspace so catalogue refreshes preserve the dialog. */
+#kbUploadDialog {
+  width: min(620px, calc(100vw - 32px));
+  max-height: calc(100dvh - 32px);
+  margin: auto;
+  padding: 28px;
+  border: 1px solid var(--stitch-outline-variant);
+  border-radius: 24px;
+  background: var(--stitch-surface-container-lowest);
+  color: var(--stitch-on-surface);
+  box-shadow: 0 28px 90px #090e2955;
+  overflow: auto;
+}
+#kbUploadDialog::backdrop { background: #0d122a88; backdrop-filter: blur(7px); }
+#kbUploadDialog .kbu-header { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; margin-bottom:16px; }
+#kbUploadDialog .kbu-eyebrow { color:var(--stitch-primary); font-size:12px; font-weight:600; letter-spacing:.06em; }
+#kbUploadDialog h2 { margin-top:6px; font-size:23px; font-weight:600; }
+#kbUploadDialog .kbu-close { flex:none; width:40px; height:40px; border:1px solid var(--stitch-outline-variant); border-radius:50%; color:var(--stitch-on-surface-variant); background:transparent; font-size:24px; cursor:pointer; }
+#kbUploadDialog .kbu-close:hover { background:var(--stitch-surface-container-high); color:var(--stitch-on-surface); }
+#kbUploadDialog form { display:grid; gap:16px; min-width:0; }
+#kbUploadDialog #kbUploadIntro { color:var(--stitch-on-surface-variant); font-size:13px; line-height:1.7; }
+#kbUploadDialog .kbu-picker { display:flex; flex-direction:column; align-items:center; gap:10px; padding:22px 16px; border:1px dashed var(--stitch-outline-variant); border-radius:16px; background:var(--stitch-surface-container-low); color:var(--stitch-primary); cursor:pointer; }
+#kbUploadDialog .kbu-picker:hover, #kbUploadDialog .kbu-picker:focus-within { border-color:var(--stitch-primary); background:color-mix(in srgb,var(--stitch-primary) 7%,var(--stitch-surface-container-low)); }
+#kbUploadDialog .kbu-picker strong { font-size:15px; }
+#kbUploadDialog .kbu-picker span { font-size:12px; color:var(--stitch-on-surface-variant); }
+#kbUploadDialog #kbFiles { position:absolute; width:1px; height:1px; padding:0; overflow:hidden; clip-path:inset(50%); }
+#kbUploadDialog input::file-selector-button { padding:7px 12px; margin-right:10px; border:1px solid var(--stitch-outline-variant); border-radius:8px; background:var(--stitch-surface-container-lowest); color:var(--stitch-on-surface); cursor:pointer; }
+#kbUploadDialog .kbu-hint { color:var(--stitch-on-surface-variant); font-size:12px; line-height:1.7; }
+#kbUploadDialog .kbu-field { font-size:13px; font-weight:600; }
+#kbUploadDialog .kbu-field > span { margin-left:6px; color:var(--stitch-on-surface-variant); font-size:12px; font-weight:400; }
+#kbUploadDialog #kbUploadChapter { display:block; width:100%; min-width:0; padding:12px; margin-top:8px; border:1px solid var(--stitch-outline-variant); border-radius:12px; background:var(--stitch-surface-container-low); color:var(--stitch-on-surface); font-size:13px; }
+#kbUploadDialog .kbu-selection:empty, #kbUploadDialog #kbUploadMessage:empty, #kbUploadDialog #kbUploadProgress:empty { display:none; }
+#kbUploadDialog .kbu-selection > strong { font-size:12px; }
+#kbUploadDialog .kbu-selection ul { list-style:none; padding:0; margin:8px 0 0; max-height:170px; overflow:auto; }
+#kbUploadDialog .kbu-selection li { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:9px 0; border-bottom:1px solid var(--stitch-outline-variant); }
+#kbUploadDialog .kbu-selection li > div { min-width:0; display:grid; gap:4px; }
+#kbUploadDialog .kbu-selection li span { overflow-wrap:anywhere; font-size:13px; }
+#kbUploadDialog .kbu-selection small { color:var(--stitch-on-surface-variant); font-size:11px; }
+#kbUploadDialog .kbu-selection button { flex:none; padding:8px; border-radius:8px; background:transparent; color:var(--stitch-primary); font-size:12px; cursor:pointer; }
+#kbUploadDialog .kbu-footer { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:10px; padding-top:18px; border-top:1px solid var(--stitch-outline-variant); }
+#kbUploadDialog .kbu-footer .button { min-height:42px; }
+#kbUploadDialog :disabled { opacity:.55; cursor:not-allowed; }
+#kbUploadDialog #kbUploadMessage { color:var(--stitch-on-surface); font-size:13px; line-height:1.7; overflow-wrap:anywhere; }
+#kbUploadDialog #kbUploadMessage[data-error="true"] { color:var(--stitch-error); }
+#kbUploadDialog .lw-upload-status { display:grid; gap:8px; padding:12px; border-radius:12px; background:var(--stitch-surface-container-low); font-size:13px; overflow-wrap:anywhere; }
+#kbUploadDialog .lw-upload-status progress { width:100%; accent-color:var(--stitch-primary); }
+#kbUploadDialog .lw-upload-status small { font-size:12px; color:var(--stitch-on-surface-variant); }
+#kbUploadDialog :is(button,input):focus-visible { outline:2px solid var(--stitch-primary); outline-offset:3px; }
+@media (max-width:600px) { #kbUploadDialog { width:calc(100vw - 24px); max-height:calc(100dvh - 24px); padding:20px; border-radius:20px; } }
+
 /* ---------- header ---------- */
 #knowledgeWorkspace .lw-heading {
   align-items: flex-start;
@@ -436,7 +486,53 @@ html[data-theme="dark"] #knowledgeWorkspace .lw-off { color: #e0a878; }
 }
 
 #knowledgeWorkspace .lw-section-head > div {
+  flex: 1 1 240px;
   min-width: 0;
+}
+
+#knowledgeWorkspace .lw-upload-button {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 10px 16px;
+  border: 1px solid var(--lw-accent);
+  border-radius: 12px;
+  background: var(--lw-accent);
+  color: var(--stitch-on-primary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: box-shadow .18s ease, filter .18s ease, transform .18s ease;
+}
+
+#knowledgeWorkspace .lw-upload-button:hover,
+#knowledgeWorkspace .lw-upload-button:focus-visible {
+  filter: brightness(1.12);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--lw-accent) 22%, transparent), 0 6px 20px color-mix(in srgb, var(--lw-accent) 26%, transparent);
+  transform: translateY(-1px);
+}
+
+#knowledgeWorkspace .lw-upload-button:focus-visible {
+  outline: 2px solid var(--lw-accent);
+  outline-offset: 4px;
+}
+
+#knowledgeWorkspace .lw-import-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+#knowledgeWorkspace #kbNotice:empty {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #knowledgeWorkspace .lw-upload-button { transition: none; transform: none; }
 }
 
 #knowledgeWorkspace .lw-section-head h2 {
@@ -533,6 +629,26 @@ html[data-theme="dark"] #knowledgeWorkspace .lw-off { color: #e0a878; }
 #knowledgeWorkspace .lw-doc-main {
   min-width: 0;
 }
+
+#knowledgeWorkspace .lw-doc-footer { grid-column:1 / -1; margin-top:4px; }
+.kb-delete-button {
+  min-height:40px;
+  padding:8px 18px;
+  border:1px solid #9f8ee0;
+  border-radius:10px;
+  background:#e5ddff;
+  color:#ac152e;
+  font-size:13px;
+  font-weight:600;
+  cursor:pointer;
+  transition:box-shadow .18s ease, background .18s ease;
+}
+html[data-theme="dark"] .kb-delete-button { background:#463365; color:#ff8f9f; border-color:#79639b; }
+.kb-delete-button:hover, .kb-delete-button:focus-visible { background:#d4c5ff; box-shadow:0 0 0 4px #a88de633; }
+html[data-theme="dark"] .kb-delete-button:hover, html[data-theme="dark"] .kb-delete-button:focus-visible { background:#604783; box-shadow:0 0 0 4px #bd9aff33; }
+.kb-delete-button:focus-visible { outline:2px solid var(--stitch-primary); outline-offset:3px; }
+.kb-delete-button:disabled { opacity:.6; cursor:not-allowed; }
+.kb-delete-actions { display:flex; justify-content:flex-end; gap:12px; margin-top:10px; }
 
 #knowledgeWorkspace .lw-doc-title {
   display: flex;

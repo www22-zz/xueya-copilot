@@ -1,21 +1,31 @@
 import hashlib
 import json
+import asyncio
 
 import pytest
 
-from backend.xueya.common import AppError, digest
+from backend.xueya.common import AppError, digest, Scope
 from backend.xueya.rag_api import ApiSettings
 from backend.xueya.rag_moark import QwenEmbeddingProvider
 from backend.xueya.rag_service import RagService
 from scripts.import_validated_vector_cache import promote
-from test_rag import completed
 
 
 @pytest.mark.asyncio
-async def test_cache_requires_exact_source_identity_and_promotes_without_network(platform, tmp_path):
+@pytest.mark.parametrize('owner', ['local-user', 'account-cached-vectors'])
+async def test_cache_requires_exact_source_identity_and_promotes_without_network(platform, tmp_path, owner):
     rag = RagService(platform)
-    scope = platform.scope()
-    done = await completed(platform, rag.upload(scope, '# 规则\n\n栈遵循后进先出。'.encode(), 'rules.md', 'rules'))
+    platform.repo.ensure_course(owner, {'id': 'course-default', 'name': '缓存恢复测试'})
+    scope = Scope(user_id=owner, course_id='course-default')
+    job = rag.upload(scope, '# 规则\n\n栈遵循后进先出。'.encode(), 'rules.md', 'rules')
+    platform.jobs.stopped = False
+    for _ in range(500):
+        await platform.jobs.tick()
+        done = platform.jobs.get(job['id'], owner)
+        if done['status'] in ('succeeded', 'failed'):
+            break
+        await asyncio.sleep(.01)
+    assert done['status'] == 'succeeded'
     doc_id = done['result']['documentId']
     doc = rag.document(scope, doc_id)
     identity = QwenEmbeddingProvider(platform, ApiSettings(model='Qwen3-VL-Embedding-2B', dimension=2048,
@@ -40,4 +50,20 @@ async def test_cache_requires_exact_source_identity_and_promotes_without_network
     assert result['cachedVectors'] == len(rows)
     current = rag.document(scope, doc_id)
     assert current['indexStatus'] == 'ready' and current['embeddingIdentity'] == identity
+    plan = rag.index_plan(scope, doc_id)
+    assert plan['cachedVectors'] == len(rows) and plan['missingVectors'] == 0
+    assert not plan['requiresExternal']
     assert not platform.db.one('SELECT id FROM invocations')
+    # Reparse invalidates the index binding but keeps matching content vectors.
+    parsed = rag.submit(scope, 'rag-parse', doc_id, 'reparse', expected_version=current['version'])
+    for _ in range(500):
+        await platform.jobs.tick()
+        done = platform.jobs.get(parsed['id'], owner)
+        if done['status'] in ('succeeded', 'failed', 'cancelled', 'unknown'):
+            break
+        await asyncio.sleep(.01)
+    assert done['status'] == 'succeeded'
+    assert rag.document(scope, doc_id)['indexStatus'] == 'not_indexed'
+    restored = await promote(platform, rag, scope, doc_id, path, proof, expected_identity=identity)
+    assert restored['newModelRequests'] == restored['result']['computed'] == 0
+    assert rag.document(scope, doc_id)['indexStatus'] == 'ready'

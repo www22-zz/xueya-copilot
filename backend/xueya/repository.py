@@ -7,7 +7,7 @@ import json
 from uuid import uuid4
 
 from .common import KINDS, Scope, digest, dumps, identifier, require, utc_now, validate_workspace
-from .learning import QUESTIONS, SOURCES, wrong_questions
+from .learning import QUESTIONS, wrong_questions
 
 
 def encode_cursor(value):
@@ -36,14 +36,21 @@ class Repository:
         require(archived or not row["archived"], "COURSE_ARCHIVED")
         return row
 
+    def course_name(self, user_id, course_id, fallback):
+        """An explicitly source-bound library owns its name, not browser caches."""
+        row = self.db.one("SELECT data FROM entities WHERE user_id=? AND course_id=? AND kind='artifact' AND id='source-bound-knowledge-base' AND deleted=0", (user_id, course_id))
+        profile = json.loads(row['data']) if row else {}
+        name = profile.get('name')
+        return name if profile.get('kind') == 'source-bound-knowledge-base' and isinstance(name, str) and 0 < len(name) <= 100 else fallback
+
     def ensure_course(self, user_id, course):
         identifier(user_id)
         identifier(course.get("id"))
         require(isinstance(course.get("name"), str) and 0 < len(course["name"]) <= 100, "INVALID_COURSE")
-        self.db.execute("INSERT INTO courses(user_id,id,name,archived) VALUES(?,?,?,?) ON CONFLICT(user_id,id) DO UPDATE SET name=excluded.name,archived=excluded.archived,version=courses.version+1", (user_id, course["id"], course["name"], int(bool(course.get("archived")))))
+        self.db.execute("INSERT INTO courses(user_id,id,name,archived) VALUES(?,?,?,?) ON CONFLICT(user_id,id) DO UPDATE SET name=excluded.name,archived=excluded.archived,version=courses.version+1", (user_id, course["id"], self.course_name(user_id, course['id'], course['name']), int(bool(course.get("archived")))))
 
     def courses(self, user_id):
-        return [{**r, "archived": bool(r["archived"])} for r in self.db.all("SELECT id,name,archived,version FROM courses WHERE user_id=? ORDER BY id", (user_id,))]
+        return [{**r, "name": self.course_name(user_id, r['id'], r['name']), "archived": bool(r["archived"])} for r in self.db.all("SELECT id,name,archived,version FROM courses WHERE user_id=? ORDER BY id", (user_id,))]
 
     def read(self, scope, kind, entity_id, *, include_deleted=False):
         self.require_course(scope, archived=True)
@@ -97,12 +104,22 @@ class Repository:
 
     def get_workspace(self, user_id):
         row = self.db.one("SELECT * FROM workspaces WHERE user_id=?", (user_id,))
-        return {"version": row["version"], "data": json.loads(row["data"]), "updatedAt": row["updated_at"]} if row else None
+        if not row:
+            return None
+        data = json.loads(row['data'])
+        for course in data['courses']:
+            course['name'] = self.course_name(user_id, course['id'], course['name'])
+        return {"version": row["version"], "data": data, "updatedAt": row["updated_at"]}
 
     def save_workspace(self, user_id, value, expected_version=0):
         validate_workspace(value)
         from .practice_cleanup import strip_retired_payload
         value = copy.deepcopy(value) if self.preserve_legacy_data else strip_retired_payload(value)
+        from .document_catalog import is_demo_placeholder
+        for course in value['courses']:
+            course['name'] = self.course_name(user_id, course['id'], course['name'])
+            data = course['data']
+            data['documents'] = [d for d in data.get('documents', []) if not is_demo_placeholder(d)]
         require(type(expected_version) is int and expected_version >= 0, "INVALID_VERSION")
         with self.db.transaction():
             old = self.get_workspace(user_id)
@@ -123,7 +140,7 @@ class Repository:
         for course in workspace["courses"]:
             self.ensure_course(user_id, {**course, "archived": False})
             scope, data = Scope(user_id=user_id, course_id=course["id"]), course["data"]
-            sources = (SOURCES if course["id"] == "course-default" else []) + [s for d in data.get("documents", []) if not d.get("superseded") and not d.get("deleted") for s in d.get("chunks", [])]
+            sources = [s for d in data.get("documents", []) if not d.get("superseded") and not d.get("deleted") for s in d.get("chunks", [])]
             groups = {"source": sources, "session": data.get("sessions", [])}
             for kind, items in groups.items():
                 seen = set()

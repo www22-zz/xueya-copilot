@@ -581,3 +581,21 @@ POST /plan/adopt继续要求confirmed=true、业务expectedRevision及operationI
 `GET /api/learning/space/course-graph` 的 concept 节点新增 `fixedQuestions: [{id,title,url}]`，链接指向现有 `#space/practice/legacy/{id}`，复用课程固定题及原有作答记录。候选与当前账号 workspace 题库一致，不创建新 Question 或 Attempt。
 
 已就绪的栈与队列章节可附加 `sourceType: fixed-practice` 节点，由可见题库的 topic/subtopic 分组。此类节点不计入 AI 提取批次或生成题统计；`questionIds` 仍仅供现有资料题练习接口使用。无匹配题时 `fixedQuestions` 为空，不伪造题量或重试模型。
+
+# 建立向量索引前的只读预览（2026-11-12）
+
+`GET /api/platform/knowledge/index-plan?courseId=...&documentId=...` 复用现有账号及课程权限，返回 `{ok:true,plan:{documentId,version,model,sourceCount,cachedVectors,missingVectors,requiresExternal}}`。数量按与当前模型身份、片段文本哈希和维度匹配的有效缓存统计，缓存与缺失数量按去重后的片段计算。此接口不调用模型、不修改索引、不返回密钥或正文。跨课程文档返回 404，缺少会话令牌返回 403；未配置向量服务返回既有 `EMBEDDING_UNAVAILABLE`。
+
+页面展示计划后，通过既有 `POST /api/platform/knowledge/process` 提交 `{courseId,documentId,version,action:'index',idempotencyKey,confirmedExternal:true}`。现有版本校验、外部调用确认、缓存优先和作业账本保持。预览不预留缓存，实际执行时再次校验；期间被更换的资料返回版本冲突。
+
+# 资料默认章节与删除（2026-11-12）
+
+`POST /api/platform/knowledge/upload` 的 `chapter` 为空或仅空白时，使用文件名去掉最后一个扩展名作为章节并保存，例如 `Lab1_2.docx` → `Lab1_2`；显式章节优先。catalog 对历史空章节使用同样的默认值，章节检索筛选保持一致；原有非空章节不被覆盖。旧规则导入记录保持重复上传兼容，删除后重新上传会创建新资料，不复活旧引用。
+
+`POST /api/platform/knowledge/remove` 接收 `{courseId,documentId,version,confirmed:true}`，复用账号作用域和资料版本校验。未确认返回 `CONFIRMATION_REQUIRED`，旧版本返回409，跨课程资料返回404，无令牌返回403。成功返回 `{ok:true,removed:true,retainedForRecovery:true}`：在同一事务中移除当前资料、片段和解析产物，解除索引绑定并清理不再使用的向量缓存，取消该资料尚未完成的解析/索引任务。其他资料仍引用的共用缓存保留。沿用已有可恢复删除机制，原件和历史修订不作物理粉碎，不能据此声称历史数据已彻底擦除。
+
+# 采用旧计划草稿时确认当前执行计划（2026-11-12）
+
+`POST /api/learning/space/plan/adopt` 兼容增加可选 `expectedCurrent: {id,revision} | null`。客户端先读取 `/plan/list`，向用户说明将被替换的最新执行计划，确认后提交该快照；服务端在采用事务中核对实际执行计划。显式 null 表示确认当前没有执行计划；字段形状不合法返回 `INVALID_CURRENT_PLAN`，实际计划或修订再次变化返回 `PLAN_CURRENT_CHANGED`，不替换计划。草稿自身 expectedRevision、明确确认、生成就绪和调整草稿 sourcePlanRevision 校验保持。未传 expectedCurrent 的旧客户端继续使用原 adoptionBase 保护。该字段也参与操作幂等签名；同一成功请求重放不重复采用。
+
+两个计划页面的采用按钮均使用最新快照确认。已是当前执行计划时只读核验后显示“采用成功”；真正成功后关闭预览并进入我的计划。失败时弹窗显示中文原因，不把原始错误码当作唯一提示，也不自动重试或重新生成。

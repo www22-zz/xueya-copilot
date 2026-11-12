@@ -19,6 +19,8 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from .common import AppError, Scope, require, utc_now
 
+_UNSPECIFIED_CURRENT = object()
+
 
 def generate_id(prefix: str = "") -> str:
     return f"{prefix}{uuid.uuid4().hex[:12]}"
@@ -237,12 +239,15 @@ class StudySpaceService:
             "history": sorted(history, key=lambda p: p.get("updatedAt", ""), reverse=True)
         }
 
-    def adopt_plan(self, account_id: str, plan_id: str, expected_revision: int, confirmed: bool, operation_id=None) -> Dict[str, Any]:
+    def adopt_plan(self, account_id: str, plan_id: str, expected_revision: int, confirmed: bool, operation_id=None, *, expected_current=_UNSPECIFIED_CURRENT) -> Dict[str, Any]:
         request={'planId':plan_id,'expectedRevision':expected_revision,'confirmed':confirmed}
+        if expected_current is not _UNSPECIFIED_CURRENT:
+            require(expected_current is None or (isinstance(expected_current, dict) and set(expected_current)=={'id','revision'} and isinstance(expected_current['id'],str) and 0<len(expected_current['id'])<=200 and type(expected_current['revision']) is int and expected_current['revision']>0), 'INVALID_CURRENT_PLAN')
+            request['expectedCurrent']=expected_current
         return self.plan_operation(account_id, operation_id, 'adopt', request,
-                                   lambda:self._adopt_plan(account_id,plan_id,expected_revision,confirmed))
+                                   lambda:self._adopt_plan(account_id,plan_id,expected_revision,confirmed,expected_current=expected_current))
 
-    def _adopt_plan(self, account_id: str, plan_id: str, expected_revision: int, confirmed: bool) -> Dict[str, Any]:
+    def _adopt_plan(self, account_id: str, plan_id: str, expected_revision: int, confirmed: bool, *, expected_current=_UNSPECIFIED_CURRENT) -> Dict[str, Any]:
         """Atomically adopt a draft plan as the active execution plan."""
         require(confirmed is True, "CONFIRMATION_REQUIRED")
         scope = self._scope(account_id)
@@ -257,8 +262,10 @@ class StudySpaceService:
             if readiness.get('frameworkStatus')=='failed':
                 draft.update(generationStatus='plan-ready-framework-failed',frameworkStatus='failed',frameworkError=readiness.get('frameworkError'))
             current=self.get_active_plan(account_id)
-            if 'adoptionBase' in draft and not draft.get('sourcePlanId'):
-                actual={'id':current['id'],'revision':current['revision']} if current else None
+            actual={'id':current['id'],'revision':current['revision']} if current else None
+            if expected_current is not _UNSPECIFIED_CURRENT:
+                require(expected_current==actual,'PLAN_CURRENT_CHANGED')
+            elif 'adoptionBase' in draft and not draft.get('sourcePlanId'):
                 require(draft['adoptionBase']==actual,'PLAN_CURRENT_CHANGED')
             if draft.get('sourcePlanId'):
                 source=self.get_active_plan(account_id)

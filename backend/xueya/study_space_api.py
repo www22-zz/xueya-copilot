@@ -262,7 +262,8 @@ def install_study_space(app):
         expected_revision = data.get("expectedRevision", 1)
         require(type(expected_revision) is int, "INVALID_REVISION")
         confirmed = data.get("confirmed")
-        plan = service().adopt_plan(account_id(request), plan_id, expected_revision, confirmed, data.get('operationId'))
+        options = {'expected_current':data['expectedCurrent']} if 'expectedCurrent' in data else {}
+        plan = service().adopt_plan(account_id(request), plan_id, expected_revision, confirmed, data.get('operationId'), **options)
         return success(plan=plan)
 
     @router.post('/plan/adjust-preview')

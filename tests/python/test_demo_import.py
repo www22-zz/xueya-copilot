@@ -128,9 +128,11 @@ def test_missing_materials_is_visible_and_disabled_mode_writes_nothing(tmp_path)
         assert not p.db.one('SELECT 1 FROM jobs')
 
 
-def test_server_config_defaults_on_and_environment_can_opt_out(tmp_path, monkeypatch):
+def test_server_config_defaults_off_and_requires_explicit_opt_in(tmp_path, monkeypatch):
     monkeypatch.setattr('backend.xueya.config.ROOT', tmp_path)
     monkeypatch.delenv('XUEYA_AUTO_IMPORT_DEMO', raising=False)
-    assert load_config().auto_import_demo is True
+    assert load_config().auto_import_demo is False
     monkeypatch.setenv('XUEYA_AUTO_IMPORT_DEMO', '0')
     assert load_config().auto_import_demo is False
+    monkeypatch.setenv('XUEYA_AUTO_IMPORT_DEMO', '1')
+    assert load_config().auto_import_demo is True

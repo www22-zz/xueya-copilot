@@ -62,9 +62,9 @@ def test_upload_chapter_dedup_across_keys_search_and_actual_citation(client):
     data = catalog(client, course)
     assert data['summary']['documents'] == 1 and data['summary']['sources'] > 0
     doc = data['documents'][0]
-    assert doc['chapter'] == '第3章' and 'chunks' not in doc and 'fileHash' not in doc
+    assert doc['chapter'] == 'week4 第3章_栈和队列' and 'chunks' not in doc and 'fileHash' not in doc
     assert doc['task']['status'] == 'succeeded' and not doc['vectorReady']
-    search = post(client, 'search', {'courseId': course, 'query': '后进先出', 'chapter': '第3章'}).json()['evidence']
+    search = post(client, 'search', {'courseId': course, 'query': '后进先出', 'chapter': doc['chapter']}).json()['evidence']
     assert search['sources'] and not search['warnings']
     for source in search['sources']:
         assert client.post('/api/platform/rag/validate', json={'courseId': course, 'citation': source}, headers=client.platform_headers).json()['valid']
@@ -103,6 +103,28 @@ def test_archive_excluded_and_retry_failed_parse(client):
     assert client.post('/api/platform/library/organize', headers=client.platform_headers, json={'courseId': course, 'documentId': d['id'], 'version': d['version'], 'action': 'archive', 'confirmed': True}).status_code == 200
     assert not post(client, 'search', {'courseId': course, 'query': '栈'}).json()['evidence']['sources']
     assert catalog(client, course)['summary']['documents'] == 1  # Failed file remains visible.
+
+
+def test_index_plan_uses_configured_service_without_calling_it_and_is_scoped(client):
+    from backend.xueya.rag_api import ApiSettings
+    from backend.xueya.rag_moark import QwenEmbeddingProvider
+    rag = client.app.state.rag
+    rag.embedding = QwenEmbeddingProvider(client.platform, ApiSettings(
+        key='synthetic-never-sent', model='Qwen3-VL-Embedding-2B', dimension=2048,
+        base_url='https://api.moark.com/v1'))
+    a, b = create(client, 'plan-a'), create(client, 'plan-b')
+    result = upload(client, a).json()
+    assert wait(client, result['job'])['status'] == 'succeeded'
+    params = {'courseId': a, 'documentId': result['documentId']}
+    response = client.get('/api/platform/knowledge/index-plan', params=params, headers=client.platform_headers)
+    assert response.status_code == 200
+    plan = response.json()['plan']
+    assert plan['model'] == 'Qwen3-VL-Embedding-2B' and plan['requiresExternal']
+    assert plan['cachedVectors'] == 0 and plan['missingVectors'] == plan['sourceCount'] > 0
+    assert 'synthetic-never-sent' not in response.text
+    assert client.get('/api/platform/knowledge/index-plan', params={**params, 'courseId': b}, headers=client.platform_headers).status_code == 404
+    assert client.get('/api/platform/knowledge/index-plan', params=params).status_code == 403
+    assert not client.platform.db.one('SELECT id FROM invocations')
 
 
 @pytest.mark.parametrize('name,chapter', [('week14 第7.4章图.pptx', '第7.4章'), ('week5_字符串.pptx', '第5周'), ('讲义.pptx', '')])

@@ -296,6 +296,26 @@ class RagService:
     def _cache_id(identity, text):
         return "vec-"+digest({"identity": identity, "text": text})[:56]
 
+    def index_plan(self, scope, document_id):
+        doc = self.document(scope, document_id, active=True)
+        require(self.embedding is not None, 'EMBEDDING_UNAVAILABLE')
+        identity = self.embedding.identity
+        sources = self.sources(scope, document_ids=[document_id])
+        unique = {self._cache_id(identity, s['quote']): s['quote'] for s in sources}
+        cached = 0
+        for key, text in unique.items():
+            row = self.repo.read(scope, 'vector', key)
+            if not row or row['value'].get('identity') != identity or row['value'].get('textHash') != digest(text):
+                continue
+            try:
+                normalize(row['value'].get('values'), identity['dimension'])
+                cached += 1
+            except AppError:
+                pass
+        return {'documentId': document_id, 'version': doc['version'], 'model': identity['model'],
+                'sourceCount': len(sources), 'cachedVectors': cached, 'missingVectors': len(unique)-cached,
+                'requiresExternal': cached < len(unique)}
+
     async def index_job(self, scope, args, *, progress, checkpoint, commit):
         doc = self._job_doc(scope, args, "rag-index", paid=True)
         require(self.embedding is not None, "NOT_SENT")
@@ -423,9 +443,13 @@ class RagService:
         with self.p.db.transaction():
             doc = self.document(scope, document_id)
             require(doc["version"] == expected_version, "VERSION_CONFLICT")
-            self.repo.put(scope, "document", document_id, {**doc, "deleted": True}, expected_version, deleted=True)
+            self.repo.put(scope, "document", document_id, {**doc, "deleted": True, "indexStatus": "deleted", "embeddingIdentity": None, "chunks": []}, expected_version, deleted=True)
             self._retire(scope, document_id)
             self._prune_vectors(scope)
+            import json
+            for row in self.p.db.all("SELECT id,input FROM jobs WHERE user_id=? AND course_id=? AND status IN ('queued','running') AND type IN ('rag-parse','rag-index','rag-ocr','rag-visual-apply','rag-prepared-pdf')", (scope.user_id, scope.course_id)):
+                if json.loads(row['input']).get('documentId') == document_id:
+                    self.p.jobs.cancel(row['id'], scope.user_id)
         return {"removed": True, "retainedForRecovery": True}
 
     def export(self, scope, document_id):

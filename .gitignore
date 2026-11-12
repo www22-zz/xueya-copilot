@@ -4,6 +4,7 @@ node_modules/
 .env.*
 !.env.example
 !.env.moark.example
+!.env.team-embedding.example
 *.log
 .xueya-data/
 .xueya-backups/
