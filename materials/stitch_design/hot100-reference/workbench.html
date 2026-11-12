@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&amp;family=Plus+Jakarta+Sans:wght@100..900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{colors:{"on-tertiary":"#ffffff","on-secondary-fixed-variant":"#004395","surface":"#faf8ff","surface-variant":"#dae2fd","on-primary-container":"#dad7ff","secondary-container":"#2170e4","secondary-fixed":"#d8e2ff","on-secondary":"#ffffff","tertiary-fixed-dim":"#d0bcff","on-secondary-fixed":"#001a42","on-primary-fixed":"#0f0069","background":"#faf8ff","primary-fixed":"#e2dfff","surface-tint":"#4d44e3","secondary":"#0058be","secondary-fixed-dim":"#adc6ff","primary-fixed-dim":"#c3c0ff","error":"#ba1a1a","tertiary":"#571ac0","surface-container":"#eaedff","primary":"#3525cd","surface-container-low":"#f2f3ff","on-primary-fixed-variant":"#3323cc","outline-variant":"#c7c4d8","outline":"#777587","inverse-primary":"#c3c0ff","surface-container-high":"#e2e7ff","on-secondary-container":"#fefcff","surface-dim":"#d2d9f4","on-tertiary-fixed":"#23005c","inverse-surface":"#283044","surface-container-lowest":"#ffffff","on-surface":"#131b2e","surface-container-highest":"#dae2fd","inverse-on-surface":"#eef0ff","on-primary":"#ffffff","on-error-container":"#93000a","tertiary-container":"#6f3dd9","error-container":"#ffdad6","tertiary-fixed":"#e9ddff","on-error":"#ffffff","surface-bright":"#faf8ff","on-surface-variant":"#464555","on-tertiary-container":"#e3d5ff","on-tertiary-fixed-variant":"#5516be","primary-container":"#4f46e5","on-background":"#131b2e"},borderRadius:{DEFAULT:"0.25rem",lg:"0.5rem",xl:"0.75rem",full:"9999px"},spacing:{"space-lg":"1.5rem","gutter-mobile":"0.75rem",margin:"2rem","space-2xl":"3rem","margin-mobile":"1rem",gutter:"1.25rem","space-md":"1rem","space-sm":"0.5rem","space-xl":"2rem","space-xs":"0.25rem"},fontFamily:{"headline-lg":["Plus Jakarta Sans"],"headline-md":["Plus Jakarta Sans"],"headline-lg-mobile":["Plus Jakarta Sans"],"display-lg":["Plus Jakarta Sans"],"body-lg":["Inter"],"label-sm":["Inter"],"label-md":["Inter"],"body-sm":["Inter"],"code-sm":["JetBrains Mono"],"body-md":["Inter"],"headline-sm":["Plus Jakarta Sans"]},fontSize:{"headline-lg":["28px",{lineHeight:"36px",letterSpacing:"-0.02em",fontWeight:"700"}],"headline-md":["20px",{lineHeight:"28px",letterSpacing:"-0.01em",fontWeight:"600"}],"headline-lg-mobile":["22px",{lineHeight:"30px",letterSpacing:"-0.015em",fontWeight:"700"}],"display-lg":["36px",{lineHeight:"44px",letterSpacing:"-0.025em",fontWeight:"700"}],"body-lg":["16px",{lineHeight:"26px",fontWeight:"400"}],"label-sm":["11px",{lineHeight:"14px",fontWeight:"500"}],"label-md":["12px",{lineHeight:"16px",letterSpacing:"0.04em",fontWeight:"600"}],"body-sm":["13px",{lineHeight:"18px",fontWeight:"400"}],"code-sm":["13px",{lineHeight:"20px",fontWeight:"400"}],"body-md":["14px",{lineHeight:"22px",fontWeight:"400"}],"headline-sm":["16px",{lineHeight:"24px",fontWeight:"600"}]}}}};</script></head><body class="bg-background font-body-md text-on-surface min-h-screen"><header class="fixed top-0 left-0 right-0 h-16 bg-surface-container-lowest/80 backdrop-blur-xl z-50 shadow-[0_1px_8px_rgba(0,0,0,0.03)]"><div class="h-16 w-full px-margin flex items-center justify-between gap-space-md"><div class="flex items-center gap-space-md min-w-[240px]"><img alt="学涯 Copilot Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1X92TAI0zokI7ftf4Kja0CaUkhDIuAYyzvzO5-qW6GvpV0MI1w9uSCSJjqzFxcH5igxle8mviQhHK-T-AWqbjAXcQTYcOKDhJLiXlZmzQ9aw-VZhx9ZdHRjH7GyyKO3WbE5Y2X-j5swzIb8ns-BYMP_oBjexNmtAPu21nRFVM1AGln3qezztMcDgOSJFkIKmrvsyHXTljQPsnBzj2ksx5fDUBmx8tKajZ4WpNQZplE"/><div class="flex flex-col"><span class="font-headline-sm text-headline-sm text-on-surface font-semibold tracking-tight">学涯 Copilot</span><span class="font-label-sm text-label-sm text-on-surface-variant font-medium">Study Workspace</span></div></div><div class="flex items-center gap-space-lg flex-1 justify-center max-w-2xl"><div class="flex items-center bg-surface-container-low px-space-xs py-space-xs rounded-full p-1"><button class="px-space-md py-1.5 rounded-full font-label-md text-label-md text-on-surface-variant hover:text-on-surface transition-all flex items-center gap-1.5" type="button"><span class="material-symbols-outlined text-[16px]">auto_awesome</span>AI 助手</button><button class="px-space-md py-1.5 rounded-full font-label-md text-label-md bg-surface-container-lowest text-primary shadow-sm font-semibold flex items-center gap-1.5" type="button"><span class="material-symbols-outlined text-[16px]">school</span>学习中心</button></div><div class="flex items-center bg-surface-container-low px-space-md py-1.5 rounded-full w-72 text-on-surface-variant hover:bg-surface-container transition-colors cursor-pointer"><span class="material-symbols-outlined text-[18px] mr-space-sm text-outline">search</span><span class="font-body-sm text-body-sm flex-1 text-on-surface-variant">全局快速检索资料、笔记...</span><kbd class="font-code-sm text-label-sm bg-surface-container-lowest text-on-surface-variant px-1.5 py-0.5 rounded shadow-sm">⌘K</kbd></div></div><div class="flex items-center gap-space-md justify-end min-w-[240px]"><button class="w-9 h-9 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" title="AI 工具集" type="button"><span class="material-symbols-outlined text-[20px]">construction</span></button><button class="relative w-9 h-9 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" title="消息通知" type="button"><span class="material-symbols-outlined text-[20px]">notifications</span><span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full"></span></button><div class="h-4 w-px bg-surface-container-high"></div><div class="flex items-center gap-space-sm pl-1"><img alt="Profile" class="w-8 h-8 rounded-full object-cover ring-2 ring-surface-variant" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCzehY6ceo6sHe5J4cvkn96VQNGjfQZbY0Ji9KxcV435A3aRcU4eYzCHR3N1N3VANfJZOrG8mt1GJnwjbq83RvgdBkajcrRafBtDY8uO0kh3p9kSryD-C1wVwEVC7a_ivV4tkB2pNRZNdFpq6yGXCrQQAF2Q0TBJHYshipqm44M_n1_eedGyQlDVsfc5bYp_QX-RQPUm0bCH4zYnCr3GVq0AcW0lqL914PBxR7VQQ"/><div class="hidden xl:flex flex-col text-left"><span class="font-label-md text-label-md text-on-surface font-semibold leading-tight">Linus C.</span><span class="font-label-sm text-label-sm text-primary font-medium">CS 专业 · 大三</span></div></div></div></div></header><aside class="fixed left-0 top-16 bottom-0 w-64 bg-surface-container-lowest/70 backdrop-blur-xl z-40 flex flex-col justify-between py-space-md shadow-[0_1px_8px_rgba(0,0,0,0.02)]"><div class="flex flex-col gap-space-md px-space-md"><div class="flex items-center justify-between px-space-sm py-space-xs"><span class="font-label-sm text-label-sm text-outline font-semibold tracking-wider uppercase">学习中心核心模块</span><button class="text-on-surface-variant hover:text-on-surface transition-colors" title="折叠侧栏" type="button"><span class="material-symbols-outlined text-[18px]">dock_to_right</span></button></div><nav class="flex flex-col gap-1.5" data-active-classes="bg-primary-container text-on-primary font-semibold shadow-[0_4px_16px_rgba(79,70,229,0.18)]"><a class="flex items-center gap-3 px-space-md py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all font-body-md text-body-md" data-path="course-study" href="#"><span class="material-symbols-outlined text-[20px]">play_lesson</span><span>课程学习</span></a><a class="flex items-center gap-3 px-space-md py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all font-body-md text-body-md" data-path="practice-quiz" href="#"><span class="material-symbols-outlined text-[20px]">quiz</span><span>专项练习</span></a><a class="flex items-center gap-3 px-space-md py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all font-body-md text-body-md" data-path="review-notebook" href="#"><span class="material-symbols-outlined text-[20px]">edit_note</span><span>错题复习</span></a><a class="flex items-center gap-3 px-space-md py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all font-body-md text-body-md" data-path="learning-analytics" href="#"><span class="material-symbols-outlined text-[20px]">insights</span><span>学情分析</span></a></nav><div class="mt-space-sm pt-space-sm"><div class="flex items-center justify-between px-space-sm mb-2"><span class="font-label-sm text-label-sm text-outline font-semibold tracking-wider uppercase">近期 AI 答疑</span><button class="text-on-surface-variant hover:text-on-surface transition-colors" title="查看全部记录" type="button"><span class="material-symbols-outlined text-[16px]">chevron_right</span></button></div><div class="flex flex-col gap-1"><a class="flex items-center gap-2 px-space-sm py-2 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all text-body-sm font-body-sm truncate" href="#"><span class="material-symbols-outlined text-[16px] text-tertiary">forum</span><span class="truncate">TCP 三次握手状态迁移解析</span></a><a class="flex items-center gap-2 px-space-sm py-2 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all text-body-sm font-body-sm truncate" href="#"><span class="material-symbols-outlined text-[16px] text-tertiary">forum</span><span class="truncate">红黑树旋转平衡代码推导</span></a><a class="flex items-center gap-2 px-space-sm py-2 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all text-body-sm font-body-sm truncate" href="#"><span class="material-symbols-outlined text-[16px] text-tertiary">forum</span><span class="truncate">虚拟内存段页式存储计算题</span></a></div></div></div><div class="px-space-md pt-space-sm flex flex-col gap-1"><a class="flex items-center gap-3 px-space-md py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all font-body-md text-body-md" data-path="settings" href="#"><span class="material-symbols-outlined text-[20px]">settings</span><span>系统设置</span></a></div></aside><div class="pl-64"><main class="relative pt-16 min-h-screen bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(226,223,255,0.45),rgba(250,248,255,1))]"><div class="flex flex-col w-full">
+<!-- 练习工作台主体容器 -->
+<div class="w-full max-w-[1580px] mx-auto px-margin-mobile lg:px-margin pb-space-2xl flex flex-col gap-space-md">
+<!-- 顶部状态导航与题库元信息条 -->
+<header class="w-full flex flex-col lg:flex-row lg:items-center justify-between gap-space-sm pt-space-xs">
+<div class="flex flex-wrap items-center gap-space-sm">
+<a class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface font-label-md text-label-md transition-colors" href="#">
+<span class="material-symbols-outlined text-[15px]">arrow_back</span>
+<span>返回练习首页</span>
+</a>
+<span class="text-outline-variant select-none">/</span>
+<h1 class="font-headline-md text-headline-md text-on-surface font-bold tracking-tight">408 考研与力扣精选题库</h1>
+<div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm font-medium">
+<span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
+<span>已同步 300 题 · 240 单选 · 60 算法大题</span>
+</div>
+</div>
+<!-- 分段状态过滤 (Segmented Status Filter) -->
+<div class="flex items-center gap-1.5 bg-surface-container-low p-1 rounded-full shadow-sm">
+<button class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary-container text-on-primary font-label-md text-label-md shadow-sm transition-all" type="button">
+<span>待刷</span>
+<span class="px-1.5 py-0.2 rounded-full bg-white/20 font-code-sm text-label-sm">186</span>
+</button>
+<button class="flex items-center gap-1.5 px-3 py-1 rounded-full text-on-surface-variant hover:text-on-surface font-label-md text-label-md hover:bg-surface-container transition-all" type="button">
+<span>已掌握</span>
+<span class="px-1.5 py-0.2 rounded-full bg-surface-container-high text-on-surface-variant font-code-sm text-label-sm">94</span>
+</button>
+<button class="flex items-center gap-1.5 px-3 py-1 rounded-full text-on-surface-variant hover:text-primary font-label-md text-label-md hover:bg-surface-container transition-all" type="button">
+<span>错题本</span>
+<span class="px-1.5 py-0.2 rounded-full bg-error-container text-on-error-container font-code-sm text-label-sm font-bold">20</span>
+<span class="material-symbols-outlined text-[13px]">arrow_forward</span>
+</button>
+</div>
+</header>
+<!-- 复合筛选与快速检索栏 (Filter & Search Control Dock) -->
+<section class="w-full bg-surface-container-lowest/85 backdrop-blur-xl rounded-xl p-space-sm shadow-[0_4px_20px_-2px_rgba(15,23,42,0.03)] flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-space-sm">
+<div class="flex flex-col md:flex-row items-stretch md:items-center gap-space-sm flex-1">
+<!-- 搜索输入 -->
+<div class="relative flex-1 min-w-[280px]">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-[18px]">search</span>
+<input class="w-full h-10 pl-9 pr-12 rounded-lg bg-surface-container-low text-on-surface placeholder:text-on-surface-variant/60 font-body-sm text-body-sm focus:outline-none focus:bg-surface-container-lowest transition-all" placeholder="搜索题号、标题、题干描述、核心考点..." type="text" value=""/>
+<kbd class="absolute right-2.5 top-1/2 -translate-y-1/2 font-code-sm text-label-sm px-1.5 py-0.5 rounded bg-surface-container-lowest text-outline shadow-sm">⌘F</kbd>
+</div>
+<!-- 维度过滤下拉组 -->
+<div class="flex flex-wrap items-center gap-2">
+<!-- 全部科目 -->
+<div class="relative">
+<select class="appearance-none h-10 pl-3 pr-8 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface font-body-sm text-body-sm focus:outline-none transition-colors cursor-pointer">
+<option selected="">全部科目 (数据结构优先)</option>
+<option>数据结构与算法 (DS)</option>
+<option>计算机组成原理 (CO)</option>
+<option>操作系统内核 (OS)</option>
+<option>计算机网络协议 (CN)</option>
+</select>
+<span class="material-symbols-outlined pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-outline text-[16px]">expand_more</span>
+</div>
+<!-- 全部难度 -->
+<div class="relative">
+<select class="appearance-none h-10 pl-3 pr-8 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface font-body-sm text-body-sm focus:outline-none transition-colors cursor-pointer">
+<option>全部难度</option>
+<option>入门 · 基础夯实</option>
+<option selected="">中等 · 408高频</option>
+<option>困难 · 综合压轴</option>
+</select>
+<span class="material-symbols-outlined pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-outline text-[16px]">expand_more</span>
+</div>
+<!-- 全部题型 -->
+<div class="relative">
+<select class="appearance-none h-10 pl-3 pr-8 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface font-body-sm text-body-sm focus:outline-none transition-colors cursor-pointer">
+<option selected="">全部题型 (单选题)</option>
+<option>单项选择题</option>
+<option>多项选择题</option>
+<option>综合计算/算法设计大题</option>
+</select>
+<span class="material-symbols-outlined pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-outline text-[16px]">expand_more</span>
+</div>
+<!-- 知识点维度 -->
+<div class="relative hidden 2xl:block">
+<select class="appearance-none h-10 pl-3 pr-8 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface font-body-sm text-body-sm focus:outline-none transition-colors cursor-pointer">
+<option selected="">全部知识点</option>
+<option>抽象数据类型与复杂度</option>
+<option>线性表与哈希散列</option>
+<option>二叉搜索树与平衡旋转</option>
+<option>图论拓扑与最小生成树</option>
+</select>
+<span class="material-symbols-outlined pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-outline text-[16px]">expand_more</span>
+</div>
+</div>
+</div>
+<!-- 右侧辅助动作栏 -->
+<div class="flex items-center gap-2 justify-end pt-2 xl:pt-0 border-t xl:border-0 border-surface-container">
+<button class="h-10 px-3 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md text-label-md flex items-center gap-1.5 transition-colors" title="随机抽选一道未掌握的题目" type="button">
+<span class="material-symbols-outlined text-[17px] text-primary">casino</span>
+<span>随机刷题</span>
+</button>
+<button class="h-10 px-3 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface font-label-md text-label-md flex items-center gap-1.5 transition-colors" title="云端题库进度同步" type="button">
+<span class="material-symbols-outlined text-[17px]">sync</span>
+<span>重试同步</span>
+</button>
+<button class="h-10 px-3 rounded-lg text-outline hover:text-error font-label-md text-label-md transition-colors" title="清空所有当前筛选条件" type="button">
+<span>清除筛选</span>
+</button>
+</div>
+</section>
+<!-- 工作台双栏主体 (Split-Pane Practice Workspace: 340px : 1fr) -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-space-md items-start">
+<!-- 左栏：题目目录导航与专题过滤栏 (Interactive Question Navigator, 4 cols on lg, 3.5 on xl) -->
+<aside class="lg:col-span-4 xl:col-span-3 flex flex-col gap-space-sm bg-surface-container-lowest/80 backdrop-blur-xl rounded-xl p-space-sm shadow-[0_4px_24px_rgba(15,23,42,0.03)] h-[calc(100vh-190px)] min-h-[640px] sticky top-20">
+<!-- 专题快速 Capsule 胶囊筛选 -->
+<div class="flex items-center gap-1.5 overflow-x-auto pb-1.5 pt-0.5 no-scrollbar">
+<button class="px-2.5 py-1 rounded-full bg-primary-container text-on-primary font-label-sm text-label-sm font-semibold shrink-0" type="button">全部专题</button>
+<button class="px-2.5 py-1 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface font-label-sm text-label-sm shrink-0" type="button">基础与复杂度</button>
+<button class="px-2.5 py-1 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface font-label-sm text-label-sm shrink-0" type="button">哈希表</button>
+<button class="px-2.5 py-1 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface font-label-sm text-label-sm shrink-0" type="button">双指针</button>
+<button class="px-2.5 py-1 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface font-label-sm text-label-sm shrink-0" type="button">二叉树</button>
+</div>
+<!-- 题卡滚动列表区域 -->
+<div class="flex-1 overflow-y-auto pr-1 flex flex-col gap-2"><!-- 题目 #1：当前激活项 (算法编程题) -->
+<div class="p-3 rounded-lg bg-primary-fixed/30 shadow-[0_2px_12px_rgba(79,70,229,0.08)] flex flex-col gap-1.5 relative overflow-hidden cursor-default">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-primary"></div>
+<div class="flex items-center justify-between pl-1">
+<div class="flex items-center gap-1.5">
+<span class="font-code-sm text-label-sm text-primary font-bold">#1 · 力扣 Hot100</span>
+<span class="w-1.5 h-1.5 rounded-full bg-primary animate-ping"></span>
+</div>
+<span class="px-2 py-0.5 rounded-full bg-primary-container text-on-primary font-label-sm text-label-sm font-semibold flex items-center gap-1">
+<span class="material-symbols-outlined text-[13px]">code</span>正在编码
+    </span>
+</div>
+<div class="font-headline-sm text-headline-sm text-primary font-bold pl-1">两数之和 (Two Sum)</div>
+<div class="flex items-center gap-2 font-label-sm text-label-sm text-on-surface pl-1">
+<span class="text-secondary font-semibold">简单</span>
+<span>·</span>
+<span>哈希散列 / 数组双指针</span>
+<span class="ml-auto px-1.5 py-0.2 rounded bg-primary/10 text-primary font-code-sm text-label-sm">算法代码题</span>
+</div>
+</div>
+<!-- 题目 #2 -->
+<div class="p-3 rounded-lg bg-surface-container-low hover:bg-surface-container transition-all cursor-pointer flex flex-col gap-1.5 group">
+<div class="flex items-center justify-between">
+<span class="font-code-sm text-label-sm text-outline">#2 · 408 核心经典</span>
+<span class="px-2 py-0.5 rounded-full bg-surface-container-highest text-on-surface-variant font-label-sm text-label-sm">待刷</span>
+</div>
+<div class="font-headline-sm text-headline-sm text-on-surface font-semibold group-hover:text-primary transition-colors">抽象数据类型 (ADT) 与复杂度</div>
+<div class="flex items-center gap-2 font-label-sm text-label-sm text-on-surface-variant">
+<span class="text-tertiary font-medium">中等</span>
+<span>·</span>
+<span>数据结构形式化定义</span>
+</div>
+</div>
+<!-- 题目 #3 -->
+<div class="p-3 rounded-lg bg-surface-container-low hover:bg-surface-container transition-all cursor-pointer flex flex-col gap-1.5 group">
+<div class="flex items-center justify-between">
+<span class="font-code-sm text-label-sm text-outline">#3 · 408 算法分析</span>
+<span class="px-2 py-0.5 rounded-full bg-surface-container-highest text-on-surface-variant font-label-sm text-label-sm">待刷</span>
+</div>
+<div class="font-headline-sm text-headline-sm text-on-surface font-semibold group-hover:text-primary transition-colors">算法终止要求与渐进分析</div>
+<div class="flex items-center gap-2 font-label-sm text-label-sm text-on-surface-variant">
+<span class="text-tertiary font-medium">中等</span>
+<span>·</span>
+<span>大 O 阶界定 / 有穷性判定</span>
+</div>
+</div>
+<!-- 题目 #4 -->
+<div class="p-3 rounded-lg bg-surface-container-low hover:bg-surface-container transition-all cursor-pointer flex flex-col gap-1.5 group">
+<div class="flex items-center justify-between">
+<span class="font-code-sm text-label-sm text-outline">#4 · 顺序表原理</span>
+<span class="px-2 py-0.5 rounded-full bg-surface-container-highest text-on-surface-variant font-label-sm text-label-sm">待刷</span>
+</div>
+<div class="font-headline-sm text-headline-sm text-on-surface font-semibold group-hover:text-primary transition-colors">常数次数访问与随机存取</div>
+<div class="flex items-center gap-2 font-label-sm text-label-sm text-on-surface-variant">
+<span class="text-secondary font-medium">简单</span>
+<span>·</span>
+<span>寻址公式与内存连续性</span>
+</div>
+</div>
+<!-- 题目 #5 -->
+<div class="p-3 rounded-lg bg-surface-container-low hover:bg-surface-container transition-all cursor-pointer flex flex-col gap-1.5 group">
+<div class="flex items-center justify-between">
+<span class="font-code-sm text-label-sm text-outline">#5 · 循环分析</span>
+<span class="px-2 py-0.5 rounded-full bg-surface-container-highest text-on-surface-variant font-label-sm text-label-sm">待刷</span>
+</div>
+<div class="font-headline-sm text-headline-sm text-on-surface font-semibold group-hover:text-primary transition-colors">折半外层循环的总工作量推导</div>
+<div class="flex items-center gap-2 font-label-sm text-label-sm text-on-surface-variant">
+<span class="text-tertiary font-medium">中等</span>
+<span>·</span>
+<span>调和级数与主定理展开</span>
+</div>
+</div>
+<!-- 题目 #6 -->
+<div class="p-3 rounded-lg bg-surface-container-low hover:bg-surface-container transition-all cursor-pointer flex flex-col gap-1.5 group">
+<div class="flex items-center justify-between">
+<span class="font-code-sm text-label-sm text-outline">#6 · 递归调用栈</span>
+<span class="px-2 py-0.5 rounded-full bg-surface-container-highest text-on-surface-variant font-label-sm text-label-sm">待刷</span>
+</div>
+<div class="font-headline-sm text-headline-sm text-on-surface font-semibold group-hover:text-primary transition-colors">递归二分查找的辅助空间占用</div>
+<div class="flex items-center gap-2 font-label-sm text-label-sm text-on-surface-variant">
+<span class="text-tertiary font-medium">中等</span>
+<span>·</span>
+<span>活动记录与栈深 O(log n)</span>
+</div>
+</div>
+<!-- 题目 #7 -->
+<div class="p-3 rounded-lg bg-surface-container-low hover:bg-surface-container transition-all cursor-pointer flex flex-col gap-1.5 group">
+<div class="flex items-center justify-between">
+<span class="font-code-sm text-label-sm text-outline">#7 · 渐进复杂界</span>
+<span class="px-2 py-0.5 rounded-full bg-surface-container-highest text-on-surface-variant font-label-sm text-label-sm">待刷</span>
+</div>
+<div class="font-headline-sm text-headline-sm text-on-surface font-semibold group-hover:text-primary transition-colors">翻倍规模后的增长阶数</div>
+<div class="flex items-center gap-2 font-label-sm text-label-sm text-on-surface-variant">
+<span class="text-tertiary font-medium">中等</span>
+<span>·</span>
+<span>多项式阶与对数阶对比</span>
+</div>
+</div>
+<!-- 题目 #8 -->
+<div class="p-3 rounded-lg bg-surface-container-low hover:bg-surface-container transition-all cursor-pointer flex flex-col gap-1.5 group">
+<div class="flex items-center justify-between">
+<span class="font-code-sm text-label-sm text-outline">#8 · 有向无环图</span>
+<span class="px-2 py-0.5 rounded-full bg-surface-container-highest text-on-surface-variant font-label-sm text-label-sm">待刷</span>
+</div>
+<div class="font-headline-sm text-headline-sm text-on-surface font-semibold group-hover:text-primary transition-colors">拓扑依赖的建模与入度检验</div>
+<div class="flex items-center gap-2 font-label-sm text-label-sm text-on-surface-variant">
+<span class="text-tertiary font-medium">中等</span>
+<span>·</span>
+<span>Kahn 算法与 DFS 判环</span>
+</div>
+</div></div>
+<!-- 目录底栏微指标 -->
+<div class="pt-2 border-t border-surface-container flex items-center justify-between font-label-sm text-label-sm text-outline">
+<span>列表显示 8 / 300 题</span>
+<span class="flex items-center gap-1 hover:text-primary cursor-pointer transition-colors">加载更多 <span class="material-symbols-outlined text-[14px]">expand_more</span></span>
+</div>
+</aside>
+<!-- 右栏：主作答工作区 (Main Problem & Interactive Workspace, 8 cols on lg, 8.5 on xl) -->
+<section class="lg:col-span-8 xl:col-span-9 flex flex-col gap-space-md"><!-- 题目与代码编辑器复合工作台 (Integrated Algorithm & IDE Split Container) -->
+<div class="bg-surface-container-lowest/90 backdrop-blur-xl rounded-xl p-space-md shadow-[0_4px_28px_rgba(15,23,42,0.03)] flex flex-col gap-space-md border border-surface-container">
+<!-- 顶部算法题元信息栏 -->
+<div class="flex flex-col gap-space-sm border-b border-surface-container pb-3">
+<div class="flex flex-wrap items-center justify-between gap-2">
+<div class="flex flex-wrap items-center gap-2">
+<span class="px-2.5 py-0.5 rounded-md bg-primary-container text-on-primary font-label-md text-label-md font-bold flex items-center gap-1">
+<span class="material-symbols-outlined text-[15px]">code</span>第 1 题 · 算法大题
+        </span>
+<span class="px-2 py-0.5 rounded-md bg-secondary/10 text-secondary font-label-sm text-label-sm font-semibold">力扣 Hot100 必刷</span>
+<span class="px-2 py-0.5 rounded-md bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm">408 统考真题同源</span>
+<span class="px-2 py-0.5 rounded-md bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm">考点频度 ★★★★★</span>
+</div>
+<div class="flex items-center gap-2">
+<button class="w-8 h-8 rounded-full bg-surface-container-low hover:bg-surface-container text-on-surface-variant hover:text-primary flex items-center justify-center transition-colors" title="收藏题目" type="button">
+<span class="material-symbols-outlined text-[18px]">bookmark_border</span>
+</button>
+<button class="w-8 h-8 rounded-full bg-surface-container-low hover:bg-surface-container text-on-surface-variant hover:text-primary flex items-center justify-center transition-colors" title="分享代码" type="button">
+<span class="material-symbols-outlined text-[18px]">share</span>
+</button>
+<span class="px-2.5 py-0.5 rounded-full bg-surface-container text-on-surface-variant font-label-sm text-label-sm font-semibold">通过率 53.8%</span>
+</div>
+</div>
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-1">
+<h2 class="font-headline-lg text-headline-lg text-on-surface font-bold tracking-tight flex items-center gap-2">
+<span>1. 两数之和</span>
+<span class="font-code-sm text-headline-sm text-outline font-normal">(Two Sum)</span>
+</h2>
+<div class="flex items-center gap-2 font-body-sm text-body-sm text-on-surface-variant">
+<span class="text-secondary font-semibold">简单难度</span>
+<span>·</span>
+<span>内存限制: 256 MB</span>
+<span>·</span>
+<span>时间限制: 1000 ms</span>
+</div>
+</div>
+</div>
+<!-- 核心上下分屏或左右分屏：算法题干描述与在线代码编辑器 -->
+<div class="grid grid-cols-1 xl:grid-cols-12 gap-space-md items-start">
+<!-- 左侧：题干与限制规范栏 (5 cols on xl) -->
+<div class="xl:col-span-5 flex flex-col gap-3 max-h-[580px] overflow-y-auto pr-1 text-on-surface font-body-sm">
+<!-- 题干阐述 -->
+<div class="p-space-sm rounded-xl bg-surface-container-low/70 flex flex-col gap-2">
+<div class="flex items-center gap-1.5 font-label-md text-label-md text-primary font-bold">
+<span class="material-symbols-outlined text-[17px]">description</span>
+<span>题目描述</span>
+</div>
+<p class="leading-relaxed text-on-surface">
+          给定一个整数数组 <code class="font-code-sm text-primary bg-primary-fixed/40 px-1 py-0.5 rounded">nums</code> 和一个整数目标值 <code class="font-code-sm text-primary bg-primary-fixed/40 px-1 py-0.5 rounded">target</code>，请你在该数组中找出 <strong>和为目标值</strong> <em><code class="font-code-sm text-primary">target</code></em> 的那 <strong>两个</strong> 整数，并返回它们的数组下标。
+        </p>
+<p class="text-on-surface-variant text-[13px] leading-relaxed">
+          你可以假设每种输入只会对应一个答案。但是，数组中同一个元素在答案里不能重复出现。你可以按任意顺序返回答案。
+        </p>
+</div>
+<!-- 示例 1 -->
+<div class="p-space-sm rounded-xl bg-surface-container-lowest border border-surface-container flex flex-col gap-1.5 shadow-sm">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md font-bold text-on-surface">示例 1</span>
+<span class="text-outline text-label-sm font-code-sm">Standard Case</span>
+</div>
+<div class="font-code-sm text-[12px] bg-surface-container-low p-2 rounded-lg leading-relaxed">
+<div><span class="text-outline font-semibold">输入:</span> nums = [2,7,11,15], target = 9</div>
+<div><span class="text-outline font-semibold">输出:</span> [0,1]</div>
+<div class="text-on-surface-variant mt-1"><span class="text-outline font-semibold">解释:</span> 因为 nums[0] + nums[1] == 9 ，返回 [0, 1] 。</div>
+</div>
+</div>
+<!-- 示例 2 -->
+<div class="p-space-sm rounded-xl bg-surface-container-lowest border border-surface-container flex flex-col gap-1.5 shadow-sm">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md font-bold text-on-surface">示例 2</span>
+</div>
+<div class="font-code-sm text-[12px] bg-surface-container-low p-2 rounded-lg leading-relaxed">
+<div><span class="text-outline font-semibold">输入:</span> nums = [3,2,4], target = 6</div>
+<div><span class="text-outline font-semibold">输出:</span> [1,2]</div>
+</div>
+</div>
+<!-- 复杂度与数据约束 -->
+<div class="p-space-sm rounded-xl bg-surface-container-lowest border border-surface-container flex flex-col gap-1.5 shadow-sm">
+<div class="flex items-center gap-1.5 font-label-md text-label-md font-bold text-tertiary">
+<span class="material-symbols-outlined text-[16px]">warning</span>
+<span>数据约束与进阶考查</span>
+</div>
+<ul class="list-none pl-0 flex flex-col gap-1 text-[12px] text-on-surface-variant font-code-sm">
+<li class="flex items-center gap-1.5"><span class="w-1 h-1 rounded-full bg-outline"></span> 2 &lt;= nums.length &lt;= 10⁴</li>
+<li class="flex items-center gap-1.5"><span class="w-1 h-1 rounded-full bg-outline"></span> -10⁹ &lt;= nums[i] &lt;= 10⁹</li>
+<li class="flex items-center gap-1.5"><span class="w-1 h-1 rounded-full bg-outline"></span> -10⁹ &lt;= target &lt;= 10⁹</li>
+<li class="flex items-center gap-1.5 text-primary font-medium"><span class="material-symbols-outlined text-[14px]">bolt</span> 进阶：你可以想出一个时间复杂度小于 O(n²) 的算法吗？</li>
+</ul>
+</div>
+</div>
+<!-- 右侧：专业在线代码编辑器 (7 cols on xl) -->
+<div class="xl:col-span-7 flex flex-col rounded-xl overflow-hidden border border-surface-container shadow-sm bg-surface-container-lowest">
+<!-- 编辑器顶部控制工具栏 -->
+<div class="flex flex-wrap items-center justify-between gap-2 px-space-sm py-2 bg-surface-container-low border-b border-surface-container">
+<div class="flex items-center gap-2">
+<!-- 编程语言选择器 -->
+<div class="relative">
+<select class="appearance-none h-8 pl-2.5 pr-7 rounded bg-surface-container-lowest border border-surface-container text-on-surface font-code-sm text-[13px] font-semibold focus:outline-none cursor-pointer">
+<option selected="">C++ 20 (g++ 12.2)</option>
+<option>Python 3 (3.11)</option>
+<option>Java (OpenJDK 17)</option>
+<option>Go (1.21)</option>
+</select>
+<span class="material-symbols-outlined pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2 text-outline text-[16px]">expand_more</span>
+</div>
+<span class="inline-flex items-center gap-1 font-label-sm text-label-sm text-outline px-2 py-0.5 rounded bg-surface-container">
+<span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
+<span>本地已自动保存 · 10秒前</span>
+</span>
+</div>
+<div class="flex items-center gap-1">
+<button class="w-7 h-7 rounded hover:bg-surface-container text-on-surface-variant flex items-center justify-center transition-colors" title="代码重置为初始模板" type="button">
+<span class="material-symbols-outlined text-[16px]">restart_alt</span>
+</button>
+<button class="w-7 h-7 rounded hover:bg-surface-container text-on-surface-variant flex items-center justify-center transition-colors" title="代码格式化 (Shift+Alt+F)" type="button">
+<span class="material-symbols-outlined text-[16px]">format_align_left</span>
+</button>
+<button class="w-7 h-7 rounded hover:bg-surface-container text-on-surface-variant flex items-center justify-center transition-colors" title="快捷键备忘 (Ctrl+Enter 运行)" type="button">
+<span class="material-symbols-outlined text-[16px]">keyboard</span>
+</button>
+<button class="w-7 h-7 rounded hover:bg-surface-container text-on-surface-variant flex items-center justify-center transition-colors" title="全屏沉浸编码" type="button">
+<span class="material-symbols-outlined text-[16px]">fullscreen</span>
+</button>
+</div>
+</div>
+<!-- Monaco / VS Code 风格编辑区 (具有行号与语法高亮质感) -->
+<div class="relative flex bg-[#1e1e2e] text-[#cdd6f4] font-code-sm text-[13px] min-h-[300px] overflow-x-auto leading-[22px] select-text p-2">
+<!-- 行号列 (Line Numbers) -->
+<div class="flex flex-col items-end pr-3 select-none text-[#585b70] font-code-sm border-r border-[#313244] shrink-0">
+<span>1</span><span>2</span><span>3</span><span>4</span><span>5</span>
+<span>6</span><span>7</span><span>8</span><span>9</span><span>10</span>
+<span>11</span><span>12</span><span>13</span><span>14</span><span>15</span>
+</div>
+<!-- 代码主体 -->
+<div class="flex-1 pl-3 font-code-sm whitespace-pre overflow-x-auto text-[#cdd6f4]"><span class="text-[#cba6f7]">#include</span> <span class="text-[#a6e3a1]">&lt;vector&gt;</span>
+<span class="text-[#cba6f7]">#include</span> <span class="text-[#a6e3a1]">&lt;unordered_map&gt;</span>
+<span class="text-[#cba6f7]">using</span> <span class="text-[#cba6f7]">namespace</span> std;
+
+<span class="text-[#cba6f7]">class</span> <span class="text-[#f9e2af] font-semibold">Solution</span> {
+<span class="text-[#cba6f7]">public</span>:
+    vector&lt;<span class="text-[#89b4fa]">int</span>&gt; <span class="text-[#89b4fa]">twoSum</span>(vector&lt;<span class="text-[#89b4fa]">int</span>&gt;&amp; <span class="text-[#fab387]">nums</span>, <span class="text-[#89b4fa]">int</span> <span class="text-[#fab387]">target</span>) {
+        <span class="text-[#6c7086] italic">// 408 核心考点：哈希散列表 O(n) 时间一次遍历</span>
+        unordered_map&lt;<span class="text-[#89b4fa]">int</span>, <span class="text-[#89b4fa]">int</span>&gt; <span class="text-[#fab387]">hashTable</span>;
+        <span class="text-[#cba6f7]">for</span> (<span class="text-[#89b4fa]">int</span> i = <span class="text-[#fab387]">0</span>; i &lt; nums.<span class="text-[#89b4fa]">size</span>(); ++i) {
+            <span class="text-[#cba6f7]">auto</span> it = hashTable.<span class="text-[#89b4fa]">find</span>(target - nums[i]);
+            <span class="text-[#cba6f7]">if</span> (it != hashTable.<span class="text-[#89b4fa]">end</span>()) {
+                <span class="text-[#cba6f7]">return</span> {it-&gt;<span class="text-[#fab387]">second</span>, i};
+            }
+            hashTable[nums[i]] = i;
+        }
+        <span class="text-[#cba6f7]">return</span> {};
+    }
+};</div>
+</div>
+</div>
+</div>
+<!-- 底部测试用例与控制台面板 (Testcase & Console Dock) -->
+<div class="flex flex-col rounded-xl border border-surface-container bg-surface-container-lowest shadow-sm overflow-hidden">
+<!-- 控制台选项卡切换 -->
+<div class="flex items-center justify-between px-space-sm py-1.5 bg-surface-container-low border-b border-surface-container">
+<div class="flex items-center gap-1.5">
+<button class="px-3 py-1 rounded font-label-md text-label-md bg-surface-container-lowest text-primary font-bold shadow-sm flex items-center gap-1.5" type="button">
+<span class="material-symbols-outlined text-[15px]">checklist</span>
+<span>测试用例 Testcases</span>
+</button>
+<button class="px-3 py-1 rounded font-label-md text-label-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-all flex items-center gap-1.5" type="button">
+<span class="material-symbols-outlined text-[15px] text-[#22c55e]">check_circle</span>
+<span>执行结果 Output</span>
+<span class="px-1.5 py-0.2 rounded-full bg-[#22c55e]/15 text-[#16a34a] font-code-sm text-label-sm font-bold">Passed</span>
+</button>
+<button class="px-3 py-1 rounded font-label-md text-label-md text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-all flex items-center gap-1.5" type="button">
+<span class="material-symbols-outlined text-[15px] text-tertiary">psychology</span>
+<span>AI 复杂度诊断与代码分析</span>
+</button>
+</div>
+<div class="flex items-center gap-2">
+<span class="font-code-sm text-[12px] text-outline">执行耗时: <strong class="text-primary">4 ms</strong> (击败 92.4%) · 内存: <strong class="text-primary">10.2 MB</strong></span>
+</div>
+</div>
+<!-- 测试用例输入与结果并列区 -->
+<div class="p-space-sm grid grid-cols-1 md:grid-cols-12 gap-space-sm bg-surface-container-lowest items-stretch">
+<!-- 用例选择胶囊与入参 (7 cols) -->
+<div class="md:col-span-7 flex flex-col gap-2 border-r md:border-surface-container pr-space-sm">
+<div class="flex items-center gap-2">
+<button class="px-2.5 py-0.5 rounded-md bg-primary-container text-on-primary font-code-sm text-label-sm font-bold" type="button">Case 1</button>
+<button class="px-2.5 py-0.5 rounded-md bg-surface-container hover:bg-surface-container-high text-on-surface font-code-sm text-label-sm" type="button">Case 2</button>
+<button class="px-2.5 py-0.5 rounded-md bg-surface-container hover:bg-surface-container-high text-on-surface font-code-sm text-label-sm" type="button">Case 3</button>
+<button class="px-2 py-0.5 rounded-md border border-dashed border-outline-variant hover:border-primary text-outline hover:text-primary font-label-sm text-label-sm flex items-center gap-1 transition-colors" type="button">
+<span class="material-symbols-outlined text-[14px]">add</span>自定义用例
+          </button>
+</div>
+<div class="grid grid-cols-2 gap-2 font-code-sm text-[12px]">
+<div class="flex flex-col gap-1">
+<span class="text-outline font-semibold">nums =</span>
+<div class="p-2 rounded bg-surface-container-low text-on-surface border border-surface-container">[2, 7, 11, 15]</div>
+</div>
+<div class="flex flex-col gap-1">
+<span class="text-outline font-semibold">target =</span>
+<div class="p-2 rounded bg-surface-container-low text-on-surface border border-surface-container">9</div>
+</div>
+</div>
+</div>
+<!-- 输出对比与状态反馈 (5 cols) -->
+<div class="md:col-span-5 flex flex-col gap-2 font-code-sm text-[12px]">
+<div class="flex items-center justify-between text-outline">
+<span>实际输出 Output</span>
+<span class="text-[#16a34a] font-bold flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">check</span>输出与预期匹配
+          </span>
+</div>
+<div class="p-2 rounded bg-surface-container-low text-[#16a34a] font-bold border border-surface-container flex items-center justify-between">
+<span>[0, 1]</span>
+<span class="text-outline text-label-sm font-normal">预期: [0, 1]</span>
+</div>
+</div>
+</div>
+</div>
+<!-- 底部主控动作栏与 AI 助教协作条 (Submission, Test, & AI Assistance Dock) -->
+<div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-space-md pt-2.5 border-t border-surface-container"><div class="flex flex-wrap items-center gap-2"><button class="h-9 px-3 rounded-full bg-primary-container text-on-primary font-label-md text-label-md font-semibold flex items-center gap-1.5 shadow-[0_2px_8px_rgba(79,70,229,0.25)] transition-all" type="button"><span class="material-symbols-outlined text-[17px]">auto_awesome</span><span>AI 白板与诊断</span><span class="px-1.5 py-0.2 rounded-full bg-white/20 text-[10px] font-bold">已展开</span></button><button class="h-9 px-3 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md text-label-md flex items-center gap-1.5 transition-colors" type="button"><span class="material-symbols-outlined text-[17px] text-primary">edit_note</span><span>解题随手记</span><span class="w-1.5 h-1.5 rounded-full bg-secondary"></span></button><button class="h-9 px-3 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface font-label-md text-label-md flex items-center gap-1.5 transition-colors" type="button"><span class="material-symbols-outlined text-[17px] text-tertiary">lightbulb</span><span>思路提示 (Hint)</span></button><button class="h-9 px-3 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface font-label-md text-label-md flex items-center gap-1.5 transition-colors" type="button"><span class="material-symbols-outlined text-[17px]">smart_toy</span><span>边界用例生成</span></button><button class="h-9 px-3 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface font-label-md text-label-md flex items-center gap-1.5 transition-colors" type="button"><span class="material-symbols-outlined text-[17px]">menu_book</span><span>官方题解</span></button></div><div class="flex items-center gap-2 justify-end"><button class="h-9 px-4 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md text-label-md font-medium flex items-center gap-1.5 transition-colors shadow-sm" title="快捷键 Ctrl + Enter 运行测试用例" type="button"><span class="material-symbols-outlined text-[18px] text-secondary">play_arrow</span><span>运行代码</span><kbd class="font-code-sm text-[11px] px-1 py-0.5 rounded bg-surface-container-lowest text-outline">Ctrl+↵</kbd></button><button class="h-9 px-5 rounded-lg bg-primary-container hover:bg-primary text-on-primary font-label-md text-label-md font-semibold flex items-center justify-center gap-2 shadow-[0_4px_16px_rgba(79,70,229,0.2)] transition-all" type="button"><span class="material-symbols-outlined text-[18px]">cloud_done</span><span>提交解答</span></button><button class="h-9 px-3 rounded-lg bg-surface-container-high hover:bg-surface-variant text-primary font-label-md text-label-md font-semibold flex items-center gap-1 transition-colors" title="进入下一道算法题" type="button"><span>下一题</span><span class="material-symbols-outlined text-[16px]">arrow_forward</span></button></div></div>
+</div>
+<!-- 底部随手记与伴学推导抽屉 (保留并适配算法题) -->
+</section>
+</div>
+<div class="fixed bottom-6 right-8 z-50 w-[460px] max-w-[calc(100vw-3rem)] rounded-2xl bg-surface-container-lowest/95 backdrop-blur-xl border border-surface-container shadow-[0_12px_40px_rgba(15,23,42,0.18)] flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-4 transition-all"><div class="flex items-center justify-between px-4 py-3 bg-surface-container-low border-b border-surface-container"><div class="flex items-center gap-2"><div class="w-7 h-7 rounded-lg bg-primary-container text-on-primary flex items-center justify-center shadow-sm"><span class="material-symbols-outlined text-[17px]">auto_awesome</span></div><div><div class="font-headline-sm text-body-md font-bold text-on-surface flex items-center gap-1.5"><span>学涯 AI 伴学白板 &amp; 辅助抽屉</span><span class="px-1.5 py-0.2 rounded-full bg-primary/10 text-primary font-code-sm text-[10px] font-semibold">MiMo 深度思考</span></div><span class="font-label-sm text-[11px] text-outline">轻量浮窗 · 支持一键收起与标签切换</span></div></div><div class="flex items-center gap-1"><button class="w-7 h-7 rounded hover:bg-surface-container text-on-surface-variant flex items-center justify-center transition-colors" title="最大化窗口" type="button"><span class="material-symbols-outlined text-[16px]">open_in_full</span></button><button class="w-7 h-7 rounded hover:bg-surface-container hover:text-error text-on-surface-variant flex items-center justify-center transition-colors" title="关闭浮窗" type="button"><span class="material-symbols-outlined text-[18px]">close</span></button></div></div><div class="flex items-center gap-1 px-3 pt-2 bg-surface-container-low/50 border-b border-surface-container"><button class="px-3 py-1.5 border-b-2 border-primary text-primary font-label-md text-label-md font-bold flex items-center gap-1.5" type="button"><span class="material-symbols-outlined text-[15px]">insights</span><span>时空证明白板</span></button><button class="px-3 py-1.5 border-b-2 border-transparent text-on-surface-variant hover:text-on-surface font-label-md text-label-md flex items-center gap-1.5 transition-colors" type="button"><span class="material-symbols-outlined text-[15px]">edit_note</span><span>解题备忘草稿</span><span class="w-1.5 h-1.5 rounded-full bg-[#22c55e]"></span></button><button class="px-3 py-1.5 border-b-2 border-transparent text-on-surface-variant hover:text-on-surface font-label-md text-label-md flex items-center gap-1.5 transition-colors" type="button"><span class="material-symbols-outlined text-[15px]">lightbulb</span><span>梯度提示 (Hint)</span></button></div><div class="p-4 flex flex-col gap-3 max-h-[360px] overflow-y-auto"><div class="p-3 rounded-xl bg-gradient-to-br from-primary-fixed/30 via-surface-container-low to-surface-container-lowest border border-surface-container flex flex-col gap-1.5"><div class="flex items-center justify-between"><span class="font-label-md text-label-md font-bold text-primary flex items-center gap-1"><span class="material-symbols-outlined text-[15px]">verified</span>AI 复杂度诊断结论</span><span class="font-code-sm text-[11px] text-outline">408 考点高频吻合</span></div><p class="font-body-sm text-[12px] text-on-surface leading-relaxed">当前解答采用<strong>一次哈希散列遍历法</strong>。时间复杂度 <code class="text-primary font-code-sm font-semibold">O(n)</code>，空间复杂度 <code class="text-primary font-code-sm font-semibold">O(n)</code>，击败了 92.4% 的提交方案。</p></div><div class="p-3 rounded-xl bg-surface-container-low border border-surface-container flex flex-col gap-1.5"><div class="flex items-center justify-between text-label-sm"><span class="font-bold text-on-surface">推导证明关键步骤</span><span class="text-outline font-code-sm">unordered_map 机制</span></div><div class="font-code-sm text-[11px] text-on-surface-variant flex flex-col gap-1 pl-1 border-l-2 border-primary/40"><div class="flex items-center gap-1"><span>1. 目标等式：</span><code class="bg-surface-container-lowest px-1 rounded text-primary">num1 + num2 = target</code></div><div class="flex items-center gap-1"><span>2. 寻址映射：</span><span>当前遍历到</span><code class="bg-surface-container-lowest px-1 rounded">nums[i]</code><span>，查询</span><code class="bg-surface-container-lowest px-1 rounded text-tertiary">target - nums[i]</code></div><div class="flex items-center gap-1"><span>3. 防重策略：</span><span>边查找边插入，无需提前存入全部元素</span></div></div></div><div class="p-2.5 rounded-lg bg-surface-container-lowest border border-surface-container flex items-center justify-between"><div class="flex items-center gap-2"><span class="material-symbols-outlined text-outline text-[16px]">cloud_done</span><span class="font-label-sm text-[11px] text-outline">草稿已本地同步保存 (2条推导速记)</span></div><button class="font-label-sm text-[11px] text-primary hover:underline font-semibold" type="button">一键插入当前代码注释</button></div></div><div class="px-4 py-2 bg-surface-container-low border-t border-surface-container flex items-center justify-between"><span class="font-label-sm text-[11px] text-outline">可通过底部药丸胶囊随时唤起或关闭</span><button class="px-2.5 py-1 rounded bg-surface-container hover:bg-surface-container-high text-on-surface font-label-sm text-label-sm transition-colors" type="button">收起并最小化</button></div></div></div>
+</div>
+<script>
+  // 选项交互与单选选中微动效
+  document.addEventListener('DOMContentLoaded', () => {
+    const optionCards = document.querySelectorAll('#question-options label');
+    optionCards.forEach(card => {
+      card.addEventListener('click', () => {
+        optionCards.forEach(c => {
+          c.classList.remove('bg-primary-fixed/25', 'shadow-[0_4px_16px_rgba(79,70,229,0.08)]');
+          c.classList.add('bg-surface-container-lowest');
+          const badge = c.querySelector('.bg-primary-container');
+          if (badge && badge.textContent.includes('当前已选')) {
+            badge.remove();
+          }
+        });
+        card.classList.add('bg-primary-fixed/25', 'shadow-[0_4px_16px_rgba(79,70,229,0.08)]');
+        card.classList.remove('bg-surface-container-lowest');
+      });
+    });
+  });
+</script></main></div></body></html>

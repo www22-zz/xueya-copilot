@@ -1,4 +1,4 @@
-"""Offline causal checks: one model call, early verified output, current evidence."""
+﻿"""Offline causal checks: one model call, early verified output, current evidence."""
 import asyncio
 from contextlib import aclosing
 import json
@@ -103,7 +103,7 @@ async def test_complete_narrative_waits_for_model_and_uses_one_call(platform):
     assert result['type'] == 'done' and result['sources'] == [SOURCE['id']]
     assert result['answer'] == CLAIM['text']+' [1]'
     assert len(captured) == result['timings']['modelCalls'] == 1
-    assert captured[0]['thinking'] == {'type': 'disabled'}
+    assert captured[0]['thinking'] == {'type': 'disabled'}  # default answer mode
     timing = result['timings']
     assert timing['route'] == 'fast-qa'
     assert 0 <= timing['firstModelTokenMs'] <= timing['firstContentMs'] <= timing['totalMs']

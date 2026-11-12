@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&family=Plus+Jakarta+Sans:wght@100..900&display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{colors:{"on-tertiary":"#ffffff","on-secondary-fixed-variant":"#004395","surface":"#faf8ff","surface-variant":"#dae2fd","on-primary-container":"#dad7ff","secondary-container":"#2170e4","secondary-fixed":"#d8e2ff","on-secondary":"#ffffff","tertiary-fixed-dim":"#d0bcff","on-secondary-fixed":"#001a42","on-primary-fixed":"#0f0069","background":"#faf8ff","primary-fixed":"#e2dfff","surface-tint":"#4d44e3","secondary":"#0058be","secondary-fixed-dim":"#adc6ff","primary-fixed-dim":"#c3c0ff","error":"#ba1a1a","tertiary":"#571ac0","surface-container":"#eaedff","primary":"#3525cd","surface-container-low":"#f2f3ff","on-primary-fixed-variant":"#3323cc","outline-variant":"#c7c4d8","outline":"#777587","inverse-primary":"#c3c0ff","surface-container-high":"#e2e7ff","on-secondary-container":"#fefcff","surface-dim":"#d2d9f4","on-tertiary-fixed":"#23005c","inverse-surface":"#283044","surface-container-lowest":"#ffffff","on-surface":"#131b2e","surface-container-highest":"#dae2fd","inverse-on-surface":"#eef0ff","on-primary":"#ffffff","on-error-container":"#93000a","tertiary-container":"#6f3dd9","error-container":"#ffdad6","tertiary-fixed":"#e9ddff","on-error":"#ffffff","surface-bright":"#faf8ff","on-surface-variant":"#464555","on-tertiary-container":"#e3d5ff","on-tertiary-fixed-variant":"#5516be","primary-container":"#4f46e5","on-background":"#131b2e"},borderRadius:{DEFAULT:"0.25rem",lg:"0.5rem",xl:"0.75rem",full:"9999px"},spacing:{"space-lg":"1.5rem","gutter-mobile":"0.75rem",margin:"2rem","space-2xl":"3rem","margin-mobile":"1rem",gutter:"1.25rem","space-md":"1rem","space-sm":"0.5rem","space-xl":"2rem","space-xs":"0.25rem"},fontFamily:{"headline-lg":["Plus Jakarta Sans"],"headline-md":["Plus Jakarta Sans"],"headline-lg-mobile":["Plus Jakarta Sans"],"display-lg":["Plus Jakarta Sans"],"body-lg":["Inter"],"label-sm":["Inter"],"label-md":["Inter"],"body-sm":["Inter"],"code-sm":["JetBrains Mono"],"body-md":["Inter"],"headline-sm":["Plus Jakarta Sans"]},fontSize:{"headline-lg":["28px",{lineHeight:"36px",letterSpacing:"-0.02em",fontWeight:"700"}],"headline-md":["20px",{lineHeight:"28px",letterSpacing:"-0.01em",fontWeight:"600"}],"headline-lg-mobile":["22px",{lineHeight:"30px",letterSpacing:"-0.015em",fontWeight:"700"}],"display-lg":["36px",{lineHeight:"44px",letterSpacing:"-0.025em",fontWeight:"700"}],"body-lg":["16px",{lineHeight:"26px",fontWeight:"400"}],"label-sm":["11px",{lineHeight:"14px",fontWeight:"500"}],"label-md":["12px",{lineHeight:"16px",letterSpacing:"0.04em",fontWeight:"600"}],"body-sm":["13px",{lineHeight:"18px",fontWeight:"400"}],"code-sm":["13px",{lineHeight:"20px",fontWeight:"400"}],"body-md":["14px",{lineHeight:"22px",fontWeight:"400"}],"headline-sm":["16px",{lineHeight:"24px",fontWeight:"600"}]}}}};</script></head><body class="bg-background font-body-md text-on-surface min-h-screen"><header class="fixed top-0 left-0 right-0 h-16 bg-surface-container-lowest/80 backdrop-blur-xl z-50 shadow-[0_1px_8px_rgba(0,0,0,0.03)]"><div class="h-16 w-full px-margin flex items-center justify-between gap-space-md"><div class="flex items-center gap-space-md min-w-[240px]"><img alt="学涯 Copilot Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1X92TAI0zokI7ftf4Kja0CaUkhDIuAYyzvzO5-qW6GvpV0MI1w9uSCSJjqzFxcH5igxle8mviQhHK-T-AWqbjAXcQTYcOKDhJLiXlZmzQ9aw-VZhx9ZdHRjH7GyyKO3WbE5Y2X-j5swzIb8ns-BYMP_oBjexNmtAPu21nRFVM1AGln3qezztMcDgOSJFkIKmrvsyHXTljQPsnBzj2ksx5fDUBmx8tKajZ4WpNQZplE"/><div class="flex flex-col"><span class="font-headline-sm text-headline-sm text-on-surface font-semibold tracking-tight">学涯 Copilot</span><span class="font-label-sm text-label-sm text-on-surface-variant font-medium">Study Workspace</span></div></div><div class="flex items-center gap-space-lg flex-1 justify-center max-w-2xl"><div class="flex items-center bg-surface-container-low px-space-xs py-space-xs rounded-full p-1"><button class="px-space-md py-1.5 rounded-full font-label-md text-label-md text-on-surface-variant hover:text-on-surface transition-all flex items-center gap-1.5" type="button"><span class="material-symbols-outlined text-[16px]">auto_awesome</span>AI 助手</button><button class="px-space-md py-1.5 rounded-full font-label-md text-label-md bg-surface-container-lowest text-primary shadow-sm font-semibold flex items-center gap-1.5" type="button"><span class="material-symbols-outlined text-[16px]">school</span>学习中心</button></div><div class="flex items-center bg-surface-container-low px-space-md py-1.5 rounded-full w-72 text-on-surface-variant hover:bg-surface-container transition-colors cursor-pointer"><span class="material-symbols-outlined text-[18px] mr-space-sm text-outline">search</span><span class="font-body-sm text-body-sm flex-1 text-on-surface-variant">全局快速检索资料、笔记...</span><kbd class="font-code-sm text-label-sm bg-surface-container-lowest text-on-surface-variant px-1.5 py-0.5 rounded shadow-sm">⌘K</kbd></div></div><div class="flex items-center gap-space-md justify-end min-w-[240px]"><button class="w-9 h-9 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" title="AI 工具集" type="button"><span class="material-symbols-outlined text-[20px]">construction</span></button><button class="relative w-9 h-9 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" title="消息通知" type="button"><span class="material-symbols-outlined text-[20px]">notifications</span><span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full"></span></button><div class="h-4 w-px bg-surface-container-high"></div><div class="flex items-center gap-space-sm pl-1"><img alt="Profile" class="w-8 h-8 rounded-full object-cover ring-2 ring-surface-variant" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCzehY6ceo6sHe5J4cvkn96VQNGjfQZbY0Ji9KxcV435A3aRcU4eYzCHR3N1N3VANfJZOrG8mt1GJnwjbq83RvgdBkajcrRafBtDY8uO0kh3p9kSryD-C1wVwEVC7a_ivV4tkB2pNRZNdFpq6yGXCrQQAF2Q0TBJHYshipqm44M_n1_eedGyQlDVsfc5bYp_QX-RQPUm0bCH4zYnCr3GVq0AcW0lqL914PBxR7VQQ"/><div class="hidden xl:flex flex-col text-left"><span class="font-label-md text-label-md text-on-surface font-semibold leading-tight">Linus C.</span><span class="font-label-sm text-label-sm text-primary font-medium">CS 专业 · 大三</span></div></div></div></div></header><aside class="fixed left-0 top-16 bottom-0 w-64 bg-surface-container-lowest/70 backdrop-blur-xl z-40 flex flex-col justify-between py-space-md shadow-[0_1px_8px_rgba(0,0,0,0.02)]"><div class="flex flex-col gap-space-md px-space-md"><div class="flex items-center justify-between px-space-sm py-space-xs"><span class="font-label-sm text-label-sm text-outline font-semibold tracking-wider uppercase">学习中心核心模块</span><button class="text-on-surface-variant hover:text-on-surface transition-colors" title="折叠侧栏" type="button"><span class="material-symbols-outlined text-[18px]">dock_to_right</span></button></div><nav class="flex flex-col gap-1.5" data-active-classes="bg-primary-container text-on-primary font-semibold shadow-[0_4px_16px_rgba(79,70,229,0.18)]"><a aria-current="page" class="flex items-center gap-3 px-space-md py-2.5 rounded-lg transition-all bg-primary-container text-on-primary font-semibold shadow-[0_4px_16px_rgba(79,70,229,0.18)]" data-path="course-study" href="#"><span class="material-symbols-outlined text-[20px]">play_lesson</span><span>课程学习</span></a><a class="flex items-center gap-3 px-space-md py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all font-body-md text-body-md" data-path="practice-quiz" href="#"><span class="material-symbols-outlined text-[20px]">quiz</span><span>专项练习</span></a><a class="flex items-center gap-3 px-space-md py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all font-body-md text-body-md" data-path="review-notebook" href="#"><span class="material-symbols-outlined text-[20px]">edit_note</span><span>错题复习</span></a><a class="flex items-center gap-3 px-space-md py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all font-body-md text-body-md" data-path="learning-analytics" href="#"><span class="material-symbols-outlined text-[20px]">insights</span><span>学情分析</span></a></nav><div class="mt-space-sm pt-space-sm"><div class="flex items-center justify-between px-space-sm mb-2"><span class="font-label-sm text-label-sm text-outline font-semibold tracking-wider uppercase">近期 AI 答疑</span><button class="text-on-surface-variant hover:text-on-surface transition-colors" title="查看全部记录" type="button"><span class="material-symbols-outlined text-[16px]">chevron_right</span></button></div><div class="flex flex-col gap-1"><a class="flex items-center gap-2 px-space-sm py-2 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all text-body-sm font-body-sm truncate" href="#"><span class="material-symbols-outlined text-[16px] text-tertiary">forum</span><span class="truncate">TCP 三次握手状态迁移解析</span></a><a class="flex items-center gap-2 px-space-sm py-2 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all text-body-sm font-body-sm truncate" href="#"><span class="material-symbols-outlined text-[16px] text-tertiary">forum</span><span class="truncate">红黑树旋转平衡代码推导</span></a><a class="flex items-center gap-2 px-space-sm py-2 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all text-body-sm font-body-sm truncate" href="#"><span class="material-symbols-outlined text-[16px] text-tertiary">forum</span><span class="truncate">虚拟内存段页式存储计算题</span></a></div></div></div><div class="px-space-md pt-space-sm flex flex-col gap-1"><a class="flex items-center gap-3 px-space-md py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all font-body-md text-body-md" data-path="settings" href="#"><span class="material-symbols-outlined text-[20px]">settings</span><span>系统设置</span></a></div></aside><div class="pl-64"><main class="relative pt-16 min-h-screen bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(226,223,255,0.45),rgba(250,248,255,1))]"><div class="w-full px-margin py-space-lg max-w-[1600px] mx-auto"><div class="flex flex-col w-full gap-space-xl">
+<!-- Top Metrics & Action Hero Banner -->
+<section class="relative w-full rounded-2xl bg-surface-container-lowest shadow-[0_8px_32px_rgba(79,70,229,0.06)] p-space-lg overflow-hidden">
+<!-- Atmospheric subtle ambient glow -->
+<div class="absolute -right-24 -top-24 w-96 h-96 rounded-full bg-primary/10 blur-3xl pointer-events-none"></div>
+<div class="absolute right-1/3 -bottom-28 w-80 h-80 rounded-full bg-secondary-container/10 blur-3xl pointer-events-none"></div>
+<div class="relative z-10 flex flex-col xl:flex-row xl:items-center justify-between gap-space-lg">
+<!-- Left: Academic Mission & Progress Stream -->
+<div class="flex-1 flex flex-col gap-space-md min-w-0">
+<div class="flex flex-wrap items-center gap-space-sm">
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary font-label-md text-label-md">
+<span class="material-symbols-outlined text-[15px]" style="font-variation-settings: 'FILL' 1;">terminal</span>
+            CS 学科知识图谱引擎
+          </span>
+<span class="inline-flex items-center gap-1 text-on-surface-variant font-code-sm text-code-sm">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+            同步大纲: 2025 计算机 408 统考 & 工业界工程标杆
+          </span>
+</div>
+<div class="flex flex-col gap-1">
+<h1 class="font-display-lg text-display-lg text-on-surface tracking-tight">计算机精品课程研修台</h1>
+<p class="font-body-md text-body-md text-on-surface-variant">聚合顶级高校国家精品课程与前沿 AI 架构实践，构建严密、贯通底层的计算机认知范式。</p>
+</div>
+<!-- Integrated Progress Metrics Strip -->
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-space-md pt-space-xs">
+<!-- Metric 1 -->
+<div class="flex items-center gap-3 p-3 rounded-xl bg-surface-container-low/70 backdrop-blur-sm">
+<div class="w-10 h-10 rounded-lg bg-primary-container text-on-primary flex items-center justify-center shadow-sm">
+<span class="material-symbols-outlined text-[20px]">school</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-outline">已录入体系课程</span>
+<span class="font-headline-md text-headline-md text-on-surface font-bold tracking-tight">7 <span class="font-body-sm text-body-sm font-normal text-on-surface-variant">门精选</span></span>
+</div>
+</div>
+<!-- Metric 2 -->
+<div class="flex items-center gap-3 p-3 rounded-xl bg-surface-container-low/70 backdrop-blur-sm">
+<div class="w-10 h-10 rounded-lg bg-secondary text-on-secondary flex items-center justify-center shadow-sm">
+<span class="material-symbols-outlined text-[20px]">schedule</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-outline">累计已学课时</span>
+<span class="font-headline-md text-headline-md text-on-surface font-bold tracking-tight">0 <span class="font-body-sm text-body-sm font-normal text-on-surface-variant">/ 84 课时</span></span>
+</div>
+</div>
+<!-- Metric 3 with custom Mini Spark Ring -->
+<div class="flex items-center justify-between p-3 rounded-xl bg-surface-container-low/70 backdrop-blur-sm">
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-outline">综合完成进度</span>
+<span class="font-headline-md text-headline-md text-primary font-bold tracking-tight">0.0%</span>
+</div>
+<div class="relative w-11 h-11 flex items-center justify-center">
+<svg class="w-11 h-11 -rotate-90" viewbox="0 0 36 36">
+<circle class="text-surface-container-high" cx="18" cy="18" fill="none" r="14" stroke="currentColor" stroke-width="3"></circle>
+<circle class="text-primary" cx="18" cy="18" fill="none" r="14" stroke="currentColor" stroke-dasharray="87.96" stroke-dashoffset="87.96" stroke-linecap="round" stroke-width="3.5"></circle>
+</svg>
+<span class="material-symbols-outlined absolute text-[16px] text-primary">flag</span>
+</div>
+</div>
+</div>
+<!-- Linear Progress Bar -->
+<div class="flex flex-col gap-1.5 pt-1">
+<div class="flex items-center justify-between font-label-sm text-label-sm text-on-surface-variant">
+<span>当前学期总规划履约度</span>
+<span class="font-code-sm text-code-sm font-medium text-outline">本周建议新增研习 ≥ 4.5 小时</span>
+</div>
+<div class="w-full h-2 rounded-full bg-surface-container-highest overflow-hidden">
+<div class="h-full bg-gradient-to-r from-primary to-secondary rounded-full w-[4%] transition-all duration-700"></div>
+</div>
+</div>
+</div>
+<!-- Right: Main Callouts & Import Action Hub -->
+<div class="flex flex-col sm:flex-row xl:flex-col gap-space-sm xl:w-72 shrink-0">
+<button class="group relative flex items-center justify-between w-full px-5 py-3.5 rounded-xl bg-primary-container text-on-primary font-headline-sm text-headline-sm shadow-[0_6px_20px_rgba(79,70,229,0.28)] hover:shadow-[0_8px_26px_rgba(79,70,229,0.36)] hover:bg-primary transition-all overflow-hidden" type="button">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-surface-container-lowest/20 flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px]">add_circle</span>
+</div>
+<span class="font-semibold">添加自定义视频课</span>
+</div>
+<span class="material-symbols-outlined text-[20px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
+</button>
+<!-- Rapid Upload / Cloud-sync quick actions -->
+<div class="grid grid-cols-2 gap-space-xs">
+<button class="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-surface-container text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all font-label-md text-label-md" type="button">
+<span class="material-symbols-outlined text-[18px] text-primary">folder_open</span>
+<span>本地音视频</span>
+</button>
+<button class="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-surface-container text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all font-label-md text-label-md" type="button">
+<span class="material-symbols-outlined text-[18px] text-secondary">cloud_sync</span>
+<span>阿里云盘 / WebDAV</span>
+</button>
+</div>
+<div class="p-3 rounded-xl bg-surface-container-low text-on-surface-variant flex items-center gap-2.5">
+<span class="material-symbols-outlined text-[18px] text-tertiary">psychology</span>
+<span class="font-body-sm text-body-sm leading-snug">支持智能生成课程切片与考点知识图谱速查卡</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Filter Hub & Taxonomy Bar -->
+<section class="flex flex-col lg:flex-row lg:items-center justify-between gap-space-md bg-surface-container-lowest/80 backdrop-blur-xl p-3 rounded-2xl shadow-[0_2px_12px_rgba(0,0,0,0.02)]">
+<!-- Pills Filter -->
+<div class="flex items-center gap-2 overflow-x-auto pb-1 lg:pb-0" id="filter-container">
+<button class="filter-pill active px-4 py-2 rounded-full font-label-md text-label-md font-semibold bg-primary-container text-on-primary shadow-sm whitespace-nowrap transition-all flex items-center gap-1.5" type="button">
+<span class="material-symbols-outlined text-[16px]">apps</span>
+        全部计算机课程 (7)
+      </button>
+<button class="filter-pill px-4 py-2 rounded-full font-label-md text-label-md text-on-surface-variant bg-surface-container-low hover:bg-surface-container hover:text-on-surface whitespace-nowrap transition-all flex items-center gap-1.5" type="button">
+<span class="material-symbols-outlined text-[16px]">menu_book</span>
+        核心理论 / 408 (4)
+      </button>
+<button class="filter-pill px-4 py-2 rounded-full font-label-md text-label-md text-on-surface-variant bg-surface-container-low hover:bg-surface-container hover:text-on-surface whitespace-nowrap transition-all flex items-center gap-1.5" type="button">
+<span class="material-symbols-outlined text-[16px]">code</span>
+        编程语言与全栈 (1)
+      </button>
+<button class="filter-pill px-4 py-2 rounded-full font-label-md text-label-md text-on-surface-variant bg-surface-container-low hover:bg-surface-container hover:text-on-surface whitespace-nowrap transition-all flex items-center gap-1.5" type="button">
+<span class="material-symbols-outlined text-[16px]">dataset</span>
+        系统架构与数据库 (1)
+      </button>
+<button class="filter-pill px-4 py-2 rounded-full font-label-md text-label-md text-on-surface-variant bg-surface-container-low hover:bg-surface-container hover:text-on-surface whitespace-nowrap transition-all flex items-center gap-1.5" type="button">
+<span class="material-symbols-outlined text-[16px]">neurology</span>
+        AI 与智能体前沿 (1)
+      </button>
+</div>
+<!-- Right: Search & Sorting Actions -->
+<div class="flex items-center gap-space-sm shrink-0">
+<div class="relative flex items-center w-full sm:w-64">
+<span class="material-symbols-outlined absolute left-3 text-outline text-[18px]">search</span>
+<input class="w-full h-10 pl-9 pr-4 rounded-xl bg-surface-container-low text-on-surface font-body-sm text-body-sm placeholder:text-outline focus:outline-none focus:bg-surface-container-lowest shadow-inner transition-all" placeholder="搜索课程名、知识点、教授..." type="text"/>
+</div>
+<div class="flex items-center gap-1 bg-surface-container-low p-1 rounded-xl">
+<button class="p-1.5 rounded-lg bg-surface-container-lowest text-primary shadow-sm" title="网格视图" type="button">
+<span class="material-symbols-outlined text-[18px]">grid_view</span>
+</button>
+<button class="p-1.5 rounded-lg text-on-surface-variant hover:text-on-surface" title="列表视图" type="button">
+<span class="material-symbols-outlined text-[18px]">view_list</span>
+</button>
+</div>
+<button class="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-surface-container-low text-on-surface font-label-md text-label-md hover:bg-surface-container transition-colors" type="button">
+<span class="material-symbols-outlined text-[16px] text-outline">sort</span>
+<span>按默认推荐</span>
+<span class="material-symbols-outlined text-[16px] text-outline">keyboard_arrow_down</span>
+</button>
+</div>
+</section>
+<!-- Main Content Layout Grid: 8-col Courses Grid + 4-col Side Intelligence Column -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-space-lg items-start">
+<!-- Courses Gallery (8 Columns on desktop) -->
+<div class="lg:col-span-8 flex flex-col gap-space-lg">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-space-lg">
+<!-- CARD 1: 数据结构与算法 (清华) -->
+<div class="group relative flex flex-col rounded-2xl bg-surface-container-lowest overflow-hidden shadow-[0_4px_20px_rgba(15,23,42,0.03)] hover:shadow-[0_16px_36px_rgba(79,70,229,0.12)] hover:-translate-y-1 transition-all duration-300">
+<!-- Thumbnail Container -->
+<div class="relative w-full aspect-[16/9] bg-inverse-surface overflow-hidden">
+<img alt="数据结构与算法" class="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500 opacity-90" src="https://lh3.googleusercontent.com/aida-public/AB6AXuADFhEZ1y-I2qQ5fXR6d8AyEGP5U1jDACo85IRS96IPoJjhI65di3GOxGV2cndthDeJ2srIeYjkVI0Q4gsKtBFCQkJkXFH0N2TEe-NbvayoT5t6K-vBisBwnvO5lEaZfJ2UGH6I31nUQ1sWelzXFCV9EtN4JXn4XKfY-SyPylJ3yvEep4gCDu-1GTnl0PSlXCcJle7-DcJLcYGczX7m5d_9-35389e_8_3-xZwYRlou6Uy_faaTSlM"/>
+<div class="absolute inset-0 bg-gradient-to-t from-inverse-surface/90 via-inverse-surface/30 to-transparent"></div>
+<!-- Badges -->
+<div class="absolute top-3 left-3 flex flex-wrap gap-1.5 z-10">
+<span class="px-2.5 py-1 rounded-md bg-primary-container text-on-primary font-label-sm text-label-sm font-semibold tracking-wide shadow-sm">
+                408 核心 · 清华名课
+              </span>
+<span class="px-2 py-1 rounded-md bg-surface-container-lowest/90 backdrop-blur-md text-tertiary font-label-sm text-label-sm font-medium">
+                进阶必修
+              </span>
+</div>
+<div class="absolute top-3 right-3 z-10">
+<span class="px-2 py-1 rounded-md bg-inverse-surface/80 backdrop-blur-md text-inverse-on-surface font-code-sm text-label-sm">
+                12 课时 · 约4.5h
+              </span>
+</div>
+<!-- Play trigger icon -->
+<div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+<div class="w-12 h-12 rounded-full bg-primary-container text-on-primary flex items-center justify-center shadow-lg transform scale-90 group-hover:scale-100 transition-transform">
+<span class="material-symbols-outlined text-[26px]" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</div>
+</div>
+<!-- Bottom Video Metadata Tag inside thumb -->
+<div class="absolute bottom-3 left-3 right-3 flex items-center justify-between text-inverse-on-surface text-label-sm font-label-sm">
+<span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-secondary"></span>清华大学国家级一流本科课</span>
+<span class="font-code-sm text-inverse-on-surface/80">THU-CS-201</span>
+</div>
+</div>
+<!-- Card Body -->
+<div class="flex-1 flex flex-col p-5 justify-between gap-space-md">
+<div class="flex flex-col gap-2">
+<h3 class="font-headline-md text-headline-md text-on-surface group-hover:text-primary transition-colors line-clamp-1">
+                数据结构与高频算法精析（清华公开课）
+              </h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant line-clamp-2">
+                深入剖析红黑树、B+树、并查集、动态规划与图论最短路推导，贯通数据组织与时间复杂度优化极限。
+              </p>
+</div>
+<!-- Lecturer info & Tags -->
+<div class="flex items-center justify-between pt-1">
+<div class="flex items-center gap-2">
+<div class="w-7 h-7 rounded-full bg-surface-container flex items-center justify-center text-primary font-semibold text-label-sm">
+                  邓
+                </div>
+<span class="font-label-md text-label-md text-on-surface font-medium">邓俊辉教授团队</span>
+</div>
+<span class="font-label-sm text-label-sm text-outline">已学 0/12 讲 (0%)</span>
+</div>
+<!-- Progress bar -->
+<div class="w-full h-1.5 rounded-full bg-surface-container-high overflow-hidden">
+<div class="h-full bg-primary rounded-full w-0"></div>
+</div>
+<!-- Action footer -->
+<div class="flex items-center justify-between pt-2">
+<span class="font-label-sm text-label-sm text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px] text-tertiary">auto_awesome</span>
+                配备 AI 思维脑图
+              </span>
+<a class="px-4 py-2 rounded-lg bg-surface-container-low text-primary font-headline-sm text-label-md font-semibold hover:bg-primary-container hover:text-on-primary transition-all flex items-center gap-1" href="#">
+<span>立即学习</span>
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+</a>
+</div>
+</div>
+</div>
+<!-- CARD 2: 计算机组成原理 (哈工大) -->
+<div class="group relative flex flex-col rounded-2xl bg-surface-container-lowest overflow-hidden shadow-[0_4px_20px_rgba(15,23,42,0.03)] hover:shadow-[0_16px_36px_rgba(79,70,229,0.12)] hover:-translate-y-1 transition-all duration-300">
+<div class="relative w-full aspect-[16/9] bg-inverse-surface overflow-hidden">
+<img alt="计算机组成原理" class="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500 opacity-80 hue-rotate-15" src="https://lh3.googleusercontent.com/aida-public/AB6AXuADFhEZ1y-I2qQ5fXR6d8AyEGP5U1jDACo85IRS96IPoJjhI65di3GOxGV2cndthDeJ2srIeYjkVI0Q4gsKtBFCQkJkXFH0N2TEe-NbvayoT5t6K-vBisBwnvO5lEaZfJ2UGH6I31nUQ1sWelzXFCV9EtN4JXn4XKfY-SyPylJ3yvEep4gCDu-1GTnl0PSlXCcJle7-DcJLcYGczX7m5d_9-35389e_8_3-xZwYRlou6Uy_faaTSlM"/>
+<div class="absolute inset-0 bg-gradient-to-t from-inverse-surface/90 via-inverse-surface/30 to-transparent"></div>
+<div class="absolute top-3 left-3 flex flex-wrap gap-1.5 z-10">
+<span class="px-2.5 py-1 rounded-md bg-secondary text-on-secondary font-label-sm text-label-sm font-semibold tracking-wide shadow-sm">
+                408 核心 · 硬件底座
+              </span>
+<span class="px-2 py-1 rounded-md bg-surface-container-lowest/90 backdrop-blur-md text-secondary font-label-sm text-label-sm font-medium">
+                经典必修
+              </span>
+</div>
+<div class="absolute top-3 right-3 z-10">
+<span class="px-2 py-1 rounded-md bg-inverse-surface/80 backdrop-blur-md text-inverse-on-surface font-code-sm text-label-sm">
+                12 课时 · 约5.0h
+              </span>
+</div>
+<div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+<div class="w-12 h-12 rounded-full bg-secondary text-on-secondary flex items-center justify-center shadow-lg transform scale-90 group-hover:scale-100 transition-transform">
+<span class="material-symbols-outlined text-[26px]" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</div>
+</div>
+<div class="absolute bottom-3 left-3 right-3 flex items-center justify-between text-inverse-on-surface text-label-sm font-label-sm">
+<span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-primary-fixed"></span>哈尔滨工业大学公开课</span>
+<span class="font-code-sm text-inverse-on-surface/80">HIT-CS-301</span>
+</div>
+</div>
+<div class="flex-1 flex flex-col p-5 justify-between gap-space-md">
+<div class="flex flex-col gap-2">
+<h3 class="font-headline-md text-headline-md text-on-surface group-hover:text-primary transition-colors line-clamp-1">
+                计算机组成原理与体系结构深度精析
+              </h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant line-clamp-2">
+                详解定点浮点数运算器、五级指令流水线、Cache组相联映射以及中断与总线仲裁协议。
+              </p>
+</div>
+<div class="flex items-center justify-between pt-1">
+<div class="flex items-center gap-2">
+<div class="w-7 h-7 rounded-full bg-surface-container flex items-center justify-center text-secondary font-semibold text-label-sm">
+                  刘
+                </div>
+<span class="font-label-md text-label-md text-on-surface font-medium">刘宏伟教授团队</span>
+</div>
+<span class="font-label-sm text-label-sm text-outline">已学 0/12 讲 (0%)</span>
+</div>
+<div class="w-full h-1.5 rounded-full bg-surface-container-high overflow-hidden">
+<div class="h-full bg-secondary rounded-full w-0"></div>
+</div>
+<div class="flex items-center justify-between pt-2">
+<span class="font-label-sm text-label-sm text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px] text-secondary">memory</span>
+                配套硬件逻辑仿真动画
+              </span>
+<a class="px-4 py-2 rounded-lg bg-surface-container-low text-primary font-headline-sm text-label-md font-semibold hover:bg-primary-container hover:text-on-primary transition-all flex items-center gap-1" href="#">
+<span>立即学习</span>
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+</a>
+</div>
+</div>
+</div>
+<!-- CARD 3: 操作系统 (哈工大 李治军) -->
+<div class="group relative flex flex-col rounded-2xl bg-surface-container-lowest overflow-hidden shadow-[0_4px_20px_rgba(15,23,42,0.03)] hover:shadow-[0_16px_36px_rgba(79,70,229,0.12)] hover:-translate-y-1 transition-all duration-300">
+<div class="relative w-full aspect-[16/9] bg-inverse-surface overflow-hidden">
+<img alt="操作系统剖析" class="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500 opacity-80 invert-[0.1]" src="https://lh3.googleusercontent.com/aida-public/AB6AXuADFhEZ1y-I2qQ5fXR6d8AyEGP5U1jDACo85IRS96IPoJjhI65di3GOxGV2cndthDeJ2srIeYjkVI0Q4gsKtBFCQkJkXFH0N2TEe-NbvayoT5t6K-vBisBwnvO5lEaZfJ2UGH6I31nUQ1sWelzXFCV9EtN4JXn4XKfY-SyPylJ3yvEep4gCDu-1GTnl0PSlXCcJle7-DcJLcYGczX7m5d_9-35389e_8_3-xZwYRlou6Uy_faaTSlM"/>
+<div class="absolute inset-0 bg-gradient-to-t from-inverse-surface/90 via-inverse-surface/30 to-transparent"></div>
+<div class="absolute top-3 left-3 flex flex-wrap gap-1.5 z-10">
+<span class="px-2.5 py-1 rounded-md bg-tertiary-container text-on-tertiary font-label-sm text-label-sm font-semibold tracking-wide shadow-sm">
+                计算机底座 · 哈工大名课
+              </span>
+<span class="px-2 py-1 rounded-md bg-surface-container-lowest/90 backdrop-blur-md text-tertiary font-label-sm text-label-sm font-medium">
+                内核实战
+              </span>
+</div>
+<div class="absolute top-3 right-3 z-10">
+<span class="px-2 py-1 rounded-md bg-inverse-surface/80 backdrop-blur-md text-inverse-on-surface font-code-sm text-label-sm">
+                10 课时 · 约4.0h
+              </span>
+</div>
+<div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+<div class="w-12 h-12 rounded-full bg-tertiary-container text-on-tertiary flex items-center justify-center shadow-lg transform scale-90 group-hover:scale-100 transition-transform">
+<span class="material-symbols-outlined text-[26px]" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</div>
+</div>
+<div class="absolute bottom-3 left-3 right-3 flex items-center justify-between text-inverse-on-surface text-label-sm font-label-sm">
+<span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-tertiary-fixed"></span>Linux 0.11 内核代码精讲</span>
+<span class="font-code-sm text-inverse-on-surface/80">HIT-OS-402</span>
+</div>
+</div>
+<div class="flex-1 flex flex-col p-5 justify-between gap-space-md">
+<div class="flex flex-col gap-2">
+<h3 class="font-headline-md text-headline-md text-on-surface group-hover:text-primary transition-colors line-clamp-1">
+                操作系统深度剖析：进程、内存与 Linux 内核
+              </h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant line-clamp-2">
+                剥离抽象外壳，从 CPU 引导、多进程切换 TSS、段页式虚拟内存地址转换到文件系统 i-node 机制。
+              </p>
+</div>
+<div class="flex items-center justify-between pt-1">
+<div class="flex items-center gap-2">
+<div class="w-7 h-7 rounded-full bg-surface-container flex items-center justify-center text-tertiary font-semibold text-label-sm">
+                  李
+                </div>
+<span class="font-label-md text-label-md text-on-surface font-medium">李治军教授</span>
+</div>
+<span class="font-label-sm text-label-sm text-outline">已学 0/10 讲 (0%)</span>
+</div>
+<div class="w-full h-1.5 rounded-full bg-surface-container-high overflow-hidden">
+<div class="h-full bg-tertiary rounded-full w-0"></div>
+</div>
+<div class="flex items-center justify-between pt-2">
+<span class="font-label-sm text-label-sm text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px] text-tertiary">code</span>
+                附带完整汇编/C内核批注
+              </span>
+<a class="px-4 py-2 rounded-lg bg-surface-container-low text-primary font-headline-sm text-label-md font-semibold hover:bg-primary-container hover:text-on-primary transition-all flex items-center gap-1" href="#">
+<span>立即学习</span>
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+</a>
+</div>
+</div>
+</div>
+<!-- CARD 4: 计算机网络自顶向下精讲 -->
+<div class="group relative flex flex-col rounded-2xl bg-surface-container-lowest overflow-hidden shadow-[0_4px_20px_rgba(15,23,42,0.03)] hover:shadow-[0_16px_36px_rgba(79,70,229,0.12)] hover:-translate-y-1 transition-all duration-300">
+<div class="relative w-full aspect-[16/9] bg-inverse-surface overflow-hidden">
+<img alt="计算机网络" class="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500 opacity-80 brightness-90" src="https://lh3.googleusercontent.com/aida-public/AB6AXuADFhEZ1y-I2qQ5fXR6d8AyEGP5U1jDACo85IRS96IPoJjhI65di3GOxGV2cndthDeJ2srIeYjkVI0Q4gsKtBFCQkJkXFH0N2TEe-NbvayoT5t6K-vBisBwnvO5lEaZfJ2UGH6I31nUQ1sWelzXFCV9EtN4JXn4XKfY-SyPylJ3yvEep4gCDu-1GTnl0PSlXCcJle7-DcJLcYGczX7m5d_9-35389e_8_3-xZwYRlou6Uy_faaTSlM"/>
+<div class="absolute inset-0 bg-gradient-to-t from-inverse-surface/90 via-inverse-surface/30 to-transparent"></div>
+<div class="absolute top-3 left-3 flex flex-wrap gap-1.5 z-10">
+<span class="px-2.5 py-1 rounded-md bg-primary-container text-on-primary font-label-sm text-label-sm font-semibold tracking-wide shadow-sm">
+                408 核心 · 网络体系
+              </span>
+<span class="px-2 py-1 rounded-md bg-surface-container-lowest/90 backdrop-blur-md text-primary font-label-sm text-label-sm font-medium">
+                协议与安全
+              </span>
+</div>
+<div class="absolute top-3 right-3 z-10">
+<span class="px-2 py-1 rounded-md bg-inverse-surface/80 backdrop-blur-md text-inverse-on-surface font-code-sm text-label-sm">
+                14 课时 · 约5.5h
+              </span>
+</div>
+<div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+<div class="w-12 h-12 rounded-full bg-primary-container text-on-primary flex items-center justify-center shadow-lg transform scale-90 group-hover:scale-100 transition-transform">
+<span class="material-symbols-outlined text-[26px]" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</div>
+</div>
+<div class="absolute bottom-3 left-3 right-3 flex items-center justify-between text-inverse-on-surface text-label-sm font-label-sm">
+<span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-secondary-fixed"></span>RFC 规范与 Wireshark 抓包实战</span>
+<span class="font-code-sm text-inverse-on-surface/80">NET-TOP-501</span>
+</div>
+</div>
+<div class="flex-1 flex flex-col p-5 justify-between gap-space-md">
+<div class="flex flex-col gap-2">
+<h3 class="font-headline-md text-headline-md text-on-surface group-hover:text-primary transition-colors line-clamp-1">
+                计算机网络自顶向下精讲：从应用层到物理层
+              </h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant line-clamp-2">
+                全景式拆解 HTTP/3 QUIC、TCP 拥塞控制算法 (BBR/Cubic)、BGP 路由广播与 ARP 地址解析协议。
+              </p>
+</div>
+<div class="flex items-center justify-between pt-1">
+<div class="flex items-center gap-2">
+<div class="w-7 h-7 rounded-full bg-surface-container flex items-center justify-center text-primary font-semibold text-label-sm">
+                  K
+                </div>
+<span class="font-label-md text-label-md text-on-surface font-medium">中科大郑烇老师精选班</span>
+</div>
+<span class="font-label-sm text-label-sm text-outline">已学 0/14 讲 (0%)</span>
+</div>
+<div class="w-full h-1.5 rounded-full bg-surface-container-high overflow-hidden">
+<div class="h-full bg-primary rounded-full w-0"></div>
+</div>
+<div class="flex items-center justify-between pt-2">
+<span class="font-label-sm text-label-sm text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px] text-primary">lan</span>
+                含 28 组 Wireshark 真实抓包包体
+              </span>
+<a class="px-4 py-2 rounded-lg bg-surface-container-low text-primary font-headline-sm text-label-md font-semibold hover:bg-primary-container hover:text-on-primary transition-all flex items-center gap-1" href="#">
+<span>立即学习</span>
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+</a>
+</div>
+</div>
+</div>
+</div>
+<!-- Additional Wide Banner: 大模型工程与全栈实战课 -->
+<div class="flex flex-col md:flex-row items-center gap-space-lg p-space-lg rounded-2xl bg-gradient-to-r from-surface-container-lowest to-surface-container-low shadow-[0_4px_24px_rgba(0,0,0,0.03)]">
+<div class="w-full md:w-56 aspect-video rounded-xl bg-inverse-surface overflow-hidden relative shrink-0">
+<img alt="大模型工程全栈" class="w-full h-full object-cover saturate-150" src="https://lh3.googleusercontent.com/aida-public/AB6AXuADFhEZ1y-I2qQ5fXR6d8AyEGP5U1jDACo85IRS96IPoJjhI65di3GOxGV2cndthDeJ2srIeYjkVI0Q4gsKtBFCQkJkXFH0N2TEe-NbvayoT5t6K-vBisBwnvO5lEaZfJ2UGH6I31nUQ1sWelzXFCV9EtN4JXn4XKfY-SyPylJ3yvEep4gCDu-1GTnl0PSlXCcJle7-DcJLcYGczX7m5d_9-35389e_8_3-xZwYRlou6Uy_faaTSlM"/>
+<div class="absolute inset-0 bg-inverse-surface/40 flex items-center justify-center">
+<span class="material-symbols-outlined text-on-primary text-[32px]">neurology</span>
+</div>
+<span class="absolute bottom-2 right-2 px-1.5 py-0.5 rounded bg-inverse-surface/80 text-inverse-on-surface font-code-sm text-[11px]">
+            前沿前瞻
+          </span>
+</div>
+<div class="flex-1 flex flex-col gap-2">
+<div class="flex items-center gap-2">
+<span class="px-2.5 py-0.5 rounded-md bg-tertiary/10 text-tertiary font-label-sm text-label-sm font-semibold">AI Agent 架构</span>
+<span class="text-on-surface-variant font-code-sm text-code-sm">18 课时 · 8.0h 实战</span>
+</div>
+<h4 class="font-headline-sm text-headline-sm text-on-surface font-bold">大模型工程与全栈实战课：从 Transformer 权重推导到 LangGraph 智能体</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant line-clamp-2">覆盖 RAG 向量混合检索、LoRA 参数微调、Function Calling 机制与高并发推理服务部署。</p>
+</div>
+<button class="shrink-0 px-5 py-2.5 rounded-xl bg-surface-container-high text-on-surface font-label-md text-label-md font-semibold hover:bg-primary-container hover:text-on-primary transition-all" type="button">
+          加入课程列表
+        </button>
+</div>
+</div>
+<!-- Right Column: Learning Assistant & Continuity Widgets (4 Columns) -->
+<div class="lg:col-span-4 flex flex-col gap-space-lg">
+<!-- WIDGET 1: 断点续播悬浮快捷卡 (Instant Resume Widget) -->
+<div class="relative p-5 rounded-2xl bg-surface-container-lowest shadow-[0_6px_28px_rgba(79,70,229,0.08)] overflow-hidden">
+<div class="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-2xl pointer-events-none"></div>
+<div class="flex items-center justify-between pb-3">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-secondary animate-pulse"></span>
+<span class="font-headline-sm text-headline-sm text-on-surface font-semibold">断点续播 · 接着学</span>
+</div>
+<span class="font-code-sm text-label-sm text-outline">上次学习: 昨天 21:40</span>
+</div>
+<div class="p-3.5 rounded-xl bg-surface-container-low flex flex-col gap-2.5">
+<div class="flex items-start justify-between gap-2">
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-primary font-medium">数据结构与高频算法精析</span>
+<span class="font-body-md text-body-md text-on-surface font-semibold line-clamp-1">第 1 讲：绪论与大 O 复杂度计算律</span>
+</div>
+<span class="font-code-sm text-code-sm text-on-surface-variant shrink-0 bg-surface-container-lowest px-2 py-0.5 rounded shadow-sm">18:42 / 42:15</span>
+</div>
+<div class="w-full h-1.5 rounded-full bg-surface-container-highest overflow-hidden">
+<div class="h-full bg-secondary rounded-full w-[44%]"></div>
+</div>
+</div>
+<button class="mt-4 w-full py-2.5 px-4 rounded-xl bg-primary-container text-on-primary font-headline-sm text-headline-sm font-semibold shadow-sm hover:bg-primary transition-all flex items-center justify-center gap-2" type="button">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+<span>一键无缝恢复播放</span>
+</button>
+</div>
+<!-- WIDGET 2: AI 导师考点答疑直达 (AI Question Drawer shortcut) -->
+<div class="p-5 rounded-2xl bg-surface-container-lowest shadow-[0_4px_20px_rgba(0,0,0,0.03)] flex flex-col gap-space-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-tertiary text-[22px]">auto_awesome</span>
+<span class="font-headline-sm text-headline-sm text-on-surface font-semibold">AI 视频切片答疑</span>
+</div>
+<span class="px-2 py-0.5 rounded bg-tertiary-fixed text-on-tertiary-fixed font-label-sm text-label-sm font-medium">实时在线</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+          在视频播放过程中遇到卡壳点？唤醒 AI 助手直接关联当前帧代码或公式进行白板级推演。
+        </p>
+<!-- Prompt Ideas / Quick Prompts -->
+<div class="flex flex-col gap-2">
+<a class="p-2.5 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface-variant hover:text-on-surface transition-colors text-body-sm font-body-sm flex items-center justify-between" href="#">
+<span class="truncate">✦ 解释红黑树左旋与颜色反转规律</span>
+<span class="material-symbols-outlined text-[16px] text-outline">arrow_forward</span>
+</a>
+<a class="p-2.5 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface-variant hover:text-on-surface transition-colors text-body-sm font-body-sm flex items-center justify-between" href="#">
+<span class="truncate">✦ 虚拟内存两级页表节省内存的数学本质</span>
+<span class="material-symbols-outlined text-[16px] text-outline">arrow_forward</span>
+</a>
+<a class="p-2.5 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface-variant hover:text-on-surface transition-colors text-body-sm font-body-sm flex items-center justify-between" href="#">
+<span class="truncate">✦ TCP 三次握手中 SYN 泛洪攻击防护</span>
+<span class="material-symbols-outlined text-[16px] text-outline">arrow_forward</span>
+</a>
+</div>
+</div>
+<!-- WIDGET 3: 408 核心学科备考与掌握雷达简报 (Skill Health Meter) -->
+<div class="p-5 rounded-2xl bg-surface-container-lowest shadow-[0_4px_20px_rgba(0,0,0,0.03)] flex flex-col gap-space-md">
+<div class="flex items-center justify-between">
+<span class="font-headline-sm text-headline-sm text-on-surface font-semibold">408 知识图谱掌握度</span>
+<span class="font-label-sm text-label-sm text-primary font-medium">更新于今日</span>
+</div>
+<div class="flex flex-col gap-3 font-label-md text-label-md">
+<!-- Item 1 -->
+<div class="flex flex-col gap-1">
+<div class="flex justify-between text-on-surface">
+<span>数据结构与算法 (DS)</span>
+<span class="font-code-sm text-code-sm text-outline">0% 已建构</span>
+</div>
+<div class="w-full h-1.5 rounded-full bg-surface-container-high overflow-hidden">
+<div class="h-full bg-primary rounded-full w-[0%]"></div>
+</div>
+</div>
+<!-- Item 2 -->
+<div class="flex flex-col gap-1">
+<div class="flex justify-between text-on-surface">
+<span>计算机组成原理 (CO)</span>
+<span class="font-code-sm text-code-sm text-outline">0% 已建构</span>
+</div>
+<div class="w-full h-1.5 rounded-full bg-surface-container-high overflow-hidden">
+<div class="h-full bg-secondary rounded-full w-[0%]"></div>
+</div>
+</div>
+<!-- Item 3 -->
+<div class="flex flex-col gap-1">
+<div class="flex justify-between text-on-surface">
+<span>操作系统 (OS)</span>
+<span class="font-code-sm text-code-sm text-outline">0% 已建构</span>
+</div>
+<div class="w-full h-1.5 rounded-full bg-surface-container-high overflow-hidden">
+<div class="h-full bg-tertiary rounded-full w-[0%]"></div>
+</div>
+</div>
+<!-- Item 4 -->
+<div class="flex flex-col gap-1">
+<div class="flex justify-between text-on-surface">
+<span>计算机网络 (CN)</span>
+<span class="font-code-sm text-code-sm text-outline">0% 已建构</span>
+</div>
+<div class="w-full h-1.5 rounded-full bg-surface-container-high overflow-hidden">
+<div class="h-full bg-primary-container rounded-full w-[0%]"></div>
+</div>
+</div>
+</div>
+<div class="pt-2 flex items-center justify-between text-label-sm font-label-sm text-outline">
+<span>建议：从《数据结构》首章节开启</span>
+<a class="text-primary hover:underline" href="#">查看全图谱 →</a>
+</div>
+</div>
+</div>
+</div>
+</div>
+<script>
+  // Simple micro-interaction for taxonomy pills filter switching
+  document.addEventListener('DOMContentLoaded', () => {
+    const pills = document.querySelectorAll('.filter-pill');
+    pills.forEach(pill => {
+      pill.addEventListener('click', () => {
+        pills.forEach(p => {
+          p.classList.remove('bg-primary-container', 'text-on-primary', 'shadow-sm');
+          p.classList.add('bg-surface-container-low', 'text-on-surface-variant');
+        });
+        pill.classList.remove('bg-surface-container-low', 'text-on-surface-variant');
+        pill.classList.add('bg-primary-container', 'text-on-primary', 'shadow-sm');
+      });
+    });
+  });
+</script></div></main></div></body></html>

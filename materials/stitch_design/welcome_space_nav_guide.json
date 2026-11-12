@@ -1,0 +1,29 @@
+{
+  "id": 4,
+  "jsonrpc": "2.0",
+  "result": {
+    "content": [
+      {
+        "text": "{\"name\":\"projects/560289792652862844/screens/954168e627824e9386cca380dcd79a89\",\"title\":\"学涯 Copilot - 欢迎与空间导航引导页\",\"screenshot\":{\"name\":\"projects/560289792652862844/screens/954168e627824e9386cca380dcd79a89/fileEntries/screenshot\",\"downloadUrl\":\"https://stitch.googleapis.com/v1/projects/560289792652862844/files/screenshot_00065f69738be4f90840dc4c951b67f9:download\",\"mimeType\":\"image/png\"},\"htmlCode\":{\"name\":\"projects/560289792652862844/screens/954168e627824e9386cca380dcd79a89/fileEntries/html\",\"downloadUrl\":\"https://stitch.googleapis.com/v1/projects/560289792652862844/files/954168e627824e9386cca380dcd79a89:download\",\"mimeType\":\"text/html\"},\"width\":\"2560\",\"height\":\"2732\",\"deviceType\":\"DESKTOP\"}",
+        "type": "text"
+      }
+    ],
+    "structuredContent": {
+      "deviceType": "DESKTOP",
+      "height": "2732",
+      "htmlCode": {
+        "downloadUrl": "https://stitch.googleapis.com/v1/projects/560289792652862844/files/954168e627824e9386cca380dcd79a89:download",
+        "mimeType": "text/html",
+        "name": "projects/560289792652862844/screens/954168e627824e9386cca380dcd79a89/fileEntries/html"
+      },
+      "name": "projects/560289792652862844/screens/954168e627824e9386cca380dcd79a89",
+      "screenshot": {
+        "downloadUrl": "https://stitch.googleapis.com/v1/projects/560289792652862844/files/screenshot_00065f69738be4f90840dc4c951b67f9:download",
+        "mimeType": "image/png",
+        "name": "projects/560289792652862844/screens/954168e627824e9386cca380dcd79a89/fileEntries/screenshot"
+      },
+      "title": "学涯 Copilot - 欢迎与空间导航引导页",
+      "width": "2560"
+    }
+  }
+}

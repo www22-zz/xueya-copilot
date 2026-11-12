@@ -1,0 +1,29 @@
+{
+  "id": 2,
+  "jsonrpc": "2.0",
+  "result": {
+    "content": [
+      {
+        "text": "{\"name\":\"projects/560289792652862844/screens/98a7d41260084c62998c6642699beb33\",\"title\":\"学涯 Copilot - AI 伴学助手与沉浸式研学工作台\",\"screenshot\":{\"name\":\"projects/560289792652862844/screens/98a7d41260084c62998c6642699beb33/fileEntries/screenshot\",\"downloadUrl\":\"https://stitch.googleapis.com/v1/projects/560289792652862844/files/screenshot_00065f6ad71682a50332c9b109319002:download\",\"mimeType\":\"image/png\"},\"htmlCode\":{\"name\":\"projects/560289792652862844/screens/98a7d41260084c62998c6642699beb33/fileEntries/html\",\"downloadUrl\":\"https://stitch.googleapis.com/v1/projects/560289792652862844/files/98a7d41260084c62998c6642699beb33:download\",\"mimeType\":\"text/html\"},\"width\":\"2560\",\"height\":\"2048\",\"deviceType\":\"DESKTOP\"}",
+        "type": "text"
+      }
+    ],
+    "structuredContent": {
+      "deviceType": "DESKTOP",
+      "height": "2048",
+      "htmlCode": {
+        "downloadUrl": "https://stitch.googleapis.com/v1/projects/560289792652862844/files/98a7d41260084c62998c6642699beb33:download",
+        "mimeType": "text/html",
+        "name": "projects/560289792652862844/screens/98a7d41260084c62998c6642699beb33/fileEntries/html"
+      },
+      "name": "projects/560289792652862844/screens/98a7d41260084c62998c6642699beb33",
+      "screenshot": {
+        "downloadUrl": "https://stitch.googleapis.com/v1/projects/560289792652862844/files/screenshot_00065f6ad71682a50332c9b109319002:download",
+        "mimeType": "image/png",
+        "name": "projects/560289792652862844/screens/98a7d41260084c62998c6642699beb33/fileEntries/screenshot"
+      },
+      "title": "学涯 Copilot - AI 伴学助手与沉浸式研学工作台",
+      "width": "2560"
+    }
+  }
+}

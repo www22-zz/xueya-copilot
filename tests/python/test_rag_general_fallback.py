@@ -7,7 +7,7 @@ import pytest
 from backend.xueya.agent import Agent
 from backend.xueya.config import Config
 from backend.xueya.provider import MimoProvider
-from backend.xueya.rag_fallback import PREFIX, eligible
+from backend.xueya.rag_fallback import eligible
 from backend.xueya.rag_service import RagService
 from test_rag import completed
 
@@ -36,7 +36,7 @@ async def test_missing_knowledge_switches_once_without_sending_course_evidence(p
     events = [e async for e in agent.workflow({'question': '哈希冲突是什么？', 'documentIds': [doc]})]
     final = events[-1]
     assert final['engine'] == 'general-chat' and final['answerStatus'] == 'answered'
-    assert final['answer'].startswith(PREFIX) and final['fallback']['reason'] == 'NO_RELEVANT_KNOWLEDGE'
+    assert '哈希冲突是不同键映射到同一位置' in final['answer'] and final['fallback']['reason'] == 'NO_RELEVANT_KNOWLEDGE'
     assert final['sources'] == final['sourceObjects'] == final['sourceDetails'] == []
     assert final['verification'] == 'general-knowledge-not-course-verified'
     assert len(captured) == 1 and captured[0][1]['timeout'] == 90
@@ -192,7 +192,7 @@ async def test_successful_grounded_answer_keeps_its_original_citations(platform)
     agent = Agent(Model(), platform);agent.rag = rag
     final = [e async for e in agent.workflow({'question': '栈是什么？', 'documentIds': [doc]})][-1]
     assert calls == [1] and final['sources'] == [source['id']] and not final.get('fallback')
-    assert final['verification'] == 'verbatim-only' and not final['answer'].startswith(PREFIX)
+    assert final['verification'] == 'verbatim-only'
     assert all(rag.validate(platform.scope(), s) for s in final['sourceDetails'])
 
 
@@ -220,7 +220,7 @@ def test_fallback_on_real_host_http_and_sse_contracts(client, path):
     else:
         result = response.json()
     assert result['engine'] == 'general-chat' and result['fallback']['attempts'] == 1
-    assert result['sources'] == result['sourceDetails'] == [] and result['answer'].startswith(PREFIX)
+    assert result['sources'] == result['sourceDetails'] == [] and result['answer']
     assert len(sent) == 2 and sent[0] != sent[1]
 
 @pytest.mark.asyncio

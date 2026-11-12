@@ -75,10 +75,30 @@ def test_model_cannot_reference_another_accounts_private_course(platform):
 
 def test_original_course_ids_and_episode_ids_are_preserved():
     courses=platform_courses()
-    legacy=[c for c in courses if c.get('verification')=='legacy-unverified']
-    assert len(legacy)==7 and sum(len(c['episodes']) for c in legacy)==22
+    playback=[c for c in courses if c.get('verification')=='verified-playback']
+    assert len(playback)==7 and sum(len(c['episodes']) for c in playback)==22
     assert courses[0]['id']=='cs-ds-algo' and courses[0]['episodes'][0]['id']=='ds-ep-1'
     official=[c for c in courses if c.get('verification')=='verified-metadata']
     assert {c['id'] for c in official}=={'mooc-ds','mooc-co','mooc-os','mooc-cn'}
     assert len(courses)==11 and all(c['sourceUrl'].startswith('https://www.icourse163.org/course/') for c in official)
     assert all(c['episodes'][0]['sourceUrl']==c['sourceUrl'] for c in official)
+
+
+def test_catalog_videos_have_verified_playable_sources_and_real_covers():
+    import re
+    courses=platform_courses()
+    assert {c['id'] for c in courses}=={
+        'cs-ds-algo','cs-arch-sys','cs-os-kernel','cs-network-http','cs-prog-fullstack',
+        'cs-sys-database','cs-ai-agent','mooc-ds','mooc-co','mooc-os','mooc-cn'}
+    for course in courses:
+        assert re.fullmatch(r'BV[0-9A-Za-z]{10}',course['bvid']),course['id']
+        assert course['cover'].startswith('https://i') and course['cover'].endswith(('.jpg','.png')),course['id']
+        assert course['totalPages']>=len(course['episodes'])>0,course['id']
+        for field in ('duration','instructor','description'):
+            assert course[field] and '待核验' not in course[field] and '见原站' not in course[field],(course['id'],field)
+        for episode in course['episodes']:
+            assert re.fullmatch(r'BV[0-9A-Za-z]{10}',episode['bvid']),episode['id']
+            assert episode['bvid']==course['bvid'],episode['id']
+            assert type(episode['bpage']) is int and 1<=episode['bpage']<=course['totalPages'],episode['id']
+            assert re.fullmatch(r'(?:\d+:)?\d{2}:\d{2}',episode['duration']),(course['id'],episode['id'])
+            assert '待核验' not in episode['title'],episode['id']

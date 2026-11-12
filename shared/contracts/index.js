@@ -38,7 +38,7 @@
     const history=(Array.isArray(input.history)?input.history:[]).slice(-LIMITS.history)
       .filter(m=>m&&['user','assistant'].includes(m.role)&&typeof m.content==='string')
       .map(m=>({role:m.role,content:m.content.slice(0,LIMITS.historyContent)}));
-    return{question,mode:MODES.includes(input.mode)?input.mode:'ask',sources:Array.isArray(input.sources)?input.sources:[],history,...(input.previousAnswerKind==='general'?{previousAnswerKind:'general'}:{})};
+    return{question,mode:MODES.includes(input.mode)?input.mode:'ask',sources:Array.isArray(input.sources)?input.sources:[],history,...(input.previousAnswerKind==='general'?{previousAnswerKind:'general'}:{}),...(input.fastMode===true?{fastMode:true}:{}),...(input.deepThink===true?{deepThink:true}:{})};
   }
 
   function sanitizeSources(input,catalog=[]){

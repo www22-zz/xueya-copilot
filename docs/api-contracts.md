@@ -1,4 +1,4 @@
-# 模块接口约定
+﻿# 模块接口约定
 
 ## 2026-11-09 学习工作台：代码运行、AI 复杂度和思维导图
 
@@ -599,3 +599,60 @@ POST /plan/adopt继续要求confirmed=true、业务expectedRevision及operationI
 `POST /api/learning/space/plan/adopt` 兼容增加可选 `expectedCurrent: {id,revision} | null`。客户端先读取 `/plan/list`，向用户说明将被替换的最新执行计划，确认后提交该快照；服务端在采用事务中核对实际执行计划。显式 null 表示确认当前没有执行计划；字段形状不合法返回 `INVALID_CURRENT_PLAN`，实际计划或修订再次变化返回 `PLAN_CURRENT_CHANGED`，不替换计划。草稿自身 expectedRevision、明确确认、生成就绪和调整草稿 sourcePlanRevision 校验保持。未传 expectedCurrent 的旧客户端继续使用原 adoptionBase 保护。该字段也参与操作幂等签名；同一成功请求重放不重复采用。
 
 两个计划页面的采用按钮均使用最新快照确认。已是当前执行计划时只读核验后显示“采用成功”；真正成功后关闭预览并进入我的计划。失败时弹窗显示中文原因，不把原始错误码当作唯一提示，也不自动重试或重新生成。
+# 2026-11-10 问答延迟优化（增量契约）
+
+以下均为增量字段与宿主开关；既有 HTTP/SSE 事件类型、必需字段、证据/权限/预算与失败语义保留。
+
+## SSE `draft` 未核对预览
+
+`/api/agent/stream` 在 `ask` 模式生成期间可在最终 `done` 之前发送 `{type:'draft', text, draft:true, model}`。它在正文开始前还会先发送 claims 文本作为活动预览；当 `answer` 字段开始出现时先发送 `{type:'draft',text:',draft:true,reset:true}` 清空预览，再逐段发送正文，形成打字机效果。事件内容明确是未核对预览：不属于 `content` 事件，不进入历史、证据、来源或缓存，不能作为最终答案；旧客户端忽略未知事件类型。`done.answer` 仍是唯一权威结果；失败、取消和兜底（含 `resetAnswer:true`）时客户端丢弃草稿。开关 `AI_DRAFT_STREAMING`（`load_config` 默认 1；直接构造 `Config` 默认 0，保持既有测试/兼容调用行为）。`content` 事件仍只发布通过逐字校验的内容。
+
+## 核对失败后的摘录修复
+
+新增 `verification='repaired-excerpts'`：生成答案未通过逐字或语义核对且 `AI_ANSWER_REPAIR=1` 时，宿主至多发起一次保守修复调用；模型只能选择服务端提供的 `quoteId`，宿主用真实原文片段重建答案，因此不需要第二次语义核对。结果带 `repair:{mode:'excerpt',reason}` 与真实 `sources/sourceDetails`；修复不可用、资料不足或输出非法时保留原有失败语义（`answerStatus:'unavailable'` 与既有兜底链）。每个答案最多一次修复，不重试付费请求。
+
+## 并行核对、提前核对与 fail-fast
+
+- `AI_REVIEW_SHARDS`（1–3，默认 2）与 `AI_REVIEW_SHARD_MIN_CLAIMS`（默认 4）：待核对 claims 达到阈值时分片并行调用同一核对提示词；某个分片失败/格式非法只使该分片 claims 保持未核验，不影响其他分片，也不抛错。
+- `AI_EARLY_REVIEW=1`：流式 JSON 的 claims 数组闭合后立即后台核对；`AI_EARLY_REVIEW_FAILFAST=1` 时，若早期核对已判定不支持，宿主中止剩余生成并直接进入修复/兜底。最终结果仍以 `done` 为准；被拒绝的正文不会作为 `content` 发布。
+- `done.timings` 增量：`reviewCalls`、`repairs`、`promptTokens`、`outputTokens`、`cacheHits`、`firstDraftMs`（首个未核对草稿增量时间）；既有字段与 `phasesMs.evidenceReview` 保留。
+
+## 本地答案缓存
+
+`AI_ANSWER_CACHE_TTL_SECONDS`（0 关闭，默认 86400）：仅缓存成功且有来源的 `ask` 回答；键包含账号、课程、问题、mode、证据快照、模型、缓存提示词版本和规范化后的对话历史摘要（不同历史不会命中同一条缓存）。命中前再次校验证据版本，资料修订/移除即失效；命中时返回 `done.cacheHit=true` 且模型调用为 0。联网搜索和本地规则计算题不缓存。缓存不跨账号、不跨课程，失败答案不写入。
+
+## API 并发排队
+
+- `API_MAX_CONCURRENT` 的 `load_config` 默认提升为 4（直接构造 `Config` 仍为 2）。
+- `AI_API_QUEUE_TIMEOUT_SECONDS`（默认 12，0=快速失败）：API 槽位满时按 FIFO 等待，超时仍返回 `API_BUSY`；等待中取消不泄漏槽位、不虚报排队耗时。调用账本与预算语义不变。
+
+## 思考模式、输出上限与资料条数
+
+- `AI_ANSWER_OUTPUT_TOKENS`（默认 3072）限制主回答输出预留。
+- 回答默认关闭扩展思考（`AI_ANSWER_NO_THINKING=1`）；只有客户端显式请求 `deepThink:true` 时才启用模型推理。`AI_PLANNER_NO_THINKING=1` 对规划决策关闭。
+- `AI_ANSWER_SOURCE_LIMIT`（默认 4，1–6）控制快速资料问答读取的原文片段数；资料范围、权限和逐字校验不变。
+
+## 引文规范化的边界
+
+精确引用校验仍在语义核对之前。服务端可把仅存在空白/换行、全角半角、常见标点（。、与 . ,）或弯引号差异的候选映射回真实连续原文，并把该原文写入 claims；改写、增删文字、改变字形或伪造来源仍拒绝。该修复只提升一次通过率，不改变 `supported/unsupported` 的判定标准。
+### 2026-11-10 回答流式与内容的二次修正
+
+- 资料问答的提示词只为模型提供**完整句 span**（长原文不再同时发送整段原文、逐行片段和逐句片段；短原文保留 q0+完整句），系统提示未变；快速问答默认要求 answer 150–350 字、claims 最多 4 项且优先使用逐字原文整句，以减少 prefill 和输出耗时。
+- 叙述正文或任一相关 claim 未通过核对时，不发布不完整的资料答案，返回 `answerStatus='unavailable'`、`reason='CLAIMS_NEED_REVIEW'`，按已有配置进入一次摘录修复或通用回答兜底。原始来源仍可供核对，未通过的内容不作为正式答案发布。
+- 摘录修复只在上述核对失败或解析失败时触发，每个答案最多一次。
+## 快速模式（客户端可选，2026-11-10）
+
+`POST /api/agent/stream`（及 `/api/agent`、`/api/ai` 兼容路径）请求可增加可选字段 `fastMode: true`（仅 `mode='ask'` 生效，默认 false，其他值忽略）。这是唯一由客户端选择降低核对成本的开关，不能提高任何预算/权限/来源范围：
+
+- 仍执行：问题/来源规范化、逐字引用与 quoteId 校验、claims 语义核对、证据版本复核、预算与调用账本。
+- 跳过：最终整段叙述正文的语义核对。仅当**全部相关 claims 均通过**时发布正文，`verification='claims-supported-prose'`、`proseReview='skipped'`，正文末尾注明“正文未逐句核对，引用和要点已核对”。
+- 任一 claims 未通过时，正文和不完整的 claims 答案均不发布，返回 `answerStatus='unavailable'` 并按已有配置进入修复/兜底（与严谨模式一致）。伪造引用在两种模式下都先被拒绝。
+- 浏览器输入区提供“🧠 深度思考”开关（默认关闭，状态随本地工作区持久化）：关闭时直接综合资料回答并显示检索/核对步骤，响应更快；开启时请求携带 `deepThink:true`，启用模型推理并显示推理过程。旧的 `fastMode` 字段仅为兼容保留。
+- 该模式同时关闭思考过程（不发送 reasoning，前端不显示思考面板）并跳过正文语义核对；若 claims 全为逐字摘录（快速提示词鼓励这种写法），通常整次回答只需一次生成调用。它不承诺固定响应时间，模型生成速度仍是主要延迟来源。
+## DeepSeek 式对话体验（2026-11-10，增量）
+
+- **默认综合回答**：`AI_PROSE_REVIEW=0`（`load_config` 默认）时，资料问答只要 claims/引用核对通过就发布模型**自己组织的完整回答**（`verification='claims-supported-prose'`、`proseReview='skipped'`），不再退化为机械摘录；资料与问题无关或不足时模型返回 `answerable=false`，按既有单次通用回答兜底。设 `AI_PROSE_REVIEW=1` 恢复整段正文语义核对。
+- **思考过程**：`deepThink:true` 时资料/通用回答启用上层模型的推理输出，SSE 透传 `reasoning` 增量事件；前端折叠面板显示“思考中…”→“已思考（用时 X 秒）”，关闭时改为展示检索、读取、核对等步骤。reasoning 仅用于展示，不作为答案、证据或缓存内容。
+- **追问建议**：资料回答的 JSON 可包含 `suggestedQuestions`（最多 3 条，每条 ≤80 字），宿主校验后随 `done.suggestedQuestions` 返回；通用回答没有该字段时，前端可调用 `POST /api/agent/suggestions`，请求 `{courseId,question,answer,history}`，返回 `{ok:true,questions:[...]}`（最多 3 条；复用主平台限流、预算与调用账本）。失败时前端保留静态兜底，不重试。
+- **去品牌化**：浏览器展示的引擎名改为“资料问答/通用回答/AI 学习规划”等，不再显示模型名称；身份类问题仍按宿主配置回答。RAG 失败后的通用兜底去掉“未使用知识库证据/模型自主回答”前缀，直接给自然答案；`engine='general-chat'`、`verification='general-knowledge-not-course-verified'` 等机器字段保留。
+- **来源展示**：资料引用仍用 citation chips；联网搜索的网页来源使用站点域名作为 chip 文案并可点击打开原网页。

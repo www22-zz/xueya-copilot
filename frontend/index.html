@@ -1,9 +1,28 @@
-<!doctype html>
-<html lang="zh-CN">
+﻿<!doctype html>
+<html lang="zh-CN" data-theme="dark" style="color-scheme:dark">
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#fafbfe">
   <meta name="description" content="读懂课程资料，用固定题库刷题、巩固错题、随手记重点。学涯 Copilot，让每一次学习都有依据。">
   <title>学涯 Copilot — 让知识，真正连起来</title>
+  <script>
+  (()=>{
+    const url=new URL(location.href),requested=url.searchParams.get('theme');
+    let choice='dark';
+    try{choice=localStorage.getItem('xueya-theme')||'dark';}catch{}
+    if(['light','dark','system'].includes(requested)){
+      choice=requested;
+      try{localStorage.setItem('xueya-theme',choice);}catch{}
+      url.searchParams.delete('theme');
+      history.replaceState(history.state,'',url);
+    }
+    if(!['light','dark','system'].includes(choice))choice='dark';
+    window.XUEYA_INITIAL_THEME=choice;
+    const theme=choice==='system'?(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'):choice;
+    document.documentElement.dataset.theme=theme;
+    document.documentElement.style.colorScheme=theme;
+  })();
+  </script>
+  <script>window.XUEYA_UI_BUILD='2026-11-11-deep-think-typing-2';</script>
   <link rel="icon" href="assets/mark.svg" type="image/svg+xml">
   <!-- Icon font is multi-MB; start it before the render-blocking stylesheets. -->
   <link rel="preload" href="assets/material-symbols-outlined.woff2" as="font" type="font/woff2" crossorigin>

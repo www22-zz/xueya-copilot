@@ -1,4 +1,4 @@
-"""Keep chat fast without bypassing evidence checks or leaking connections."""
+﻿"""Keep chat fast without bypassing evidence checks or leaking connections."""
 import asyncio
 import json
 from types import SimpleNamespace
@@ -83,7 +83,7 @@ def test_browser_library_uses_scoped_mcp_without_starting_process(monkeypatch, q
         config = SimpleNamespace(model='controlled')
 
         async def stream(self, messages, **options):
-            assert options.get('thinking') == {'type': 'disabled'}
+            assert options.get('thinking') == {'type': 'disabled'}  # default answer mode
             if '本次为通用问答' in messages[0]['content']:
                 yield {'type': 'content', 'text': '星期五。', 'model': 'controlled'}
                 return

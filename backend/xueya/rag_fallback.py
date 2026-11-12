@@ -14,7 +14,7 @@ REASONS = frozenset({
     'INVALID_CLAIMS', 'UNSUPPORTED_CLAIM', 'INVALID_CITATION',
     'AI_UNEXPECTED_TOOL_CALL', 'AI_GENERATION_FAILED', 'AI_TIMEOUT', 'AI_UNAVAILABLE',
 })
-PREFIX = '模型自主回答（未使用知识库证据）：\n\n'
+PREFIX = ''
 
 
 def eligible(config, request, failure):
@@ -37,7 +37,7 @@ async def stream_general_fallback(agent, request, scope, failure):
     steps = list((failure.get('workflow') or {}).get('steps', []))
     metadata = {'from': 'course-rag', 'reason': reason, 'attempts': 1, 'sameRequestReplayed': False}
     step = {'stage': 'general-fallback', 'status': 'running',
-            'label': '知识库回答未满足要求，正在切换一次MiMo自主回答（不引用课程资料）'}
+            'label': '知识库资料未满足要求，正在切换为通用回答（不引用课程资料）'}
     steps.append(step)
     # Optional fields extend the existing workflow frame. The browser discards
     # an earlier partial JSON answer before displaying a different answer mode.
@@ -46,6 +46,10 @@ async def stream_general_fallback(agent, request, scope, failure):
     if timing:
         timing.route = 'general-fallback'
     source_free = {key: request[key] for key in ('question', 'history', 'mode')}
+    if request.get('fastMode'):
+        source_free['fastMode'] = True
+    if request.get('deepThink'):
+        source_free['deepThink'] = True
     first = True
     fragments = []
     try:
@@ -59,7 +63,7 @@ async def stream_general_fallback(agent, request, scope, failure):
                     fragments.append(text)
                     yield {**event, 'text': text}
                 elif event['type'] == 'done':
-                    steps.append({'stage': 'general-fallback', 'status': 'completed', 'label': 'MiMo自主回答已完成，未使用知识库证据'})
+                    steps.append({'stage': 'general-fallback', 'status': 'completed', 'label': '通用回答已完成'})
                     yield {**event, 'answer': PREFIX+event['answer'], 'answerStatus': 'answered',
                            'engine': 'general-chat', 'sources': [], 'sourceObjects': [], 'sourceDetails': [],
                            'claims': [], 'fallback': metadata,
@@ -91,7 +95,7 @@ async def stream_general_fallback(agent, request, scope, failure):
                 return
         steps.append({'stage': 'general-fallback', 'status': 'degraded', 'label': 'MiMo自主回答也未完成，已停止自动调用'})
         yield {'type': 'workflow', **steps[-1], 'resetAnswer': True, 'fallback': metadata}
-        yield {'type': 'done', 'ok': True, 'answer': '知识库回答未完成，MiMo自主回答也暂未完成。已停止自动调用，没有循环重试；请稍后手动重试。',
+        yield {'type': 'done', 'ok': True, 'answer': '本轮回答未能完成。已停止自动调用，没有循环重试；请稍后手动重试。',
                'sources': [], 'sourceObjects': [], 'sourceDetails': [], 'claims': [], 'knowledgePoints': [],
                'engine': 'general-chat-unavailable', 'model': getattr(agent.model.config, 'model', 'unconfigured'),
                'answerStatus': 'unavailable', 'reason': code,

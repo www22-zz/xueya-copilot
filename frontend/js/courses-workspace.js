@@ -23,451 +23,614 @@
   // Built-in curated Computer Science courses with Bilibili authoritative lectures & online fallback
   const BUILTIN_COURSES = [
     {
-      id: 'cs-ds-algo',
-      title: '数据结构与高频算法精析（清华大学公开课）',
-      category: 'theory',
-      categoryName: '核心理论 / 408',
-      level: '进阶必修',
-      badge: '408 核心 · 清华名课',
-      instructor: '清华大学计算机系 · 邓俊辉团队',
-      duration: '12 课时 · 约 4.5 小时',
-      bvid: 'BV1b7411N798',
-      coverGradient: 'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)',
-      coverIcon: 'tree',
-      description: '全网经典清华数据结构公开课：围绕线性表、树与二叉树、图论、散列表及动态规划，剖析核心底层原理与大厂面试高频算法。',
-      tags: ['二叉树', '红黑树', '图算法', '动态规划', '复杂度分析'],
-      episodes: [
+      "id": "cs-ds-algo",
+      "title": "清华大学邓俊辉《数据结构与算法》（公开课）",
+      "category": "theory",
+      "categoryName": "核心理论 / 408",
+      "level": "进阶必修",
+      "badge": "408 核心 · 清华名课",
+      "instructor": "清华大学 · 邓俊辉",
+      "duration": "4 讲精选 · 约 34.5 小时",
+      "bvid": "BV1jt4y117KR",
+      "totalPages": 474,
+      "cover": "https://i0.hdslb.com/bfs/archive/29062bbdff63049cbe3e8c2f1b8c3e1d0391692e.png",
+      "coverGradient": "linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)",
+      "coverIcon": "tree",
+      "description": "清华大学邓俊辉《数据结构与算法》公开课精讲：渐进复杂度、二叉树、图的广度优先搜索、平衡搜索树与红黑树。站内通过 B 站官方嵌入播放器在线播放。",
+      "tags": [
+        "复杂度分析",
+        "二叉树",
+        "图算法",
+        "AVL",
+        "红黑树"
+      ],
+      "platform": true,
+      "sourceType": "platform",
+      "verification": "verified-playback",
+      "episodes": [
         {
-          id: 'ds-ep-1',
-          title: '第 01 讲：绪论与大 O 渐近复杂度分析',
-          duration: '18:30',
-          bvid: 'BV1b7411N798',
-          bpage: 1,
-          videoUrl: '',
-          summary: '深入理解时间复杂度与空间复杂度，区分最坏情况、平均情况与均摊复杂度。',
-          keyPoints: ['大 O 表示法', '对数阶 O(log n)', '空间换时间权衡'],
-          copilotPrompts: [
-            '二叉搜索树查找的时间复杂度为什么是 O(log n)？',
-            '什么是均摊时间复杂度，动态数组扩容时是如何计算的？',
-            '在什么情况下算法的空间复杂度会成为主要瓶颈？'
+          "id": "ds-ep-1",
+          "title": "第 01 讲：渐进复杂度与大 O 记号",
+          "duration": "10:07",
+          "bvid": "BV1jt4y117KR",
+          "bpage": 8,
+          "videoUrl": "",
+          "summary": "渐进分析的基本记号：大 O、大 Ω、大 Θ 与常见复杂度量级。",
+          "keyPoints": [
+            "大 O 表示法",
+            "上界/下界/确界",
+            "常见复杂度量级"
+          ],
+          "copilotPrompts": [
+            "大 O 记号为什么只看增长趋势、忽略常数和低阶项？",
+            "大 Ω 和大 Θ 与 O 记号的区别是什么？",
+            "如何比较 n log n 与 n² 两种算法的复杂度？"
           ]
         },
         {
-          id: 'ds-ep-2',
-          title: '第 02 讲：树与二叉树：遍历、AVL 平衡树与红黑树',
-          duration: '24:15',
-          bvid: 'BV1b7411N798',
-          bpage: 4,
-          videoUrl: '',
-          summary: '剖析二叉搜索树的中序遍历特性，AVL 树失衡四种旋转（LL/RR/LR/RL），以及红黑树五大性质。',
-          keyPoints: ['二叉搜索树', 'AVL 单双旋', '红黑树染色与旋转'],
-          copilotPrompts: [
-            '平衡二叉树在失衡时，LL 与 LR 旋转的具体步骤是什么？',
-            '红黑树相比 AVL 树为什么在插入和删除频繁的场景更具优势？',
-            '如何在不使用递归的情况下手写二叉树的前序和中序遍历？'
+          "id": "ds-ep-2",
+          "title": "第 02 讲：树与二叉树概述",
+          "duration": "05:12",
+          "bvid": "BV1jt4y117KR",
+          "bpage": 152,
+          "videoUrl": "",
+          "summary": "二叉树的定义、性质与基本术语，为后续遍历与平衡搜索树打基础。",
+          "keyPoints": [
+            "二叉树定义",
+            "真二叉树与满二叉树",
+            "节点度数与高度关系"
+          ],
+          "copilotPrompts": [
+            "二叉树和一般树的区别是什么？",
+            "满二叉树和完全二叉树的区别？",
+            "含 n 个节点的二叉树最小高度是多少？"
           ]
         },
         {
-          id: 'ds-ep-3',
-          title: '第 03 讲：图论实战：邻接表、BFS/DFS 与拓扑排序',
-          duration: '22:40',
-          bvid: 'BV1b7411N798',
-          bpage: 6,
-          videoUrl: '',
-          summary: '图的表示方式对比，广度优先与深度优先搜索的底层队列/栈应用，有向无环图（DAG）检测与拓扑排序。',
-          keyPoints: ['邻接矩阵与邻接表', 'BFS 最短路', 'DAG 环检测与拓扑排序'],
-          copilotPrompts: [
-            '如何利用拓扑排序判断一个有向图是否存在循环依赖？',
-            'Dijkstra 最短路径算法为什么不能处理包含负权边的图？',
-            '广度优先搜索（BFS）为什么能保证无权图中的最短路径？'
+          "id": "ds-ep-3",
+          "title": "第 03 讲：图的广度优先搜索（BFS）",
+          "duration": "03:00",
+          "bvid": "BV1jt4y117KR",
+          "bpage": 194,
+          "videoUrl": "",
+          "summary": "图的广度优先搜索：化繁为简的遍历策略、队列实现与最短路径应用。",
+          "keyPoints": [
+            "BFS 遍历策略",
+            "队列实现与访问标记",
+            "无权图最短路径"
+          ],
+          "copilotPrompts": [
+            "BFS 为什么能求出无权图的最短路径？",
+            "BFS 和 DFS 分别适合什么场景？",
+            "如何用 BFS 求连通分量的个数？"
           ]
         },
         {
-          id: 'ds-ep-4',
-          title: '第 04 讲：动态规划进阶：状态定义与转移方程推导',
-          duration: '26:50',
-          bvid: 'BV1b7411N798',
-          bpage: 11,
-          videoUrl: '',
-          summary: '从斐波那契到 0-1 背包、完全背包，掌握重叠子问题、最优子结构与状态压缩技巧。',
-          keyPoints: ['重叠子问题', '最优子结构', '滚动数组空间压缩'],
-          copilotPrompts: [
-            '动态规划与贪心算法的核心区别是什么？',
-            '0-1 背包问题中，为什么一维数组优化时内层循环必须逆序遍历？',
-            '如何系统化推导最长公共子序列（LCS）的状态转移方程？'
+          "id": "ds-ep-4",
+          "title": "第 04 讲：红黑树的结构与规则",
+          "duration": "03:48",
+          "bvid": "BV1jt4y117KR",
+          "bpage": 300,
+          "videoUrl": "",
+          "summary": "红黑树的定义与规则：为何放弃绝对平衡，用四条规则保证对数高度。",
+          "keyPoints": [
+            "红黑树规则",
+            "与 4 阶 B 树的对应",
+            "对数高度保证"
+          ],
+          "copilotPrompts": [
+            "红黑树为什么允许最长路径是较短路径的两倍？",
+            "红黑树的规则如何对应 4 阶 B 树？",
+            "与 AVL 树相比，红黑树在插入删除场景的取舍是什么？"
           ]
         }
       ]
     },
     {
-      id: 'cs-arch-sys',
-      title: '计算机组成原理与体系结构深度精析（哈工大公开课）',
-      category: 'theory',
-      categoryName: '核心理论 / 408',
-      level: '进阶必修',
-      badge: '408 核心 · 硬件底座',
-      instructor: '哈尔滨工业大学 · 刘宏伟团队',
-      duration: '12 课时 · 约 5.0 小时',
-      bvid: 'BV1WW411Q7G5',
-      coverGradient: 'linear-gradient(135deg, #1e293b 0%, #475569 100%)',
-      coverIcon: 'cpu',
-      description: '国家级精品课程哈工大计组公开课：深入冯·诺依曼架构、机器级数据表示、主存与 Cache 映射、指令系统与寻址、CPU 流水线冒险以及总线与中断系统。',
-      tags: ['冯诺依曼', '补码与浮点', 'Cache映射', '指令系统', '流水线冒险', '中断与DMA'],
-      platform: true,
-      episodes: [
+      "id": "cs-arch-sys",
+      "title": "王道计算机考研 计算机组成原理（408 核心精讲）",
+      "category": "theory",
+      "categoryName": "核心理论 / 408",
+      "level": "进阶必修",
+      "badge": "408 核心 · 王道精讲",
+      "instructor": "王道计算机教育",
+      "duration": "6 讲精选 · 约 34.1 小时",
+      "bvid": "BV1ps4y1d73V",
+      "totalPages": 92,
+      "cover": "https://i0.hdslb.com/bfs/archive/6c8b11c80e44f2880356d9137f84c844bbbbe323.jpg",
+      "coverGradient": "linear-gradient(135deg, #1e293b 0%, #475569 100%)",
+      "coverIcon": "cpu",
+      "description": "王道 408 计算机组成原理：系统概述与性能指标、数据表示、存储与 Cache、指令系统、CPU 流水线与中断 I/O。站内通过 B 站官方嵌入播放器在线播放。",
+      "tags": [
+        "冯诺依曼",
+        "补码与浮点",
+        "Cache映射",
+        "指令系统",
+        "流水线"
+      ],
+      "platform": true,
+      "sourceType": "platform",
+      "verification": "verified-playback",
+      "episodes": [
         {
-          id: 'arch-ep-1',
-          title: '第 01 讲：计算机系统概述：冯·诺依曼架构与性能度量',
-          duration: '22:10',
-          bvid: 'BV1WW411Q7G5',
-          bpage: 1,
-          videoUrl: '',
-          summary: '冯·诺依曼计算机五大组成部分，存储程序概念，主频、CPI、MIPS 与 FLOPS 性能度量指标。',
-          keyPoints: ['冯诺依曼体系', '存储程序工作方式', 'CPI与MIPS计算'],
-          copilotPrompts: [
-            '冯·诺依曼体系结构的核心特点是什么，指令与数据在存储器中是如何区分的？',
-            'CPI（Cycles Per Instruction）和 MIPS 指标在评估 CPU 性能时有哪些局限性？',
-            '计算机中的字长（Word Length）是如何影响寻址范围和计算精度的？'
+          "id": "arch-ep-1",
+          "title": "第 01 讲：计算机系统概述与性能指标",
+          "duration": "23:17",
+          "bvid": "BV1ps4y1d73V",
+          "bpage": 9,
+          "videoUrl": "",
+          "summary": "计算机系统层次结构、冯·诺依曼组成与主频、CPI、MIPS 等性能指标的计算。",
+          "keyPoints": [
+            "冯·诺依曼结构",
+            "存储程序思想",
+            "CPI 与 MIPS"
+          ],
+          "copilotPrompts": [
+            "冯·诺依曼体系结构的核心特点是什么，指令与数据在存储器中如何区分？",
+            "CPI 和 MIPS 指标在评估 CPU 性能时有哪些局限？",
+            "字长如何影响寻址范围和计算精度？"
           ]
         },
         {
-          id: 'arch-ep-2',
-          title: '第 02 讲：数据的机器级表示：定点数、浮点数与 IEEE 754 标准',
-          duration: '26:40',
-          bvid: 'BV1WW411Q7G5',
-          bpage: 8,
-          videoUrl: '',
-          summary: '原码、反码、补码与移码变换，溢出判跳逻辑（双符号位法），IEEE 754 单双精度浮点数规格化与阶码偏置。',
-          keyPoints: ['补码算术加减法', '双符号位溢出判断', 'IEEE 754 浮点标准与特殊值'],
-          copilotPrompts: [
-            '为什么计算机底层的定点整数普遍采用补码表示而不是原码？',
-            'IEEE 754 单精度浮点数中，阶码为什么采用移码（偏置常数 127）表示？',
-            '浮点数的非规格化数（Subnormal Numbers）是为了解决什么计算精度问题？'
+          "id": "arch-ep-2",
+          "title": "第 02 讲：数据表示与定点数编码",
+          "duration": "32:31",
+          "bvid": "BV1ps4y1d73V",
+          "bpage": 11,
+          "videoUrl": "",
+          "summary": "原码、反码、补码与移码，定点数的编码与基本运算基础。",
+          "keyPoints": [
+            "原码/反码/补码",
+            "补码加减运算",
+            "溢出判断"
+          ],
+          "copilotPrompts": [
+            "为什么计算机底层定点整数普遍采用补码而不是原码？",
+            "补码加减运算中如何判断结果是否溢出？",
+            "移码和补码之间有什么关系？"
           ]
         },
         {
-          id: 'arch-ep-3',
-          title: '第 03 讲：存储系统与 Cache 映射：直接、全相联与组相联',
-          duration: '28:15',
-          bvid: 'BV1WW411Q7G5',
-          bpage: 24,
-          videoUrl: '',
-          summary: 'SRAM 与 DRAM 原理对比，主存芯片扩展（位扩展与字扩展），Cache-主存地址映射机制与命中率计算，写直达与写回策略。',
-          keyPoints: ['Cache 三种映射方式', 'Tag 标记位计算', '写分配与非写分配'],
-          copilotPrompts: [
-            '组相联映射相比全相联和直接映射，是如何在硬件冲突与开销间取得平衡的？',
-            '已知主存容量、Cache 容量和块大小，如何准确计算主存地址中的 Tag、Index 与 Offset 位数？',
-            'Cache 的写回策略（Write Back）为什么必须配合 Dirty Bit（脏位）使用？'
+          "id": "arch-ep-3",
+          "title": "第 03 讲：Cache 与主存的映射方式",
+          "duration": "21:58",
+          "bvid": "BV1ps4y1d73V",
+          "bpage": 47,
+          "videoUrl": "",
+          "summary": "Cache 的基本原理及其与主存的三种映射：直接映射、全相联与组相联。",
+          "keyPoints": [
+            "Cache 命中与缺失",
+            "直接/全相联/组相联",
+            "地址划分与替换"
+          ],
+          "copilotPrompts": [
+            "组相联映射相比全相联和直接映射，如何平衡冲突与开销？",
+            "已知主存与 Cache 容量，如何计算主存地址的 Tag、Index、Offset 位数？",
+            "Cache 的写直达与写回策略各有什么优缺点？"
           ]
         },
         {
-          id: 'arch-ep-4',
-          title: '第 04 讲：指令系统与寻址方式：CISC 与 RISC 架构对比',
-          duration: '24:30',
-          bvid: 'BV1WW411Q7G5',
-          bpage: 36,
-          videoUrl: '',
-          summary: '指令字格式与扩展操作码设计，立即寻址、直接寻址、寄存器寻址、基址与变址寻址，CISC 与 RISC 指令集哲学。',
-          keyPoints: ['扩展操作码设计', '基址寻址 vs 变址寻址', 'RISC 加载/存储架构'],
-          copilotPrompts: [
-            '变址寻址和基址寻址在硬件实现和面向的编程场景上有何根本区别？',
-            '采用扩展操作码技术时，如何设计满足短指令与长指令共存的二叉树前缀编码？',
-            '为什么现代高性能 CPU（如 x86）在内部会将复杂 CISC 指令译码为微操作（uOPs）执行？'
+          "id": "arch-ep-4",
+          "title": "第 04 讲：指令格式与寻址方式",
+          "duration": "23:07",
+          "bvid": "BV1ps4y1d73V",
+          "bpage": 50,
+          "videoUrl": "",
+          "summary": "指令的基本格式、扩展操作码设计，以及数据寻址与指令寻址。",
+          "keyPoints": [
+            "指令字格式",
+            "扩展操作码",
+            "寻址方式分类"
+          ],
+          "copilotPrompts": [
+            "采用扩展操作码时，如何设计短指令与长指令共存的前缀编码？",
+            "基址寻址与变址寻址在硬件实现和编程场景上有何区别？",
+            "为什么现代 CISC CPU 内部会把复杂指令译码为微操作执行？"
           ]
         },
         {
-          id: 'arch-ep-5',
-          title: '第 05 讲：中央处理器与指令流水线：数据通路与流水线冒险',
-          duration: '29:50',
-          bvid: 'BV1WW411Q7G5',
-          bpage: 48,
-          videoUrl: '',
-          summary: '单周期与多周期 CPU 数据通路设计，经典五级流水线（IF/ID/EX/MEM/WB），结构冒险、数据冒险（RAW/WAR/WAW）及分支预测处理。',
-          keyPoints: ['五级指令流水线', '写后读（RAW）数据相关', '数据旁路转发与分支预测'],
-          copilotPrompts: [
-            '流水线中的结构冒险、数据冒险和控制冒险分别是如何产生的？',
-            '旁路转发技术（Forwarding / Bypassing）是如何在无需暂停流水线的情况下解决 RAW 冒险的？',
-            '为什么深入的分支预测失败会导致现代超标量 CPU 产生巨大的性能惩罚？'
+          "id": "arch-ep-5",
+          "title": "第 05 讲：CPU 与指令流水线",
+          "duration": "18:51",
+          "bvid": "BV1ps4y1d73V",
+          "bpage": 75,
+          "videoUrl": "",
+          "summary": "指令流水线的基本概念、性能指标与五段式流水线的组织方式。",
+          "keyPoints": [
+            "流水线性能指标",
+            "五段式流水线",
+            "流水线冲突"
+          ],
+          "copilotPrompts": [
+            "流水线中的结构冒险、数据冒险和控制冒险分别是如何产生的？",
+            "数据旁路转发（Forwarding）如何在不暂停流水线的情况下解决 RAW 冒险？",
+            "分支预测失败为什么会造成明显的性能损失？"
           ]
         },
         {
-          id: 'arch-ep-6',
-          title: '第 06 讲：总线系统与 I/O 中断：程序中断与 DMA 数据传送',
-          duration: '23:45',
-          bvid: 'BV1WW411Q7G5',
-          bpage: 60,
-          videoUrl: '',
-          summary: '总线仲裁方式（链式查询、计数器定时查询、独立请求），程序查询、中断请求响应与中断屏蔽字，DMA 控制器与主存直接高速数据交换。',
-          keyPoints: ['中断响应周期与硬件隐指令', '多重中断与屏蔽字', 'DMA 周期挪用与总线控制权'],
-          copilotPrompts: [
-            'CPU 响应外部中断必须满足哪些先决条件，中断服务程序入口地址是如何获取的？',
-            '多重中断系统中，中断优先级是如何通过硬件屏蔽字进行动态调整的？',
-            'DMA 控制方式与中断控制方式在数据传输开销上有何本质不同？'
+          "id": "arch-ep-6",
+          "title": "第 06 讲：中断系统与 I/O 控制方式",
+          "duration": "43:43",
+          "bvid": "BV1ps4y1d73V",
+          "bpage": 89,
+          "videoUrl": "",
+          "summary": "中断的作用与响应过程、多重中断与中断屏蔽，以及程序中断与 DMA 控制方式。",
+          "keyPoints": [
+            "中断响应与隐指令",
+            "多重中断与屏蔽字",
+            "程序中断与 DMA"
+          ],
+          "copilotPrompts": [
+            "CPU 响应外部中断需要满足哪些先决条件，中断服务程序入口地址如何获取？",
+            "多重中断系统中，中断优先级如何通过硬件屏蔽字动态调整？",
+            "DMA 方式与中断方式在数据传输开销上有何本质不同？"
           ]
         }
       ]
     },
     {
-      id: 'cs-os-kernel',
-      title: '操作系统深度剖析：进程、内存与 Linux 内核（哈工大公开课）',
-      category: 'theory',
-      categoryName: '核心理论 / 408',
-      level: '进阶必修',
-      badge: '计算机底座 · 哈工大名课',
-      instructor: '哈尔滨工业大学 · 李治军团队',
-      duration: '10 课时 · 约 4.0 小时',
-      bvid: 'BV1d4411v7UX',
-      coverGradient: 'linear-gradient(135deg, #0f172a 0%, #334155 100%)',
-      coverIcon: 'layers',
-      description: '哈工大经典操作系统公开课：直击进程与线程模型、CPU 上下文切换、虚拟内存分页置换、以及 Linux 0.11 内核源码。',
-      tags: ['进程线程', '虚拟内存', '死锁预防', '系统调用', 'Linux 内核'],
-      episodes: [
+      "id": "cs-os-kernel",
+      "title": "操作系统（哈尔滨工业大学 · 李治军公开课）",
+      "category": "theory",
+      "categoryName": "核心理论 / 408",
+      "level": "进阶必修",
+      "badge": "计算机底座 · 哈工大名课",
+      "instructor": "哈尔滨工业大学 · 李治军",
+      "duration": "3 讲精选 · 约 22.2 小时",
+      "bvid": "BV1P44y1Z7Nw",
+      "totalPages": 32,
+      "cover": "https://i1.hdslb.com/bfs/archive/86985706b425f151ae17ec9f8ddc8934310af005.png",
+      "coverGradient": "linear-gradient(135deg, #0f172a 0%, #334155 100%)",
+      "coverIcon": "layers",
+      "description": "哈工大李治军操作系统公开课：多进程图像与线程、虚拟内存与多级页表、信号量同步与临界区保护。站内通过 B 站官方嵌入播放器在线播放。",
+      "tags": [
+        "进程线程",
+        "虚拟内存",
+        "多级页表",
+        "信号量",
+        "死锁"
+      ],
+      "platform": true,
+      "sourceType": "platform",
+      "verification": "verified-playback",
+      "episodes": [
         {
-          id: 'os-ep-1',
-          title: '第 01 讲：进程与线程模型：状态变迁与上下文切换',
-          duration: '20:10',
-          bvid: 'BV1d4411v7UX',
-          bpage: 1,
-          videoUrl: '',
-          summary: 'PCB 进程控制块结构，用户态与内核态切换，进程调度器运作机制与时间片轮转。',
-          keyPoints: ['PCB 与 TCB', '上下文切换开销', '用户态内核态转换'],
-          copilotPrompts: [
-            '为什么线程上下文切换的开销远小于进程上下文切换？',
-            '系统调用发生时，CPU 寄存器和堆栈是如何保存与恢复的？',
-            'Linux 默认的完全公平调度器（CFS）底层是基于什么数据结构实现的？'
+          "id": "os-ep-1",
+          "title": "第 01 讲：多进程图像与线程模型",
+          "duration": "53:23",
+          "bvid": "BV1P44y1Z7Nw",
+          "bpage": 9,
+          "videoUrl": "",
+          "summary": "操作系统如何组织多进程图像：进程控制块、用户级与内核级线程、CPU 调度与进程切换。",
+          "keyPoints": [
+            "PCB 与进程状态",
+            "用户级/内核级线程",
+            "CPU 调度与切换"
+          ],
+          "copilotPrompts": [
+            "为什么线程上下文切换的开销通常小于进程上下文切换？",
+            "用户级线程和内核级线程各有什么优缺点？",
+            "系统调用发生时，CPU 寄存器和堆栈是如何保存与恢复的？"
           ]
         },
         {
-          id: 'os-ep-2',
-          title: '第 02 讲：虚拟内存与分页管理：TLB 与缺页中断',
-          duration: '25:15',
-          bvid: 'BV1d4411v7UX',
-          bpage: 6,
-          videoUrl: '',
-          summary: '多级页表设计原理、MMU 地址翻译流程、快表（TLB）加速与 LRU 页面置换算法。',
-          keyPoints: ['多级页表', 'MMU 与 TLB', '缺页异常与写时复制 (COW)'],
-          copilotPrompts: [
-            '为什么 64 位操作系统普遍采用多级页表而不是单级大页表？',
-            'fork() 进程时写时复制（Copy-On-Write）底层是如何通过页表权限实现的？',
-            'TLB 缓存未命中（TLB Miss）时硬件和内核各做了哪些工作？'
+          "id": "os-ep-2",
+          "title": "第 02 讲：虚拟内存、多级页表与快表",
+          "duration": "52:09",
+          "bvid": "BV1P44y1Z7Nw",
+          "bpage": 22,
+          "videoUrl": "",
+          "summary": "内存分区、分页与多级页表，快表（TLB）加速地址翻译以及缺页处理。",
+          "keyPoints": [
+            "分页与地址翻译",
+            "多级页表",
+            "TLB 快表"
+          ],
+          "copilotPrompts": [
+            "64 位系统为什么普遍采用多级页表而不是单级大页表？",
+            "TLB 未命中时硬件和内核分别做了什么？",
+            "写时复制（COW）是如何借助页表权限实现的？"
           ]
         },
         {
-          id: 'os-ep-3',
-          title: '第 03 讲：并发互斥、条件变量与死锁预防策略',
-          duration: '21:30',
-          bvid: 'BV1d4411v7UX',
-          bpage: 10,
-          videoUrl: '',
-          summary: '互斥锁、自旋锁、读写锁性能对比，死锁产生的四大必要条件与银行家算法实测。',
-          keyPoints: ['互斥锁 vs 自旋锁', '死锁四大必要条件', '锁排序与活锁检测'],
-          copilotPrompts: [
-            '在什么场景下应该使用自旋锁而不是互斥锁？',
-            '银行家算法是如何在分配资源前判断系统是否处于安全状态的？',
-            '如何通过静态锁排序彻底规避并发程序中的循环等待死锁？'
+          "id": "os-ep-3",
+          "title": "第 03 讲：进程同步与临界区保护",
+          "duration": "52:56",
+          "bvid": "BV1P44y1Z7Nw",
+          "bpage": 17,
+          "videoUrl": "",
+          "summary": "进程同步与信号量机制，临界区的进入与退出保护，以及死锁问题的处理。",
+          "keyPoints": [
+            "信号量与 P/V 操作",
+            "临界区保护",
+            "死锁与处理"
+          ],
+          "copilotPrompts": [
+            "什么场景下应该使用自旋锁而不是互斥锁？",
+            "信号量如何保证临界区的互斥访问？",
+            "死锁产生的四个必要条件是什么？如何通过锁排序规避？"
           ]
         }
       ]
     },
     {
-      id: 'cs-network-http',
-      title: '计算机网络原理：透视 HTTP/TCP/IP 协议栈（王道408考研微课）',
-      category: 'theory',
-      categoryName: '核心理论 / 408',
-      level: '体系精讲',
-      badge: '通信基石 · 王道精讲',
-      instructor: '计算机网络教研组',
-      duration: '8 课时 · 约 3.2 小时',
-      bvid: 'BV1c4411d7jb',
-      coverGradient: 'linear-gradient(135deg, #047857 0%, #10b981 100%)',
-      coverIcon: 'link',
-      description: '彻底搞懂 TCP 三次握手与四次挥手、滑动窗口拥塞控制、DNS 解析流程与 HTTP/2/3 演进。',
-      tags: ['TCP/IP', '三次握手', '拥塞控制', 'HTTP/3 QUIC', 'DNS解析'],
-      episodes: [
+      "id": "cs-network-http",
+      "title": "计算机网络原理：TCP/IP 协议栈（王道 408 精讲）",
+      "category": "theory",
+      "categoryName": "核心理论 / 408",
+      "level": "体系精讲",
+      "badge": "通信基石 · 王道精讲",
+      "instructor": "王道计算机教育",
+      "duration": "3 讲精选 · 约 35.1 小时",
+      "bvid": "BV19E411D78Q",
+      "totalPages": 94,
+      "cover": "https://i2.hdslb.com/bfs/archive/fb3d3f987949aecc3a77a991f55ac3fa49a17e26.jpg",
+      "coverGradient": "linear-gradient(135deg, #047857 0%, #10b981 100%)",
+      "coverIcon": "link",
+      "description": "王道 408 计算机网络：TCP 连接管理（三次握手）、拥塞控制与 HTTP 协议。站内通过 B 站官方嵌入播放器在线播放。",
+      "tags": [
+        "TCP/IP",
+        "三次握手",
+        "拥塞控制",
+        "HTTP"
+      ],
+      "platform": true,
+      "sourceType": "platform",
+      "verification": "verified-playback",
+      "episodes": [
         {
-          id: 'net-ep-1',
-          title: '第 01 讲：TCP 核心机制：三次握手与四次挥手全解析',
-          duration: '19:45',
-          bvid: 'BV1c4411d7jb',
-          bpage: 45,
-          videoUrl: '',
-          summary: 'SYN、ACK、FIN 标志位详解，为什么不是两次握手，TIME_WAIT 状态（2MSL）的必要性。',
-          keyPoints: ['序号与确认号', '为什么不能两次握手', 'TIME_WAIT 与 SO_REUSEADDR'],
-          copilotPrompts: [
-            '为什么 TCP 建立连接需要三次握手，而关闭连接需要四次挥手？',
-            'TIME_WAIT 状态为什么要等待 2MSL 时间才彻底释放？',
-            '当网络上出现大量 CLOSE_WAIT 状态的连接时，通常是什么原因？'
+          "id": "net-ep-1",
+          "title": "第 01 讲：TCP 连接管理与三次握手",
+          "duration": "22:20",
+          "bvid": "BV19E411D78Q",
+          "bpage": 79,
+          "videoUrl": "",
+          "summary": "TCP 连接管理：三次握手的报文交互、状态变迁与 TIME_WAIT 等待策略。",
+          "keyPoints": [
+            "SYN/ACK 与序号",
+            "三次握手过程",
+            "TIME_WAIT 状态"
+          ],
+          "copilotPrompts": [
+            "为什么 TCP 建立连接需要三次握手，而关闭连接需要四次挥手？",
+            "TIME_WAIT 状态为什么要等待 2MSL 才彻底释放？",
+            "大量 CLOSE_WAIT 连接通常意味着什么？"
           ]
         },
         {
-          id: 'net-ep-2',
-          title: '第 02 讲：TCP 可靠传输：滑动窗口、重传与拥塞控制',
-          duration: '23:10',
-          bvid: 'BV1c4411d7jb',
-          bpage: 48,
-          videoUrl: '',
-          summary: '流量控制（滑动窗口）与拥塞控制（慢启动、拥塞避免、快重传、快恢复）协同运作。',
-          keyPoints: ['滑动窗口机制', '慢启动门限', '快重传与 SACK'],
-          copilotPrompts: [
-            'TCP 流量控制与拥塞控制有什么根本区别？',
-            '快重传机制触发的条件是什么，为什么收到 3 个重复 ACK 就要重传？',
-            '现代 BBR 拥塞控制算法相比传统基于丢包的 Cubic 有何优势？'
+          "id": "net-ep-2",
+          "title": "第 02 讲：TCP 拥塞控制",
+          "duration": "41:10",
+          "bvid": "BV19E411D78Q",
+          "bpage": 85,
+          "videoUrl": "",
+          "summary": "TCP 拥塞控制：慢开始、拥塞避免、快重传与快恢复的完整流程。",
+          "keyPoints": [
+            "拥塞窗口",
+            "慢开始与拥塞避免",
+            "快重传与快恢复"
+          ],
+          "copilotPrompts": [
+            "TCP 流量控制和拥塞控制有什么根本区别？",
+            "为什么收到 3 个重复 ACK 就触发快重传？",
+            "慢开始门限 ssthresh 是如何调整的？"
           ]
         },
         {
-          id: 'net-ep-3',
-          title: '第 03 讲：HTTP 演进：从 HTTP/1.1、HTTP/2 到 HTTP/3 QUIC',
-          duration: '24:00',
-          bvid: 'BV1c4411d7jb',
-          bpage: 55,
-          videoUrl: '',
-          summary: 'HTTP/1.1 管道化限制、HTTP/2 二进制分帧与头部压缩（HPACK）、HTTP/3 基于 UDP 的 QUIC 协议。',
-          keyPoints: ['头部阻塞 (HOL)', '二进制分帧', 'QUIC 0-RTT 握手'],
-          copilotPrompts: [
-            'HTTP/2 解决了应用层队头阻塞，为什么依然存在 TCP 层队头阻塞？',
-            'HTTP/3 的 QUIC 协议是如何在 UDP 基础上保证数据可靠传输的？',
-            'HTTPS 的 TLS 1.3 握手相比 TLS 1.2 是如何减少往返时间（RTT）的？'
+          "id": "net-ep-3",
+          "title": "第 03 讲：HTTP 协议",
+          "duration": "22:04",
+          "bvid": "BV19E411D78Q",
+          "bpage": 94,
+          "videoUrl": "",
+          "summary": "超文本传输协议 HTTP 的报文格式、连接类型与无状态特性。",
+          "keyPoints": [
+            "HTTP 请求/响应报文",
+            "持久连接与非持久连接",
+            "Cookie 与无状态"
+          ],
+          "copilotPrompts": [
+            "HTTP/1.1 的持久连接解决了什么问题？",
+            "Cookie 是如何弥补 HTTP 无状态缺陷的？",
+            "HTTP 常见状态码 1xx/2xx/3xx/4xx/5xx 分别代表什么？"
           ]
         }
       ]
     },
     {
-      id: 'cs-prog-fullstack',
-      title: '现代 TypeScript 与前端工程架构实战精讲',
-      category: 'programming',
-      categoryName: '编程语言与全栈',
-      level: '实战进阶',
-      badge: '高频全栈 · 源码精读',
-      instructor: '资深全栈研发专家',
-      duration: '8 课时 · 约 3.5 小时',
-      bvid: 'BV14Z4y1u7vy',
-      coverGradient: 'linear-gradient(135deg, #4338ca 0%, #6366f1 100%)',
-      coverIcon: 'spark',
-      description: '掌握 JS 引擎事件循环、闭包与原型链、TypeScript 类型体操、组件状态管理与现代化前端工程。',
-      tags: ['TypeScript', '事件循环', 'Promise', '闭包', '微任务'],
-      episodes: [
+      "id": "cs-prog-fullstack",
+      "title": "尚硅谷 TypeScript 入门与实战教程",
+      "category": "programming",
+      "categoryName": "编程语言与全栈",
+      "level": "实战进阶",
+      "badge": "前端工程 · TS 入门到实战",
+      "instructor": "尚硅谷 · TypeScript 教研组",
+      "duration": "2 讲精选 · 约 10.4 小时",
+      "bvid": "BV1Xy4y1v7S2",
+      "totalPages": 30,
+      "cover": "https://i1.hdslb.com/bfs/archive/a2df7e38355ae4fe9fab1d314b2105e554e3c18f.jpg",
+      "coverGradient": "linear-gradient(135deg, #4338ca 0%, #6366f1 100%)",
+      "coverIcon": "spark",
+      "description": "尚硅谷 TypeScript 教程：类型声明与常用类型、编译配置与 webpack 打包、类与接口、泛型与面向对象实战。站内通过 B 站官方嵌入播放器在线播放。",
+      "tags": [
+        "TypeScript",
+        "类型系统",
+        "泛型",
+        "类与接口",
+        "webpack"
+      ],
+      "platform": true,
+      "sourceType": "platform",
+      "verification": "verified-playback",
+      "episodes": [
         {
-          id: 'ts-ep-1',
-          title: '第 01 讲：JS 运行时底层：事件循环、宏任务与微任务',
-          duration: '19:20',
-          bvid: 'BV14Z4y1u7vy',
-          bpage: 1,
-          videoUrl: '',
-          summary: 'V8 引擎调用栈、任务队列、Promise 微任务与 DOM 渲染时机全流程追踪。',
-          keyPoints: ['调用栈与执行上下文', '宏任务 vs 微任务', 'async/await 转换本质'],
-          copilotPrompts: [
-            '请通俗解释浏览器事件循环中宏任务与微任务的执行次序。',
-            'Promise 中的 then 回调与 setImmediate/setTimeout 执行优先级是什么？',
-            '为什么在微任务中执行无限循环会导致页面彻底冻结？'
+          "id": "ts-ep-1",
+          "title": "第 01 讲：TypeScript 类型系统",
+          "duration": "34:36",
+          "bvid": "BV1Xy4y1v7S2",
+          "bpage": 5,
+          "videoUrl": "",
+          "summary": "TypeScript 常用类型、类型声明与编译选项，用静态类型约束接口数据。",
+          "keyPoints": [
+            "基础类型与联合类型",
+            "类型声明与编译",
+            "静态类型检查"
+          ],
+          "copilotPrompts": [
+            "TypeScript 相比 JavaScript 在工程维护上的核心优势是什么？",
+            "联合类型和类型别名适合解决什么问题？",
+            "tsconfig 中 strict 相关选项分别控制什么？"
           ]
         },
         {
-          id: 'ts-ep-2',
-          title: '第 02 讲：TypeScript 高级类型体操与泛型推导',
-          duration: '25:40',
-          bvid: 'BV14Z4y1u7vy',
-          bpage: 8,
-          videoUrl: '',
-          summary: '条件类型 infer 关键字、分布式条件类型、模板字面量类型与手写 DeepPartial。',
-          keyPoints: ['infer 模式匹配', '分布式条件类型', '索引访问与映射类型'],
-          copilotPrompts: [
-            'TypeScript 中的 infer 关键字在类型推断中是如何工作的？',
-            '分布式条件类型在联合类型上的展开规则是什么？',
-            '如何手写一个递归将对象所有属性变为可选的 DeepPartial 类型？'
+          "id": "ts-ep-2",
+          "title": "第 02 讲：泛型与面向对象",
+          "duration": "15:07",
+          "bvid": "BV1Xy4y1v7S2",
+          "bpage": 21,
+          "videoUrl": "",
+          "summary": "泛型与面向对象：类、接口和泛型约束，构建可复用的类型安全组件。",
+          "keyPoints": [
+            "泛型函数与泛型类",
+            "接口与类实现",
+            "泛型约束"
+          ],
+          "copilotPrompts": [
+            "泛型在函数和类中分别如何声明与使用？",
+            "接口与抽象类在 TypeScript 中该如何选择？",
+            "如何用泛型约束限制类型参数必须具备某些属性？"
           ]
         }
       ]
     },
     {
-      id: 'cs-sys-database',
-      title: 'MySQL 索引优化与底层存储引擎深度解析',
-      category: 'architecture',
-      categoryName: '系统架构与数据库',
-      level: '核心架构',
-      badge: '数据库调优 · 大厂必问',
-      instructor: '知名数据库架构专家',
-      duration: '8 课时 · 约 3.0 小时',
-      bvid: 'BV12b411K7Zu',
-      coverGradient: 'linear-gradient(135deg, #c2410c 0%, #ea580c 100%)',
-      coverIcon: 'target',
-      description: '深入 InnoDB 存储引擎、B+ 树索引结构、事务 ACID、MVCC 隔离机制与慢 SQL 调优方法论。',
-      tags: ['MySQL', 'InnoDB', 'B+树', 'MVCC', '索引覆盖', '死锁排查'],
-      episodes: [
+      "id": "cs-sys-database",
+      "title": "尚硅谷 MySQL 数据库：索引与事务精讲",
+      "category": "architecture",
+      "categoryName": "系统架构与数据库",
+      "level": "核心架构",
+      "badge": "数据库调优 · 索引与事务",
+      "instructor": "尚硅谷 · MySQL 教研组",
+      "duration": "2 讲精选 · 约 68.9 小时",
+      "bvid": "BV12b411K7Zu",
+      "totalPages": 350,
+      "cover": "https://i1.hdslb.com/bfs/archive/06bd78636fc24b4d8e68519b7979e5e1c94f6b12.jpg",
+      "coverGradient": "linear-gradient(135deg, #c2410c 0%, #ea580c 100%)",
+      "coverIcon": "target",
+      "description": "尚硅谷 MySQL 教程高级篇精选：索引结构与检索原理、事务并发问题与隔离级别。站内通过 B 站官方嵌入播放器在线播放。",
+      "tags": [
+        "MySQL",
+        "B+树",
+        "索引",
+        "事务",
+        "隔离级别"
+      ],
+      "platform": true,
+      "sourceType": "platform",
+      "verification": "verified-playback",
+      "episodes": [
         {
-          id: 'db-ep-1',
-          title: '第 01 讲：InnoDB 架构与 B+ 树索引底层设计',
-          duration: '22:15',
-          bvid: 'BV12b411K7Zu',
-          bpage: 1,
-          videoUrl: '',
-          summary: '为什么 MySQL 选择 B+ 树而不是哈希表、平衡二叉树或 B 树？聚簇索引与二级索引回表。',
-          keyPoints: ['B+ 树结构', '聚簇索引 vs 二级索引', '覆盖索引与最左匹配原则'],
-          copilotPrompts: [
-            '为什么 MySQL 索引底层选择 B+ 树而不是红黑树或普通 B 树？',
-            '什么是覆盖索引，它是如何避免二级索引“回表”查询开销的？',
-            '最左前缀匹配原则在联合索引中的底层原理是什么？'
+          "id": "db-ep-1",
+          "title": "第 01 讲：MySQL 索引结构与检索原理",
+          "duration": "09:09",
+          "bvid": "BV12b411K7Zu",
+          "bpage": 195,
+          "videoUrl": "",
+          "summary": "MySQL 索引结构与检索原理：B+ 树索引如何加速查询、以及回表的代价。",
+          "keyPoints": [
+            "B+ 树索引",
+            "聚簇索引与二级索引",
+            "索引检索过程"
+          ],
+          "copilotPrompts": [
+            "为什么 MySQL 的索引底层选择 B+ 树而不是红黑树或哈希表？",
+            "什么是覆盖索引，它如何避免回表？",
+            "联合索引的最左前缀匹配原则在底层如何生效？"
           ]
         },
         {
-          id: 'db-ep-2',
-          title: '第 02 讲：事务隔离与 MVCC：多版本并发控制原理',
-          duration: '26:00',
-          bvid: 'BV12b411K7Zu',
-          bpage: 14,
-          videoUrl: '',
-          summary: 'ReadView 生成机制、隐藏列（trx_id, roll_pointer）、Undo Log 版本链与可重复读实现。',
-          keyPoints: ['ReadView 规则', 'Undo Log 版本链', '快照读 vs 当前读'],
-          copilotPrompts: [
-            'InnoDB 在“可重复读（RR）”隔离级别下是如何借助 MVCC 解决不可重复读的？',
-            '快照读（Snapshot Read）和当前读（Current Read）有什么本质区别？',
-            '间隙锁（Gap Lock）和临键锁（Next-Key Lock）是如何在当前读下避免幻读的？'
+          "id": "db-ep-2",
+          "title": "第 02 讲：事务隔离级别与并发问题",
+          "duration": "24:45",
+          "bvid": "BV12b411K7Zu",
+          "bpage": 137,
+          "videoUrl": "",
+          "summary": "事务与隔离级别演示：并发读写问题以及四种隔离级别的表现。",
+          "keyPoints": [
+            "事务 ACID",
+            "脏读/不可重复读/幻读",
+            "四种隔离级别"
+          ],
+          "copilotPrompts": [
+            "脏读、不可重复读和幻读分别由什么并发操作引起？",
+            "MySQL 默认可重复读隔离级别下如何避免不可重复读？",
+            "串行化隔离级别为什么性能最差？"
           ]
         }
       ]
     },
     {
-      id: 'cs-ai-agent',
-      title: '大语言模型与 Agent 智能体架构实战精析',
-      category: 'ai-agent',
-      categoryName: 'AI 与智能体前沿',
-      level: '前沿实战',
-      badge: '前沿热点 · 智能体设计',
-      instructor: 'AI 平台核心研发团队',
-      duration: '8 课时 · 约 3.6 小时',
-      bvid: 'BV12b421p7eK',
-      coverGradient: 'linear-gradient(135deg, #701a75 0%, #a21caf 100%)',
-      coverIcon: 'spark',
-      description: '拆解 LLM Prompt 工程、RAG 向量检索增强、ReAct 规划推理模式及 MCP 工具协议规范。',
-      tags: ['LLM', 'RAG 检索', 'Agent 智能体', 'ReAct', 'MCP协议', 'Function Calling'],
-      episodes: [
+      "id": "cs-ai-agent",
+      "title": "黑马程序员：大模型 RAG 与 Agent 智能体实战",
+      "category": "ai-agent",
+      "categoryName": "AI 与智能体前沿",
+      "level": "前沿实战",
+      "badge": "大模型 · RAG 与 Agent 实战",
+      "instructor": "黑马程序员 · AI 大模型教研组",
+      "duration": "2 讲精选 · 约 15.5 小时",
+      "bvid": "BV1yjz5BLEoY",
+      "totalPages": 67,
+      "cover": "https://i0.hdslb.com/bfs/archive/ec034de58ed78ca875c6561c7b2a93c212ffbf8a.jpg",
+      "coverGradient": "linear-gradient(135deg, #701a75 0%, #a21caf 100%)",
+      "coverIcon": "spark",
+      "description": "黑马程序员大模型实战：Prompt 工程、LangChain 与 RAG 检索增强、Agent 智能体与 ReAct 工具调用。站内通过 B 站官方嵌入播放器在线播放。",
+      "tags": [
+        "LLM",
+        "RAG",
+        "Agent",
+        "LangChain",
+        "ReAct"
+      ],
+      "platform": true,
+      "sourceType": "platform",
+      "verification": "verified-playback",
+      "episodes": [
         {
-          id: 'ai-ep-1',
-          title: '第 01 讲：RAG 检索增强架构：文本切分、嵌入与重排',
-          duration: '21:40',
-          bvid: 'BV12b421p7eK',
-          bpage: 1,
-          videoUrl: '',
-          summary: 'Chunking 切分策略、Embedding 向量表征、ANN 向量索引与 Rerank 重排精细化召回。',
-          keyPoints: ['Chunking 策略', '向量余弦相似度', '混合检索 (Hybrid Search) 与 Rerank'],
-          copilotPrompts: [
-            '在构建 RAG 知识库时，如何确定最佳的文档分块大小（Chunk Size）与重叠（Overlap）？',
-            '向量检索结合 BM25 关键词检索的混合检索（Hybrid Search）相比单一向量检索有何优势？',
-            'RAG 中的幻觉问题（Hallucination）通常可以通过哪些校验流程进行缓解？'
+          "id": "ai-ep-1",
+          "title": "第 01 讲：RAG 检索增强生成",
+          "duration": "13:44",
+          "bvid": "BV1yjz5BLEoY",
+          "bpage": 19,
+          "videoUrl": "",
+          "summary": "RAG 检索增强生成：为什么需要外部知识、离线建库与在线检索增强流程。",
+          "keyPoints": [
+            "RAG 流程",
+            "检索与上下文增强",
+            "缓解模型幻觉"
+          ],
+          "copilotPrompts": [
+            "RAG 的离线建库和在线检索分别包含哪些步骤？",
+            "文档切分（Chunking）的大小和重叠如何选择？",
+            "RAG 能缓解大模型幻觉，但它自身还有哪些失败模式？"
           ]
         },
         {
-          id: 'ai-ep-2',
-          title: '第 02 讲：Agent 规划与工具调用：ReAct 模式与 MCP 协议',
-          duration: '27:10',
-          bvid: 'BV12b421p7eK',
-          bpage: 3,
-          videoUrl: '',
-          summary: 'Thought-Action-Observation 闭环、结构化输出、异步工具执行与 Model Context Protocol (MCP)。',
-          keyPoints: ['ReAct 循环', 'MCP 协议规范', '多 Agent 协同与任务反思'],
-          copilotPrompts: [
-            'ReAct 智能体循环中，Thought、Action 与 Observation 是如何交替推进任务的？',
-            'Model Context Protocol（MCP）协议相较于传统的函数调用（Function Calling）解决了什么标准化痛点？',
-            '当 Agent 遇到工具调用失败时，应如何设计自反思（Self-Reflection）与重试纠错机制？'
+          "id": "ai-ep-2",
+          "title": "第 02 讲：Agent 智能体与工具调用",
+          "duration": "06:28",
+          "bvid": "BV1yjz5BLEoY",
+          "bpage": 55,
+          "videoUrl": "",
+          "summary": "Agent 智能体的基本概念、运行流程与工具调用方式，为 ReAct 与项目实战打基础。",
+          "keyPoints": [
+            "Agent 定义与组成",
+            "工具调用",
+            "ReAct 行动框架"
+          ],
+          "copilotPrompts": [
+            "一个 LLM Agent 通常由哪些组件构成？",
+            "ReAct 循环中 Thought、Action、Observation 如何交替推进任务？",
+            "工具调用失败时，Agent 应如何设计重试与纠错？"
           ]
         }
       ]
@@ -556,7 +719,7 @@
       if(serverCurrent())return serverData.courses.filter(c=>!subjects||(c.verification==='verified-metadata'&&subjects.includes(c.subject)));
       if(embedded)return [];
       const custom = getCustomCourses();
-      return [...BUILTIN_COURSES.map(c=>({...c,platform:true,verification:'legacy-unverified'})), ...custom];
+      return [...BUILTIN_COURSES.map(c=>({...c,platform:true})), ...custom];
     }
 
     function getFilteredCourses() {
@@ -629,12 +792,12 @@
                   </span>
                   <span class="inline-flex items-center gap-1.5 text-on-surface-variant font-code-sm text-xs">
                     <span class="w-2 h-2 rounded-full bg-secondary"></span>
-                    课程总览与已核验分集分别展示
+                    全部课程均可站内播放
                   </span>
                 </div>
                 <div class="flex flex-col gap-1">
                   <h1 class="font-display-lg text-2xl lg:text-3xl text-on-surface tracking-tight font-bold">配套视频课程</h1>
-                  <p class="font-body-md text-sm text-on-surface-variant">按课程和主题查找视频；课程总览前往原站，未核验信息会明确标注。</p>
+                  <p class="font-body-md text-sm text-on-surface-variant">按课程和主题查找视频；全部课程通过 B 站官方嵌入播放器在线播放，不下载视频到本地。</p>
                 </div>
 
                 <!-- Integrated Progress Metrics Strip -->
@@ -731,8 +894,10 @@
                   <div>
                     <!-- Course Header Cover -->
                     <div class="relative h-40 p-4 flex flex-col justify-between overflow-hidden" style="background: ${escapeHTML(c.coverGradient || '#1e293b')};">
+                      ${c.cover ? `<img src="${escapeHTML(c.cover)}" alt="" class="absolute inset-0 w-full h-full object-cover" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">` : ''}
+                      <div class="absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-black/10 pointer-events-none"></div>
                       <div class="flex items-center justify-between relative z-10">
-                        <span class="px-2.5 py-0.5 rounded-full bg-surface-container-lowest/85 backdrop-blur-md text-primary font-bold text-[11px]">${escapeHTML(c.verification==='legacy-unverified'?'历史目录 · 待核验':c.badge || c.categoryName)}</span>
+                        <span class="px-2.5 py-0.5 rounded-full bg-surface-container-lowest/85 backdrop-blur-md text-primary font-bold text-[11px]">${escapeHTML(c.badge || c.categoryName)}</span>
                         <span class="px-2.5 py-0.5 rounded-full bg-black/40 backdrop-blur-md text-white text-[11px]">${escapeHTML(c.level || '精选')}</span>
                       </div>
                       <div class="flex items-center justify-center relative z-10">
@@ -740,9 +905,9 @@
                           <span class="material-symbols-outlined text-[28px]">play_arrow</span>
                         </div>
                       </div>
-                      <div class="flex items-center justify-between text-white/90 text-xs relative z-10">
-                        <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">timer</span>${escapeHTML(c.verification==='legacy-unverified'?'时长待核验':c.duration || (c.episodes.length + ' 条章节'))}</span>
-                        <span class="font-code-sm text-[11px]">${c.sourceUrl?'官方课程总览':c.verification==='legacy-unverified'?'分集映射待核验':c.episodes.length+' 条章节'}</span>
+                      <div class="flex items-center justify-between gap-3 text-white/90 text-xs relative z-10">
+                        <span class="flex items-center gap-1 min-w-0"><span class="material-symbols-outlined text-[14px]">timer</span><span class="truncate">${escapeHTML(c.duration || (c.episodes.length + ' 讲精选'))}</span></span>
+                        <span class="font-code-sm text-[11px] flex-shrink-0">${escapeHTML(c.sourceUrl ? '原站课程 · 站内可播' : 'B 站官方嵌入 · 站内可播')}</span>
                       </div>
                     </div>
 
@@ -776,7 +941,7 @@
                     <div class="flex items-center justify-between pt-2 border-t border-outline-variant/20">
                       <div class="flex items-center gap-1.5 text-xs text-on-surface-variant">
                         <span class="material-symbols-outlined text-[16px]">person</span>
-                        <span class="truncate max-w-[120px]">${escapeHTML(c.verification==='legacy-unverified'?'讲师待核验':c.instructor || '讲师信息未提供')}</span>
+                        <span class="truncate max-w-[120px]">${escapeHTML(c.instructor || '讲师信息未提供')}</span>
                       </div>
                       <button type="button" class="px-3.5 py-1.5 rounded-lg bg-primary text-on-primary font-semibold text-xs flex items-center gap-1 hover:bg-primary-container transition-all shadow-sm" data-enter-course="${escapeHTML(c.id)}">
                         <span>${percent > 0 ? (percent === 100 ? '复习课程' : `继续学习 (${percent}%)`) : '进入伴学播放'}</span>
@@ -833,13 +998,13 @@
                     ${escapeHTML(course.categoryName || '408 核心考点')}
                   </span>
                   <span class="px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm">
-                    ${escapeHTML(course.verification==='legacy-unverified'?'讲师待核验':course.instructor || '讲师信息未提供')} · ${escapeHTML(course.title)}
+                    ${escapeHTML(course.instructor || '讲师信息未提供')} · ${escapeHTML(course.title)}
                   </span>
                 </div>
                 <div class="flex items-center gap-3 text-on-surface-variant font-body-sm text-body-sm mt-1">
                   <span class="flex items-center gap-1 font-code-sm text-code-sm text-primary font-semibold">
                     <span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
-                    ${escapeHTML(course.verification==='legacy-unverified'?'时长待核验':currentEp?.duration || '时长未提供')}
+                    ${escapeHTML(currentEp?.duration || '时长未提供')}
                   </span>
                   <span class="text-outline-variant">•</span>
                   <span class="truncate max-w-[600px]">${escapeHTML(currentEp?.summary || course.description)}</span>
@@ -858,6 +1023,11 @@
                 <span class="material-symbols-outlined text-[18px]">picture_as_pdf</span>
                 <span>讲义资料</span>
               </a>
+
+              ${course.sourceUrl ? `<a href="${escapeHTML(course.sourceUrl)}" target="_blank" rel="noopener noreferrer" class="h-9 px-3 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface-variant hover:text-on-surface font-label-md text-label-md flex items-center gap-1.5 transition-all shadow-sm">
+                <span class="material-symbols-outlined text-[18px]">open_in_new</span>
+                <span>原站课程页</span>
+              </a>` : ''}
 
               <a href="#space/practice" class="h-9 px-3 rounded-lg bg-primary text-on-primary hover:bg-primary-container font-label-md text-label-md flex items-center gap-1.5 shadow-sm transition-all">
                 <span class="material-symbols-outlined text-[18px]">quiz</span>
@@ -900,8 +1070,14 @@
               <!-- Video Player Viewport Container -->
               <div class="relative w-full rounded-2xl overflow-hidden bg-inverse-surface shadow-2xl flex flex-col group border border-slate-800">
                 <div class="relative w-full aspect-video bg-black flex items-center justify-center overflow-hidden">
-                  ${course.sourceUrl ? `<div class="panel"><h3>官方课程</h3><p>本课程通过原站学习；本站没有逐分集播放权限或遥测。</p><a class="button button-blue" href="${escapeHTML(course.sourceUrl)}" target="_blank" rel="noopener noreferrer">前往官方课程</a></div>` : activeSource === 'bilibili' && bvid ? `
+                  ${activeSource === 'bilibili' && bvid ? `
                     <iframe id="csBilibiliPlayer" class="w-full h-full border-0" src="https://player.bilibili.com/player.html?bvid=${encodeURIComponent(bvid)}&page=${encodeURIComponent(bpage)}&high_quality=1&danmaku=0&autoplay=0" scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true" sandbox="allow-top-navigation allow-same-origin allow-forms allow-scripts"></iframe>
+                  ` : course.sourceUrl ? `
+                    <div class="w-full h-full bg-slate-950 flex flex-col items-center justify-center gap-3 p-6 text-center">
+                      <span class="material-symbols-outlined text-4xl text-slate-400">live_tv</span>
+                      <p class="text-sm text-slate-300">当前浏览器未能加载站内嵌入播放器，可前往官方原站观看。</p>
+                      <a class="button button-blue" href="${escapeHTML(course.sourceUrl)}" target="_blank" rel="noopener noreferrer">前往原站课程</a>
+                    </div>
                   ` : activeSource === 'html5' ? `
                     ${videoSrc ? `
                       <video id="csVideoPlayer" class="w-full h-full object-contain" controls preload="metadata" src="${escapeHTML(videoSrc)}">
@@ -937,7 +1113,7 @@
                     <div class="flex items-center gap-2 pointer-events-auto">
                       <span class="px-2.5 py-1 rounded-md bg-inverse-surface/85 backdrop-blur-md text-inverse-on-surface font-label-sm text-label-sm flex items-center gap-1.5 shadow-sm text-white">
                         <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
-                        ${course.sourceUrl?'官方课程链接':activeSource==='html5'?'HTML5本机播放':activeSource==='algo-demo'?'算法示意':'原站嵌入 · 播放能力待验证'}
+                        ${activeSource==='html5'?'HTML5 本机播放':activeSource==='algo-demo'?'算法示意':'B 站官方嵌入 · 已核验可播'}
                       </span>
                       <span class="px-2.5 py-1 rounded-md bg-primary/85 backdrop-blur-md text-white font-label-sm text-label-sm font-semibold">
                         当前：${escapeHTML(currentEp?.title || '正在学习')}
@@ -967,7 +1143,7 @@
                     <span class="material-symbols-outlined text-primary text-[22px]">format_list_bulleted</span>
                     <h3 class="font-headline-sm text-headline-sm font-bold text-on-surface">课程全集选课列表</h3>
                   </div>
-                  <span class="font-label-md text-label-md text-on-surface-variant font-medium">全 ${course.episodes.length} 讲 · 实时同步学情</span>
+                  <span class="font-label-md text-label-md text-on-surface-variant font-medium">精选 ${course.episodes.length} 讲 · 原视频共 ${course.totalPages || course.episodes.length} 讲</span>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5 max-h-[380px] overflow-y-auto pr-1">
@@ -981,7 +1157,7 @@
                           <span class="w-6 h-6 rounded-lg ${isCurrent ? 'bg-primary text-on-primary' : 'bg-surface-container text-on-surface-variant'} flex items-center justify-center font-code-sm text-code-sm font-bold flex-shrink-0">${idx + 1}</span>
                           <div class="flex flex-col min-w-0">
                             <span class="font-label-md text-label-md font-semibold truncate ${isCurrent ? 'text-primary' : 'text-on-surface'}">${escapeHTML(ep.title)}</span>
-                            <span class="text-xs text-on-surface-variant">${escapeHTML(course.verification==='legacy-unverified'?'时长待核验':ep.duration || '时长未提供')}</span>
+                            <span class="text-xs text-on-surface-variant">${escapeHTML(ep.duration || '时长未提供')}</span>
                           </div>
                         </div>
                         <div class="flex items-center gap-1.5 flex-shrink-0 ml-2">
@@ -1231,8 +1407,8 @@
       }
       const restore=online()&&!embedded?'<p class="panel">课程与手动完成记录保存在当前账号。<button type="button" class="button button-small button-outline" data-import-local-courses>导入本账号的本机旧记录</button></p>':'';
       const privateControl=activeCourse&&!activeCourse.platform&&online()?`<button type="button" class="button button-small button-outline" data-delete-private-course="${escapeHTML(activeCourse.id)}">删除本人私人课程</button>`:'';
-      const status=activeCourse?`<p class="panel">${activeCourse.platform?'平台课程':'本人私人课程'} · ${activeCourse.verification==='verified-metadata'?'原站元信息已核对；播放能力以播放器为准':'原站标题、作者和分集尚未核验'}。完成状态是手动确认，不表示掌握。官方嵌入播放器不提供本站可读的真实进度。</p>`:'';
-      let contextBanner='';try{const ctx=JSON.parse(sessionStorage.getItem((window.XueyaDataKey||((k)=>k))('xueya-video-context'))||'null');if(ctx&&activeCourse?.id===ctx.courseId&&ctx.returnHash?.startsWith('#space/'))contextBanner=`<p class="panel">关联学习位置：${escapeHTML(ctx.label)} · 课程总览，尚未匹配精确分集。<a href="${escapeHTML(ctx.returnHash)}" data-video-learning-return>返回原学习位置</a></p>`;}catch{}
+      const status=activeCourse?`<p class="panel">${activeCourse.platform?'平台课程':'本人私人课程'} · ${['verified-playback','verified-metadata'].includes(activeCourse.verification)?'课程来源、讲师和分集已核验；通过 B 站官方嵌入播放器在站内在线播放，不下载视频到本地':'视频来源由本人提供'}。完成状态是手动确认，不表示掌握。官方嵌入播放器不提供本站可读的真实进度。</p>`:'';
+      let contextBanner='';try{const ctx=JSON.parse(sessionStorage.getItem((window.XueyaDataKey||((k)=>k))('xueya-video-context'))||'null');if(ctx&&activeCourse?.id===ctx.courseId&&ctx.returnHash?.startsWith('#space/'))contextBanner=`<p class="panel">关联学习位置：${escapeHTML(ctx.label)} · 已核验课程入口，尚未定位到该学习位置的具体分集。<a href="${escapeHTML(ctx.returnHash)}" data-video-learning-return>返回原学习位置</a></p>`;}catch{}
       return contextBanner+restore+status+privateControl+(activeCourse ? renderPlayer(activeCourse) : renderCatalog()) + renderAddModal();
     }
 
@@ -1364,6 +1540,7 @@
             activeEpisodeId = prog?.lastEpisodeId || c?.episodes[0]?.id;
             activeSource = 'bilibili';
             if (render) render();
+            if(typeof scrollTo==='function')scrollTo({top:0,behavior:'instant'});
             return;
           }
         }
@@ -1373,6 +1550,7 @@
         if (backBtn) {
           activeCourseId = null;
           if (render) render();
+          if(typeof scrollTo==='function')scrollTo({top:0,behavior:'instant'});
           return;
         }
 

@@ -970,6 +970,42 @@ body.in-ask .learning-shortcuts {
   border-color: #a5b4fc !important;
 }
 
+/* Toggle chips must read clearly on/off: inactive is a quiet outline, active is
+   a filled accent with a check mark (blue = web search, amber = fast mode). */
+.workspace-chat .composer-web {
+  background: transparent !important;
+  color: var(--stitch-outline, #94a3b8) !important;
+  border: 1px solid var(--stitch-outline-variant, #334155) !important;
+  opacity: .78 !important;
+}
+.workspace-chat .composer-web:hover {
+  background: rgba(148, 163, 184, .12) !important;
+  color: var(--stitch-on-surface, #e2e8f0) !important;
+  opacity: 1 !important;
+}
+.workspace-chat .composer-web.is-active {
+  opacity: 1 !important;
+  font-weight: 600 !important;
+}
+.workspace-chat .composer-web.is-active[data-toggle-web-search] {
+  background: rgba(59, 130, 246, .18) !important;
+  color: #60a5fa !important;
+  border-color: rgba(59, 130, 246, .65) !important;
+  box-shadow: 0 0 0 1px rgba(59, 130, 246, .25) !important;
+}
+.workspace-chat .composer-web.is-active.composer-fast {
+  background: rgba(245, 158, 11, .18) !important;
+  color: #fbbf24 !important;
+  border-color: rgba(245, 158, 11, .65) !important;
+  box-shadow: 0 0 0 1px rgba(245, 158, 11, .25) !important;
+}
+.workspace-chat .composer-web.is-active::after {
+  content: '✓';
+  font-size: 10px;
+  line-height: 1;
+  margin-left: 1px;
+}
+
 .workspace-chat .composer-note {
   font-size: 11px !important;
   color: var(--stitch-outline) !important;

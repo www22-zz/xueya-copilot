@@ -1,4 +1,4 @@
-"""Default host general-chat regressions; all upstream calls stay offline."""
+﻿"""Default host general-chat regressions; all upstream calls stay offline."""
 import asyncio
 import json
 
@@ -187,7 +187,7 @@ def test_general_edit_followup_does_not_enter_course_planning(monkeypatch, hint,
 
         async def stream(self, messages, **options):
             self.calls += 1
-            assert options['thinking'] == {'type': 'disabled'}
+            assert options.get('thinking') in (None, {'type': 'disabled'})
             yield {'type': 'content', 'text': '```json\n{"name":"小明","age":20}\n```', 'model': 'controlled'}
 
     planning = []

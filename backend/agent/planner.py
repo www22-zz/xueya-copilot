@@ -46,10 +46,14 @@ class Planner:
         self.model, self.max_output_tokens = model, max_output_tokens
 
     async def decide(self, state, signal=None):
-        response = await self.model.generate({'messages': [
+        request = {'messages': [
             {'role': 'system', 'content': SYSTEM},
             {'role': 'user', 'content': dumps({'protocol': PROTOCOL, 'decisionSchema': DECISION_SCHEMA, **state})}],
-            'signal': signal, 'maxOutputTokens': self.max_output_tokens, 'responseFormat': {'type': 'json_object'}})
+            'signal': signal, 'maxOutputTokens': self.max_output_tokens, 'responseFormat': {'type': 'json_object'}}
+        config = getattr(getattr(self.model, 'provider', None), 'config', None)
+        if getattr(config, 'planner_thinking_disabled', False):
+            request['thinking'] = {'type': 'disabled'}
+        response = await self.model.generate(request)
         content = response.get('content')
         require(isinstance(content, str) and len(content.encode('utf-8')) <= 48000, 'AGENT_INVALID_DECISION')
         value = parse_model_json(content)

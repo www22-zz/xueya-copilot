@@ -138,7 +138,7 @@ class StudySpaceService:
             video_course=next((c for c in courses if c.get('verification')=='verified-metadata'
                                and c.get('subject')==candidate.get('subject') and c.get('episodes')),None)
             video=({'type':'course','courseId':video_course['id'],'episodeId':video_course['episodes'][0]['id'],
-                    'title':video_course['title']+'（课程总览，非精确分集）','url':'#space/courses/'+video_course['id']+'/'+video_course['episodes'][0]['id'],
+                    'title':video_course['title']+'（站内可播课程入口）','url':'#space/courses/'+video_course['id']+'/'+video_course['episodes'][0]['id'],
                     'verification':'verified-metadata'} if video_course else None)
             pending.append({"id":task_id,"title":candidate["title"],"subject":str(candidate.get("subject") or subjects[0]),
                             "kind":candidate.get('kind','self-study') if retained_ids and task_id in retained_ids else "practice" if resource['type']=='question' else "course" if resource['type']=='course' else "self-study","minutes":candidate["minutes"],"resource":resource,

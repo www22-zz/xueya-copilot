@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>学涯 Copilot · 清理旧缓存</title>
+<style>
+  body{margin:0;min-height:100vh;display:grid;place-items:center;background:#0b1020;color:#e2e8f0;font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
+  main{max-width:560px;padding:32px;text-align:center}
+  h1{font-size:20px;margin:0 0 12px}
+  p{font-size:14px;line-height:1.7;color:#94a3b8;margin:8px 0}
+  code{background:#1e293b;padding:2px 6px;border-radius:6px;color:#cbd5e1}
+  a{color:#60a5fa}
+</style>
+</head>
+<body>
+<main>
+  <h1>正在清理旧缓存…</h1>
+  <p id="status">注销 Service Worker、清理页面缓存并重新加载。</p>
+  <p>如果页面没有自动跳转，请手动打开 <a href="/">首页</a> 并按 <code>Ctrl + F5</code>。</p>
+</main>
+<script>
+(async () => {
+  const status = document.getElementById('status');
+  let build = '';
+  try {
+    const health = await fetch('/api/health', { cache: 'no-store' });
+    if (health.ok) build = (await health.json()).uiBuild || '';
+  } catch {}
+  try {
+    const tasks = [];
+    if ('serviceWorker' in navigator) {
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      for (const registration of registrations) tasks.push(registration.unregister());
+    }
+    if (window.caches) {
+      const keys = await caches.keys();
+      for (const key of keys) tasks.push(caches.delete(key));
+    }
+    await Promise.all(tasks);
+    try { localStorage.removeItem('xueya-ui-build-reload'); } catch {}
+    try { sessionStorage.clear(); } catch {}
+    status.textContent = '缓存已清理' + (build ? '，服务端构建号 ' + build : '') + '，正在重新加载最新界面…';
+    setTimeout(() => location.replace('/'), 800);
+  } catch (error) {
+    status.textContent = '清理失败：' + (error && error.message ? error.message : error) + '；请手动按 Ctrl + F5。';
+  }
+})();
+</script>
+</body>
+</html>

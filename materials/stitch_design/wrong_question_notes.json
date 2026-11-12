@@ -1,0 +1,29 @@
+{
+  "id": 4,
+  "jsonrpc": "2.0",
+  "result": {
+    "content": [
+      {
+        "text": "{\"name\":\"projects/560289792652862844/screens/ff02d470df7a4938ba623acf05f74be9\",\"title\":\"学涯 Copilot - 错题复习与笔记\",\"screenshot\":{\"name\":\"projects/560289792652862844/screens/ff02d470df7a4938ba623acf05f74be9/fileEntries/screenshot\",\"downloadUrl\":\"https://stitch.googleapis.com/v1/projects/560289792652862844/files/screenshot_00065f61d0ef23de02deaba14b0ce62b:download\",\"mimeType\":\"image/png\"},\"htmlCode\":{\"name\":\"projects/560289792652862844/screens/ff02d470df7a4938ba623acf05f74be9/fileEntries/html\",\"downloadUrl\":\"https://stitch.googleapis.com/v1/projects/560289792652862844/files/ff02d470df7a4938ba623acf05f74be9:download\",\"mimeType\":\"text/html\"},\"width\":\"2560\",\"height\":\"3374\",\"deviceType\":\"DESKTOP\"}",
+        "type": "text"
+      }
+    ],
+    "structuredContent": {
+      "deviceType": "DESKTOP",
+      "height": "3374",
+      "htmlCode": {
+        "downloadUrl": "https://stitch.googleapis.com/v1/projects/560289792652862844/files/ff02d470df7a4938ba623acf05f74be9:download",
+        "mimeType": "text/html",
+        "name": "projects/560289792652862844/screens/ff02d470df7a4938ba623acf05f74be9/fileEntries/html"
+      },
+      "name": "projects/560289792652862844/screens/ff02d470df7a4938ba623acf05f74be9",
+      "screenshot": {
+        "downloadUrl": "https://stitch.googleapis.com/v1/projects/560289792652862844/files/screenshot_00065f61d0ef23de02deaba14b0ce62b:download",
+        "mimeType": "image/png",
+        "name": "projects/560289792652862844/screens/ff02d470df7a4938ba623acf05f74be9/fileEntries/screenshot"
+      },
+      "title": "学涯 Copilot - 错题复习与笔记",
+      "width": "2560"
+    }
+  }
+}

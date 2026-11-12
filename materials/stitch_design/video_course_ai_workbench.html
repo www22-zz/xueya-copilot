@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_player_workspace" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&amp;family=Plus+Jakarta+Sans:wght@100..900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{colors:{"on-tertiary":"#ffffff","on-secondary-fixed-variant":"#004395","surface":"#faf8ff","surface-variant":"#dae2fd","on-primary-container":"#dad7ff","secondary-container":"#2170e4","secondary-fixed":"#d8e2ff","on-secondary":"#ffffff","tertiary-fixed-dim":"#d0bcff","on-secondary-fixed":"#001a42","on-primary-fixed":"#0f0069","background":"#faf8ff","primary-fixed":"#e2dfff","surface-tint":"#4d44e3","secondary":"#0058be","secondary-fixed-dim":"#adc6ff","primary-fixed-dim":"#c3c0ff","error":"#ba1a1a","tertiary":"#571ac0","surface-container":"#eaedff","primary":"#3525cd","surface-container-low":"#f2f3ff","on-primary-fixed-variant":"#3323cc","outline-variant":"#c7c4d8","outline":"#777587","inverse-primary":"#c3c0ff","surface-container-high":"#e2e7ff","on-secondary-container":"#fefcff","surface-dim":"#d2d9f4","on-tertiary-fixed":"#23005c","inverse-surface":"#283044","surface-container-lowest":"#ffffff","on-surface":"#131b2e","surface-container-highest":"#dae2fd","inverse-on-surface":"#eef0ff","on-primary":"#ffffff","on-error-container":"#93000a","tertiary-container":"#6f3dd9","error-container":"#ffdad6","tertiary-fixed":"#e9ddff","on-error":"#ffffff","surface-bright":"#faf8ff","on-surface-variant":"#464555","on-tertiary-container":"#e3d5ff","on-tertiary-fixed-variant":"#5516be","primary-container":"#4f46e5","on-background":"#131b2e"},borderRadius:{DEFAULT:"0.25rem",lg:"0.5rem",xl:"0.75rem",full:"9999px"},spacing:{"space-lg":"1.5rem","gutter-mobile":"0.75rem",margin:"2rem","space-2xl":"3rem","margin-mobile":"1rem",gutter:"1.25rem","space-md":"1rem","space-sm":"0.5rem","space-xl":"2rem","space-xs":"0.25rem"},fontFamily:{"headline-lg":["Plus Jakarta Sans"],"headline-md":["Plus Jakarta Sans"],"headline-lg-mobile":["Plus Jakarta Sans"],"display-lg":["Plus Jakarta Sans"],"body-lg":["Inter"],"label-sm":["Inter"],"label-md":["Inter"],"body-sm":["Inter"],"code-sm":["JetBrains Mono"],"body-md":["Inter"],"headline-sm":["Plus Jakarta Sans"]},fontSize:{"headline-lg":["28px",{lineHeight:"36px",letterSpacing:"-0.02em",fontWeight:"700"}],"headline-md":["20px",{lineHeight:"28px",letterSpacing:"-0.01em",fontWeight:"600"}],"headline-lg-mobile":["22px",{lineHeight:"30px",letterSpacing:"-0.015em",fontWeight:"700"}],"display-lg":["36px",{lineHeight:"44px",letterSpacing:"-0.025em",fontWeight:"700"}],"body-lg":["16px",{lineHeight:"26px",fontWeight:"400"}],"label-sm":["11px",{lineHeight:"14px",fontWeight:"500"}],"label-md":["12px",{lineHeight:"16px",letterSpacing:"0.04em",fontWeight:"600"}],"body-sm":["13px",{lineHeight:"18px",fontWeight:"400"}],"code-sm":["13px",{lineHeight:"20px",fontWeight:"400"}],"body-md":["14px",{lineHeight:"22px",fontWeight:"400"}],"headline-sm":["16px",{lineHeight:"24px",fontWeight:"600"}]}}}};</script></head><body class="bg-background font-body-md text-on-surface min-h-screen"><header class="fixed top-0 left-0 right-0 h-16 bg-surface-container-lowest/90 backdrop-blur-xl z-50 shadow-[0_1px_8px_rgba(0,0,0,0.03)]"><div class="h-16 w-full px-space-lg flex items-center justify-between gap-space-md"><div class="flex items-center gap-space-md"><a class="flex items-center gap-2 p-1.5 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors" href="#" title="返回主工作台"><span class="material-symbols-outlined text-[20px]">arrow_back</span></a><div class="h-5 w-px bg-surface-container-high"></div><img alt="学涯 Copilot" class="h-7 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1X92TAI0zokI7ftf4Kja0CaUkhDIuAYyzvzO5-qW6GvpV0MI1w9uSCSJjqzFxcH5igxle8mviQhHK-T-AWqbjAXcQTYcOKDhJLiXlZmzQ9aw-VZhx9ZdHRjH7GyyKO3WbE5Y2X-j5swzIb8ns-BYMP_oBjexNmtAPu21nRFVM1AGln3qezztMcDgOSJFkIKmrvsyHXTljQPsnBzj2ksx5fDUBmx8tKajZ4WpNQZplE"/><nav aria-label="Breadcrumb" class="flex items-center gap-2 text-on-surface-variant pl-space-xs"><a class="font-label-md text-label-md text-on-surface-variant hover:text-primary transition-colors" href="#">课程学习</a><span class="material-symbols-outlined text-[14px] text-outline-variant">chevron_right</span><a class="font-label-md text-label-md text-on-surface-variant hover:text-primary transition-colors truncate max-w-[200px]" href="#">数据结构与高频算法精析</a><span class="material-symbols-outlined text-[14px] text-outline-variant">chevron_right</span><span class="font-label-md text-label-md text-on-surface font-semibold truncate max-w-[260px]">第 1 讲：绪论与大 O 复杂度分析</span></nav></div><div class="flex items-center gap-space-md"><div class="flex items-center bg-surface-container-low px-space-md py-1.5 rounded-full text-on-surface-variant hover:bg-surface-container transition-colors cursor-pointer"><span class="material-symbols-outlined text-[16px] mr-space-xs text-primary">auto_awesome</span><span class="font-body-sm text-body-sm text-on-surface-variant">随堂 AI 助教已就绪</span></div><button class="w-9 h-9 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" title="笔记便签" type="button"><span class="material-symbols-outlined text-[20px]">edit_note</span></button><button class="w-9 h-9 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" title="快捷全屏" type="button"><span class="material-symbols-outlined text-[20px]">fullscreen</span></button><div class="h-4 w-px bg-surface-container-high"></div><img alt="Profile" class="w-8 h-8 rounded-full object-cover ring-2 ring-surface-variant" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCzehY6ceo6sHe5J4cvkn96VQNGjfQZbY0Ji9KxcV435A3aRcU4eYzCHR3N1N3VANfJZOrG8mt1GJnwjbq83RvgdBkajcrRafBtDY8uO0kh3p9kSryD-C1wVwEVC7a_ivV4tkB2pNRZNdFpq6yGXCrQQAF2Q0TBJHYshipqm44M_n1_eedGyQlDVsfc5bYp_QX-RQPUm0bCH4zYnCr3GVq0AcW0lqL914PBxR7VQQ"/></div></div></header><aside class="fixed left-0 top-16 bottom-0 w-16 bg-surface-container-lowest/80 backdrop-blur-xl z-40 flex flex-col items-center justify-between py-space-md shadow-[0_1px_8px_rgba(0,0,0,0.02)]"><div class="flex flex-col items-center gap-space-md w-full"><nav class="flex flex-col items-center gap-2 w-full px-2" data-active-classes="bg-primary-container text-on-primary font-semibold"><a aria-current="page" class="w-11 h-11 rounded-lg flex items-center justify-center transition-all bg-primary-container text-on-primary font-semibold" data-path="video-lecture-player" href="#" title="课件与视频"><span class="material-symbols-outlined text-[22px]">ondemand_video</span></a><a class="w-11 h-11 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all" data-path="course-directory" href="#" title="课程目录大纲"><span class="material-symbols-outlined text-[22px]">format_list_bulleted</span></a><a class="w-11 h-11 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all" data-path="ai-transcript" href="#" title="智能字幕与关键帧"><span class="material-symbols-outlined text-[22px]">subtitles</span></a><a class="w-11 h-11 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all" data-path="chapter-quiz" href="#" title="随堂自测"><span class="material-symbols-outlined text-[22px]">quiz</span></a></nav></div><div class="flex flex-col items-center gap-2"><button class="w-10 h-10 rounded-lg flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" title="播放器偏好设置" type="button"><span class="material-symbols-outlined text-[20px]">tune</span></button></div></aside><div class="pl-16"><main class="relative pt-16 min-h-screen bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(226,223,255,0.45),rgba(250,248,255,1))]"><div class="flex flex-col w-full">
+<div class="w-full max-w-[1680px] mx-auto px-4 lg:px-6 py-4 flex flex-col gap-5">
+<!-- Meta Bar: Lecture Context & Quick Actions -->
+<section class="w-full bg-surface-container-lowest/80 backdrop-blur-xl rounded-xl p-4 lg:p-5 shadow-[0_4px_20px_-2px_rgba(15,23,42,0.03)] flex flex-col xl:flex-row items-start xl:items-center justify-between gap-4">
+<div class="flex flex-col sm:flex-row items-start sm:items-center gap-4 min-w-0">
+<div class="w-12 h-12 rounded-xl bg-gradient-to-br from-primary via-primary-container to-tertiary-container flex items-center justify-center text-on-primary shadow-md flex-shrink-0">
+<span class="material-symbols-outlined text-[24px]">school</span>
+</div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-2 flex-wrap">
+<span class="font-headline-sm text-headline-sm text-on-surface font-semibold truncate max-w-[420px]">
+              第 1 讲：绪论与大 O 复杂度分析
+            </span>
+<span class="px-2.5 py-0.5 rounded-full bg-primary-fixed text-primary font-label-md text-label-md font-semibold">
+              408 核心考点
+            </span>
+<span class="px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm">
+              清华公开课 · 邓俊辉教学团队
+            </span>
+</div>
+<div class="flex items-center gap-3 text-on-surface-variant font-body-sm text-body-sm mt-1">
+<span class="flex items-center gap-1 font-code-sm text-code-sm text-primary font-semibold">
+<span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+              18:42
+            </span>
+<span>/</span>
+<span>42:15</span>
+<span class="text-outline-variant">•</span>
+<span class="truncate">重点聚焦：渐近记号 (O/Ω/Θ)、递归方程展开与 Master 定理判别</span>
+</div>
+</div>
+</div>
+<!-- Action Cluster -->
+<div class="flex items-center gap-2 sm:gap-2.5 flex-wrap self-end xl:self-auto">
+<button class="h-9 px-3 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface-variant hover:text-on-surface font-label-md text-label-md flex items-center gap-1.5 transition-all" type="button">
+<span class="material-symbols-outlined text-[18px]">bookmark_add</span>
+<span>切片标记</span>
+</button>
+<button class="h-9 px-3 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface-variant hover:text-on-surface font-label-md text-label-md flex items-center gap-1.5 transition-all" type="button">
+<span class="material-symbols-outlined text-[18px]">picture_as_pdf</span>
+<span>随堂讲义 PDF</span>
+</button>
+<button class="h-9 px-3 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface-variant hover:text-on-surface font-label-md text-label-md flex items-center gap-1.5 transition-all" type="button">
+<span class="material-symbols-outlined text-[18px]">note_add</span>
+<span>随堂速记</span>
+</button>
+<button class="h-9 px-3 rounded-lg bg-primary text-on-primary hover:bg-primary-container font-label-md text-label-md flex items-center gap-1.5 shadow-sm transition-all" type="button">
+<span class="material-symbols-outlined text-[18px]">fit_screen</span>
+<span>专注双屏</span>
+</button>
+</div>
+</section>
+<!-- Main Dual Workbench: Left (65%) Video & Materials, Right (35%) AI Copilot -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-5 w-full items-start">
+<!-- Left Column (Lecture & Materials - 65% on desktop / col-span-8) -->
+<div class="lg:col-span-8 flex flex-col gap-4 min-w-0">
+<!-- Video Player Viewport Container -->
+<div class="relative w-full rounded-2xl overflow-hidden bg-inverse-surface shadow-2xl flex flex-col group">
+<!-- Main Player Display Area (16:9 aspect) -->
+<div class="relative w-full aspect-video bg-inverse-surface flex items-center justify-center overflow-hidden">
+<!-- Simulated Video Slide Content -->
+<div class="absolute inset-0 bg-cover bg-center" data-alt="High quality academic lecture slide from a prestigious computer science course about data structures and asymptotic algorithm complexity, featuring detailed mathematical trees for merge sort recurrence, Big O curve graphs in glowing indigo and violet lines, crisp typography, clean dark educational slide aesthetic with chalkboard background accents" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDsgfcCz50lcOf170b3NrdK17Exy3ye1UyFlDTaRkkTUuK1Oxuj4whf5euyv8llSLxHYyRgecaNR22KGDao3GjCR6GwSLCgRqqjoNFfLnMTXfGq-HOo4LGtHCEYhbpjJkhEHujrdAsSGiVHQWY1Q2dF_JTu3i1wHsEZIAcNzoFsQAoOQ0N7eC9513NexLKTycKRQEzkTxXRkOsimw-8zYox6x_WwPKvm0yucjpzbA')"></div>
+<!-- Video Overlay Ambient Gradients -->
+<div class="absolute inset-0 bg-gradient-to-t from-inverse-surface/90 via-transparent to-inverse-surface/40 pointer-events-none"></div>
+<!-- Top Floating Live Indicator & Badge -->
+<div class="absolute top-4 left-4 right-4 flex items-center justify-between pointer-events-none">
+<div class="flex items-center gap-2 pointer-events-auto">
+<span class="px-2.5 py-1 rounded-md bg-inverse-surface/80 backdrop-blur-md text-inverse-on-surface font-label-sm text-label-sm flex items-center gap-1.5 shadow-sm">
+<span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                  4K Ultra · 60 FPS
+                </span>
+<span class="px-2.5 py-1 rounded-md bg-primary/80 backdrop-blur-md text-on-primary font-label-sm text-label-sm font-semibold">
+                  重点段落：递归树展开推演
+                </span>
+</div>
+<div class="pointer-events-auto flex items-center gap-2">
+<button class="w-8 h-8 rounded-full bg-inverse-surface/60 backdrop-blur-md text-inverse-on-surface flex items-center justify-center hover:bg-inverse-surface/90 transition-colors" title="画中画" type="button">
+<span class="material-symbols-outlined text-[18px]">picture_in_picture_alt</span>
+</button>
+</div>
+</div>
+<!-- Play Center Pulse (Hidden on active play, visible for state aesthetic) -->
+<button class="relative z-10 w-16 h-16 rounded-full bg-primary/90 text-on-primary flex items-center justify-center shadow-xl hover:scale-105 active:scale-95 transition-transform backdrop-blur-sm" type="button">
+<span class="material-symbols-outlined text-[34px] ml-0.5" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</button>
+<!-- Active Video Frame Mathematical Graph Inset (Slide Detail) -->
+<div class="absolute bottom-16 right-4 hidden md:flex flex-col p-3 rounded-xl bg-inverse-surface/85 backdrop-blur-md text-inverse-on-surface max-w-[260px] shadow-lg pointer-events-auto">
+<div class="flex items-center justify-between mb-1.5 text-on-primary-container">
+<span class="font-label-sm text-label-sm font-semibold">T(n) = 2T(n/2) + O(n)</span>
+<span class="font-code-sm text-code-sm text-primary-fixed">Master Case 2</span>
+</div>
+<!-- Mini Recurrence Tree SVG visualization -->
+<svg class="w-full h-12 text-primary-fixed-dim" fill="none" stroke="currentColor" viewbox="0 0 200 48">
+<circle cx="100" cy="8" fill="currentColor" r="4"></circle>
+<line stroke-width="1.5" x1="100" x2="60" y1="12" y2="24"></line>
+<line stroke-width="1.5" x1="100" x2="140" y1="12" y2="24"></line>
+<circle cx="60" cy="26" fill="currentColor" r="3.5"></circle>
+<circle cx="140" cy="26" fill="currentColor" r="3.5"></circle>
+<line stroke-width="1" x1="60" x2="40" y1="29" y2="40"></line>
+<line stroke-width="1" x1="60" x2="80" y1="29" y2="40"></line>
+<line stroke-width="1" x1="140" x2="120" y1="29" y2="40"></line>
+<line stroke-width="1" x1="140" x2="160" y1="29" y2="40"></line>
+<circle cx="40" cy="42" fill="currentColor" r="2.5"></circle>
+<circle cx="80" cy="42" fill="currentColor" r="2.5"></circle>
+<circle cx="120" cy="42" fill="currentColor" r="2.5"></circle>
+<circle cx="160" cy="42" fill="currentColor" r="2.5"></circle>
+</svg>
+<div class="flex items-center justify-between font-label-sm text-label-sm text-inverse-on-surface/70 mt-1">
+<span>每层耗时: cn</span>
+<span class="text-primary-fixed font-semibold">∑ = O(n log n)</span>
+</div>
+</div>
+</div>
+<!-- Frosted Video Player Control Bar -->
+<div class="w-full bg-inverse-surface/95 px-4 py-3 flex flex-col gap-2.5 backdrop-blur-md">
+<!-- Progress Track with AI Chapter Markers -->
+<div class="relative w-full h-3 flex items-center cursor-pointer group/track">
+<!-- Background Bar -->
+<div class="w-full h-1.5 bg-surface-variant/20 rounded-full overflow-hidden relative">
+<!-- Buffer Progress -->
+<div class="absolute left-0 top-0 bottom-0 w-[68%] bg-surface-variant/35 rounded-full"></div>
+<!-- Play Progress (18:42 / 42:15 ≈ 44.3%) -->
+<div class="absolute left-0 top-0 bottom-0 w-[44.3%] bg-primary-container rounded-full"></div>
+</div>
+<!-- AI Markers (Chapter Dots) -->
+<div class="absolute left-[5.3%] w-2 h-2 rounded-full bg-secondary-fixed shadow" title="02:15 计算模型与RAM假定"></div>
+<div class="absolute left-[22.5%] w-2 h-2 rounded-full bg-secondary-fixed shadow" title="09:30 渐近记号数学边界"></div>
+<div class="absolute left-[44.3%] w-3.5 h-3.5 -ml-1 rounded-full bg-on-primary ring-4 ring-primary shadow-lg cursor-grab" title="当前 18:42 递归树分析"></div>
+<div class="absolute left-[61.9%] w-2 h-2 rounded-full bg-tertiary-fixed shadow" title="26:10 主定理三种情形推导"></div>
+<div class="absolute left-[84.4%] w-2 h-2 rounded-full bg-secondary-fixed shadow" title="35:40 历年真题压轴实战"></div>
+</div>
+<!-- Bottom Control Buttons -->
+<div class="flex items-center justify-between text-inverse-on-surface">
+<div class="flex items-center gap-3">
+<button class="hover:text-primary-fixed transition-colors" title="播放 / 暂停" type="button">
+<span class="material-symbols-outlined text-[24px]">pause</span>
+</button>
+<button class="hover:text-primary-fixed transition-colors" title="快退 10 秒" type="button">
+<span class="material-symbols-outlined text-[20px]">replay_10</span>
+</button>
+<button class="hover:text-primary-fixed transition-colors" title="快进 10 秒" type="button">
+<span class="material-symbols-outlined text-[20px]">forward_10</span>
+</button>
+<!-- Volume Group -->
+<div class="flex items-center gap-2 ml-1">
+<span class="material-symbols-outlined text-[20px]">volume_up</span>
+<div class="w-16 h-1 bg-surface-variant/30 rounded-full hidden sm:block">
+<div class="w-12 h-1 bg-primary-fixed rounded-full"></div>
+</div>
+</div>
+<!-- Timestamp -->
+<div class="font-code-sm text-code-sm font-medium ml-2 text-inverse-on-surface/90">
+<span class="text-primary-fixed font-bold">18:42</span>
+<span class="text-inverse-on-surface/50"> / 42:15</span>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<!-- Speed Pill Selector -->
+<div class="px-2 py-0.5 rounded bg-surface-container-high/20 hover:bg-surface-container-high/30 font-label-md text-label-md cursor-pointer transition-colors text-primary-fixed font-bold">
+                  1.5x 倍速
+                </div>
+<!-- Resolution -->
+<div class="px-2 py-0.5 rounded bg-surface-container-high/20 hover:bg-surface-container-high/30 font-label-md text-label-md cursor-pointer transition-colors text-inverse-on-surface/80">
+                  1080P 60fps
+                </div>
+<!-- Subtitles Toggle -->
+<button class="text-primary-fixed hover:text-on-primary transition-colors" title="中英双语智能字幕" type="button">
+<span class="material-symbols-outlined text-[20px]">closed_caption</span>
+</button>
+<!-- Fullscreen -->
+<button class="hover:text-primary-fixed transition-colors" title="网页全屏" type="button">
+<span class="material-symbols-outlined text-[22px]">fullscreen</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Lecture Auxiliary Content Section (Tabs: Slices, Notes & Code, Board) -->
+<div class="w-full bg-surface-container-lowest rounded-2xl p-5 shadow-[0_4px_20px_-2px_rgba(15,23,42,0.03)] flex flex-col gap-4">
+<!-- Segmented Tab Header -->
+<div class="flex items-center justify-between flex-wrap gap-3 pb-3">
+<div class="flex items-center gap-2 p-1 rounded-xl bg-surface-container-low">
+<button class="px-4 py-1.5 rounded-lg bg-surface-container-lowest text-primary font-headline-sm text-headline-sm shadow-sm flex items-center gap-1.5" type="button">
+<span class="material-symbols-outlined text-[18px]">auto_stories</span>
+<span>AI 视频切片大纲</span>
+<span class="px-1.5 py-0.2 rounded-full bg-primary-fixed text-primary font-label-sm text-label-sm">5 节点</span>
+</button>
+<button class="px-4 py-1.5 rounded-lg text-on-surface-variant hover:text-on-surface font-headline-sm text-headline-sm flex items-center gap-1.5 transition-colors" type="button">
+<span class="material-symbols-outlined text-[18px]">code_blocks</span>
+<span>板书推导 &amp; 代码模板</span>
+</button>
+<button class="px-4 py-1.5 rounded-lg text-on-surface-variant hover:text-on-surface font-headline-sm text-headline-sm flex items-center gap-1.5 transition-colors" type="button">
+<span class="material-symbols-outlined text-[18px]">edit_note</span>
+<span>随堂笔记 (12)</span>
+</button>
+</div>
+<div class="flex items-center gap-2">
+<span class="font-label-sm text-label-sm text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px] text-primary">psychology</span>
+                知识图谱同步率 100%
+              </span>
+</div>
+</div>
+<!-- Slices & Chapters Timeline Stream -->
+<div class="flex flex-col gap-2.5">
+<!-- Slice 1: Completed -->
+<div class="flex items-center justify-between p-3.5 rounded-xl bg-surface-container-lowest hover:bg-surface-container-low transition-colors group cursor-pointer">
+<div class="flex items-center gap-3.5 min-w-0">
+<span class="font-code-sm text-code-sm text-outline px-2 py-1 rounded bg-surface-container font-semibold">02:15</span>
+<div class="flex flex-col min-w-0">
+<span class="font-headline-sm text-headline-sm text-on-surface group-hover:text-primary transition-colors truncate">
+                    01. 计算模型与图灵机抽象：RAM 模型下的基本操作代价
+                  </span>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">
+                    核心概念：赋值、算术与跳转的单位时间常数 O(1)
+                  </span>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline text-[20px] ml-2">check_circle</span>
+</div>
+<!-- Slice 2: Completed -->
+<div class="flex items-center justify-between p-3.5 rounded-xl bg-surface-container-lowest hover:bg-surface-container-low transition-colors group cursor-pointer">
+<div class="flex items-center gap-3.5 min-w-0">
+<span class="font-code-sm text-code-sm text-outline px-2 py-1 rounded bg-surface-container font-semibold">09:30</span>
+<div class="flex flex-col min-w-0">
+<span class="font-headline-sm text-headline-sm text-on-surface group-hover:text-primary transition-colors truncate">
+                    02. 渐近复杂度严格数学定义：大 O、大 Ω 与大 Θ
+                  </span>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">
+                    存在常数 c 和 n0 使得 f(n) ≤ c · g(n) 的存在性量词判定
+                  </span>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline text-[20px] ml-2">check_circle</span>
+</div>
+<!-- Slice 3: CURRENT PLAYING HIGHLIGHT -->
+<div class="flex items-center justify-between p-3.5 rounded-xl bg-primary-fixed/30 hover:bg-primary-fixed/40 transition-colors shadow-sm">
+<div class="flex items-center gap-3.5 min-w-0">
+<div class="flex items-center gap-1.5 font-code-sm text-code-sm text-primary px-2.5 py-1 rounded bg-primary-container text-on-primary font-bold shadow-sm">
+<span class="material-symbols-outlined text-[16px] animate-spin">sync</span>
+                  18:42
+                </div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-2">
+<span class="font-headline-sm text-headline-sm text-primary font-bold truncate">
+                      03. 递归树分析法：分治递归方程的几何可视化
+                    </span>
+<span class="px-2 py-0.5 rounded-full bg-primary text-on-primary font-label-sm text-label-sm font-semibold">
+                      正在播放
+                    </span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface font-medium truncate mt-0.5">
+                    以归并排序 T(n) = 2T(n/2) + O(n) 为例，逐层累加节点开销与树高 log2(n)
+                  </span>
+</div>
+</div>
+<div class="flex items-center gap-2 ml-2">
+<button class="w-8 h-8 rounded-lg bg-surface-container-lowest text-primary hover:bg-primary hover:text-on-primary flex items-center justify-center transition-colors shadow-sm" title="AI 重点精讲" type="button">
+<span class="material-symbols-outlined text-[18px]">magic_button</span>
+</button>
+</div>
+</div>
+<!-- Slice 4: Upcoming -->
+<div class="flex items-center justify-between p-3.5 rounded-xl bg-surface-container-lowest hover:bg-surface-container-low transition-colors group cursor-pointer">
+<div class="flex items-center gap-3.5 min-w-0">
+<span class="font-code-sm text-code-sm text-outline px-2 py-1 rounded bg-surface-container font-semibold">26:10</span>
+<div class="flex flex-col min-w-0">
+<span class="font-headline-sm text-headline-sm text-on-surface group-hover:text-primary transition-colors truncate">
+                    04. 主定理 (Master Theorem) 的三种情形与直观判别准则
+                  </span>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">
+                    比较关键分界指数 n^(log_b a) 与非递归项 f(n) 的多项式级主导权
+                  </span>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline-variant text-[20px] ml-2">schedule</span>
+</div>
+<!-- Slice 5: Upcoming -->
+<div class="flex items-center justify-between p-3.5 rounded-xl bg-surface-container-lowest hover:bg-surface-container-low transition-colors group cursor-pointer">
+<div class="flex items-center gap-3.5 min-w-0">
+<span class="font-code-sm text-code-sm text-outline px-2 py-1 rounded bg-surface-container font-semibold">35:40</span>
+<div class="flex flex-col min-w-0">
+<span class="font-headline-sm text-headline-sm text-on-surface group-hover:text-primary transition-colors truncate">
+                    05. 历年 408 统考真题综合实战与避坑指南
+                  </span>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">
+                    递归空间复杂度计算中系统栈帧深度的常见考法解析
+                  </span>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline-variant text-[20px] ml-2">schedule</span>
+</div>
+</div>
+<!-- Bottom Course Material Preview Card -->
+<div class="mt-2 p-4 rounded-xl bg-surface-container-low flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-10 h-10 rounded-lg bg-surface-container-lowest text-primary flex items-center justify-center flex-shrink-0 shadow-sm">
+<span class="material-symbols-outlined text-[22px]">code</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-headline-sm text-headline-sm text-on-surface font-semibold truncate">
+                  随堂 C++ 算法模板：MergeSort.cpp &amp; 复杂度形式化证明
+                </span>
+<span class="font-body-sm text-body-sm text-on-surface-variant truncate">
+                  提供标准递归与非递归自底向上实现版本，包含 STL 复杂度对比
+                </span>
+</div>
+</div>
+<div class="flex items-center gap-2 self-end md:self-auto">
+<button class="px-3 py-1.5 rounded-lg bg-surface-container-lowest text-on-surface hover:text-primary font-label-md text-label-md flex items-center gap-1 shadow-sm transition-colors" type="button">
+<span class="material-symbols-outlined text-[16px]">content_copy</span>
+                复制代码
+              </button>
+<button class="px-3 py-1.5 rounded-lg bg-primary-container text-on-primary hover:bg-primary font-label-md text-label-md flex items-center gap-1 shadow-sm transition-colors" type="button">
+<span class="material-symbols-outlined text-[16px]">terminal</span>
+                在线沙箱运行
+              </button>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Column: AI Copilot Companion Workbench (35% / col-span-4) -->
+<div class="lg:col-span-4 flex flex-col h-full min-w-0">
+<div class="w-full bg-surface-container-lowest/90 backdrop-blur-2xl rounded-2xl shadow-[0_12px_32px_-4px_rgba(79,70,229,0.08)] flex flex-col min-h-[820px] lg:h-[calc(100vh-130px)] lg:sticky lg:top-20">
+<!-- Copilot Header -->
+<div class="p-4 rounded-t-2xl bg-surface-container-lowest flex items-center justify-between gap-3 shadow-[0_1px_4px_rgba(0,0,0,0.02)]">
+<div class="flex items-center gap-3 min-w-0">
+<div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-primary to-tertiary-container flex items-center justify-center text-on-primary shadow-sm flex-shrink-0">
+<span class="material-symbols-outlined text-[20px]">smart_toy</span>
+</div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-1.5">
+<span class="font-headline-sm text-headline-sm text-on-surface font-bold truncate">学涯 Copilot 导师</span>
+<span class="px-1.5 py-0.2 rounded bg-tertiary-fixed text-tertiary font-label-sm text-label-sm font-semibold">MiMo 3.5</span>
+</div>
+<div class="flex items-center gap-1.5 text-on-surface-variant font-label-sm text-label-sm">
+<span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+<span>已对齐当前视频 (18:42)</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-1">
+<button class="w-8 h-8 rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container transition-colors flex items-center justify-center" title="白板推演窗口" type="button">
+<span class="material-symbols-outlined text-[18px]">draw</span>
+</button>
+<button class="w-8 h-8 rounded-lg text-on-surface-variant hover:text-error hover:bg-error-container/40 transition-colors flex items-center justify-center" title="清空对话记忆" type="button">
+<span class="material-symbols-outlined text-[18px]">delete_sweep</span>
+</button>
+</div>
+</div>
+<!-- Smart Quick Chips Capsule Bar -->
+<div class="px-4 py-2.5 bg-surface-container-low flex items-center gap-2 overflow-x-auto no-scrollbar">
+<span class="text-primary flex items-center flex-shrink-0">
+<span class="material-symbols-outlined text-[16px]">tips_and_updates</span>
+</span>
+<button class="px-3 py-1 rounded-full bg-surface-container-lowest hover:bg-primary-fixed/40 text-on-surface hover:text-primary font-label-sm text-label-sm flex-shrink-0 shadow-sm transition-all text-left" type="button">
+              归并排序递归树高为何是 log₂n？
+            </button>
+<button class="px-3 py-1 rounded-full bg-surface-container-lowest hover:bg-primary-fixed/40 text-on-surface hover:text-primary font-label-sm text-label-sm flex-shrink-0 shadow-sm transition-all text-left" type="button">
+              Master 定理非多项式差怎么解？
+            </button>
+<button class="px-3 py-1 rounded-full bg-surface-container-lowest hover:bg-primary-fixed/40 text-on-surface hover:text-primary font-label-sm text-label-sm flex-shrink-0 shadow-sm transition-all text-left" type="button">
+              408 渐近记号易错常识点
+            </button>
+</div>
+<!-- Dialogue Stream (Scrollable) -->
+<div class="flex-1 overflow-y-auto p-4 flex flex-col gap-4">
+<!-- Student Message Bubble -->
+<div class="flex flex-col items-end gap-1.5 max-w-[90%] self-end">
+<div class="flex items-center gap-2 text-on-surface-variant font-label-sm text-label-sm pr-1">
+<span>我 (学员)</span>
+<span>18:43</span>
+</div>
+<div class="p-3.5 rounded-2xl rounded-tr-none bg-primary text-on-primary shadow-sm font-body-md text-body-md leading-relaxed">
+                邓老师在 18:42 讲到分治法 O(n log n) 时提到了系统递归调用栈。那在 408 考研题目中，空间复杂度是否必须把递归调用栈深度算进去？为什么有些地方写 O(1)，有些写 O(log n)？
+              </div>
+</div>
+<!-- AI Response Complex Card -->
+<div class="flex flex-col items-start gap-2 max-w-[96%] self-start">
+<div class="flex items-center gap-2 text-on-surface-variant font-label-sm text-label-sm pl-1">
+<span class="flex items-center gap-1 font-semibold text-primary">
+<span class="material-symbols-outlined text-[14px]">auto_awesome</span>
+                  学涯 Copilot
+                </span>
+<span>• 结合 18:42 视频画面回答</span>
+</div>
+<!-- Main Bubble Body -->
+<div class="p-4 rounded-2xl rounded-tl-none bg-surface-container-lowest shadow-sm flex flex-col gap-3 font-body-md text-body-md text-on-surface leading-relaxed">
+<p>
+<strong class="text-primary font-semibold">答案是：必须算入！</strong> 在 408 统考及严格算法复杂度评判标准下，<strong>辅助空间复杂度 (Auxiliary Space) 严格包含递归调用栈所占用的系统内存</strong>。
+                </p>
+<!-- Embedded Concept Logic & Whiteboard Formula Box -->
+<div class="p-3.5 rounded-xl bg-surface-container-low flex flex-col gap-2">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md text-primary font-semibold flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">stacked_bar_chart</span>
+                      白板推导：递归深度 vs 辅助内存
+                    </span>
+<span class="font-code-sm text-code-sm text-on-surface-variant">S(n) = O(Stack Depth)</span>
+</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant space-y-1">
+<div class="flex items-start gap-2">
+<span class="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 flex-shrink-0"></span>
+<span><strong>快速排序 (QuickSort)：</strong>虽然是就地划分，但栈深度最差为 <code class="px-1 py-0.5 rounded bg-surface-container text-primary font-code-sm text-code-sm">O(n)</code>，平均为 <code class="px-1 py-0.5 rounded bg-surface-container text-primary font-code-sm text-code-sm">O(log n)</code>，因此空间复杂度为 <strong>O(log n)</strong> 而非 O(1)。</span>
+</div>
+<div class="flex items-start gap-2">
+<span class="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 flex-shrink-0"></span>
+<span><strong>归并排序 (MergeSort)：</strong>除了栈深度 <code class="px-1 py-0.5 rounded bg-surface-container text-primary font-code-sm text-code-sm">O(log n)</code> 之外，每次归并需要临时数组 <code class="px-1 py-0.5 rounded bg-surface-container text-primary font-code-sm text-code-sm">O(n)</code>，因此最终空间复杂度为主导项 <strong>O(n)</strong>。</span>
+</div>
+</div>
+<!-- Mini Stack Depth ASCII / Graphic Representation -->
+<div class="mt-2 p-2.5 rounded-lg bg-surface-container-highest/60 font-code-sm text-code-sm flex items-center justify-between text-on-surface">
+<span>Frame Stack: [Recur(n)] → [Recur(n/2)] → ... → [Recur(1)]</span>
+<span class="text-primary font-bold">Max Depth = ⌈log₂ n⌉ + 1</span>
+</div>
+</div>
+<!-- 408 Exam Real Question Linkage Card -->
+<div class="p-3.5 rounded-xl bg-gradient-to-r from-primary-fixed/30 to-tertiary-fixed/30 flex flex-col gap-2">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-1.5 text-primary">
+<span class="material-symbols-outlined text-[18px]">verified</span>
+<span class="font-headline-sm text-headline-sm font-semibold">408 历年真题联动推荐</span>
+</div>
+<span class="px-2 py-0.5 rounded-full bg-surface-container-lowest text-on-surface font-code-sm text-code-sm font-bold shadow-xs">
+                      #CS-2023-Q14
+                    </span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface">
+                    题目考查："若对含有 n 个元素的序列进行快速排序，在最坏情况下，其所需的附加存储空间复杂度为？"
+                  </p>
+<div class="flex items-center justify-between pt-1">
+<span class="font-label-sm text-label-sm text-on-surface-variant">正答率: 61.4% · 易混淆项: B (O(log n))</span>
+<button class="h-8 px-3 rounded-lg bg-primary hover:bg-primary-container text-on-primary font-label-md text-label-md flex items-center gap-1 transition-colors shadow-xs" type="button">
+<span>趁热练一道</span>
+<span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+</button>
+</div>
+</div>
+<!-- Feedback row -->
+<div class="flex items-center justify-between pt-1 text-on-surface-variant font-label-sm text-label-sm">
+<span class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px] text-primary">lightbulb</span>
+                    提示：可直接截取视频 18:42 课件幻灯片让我为你定位
+                  </span>
+<div class="flex items-center gap-2">
+<button class="hover:text-primary transition-colors" title="赞同" type="button"><span class="material-symbols-outlined text-[16px]">thumb_up</span></button>
+<button class="hover:text-primary transition-colors" title="踩" type="button"><span class="material-symbols-outlined text-[16px]">thumb_down</span></button>
+<button class="hover:text-primary transition-colors" title="复制回答" type="button"><span class="material-symbols-outlined text-[16px]">content_copy</span></button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Bottom Sticky Floating Interaction Dock -->
+<div class="p-3 bg-surface-container-lowest rounded-b-2xl shadow-[0_-4px_20px_-2px_rgba(15,23,42,0.03)] flex flex-col gap-2">
+<!-- Quick Feature Actions Strip -->
+<div class="flex items-center justify-between px-1">
+<div class="flex items-center gap-2">
+<button class="px-2.5 py-1 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface-variant hover:text-primary font-label-sm text-label-sm flex items-center gap-1.5 transition-colors" type="button">
+<span class="material-symbols-outlined text-[16px]">screenshot_monitor</span>
+<span>截当前帧提问</span>
+</button>
+<button class="px-2.5 py-1 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface-variant hover:text-primary font-label-sm text-label-sm flex items-center gap-1.5 transition-colors" type="button">
+<span class="material-symbols-outlined text-[16px]">functions</span>
+<span>LaTeX 公式</span>
+</button>
+</div>
+<!-- DeepThink Toggle -->
+<div class="flex items-center gap-1.5 cursor-pointer">
+<span class="material-symbols-outlined text-[16px] text-tertiary">neurology</span>
+<span class="font-label-sm text-label-sm text-tertiary font-semibold">DeepThink 深度思考</span>
+<div class="w-8 h-4 rounded-full bg-primary-container flex items-center p-0.5 justify-end">
+<div class="w-3 h-3 rounded-full bg-on-primary shadow-sm"></div>
+</div>
+</div>
+</div>
+<!-- Input Box -->
+<div class="relative w-full rounded-xl bg-surface-container-low focus-within:bg-surface-container-lowest transition-all p-2 flex flex-col gap-2">
+<textarea class="w-full bg-transparent resize-none outline-none font-body-md text-body-md text-on-surface placeholder:text-outline-variant px-1.5 pt-1" placeholder="针对当前视频 18:42 提问，或按 / 调出知识卡片模板..." rows="2"></textarea>
+<div class="flex items-center justify-between pt-1">
+<div class="flex items-center gap-1.5 text-on-surface-variant">
+<button class="w-7 h-7 rounded-lg hover:bg-surface-container flex items-center justify-center transition-colors" title="添加草稿附件" type="button">
+<span class="material-symbols-outlined text-[18px]">attach_file</span>
+</button>
+<button class="w-7 h-7 rounded-lg hover:bg-surface-container flex items-center justify-center transition-colors" title="随堂语音输入" type="button">
+<span class="material-symbols-outlined text-[18px]">mic</span>
+</button>
+</div>
+<div class="flex items-center gap-2">
+<span class="font-label-sm text-label-sm text-outline-variant hidden sm:inline">Enter 发送</span>
+<button class="h-8 w-8 rounded-lg bg-primary hover:bg-primary-container text-on-primary flex items-center justify-center transition-colors shadow-sm" type="button">
+<span class="material-symbols-outlined text-[18px]">send</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div></main></div></body></html>

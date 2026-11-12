@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&family=Plus+Jakarta+Sans:wght@100..900&display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{colors:{"on-tertiary":"#ffffff","on-secondary-fixed-variant":"#004395","surface":"#faf8ff","surface-variant":"#dae2fd","on-primary-container":"#dad7ff","secondary-container":"#2170e4","secondary-fixed":"#d8e2ff","on-secondary":"#ffffff","tertiary-fixed-dim":"#d0bcff","on-secondary-fixed":"#001a42","on-primary-fixed":"#0f0069","background":"#faf8ff","primary-fixed":"#e2dfff","surface-tint":"#4d44e3","secondary":"#0058be","secondary-fixed-dim":"#adc6ff","primary-fixed-dim":"#c3c0ff","error":"#ba1a1a","tertiary":"#571ac0","surface-container":"#eaedff","primary":"#3525cd","surface-container-low":"#f2f3ff","on-primary-fixed-variant":"#3323cc","outline-variant":"#c7c4d8","outline":"#777587","inverse-primary":"#c3c0ff","surface-container-high":"#e2e7ff","on-secondary-container":"#fefcff","surface-dim":"#d2d9f4","on-tertiary-fixed":"#23005c","inverse-surface":"#283044","surface-container-lowest":"#ffffff","on-surface":"#131b2e","surface-container-highest":"#dae2fd","inverse-on-surface":"#eef0ff","on-primary":"#ffffff","on-error-container":"#93000a","tertiary-container":"#6f3dd9","error-container":"#ffdad6","tertiary-fixed":"#e9ddff","on-error":"#ffffff","surface-bright":"#faf8ff","on-surface-variant":"#464555","on-tertiary-container":"#e3d5ff","on-tertiary-fixed-variant":"#5516be","primary-container":"#4f46e5","on-background":"#131b2e"},borderRadius:{DEFAULT:"0.25rem",lg:"0.5rem",xl:"0.75rem",full:"9999px"},spacing:{"space-lg":"1.5rem","gutter-mobile":"0.75rem",margin:"2rem","space-2xl":"3rem","margin-mobile":"1rem",gutter:"1.25rem","space-md":"1rem","space-sm":"0.5rem","space-xl":"2rem","space-xs":"0.25rem"},fontFamily:{"headline-lg":["Plus Jakarta Sans"],"headline-md":["Plus Jakarta Sans"],"headline-lg-mobile":["Plus Jakarta Sans"],"display-lg":["Plus Jakarta Sans"],"body-lg":["Inter"],"label-sm":["Inter"],"label-md":["Inter"],"body-sm":["Inter"],"code-sm":["JetBrains Mono"],"body-md":["Inter"],"headline-sm":["Plus Jakarta Sans"]},fontSize:{"headline-lg":["28px",{lineHeight:"36px",letterSpacing:"-0.02em",fontWeight:"700"}],"headline-md":["20px",{lineHeight:"28px",letterSpacing:"-0.01em",fontWeight:"600"}],"headline-lg-mobile":["22px",{lineHeight:"30px",letterSpacing:"-0.015em",fontWeight:"700"}],"display-lg":["36px",{lineHeight:"44px",letterSpacing:"-0.025em",fontWeight:"700"}],"body-lg":["16px",{lineHeight:"26px",fontWeight:"400"}],"label-sm":["11px",{lineHeight:"14px",fontWeight:"500"}],"label-md":["12px",{lineHeight:"16px",letterSpacing:"0.04em",fontWeight:"600"}],"body-sm":["13px",{lineHeight:"18px",fontWeight:"400"}],"code-sm":["13px",{lineHeight:"20px",fontWeight:"400"}],"body-md":["14px",{lineHeight:"22px",fontWeight:"400"}],"headline-sm":["16px",{lineHeight:"24px",fontWeight:"600"}]}}}};</script></head><body class="bg-background font-body-md text-on-surface min-h-screen"><header class="fixed top-0 left-0 right-0 h-16 bg-surface-container-lowest/80 backdrop-blur-xl z-50 shadow-[0_1px_8px_rgba(0,0,0,0.03)]"><div class="h-16 w-full px-margin flex items-center justify-between gap-space-md"><div class="flex items-center gap-space-md min-w-[240px]"><img alt="学涯 Copilot Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1X92TAI0zokI7ftf4Kja0CaUkhDIuAYyzvzO5-qW6GvpV0MI1w9uSCSJjqzFxcH5igxle8mviQhHK-T-AWqbjAXcQTYcOKDhJLiXlZmzQ9aw-VZhx9ZdHRjH7GyyKO3WbE5Y2X-j5swzIb8ns-BYMP_oBjexNmtAPu21nRFVM1AGln3qezztMcDgOSJFkIKmrvsyHXTljQPsnBzj2ksx5fDUBmx8tKajZ4WpNQZplE"/><div class="flex flex-col"><span class="font-headline-sm text-headline-sm text-on-surface font-semibold tracking-tight">学涯 Copilot</span><span class="font-label-sm text-label-sm text-on-surface-variant font-medium">Study Workspace</span></div></div><div class="flex items-center gap-space-lg flex-1 justify-center max-w-2xl"><div class="flex items-center bg-surface-container-low px-space-xs py-space-xs rounded-full p-1"><button class="px-space-md py-1.5 rounded-full font-label-md text-label-md text-on-surface-variant hover:text-on-surface transition-all flex items-center gap-1.5" type="button"><span class="material-symbols-outlined text-[16px]">auto_awesome</span>AI 助手</button><button class="px-space-md py-1.5 rounded-full font-label-md text-label-md bg-surface-container-lowest text-primary shadow-sm font-semibold flex items-center gap-1.5" type="button"><span class="material-symbols-outlined text-[16px]">school</span>学习中心</button></div><div class="flex items-center bg-surface-container-low px-space-md py-1.5 rounded-full w-72 text-on-surface-variant hover:bg-surface-container transition-colors cursor-pointer"><span class="material-symbols-outlined text-[18px] mr-space-sm text-outline">search</span><span class="font-body-sm text-body-sm flex-1 text-on-surface-variant">全局快速检索资料、笔记...</span><kbd class="font-code-sm text-label-sm bg-surface-container-lowest text-on-surface-variant px-1.5 py-0.5 rounded shadow-sm">⌘K</kbd></div></div><div class="flex items-center gap-space-md justify-end min-w-[240px]"><button class="w-9 h-9 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" title="AI 工具集" type="button"><span class="material-symbols-outlined text-[20px]">construction</span></button><button class="relative w-9 h-9 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" title="消息通知" type="button"><span class="material-symbols-outlined text-[20px]">notifications</span><span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full"></span></button><div class="h-4 w-px bg-surface-container-high"></div><div class="flex items-center gap-space-sm pl-1"><img alt="Profile" class="w-8 h-8 rounded-full object-cover ring-2 ring-surface-variant" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCzehY6ceo6sHe5J4cvkn96VQNGjfQZbY0Ji9KxcV435A3aRcU4eYzCHR3N1N3VANfJZOrG8mt1GJnwjbq83RvgdBkajcrRafBtDY8uO0kh3p9kSryD-C1wVwEVC7a_ivV4tkB2pNRZNdFpq6yGXCrQQAF2Q0TBJHYshipqm44M_n1_eedGyQlDVsfc5bYp_QX-RQPUm0bCH4zYnCr3GVq0AcW0lqL914PBxR7VQQ"/><div class="hidden xl:flex flex-col text-left"><span class="font-label-md text-label-md text-on-surface font-semibold leading-tight">Linus C.</span><span class="font-label-sm text-label-sm text-primary font-medium">CS 专业 · 大三</span></div></div></div></div></header><aside class="fixed left-0 top-16 bottom-0 w-64 bg-surface-container-lowest/70 backdrop-blur-xl z-40 flex flex-col justify-between py-space-md shadow-[0_1px_8px_rgba(0,0,0,0.02)]"><div class="flex flex-col gap-space-md px-space-md"><div class="flex items-center justify-between px-space-sm py-space-xs"><span class="font-label-sm text-label-sm text-outline font-semibold tracking-wider uppercase">学习中心核心模块</span><button class="text-on-surface-variant hover:text-on-surface transition-colors" title="折叠侧栏" type="button"><span class="material-symbols-outlined text-[18px]">dock_to_right</span></button></div><nav class="flex flex-col gap-1.5" data-active-classes="bg-primary-container text-on-primary font-semibold shadow-[0_4px_16px_rgba(79,70,229,0.18)]"><a class="flex items-center gap-3 px-space-md py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all font-body-md text-body-md" data-path="course-study" href="#"><span class="material-symbols-outlined text-[20px]">play_lesson</span><span>课程学习</span></a><a class="flex items-center gap-3 px-space-md py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all font-body-md text-body-md" data-path="practice-quiz" href="#"><span class="material-symbols-outlined text-[20px]">quiz</span><span>专项练习</span></a><a aria-current="page" class="flex items-center gap-3 px-space-md py-2.5 rounded-lg transition-all bg-primary-container text-on-primary font-semibold shadow-[0_4px_16px_rgba(79,70,229,0.18)]" data-path="review-notebook" href="#"><span class="material-symbols-outlined text-[20px]">edit_note</span><span>错题复习</span></a><a class="flex items-center gap-3 px-space-md py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all font-body-md text-body-md" data-path="learning-analytics" href="#"><span class="material-symbols-outlined text-[20px]">insights</span><span>学情分析</span></a></nav><div class="mt-space-sm pt-space-sm"><div class="flex items-center justify-between px-space-sm mb-2"><span class="font-label-sm text-label-sm text-outline font-semibold tracking-wider uppercase">近期 AI 答疑</span><button class="text-on-surface-variant hover:text-on-surface transition-colors" title="查看全部记录" type="button"><span class="material-symbols-outlined text-[16px]">chevron_right</span></button></div><div class="flex flex-col gap-1"><a class="flex items-center gap-2 px-space-sm py-2 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all text-body-sm font-body-sm truncate" href="#"><span class="material-symbols-outlined text-[16px] text-tertiary">forum</span><span class="truncate">TCP 三次握手状态迁移解析</span></a><a class="flex items-center gap-2 px-space-sm py-2 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all text-body-sm font-body-sm truncate" href="#"><span class="material-symbols-outlined text-[16px] text-tertiary">forum</span><span class="truncate">红黑树旋转平衡代码推导</span></a><a class="flex items-center gap-2 px-space-sm py-2 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all text-body-sm font-body-sm truncate" href="#"><span class="material-symbols-outlined text-[16px] text-tertiary">forum</span><span class="truncate">虚拟内存段页式存储计算题</span></a></div></div></div><div class="px-space-md pt-space-sm flex flex-col gap-1"><a class="flex items-center gap-3 px-space-md py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all font-body-md text-body-md" data-path="settings" href="#"><span class="material-symbols-outlined text-[20px]">settings</span><span>系统设置</span></a></div></aside><div class="pl-64"><main class="relative pt-16 min-h-screen bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(226,223,255,0.45),rgba(250,248,255,1))]"><div class="w-full px-margin py-space-lg max-w-[1600px] mx-auto"><div class="flex flex-col w-full gap-y-space-lg">
+<!-- 1. 顶部复习计划与艾宾浩斯智能预警胶囊条 -->
+<div class="relative overflow-hidden rounded-xl bg-surface-container-lowest/90 backdrop-blur-xl p-space-md shadow-sm">
+<div class="absolute -right-12 -top-12 w-48 h-48 rounded-full bg-primary-container/10 blur-2xl pointer-events-none"></div>
+<div class="flex flex-col lg:flex-row lg:items-center justify-between gap-space-md relative z-10">
+<div class="flex items-start sm:items-center gap-space-md">
+<div class="w-10 h-10 rounded-xl bg-error-container/60 text-error flex items-center justify-center shrink-0 shadow-sm">
+<span class="material-symbols-outlined text-[22px]">notification_important</span>
+</div>
+<div class="flex flex-col">
+<div class="flex flex-wrap items-center gap-2">
+<span class="font-headline-sm text-headline-sm text-on-surface">艾宾浩斯复习节奏提醒</span>
+<span class="px-2 py-0.5 rounded-full bg-error text-on-error font-label-sm text-label-sm font-semibold">今日有 7 道错题达到临界遗忘点</span>
+<span class="px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface-variant font-code-sm text-label-sm">周期：D+1 / D+4 / D+7</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">
+            根据遗忘曲线记忆衰减算法计算，今日优先重练「数据结构树形旋转」与「虚拟内存分页机制」可将长期留存率提升至 <strong class="text-primary font-semibold">92.4%</strong>。
+          </p>
+</div>
+</div>
+<div class="flex items-center gap-space-sm shrink-0 self-end lg:self-center">
+<button class="px-3.5 py-2 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface transition-all font-label-md text-label-md flex items-center gap-1.5 shadow-sm" type="button">
+<span class="material-symbols-outlined text-[18px] text-tertiary">history_toggle_off</span>
+<span>历史周期图谱</span>
+</button>
+<button class="px-4 py-2 rounded-lg bg-primary-container text-on-primary hover:opacity-95 transition-all font-label-md text-label-md font-semibold flex items-center gap-1.5 shadow-sm" type="button">
+<span class="material-symbols-outlined text-[18px]">bolt</span>
+<span>一键重练到期错题 (7)</span>
+</button>
+</div>
+</div>
+</div>
+<!-- 2. 核心大标题与理念区 + 历史底图映射区 -->
+<div class="relative overflow-hidden rounded-xl bg-surface-container-lowest/80 backdrop-blur-2xl p-space-lg shadow-sm">
+<div class="grid grid-cols-1 xl:grid-cols-12 gap-space-lg items-center">
+<div class="xl:col-span-7 flex flex-col gap-3">
+<div class="inline-flex items-center gap-2 self-start px-3 py-1 rounded-full bg-surface-container-low text-primary font-label-md text-label-md">
+<span class="material-symbols-outlined text-[16px]">psychology</span>
+<span>AI 错题智能归因与强化系统 · Ebbinghaus Loop</span>
+</div>
+<h1 class="font-display-lg text-display-lg text-on-surface tracking-tight">
+          错过的，<span class="text-primary-container">再练一次。</span>
+</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl">
+          错题本 · 错题重练 · 题目随手记 · AI 考点归纳。不盲目题海战术，针对高危失分点提供递进式变式题与思路溯源，彻底斩断知识盲区。
+        </p>
+<!-- 关键进度微指标 -->
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-space-sm pt-2">
+<div class="p-3 rounded-lg bg-surface-container-low/70">
+<span class="font-label-sm text-label-sm text-on-surface-variant">待清空错题</span>
+<div class="flex items-baseline gap-1 mt-0.5">
+<span class="font-headline-md text-headline-md text-on-surface">24</span>
+<span class="font-label-sm text-label-sm text-error">较昨日 -3</span>
+</div>
+</div>
+<div class="p-3 rounded-lg bg-surface-container-low/70">
+<span class="font-label-sm text-label-sm text-on-surface-variant">完全掌握归档</span>
+<div class="flex items-baseline gap-1 mt-0.5">
+<span class="font-headline-md text-headline-md text-primary">142</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant font-code-sm">85.5%</span>
+</div>
+</div>
+<div class="p-3 rounded-lg bg-surface-container-low/70">
+<span class="font-label-sm text-label-sm text-on-surface-variant">AI 解析采纳率</span>
+<div class="flex items-baseline gap-1 mt-0.5">
+<span class="font-headline-md text-headline-md text-tertiary">98.2%</span>
+<span class="font-label-sm text-label-sm text-primary">优秀</span>
+</div>
+</div>
+<div class="p-3 rounded-lg bg-surface-container-low/70">
+<span class="font-label-sm text-label-sm text-on-surface-variant">巩固平均耗时</span>
+<div class="flex items-baseline gap-1 mt-0.5">
+<span class="font-headline-md text-headline-md text-on-surface">4.2</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">min/题</span>
+</div>
+</div>
+</div>
+</div>
+<!-- 右侧对比原版与现代重塑视觉参照 -->
+<div class="xl:col-span-5 relative group">
+<div class="relative overflow-hidden rounded-xl bg-surface-container shadow-md">
+<div class="relative w-full aspect-[16/9] overflow-hidden">
+<img alt="原版错题与答疑视图对比" class="w-full h-full object-cover object-top opacity-90 group-hover:scale-102 transition-transform duration-500" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBphIlKebvvydPIWT693gLvs9QnW9oW6LY02iNJt9e7LUUJOwubvIq4GSyXUcvCo2n-SkJnBSepn1y6vv22RjqRltG9TkcODwEahYc_Lvr2M1eMyG5O9cL1GVsqYDPRJdgTprcjh_iXQvh92sgKaZ0A-pN7Qodjf1Z-6PQZ7E048i7gmPw62Ng4tRaOM054-KN8PvSgWuTZ66MAK_wupsHczaKWuf4AaO7dGYLZw6fWrmKiWt0Esqg"/>
+<div class="absolute inset-0 bg-gradient-to-t from-inverse-surface/80 via-transparent to-transparent flex flex-col justify-end p-4 text-inverse-on-surface">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md uppercase tracking-wider bg-surface-container-lowest/30 backdrop-blur-md px-2.5 py-1 rounded-full text-on-primary">
+                  原版答疑原型焕新升级
+                </span>
+<span class="font-code-sm text-label-sm opacity-80">v2.4 Smart Review</span>
+</div>
+<p class="font-body-sm text-body-sm text-inverse-on-surface/90 mt-1 line-clamp-1">
+                融入 AI 实时反思、思维导图切片与多轮溯源抽屉系统
+              </p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- 3. 多维筛选与搜索工作台（高精致度控制栏） -->
+<div class="flex flex-col gap-space-sm bg-surface-container-lowest/80 backdrop-blur-xl p-space-md rounded-xl shadow-sm">
+<!-- 顶部状态切换胶囊 -->
+<div class="flex flex-wrap items-center justify-between gap-space-sm pb-space-sm border-b border-surface-container-high/40">
+<div class="flex flex-wrap items-center gap-1.5 p-1 rounded-lg bg-surface-container-low">
+<button class="px-3.5 py-1.5 rounded-md bg-surface-container-lowest text-primary font-label-md text-label-md font-semibold shadow-sm transition-all flex items-center gap-1.5" type="button">
+<span class="material-symbols-outlined text-[16px]">schedule</span>
+<span>最近出错优先</span>
+</button>
+<button class="px-3.5 py-1.5 rounded-md hover:bg-surface-container text-on-surface-variant font-label-md text-label-md transition-all flex items-center gap-1.5" type="button">
+<span class="material-symbols-outlined text-[16px]">trending_up</span>
+<span>错误次数最多</span>
+</button>
+<button class="px-3.5 py-1.5 rounded-md hover:bg-surface-container text-on-surface-variant font-label-md text-label-md transition-all flex items-center gap-1.5" type="button">
+<span class="material-symbols-outlined text-[16px]">local_fire_department</span>
+<span>高频常考错题</span>
+</button>
+<button class="px-3.5 py-1.5 rounded-md hover:bg-surface-container text-on-surface-variant font-label-md text-label-md transition-all flex items-center gap-1.5" type="button">
+<span class="material-symbols-outlined text-[16px]">inventory_2</span>
+<span>已完全掌握归档</span>
+</button>
+</div>
+<div class="flex items-center gap-2">
+<span class="font-label-sm text-label-sm text-outline">视图切换:</span>
+<button class="p-1.5 rounded-md bg-surface-container-lowest text-primary shadow-sm" title="卡片详细模式" type="button">
+<span class="material-symbols-outlined text-[18px]">view_agenda</span>
+</button>
+<button class="p-1.5 rounded-md text-on-surface-variant hover:bg-surface-container" title="紧凑矩阵视图" type="button">
+<span class="material-symbols-outlined text-[18px]">table_rows</span>
+</button>
+</div>
+</div>
+<!-- 综合过滤组件 -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-space-sm items-center pt-1">
+<!-- 搜索框 -->
+<div class="lg:col-span-4 relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[18px] text-outline">search</span>
+<input class="w-full h-10 pl-9 pr-3 rounded-lg bg-surface-container-low focus:bg-surface-container-lowest text-on-surface font-body-sm text-body-sm outline-none transition-all placeholder:text-outline" placeholder="输入题号、知识考点关键词 (如: AVL旋转, LRU)" type="text"/>
+</div>
+<!-- 科目选择 -->
+<div class="lg:col-span-2">
+<select class="w-full h-10 px-3 rounded-lg bg-surface-container-low text-on-surface font-body-sm text-body-sm outline-none cursor-pointer">
+<option>全部科目 (408+算法)</option>
+<option>计算机网络 (计网)</option>
+<option>数据结构与算法</option>
+<option>操作系统 (OS)</option>
+<option>计算机组成原理</option>
+</select>
+</div>
+<!-- 题型选择 -->
+<div class="lg:col-span-2">
+<select class="w-full h-10 px-3 rounded-lg bg-surface-container-low text-on-surface font-body-sm text-body-sm outline-none cursor-pointer">
+<option>全部题型</option>
+<option>单项选择题</option>
+<option>多项选择题</option>
+<option>代码填空 / 算法题</option>
+<option>综合大题与计算题</option>
+</select>
+</div>
+<!-- 知识点层级选择器 -->
+<div class="lg:col-span-3">
+<div class="flex items-center justify-between h-10 px-3 rounded-lg bg-surface-container-low text-on-surface-variant font-body-sm text-body-sm cursor-pointer hover:bg-surface-container transition-colors">
+<span class="truncate">知识层级: 存储管理 > 虚拟分页</span>
+<span class="material-symbols-outlined text-[18px] text-outline">expand_more</span>
+</div>
+</div>
+<!-- 重置 / 导出 -->
+<div class="lg:col-span-1 flex justify-end">
+<button class="h-10 w-full lg:w-10 rounded-lg bg-surface-container-low hover:bg-surface-container text-on-surface flex items-center justify-center transition-colors" title="导出错题卷 PDF" type="button">
+<span class="material-symbols-outlined text-[18px]">picture_as_pdf</span>
+</button>
+</div>
+</div>
+</div>
+<!-- 4. 核心工作区：错题集卡片与状态展示区 + 溯源抽屉面板 (Bento 栅格) -->
+<div class="grid grid-cols-1 xl:grid-cols-12 gap-space-lg items-start">
+<!-- 左侧 8 列：错题列表流 -->
+<div class="xl:col-span-8 flex flex-col gap-space-md">
+<!-- 卡片 1: 「二叉平衡树 AVL 与红黑树旋转判定」 -->
+<article class="rounded-xl bg-surface-container-lowest/90 backdrop-blur-xl p-space-md sm:p-space-lg shadow-sm flex flex-col gap-space-sm hover:shadow-md transition-shadow">
+<!-- 卡片元信息头 -->
+<div class="flex flex-wrap items-center justify-between gap-2">
+<div class="flex flex-wrap items-center gap-2">
+<span class="px-2.5 py-1 rounded-full bg-error-container/60 text-error font-label-md text-label-md font-semibold flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">flag</span>
+<span>错误 2 次</span>
+</span>
+<span class="px-2.5 py-1 rounded-full bg-surface-container-high text-on-surface font-label-md text-label-md">
+              408 统考真题 · 选择题
+            </span>
+<span class="px-2 py-0.5 rounded bg-surface-container text-on-surface-variant font-code-sm text-label-sm">
+              #CS-2023-Q32
+            </span>
+</div>
+<div class="flex items-center gap-1.5 text-outline font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[16px]">update</span>
+<span>最近复查: 昨天 22:15</span>
+</div>
+</div>
+<!-- 题干与原题内容 -->
+<div class="flex flex-col gap-2 mt-1">
+<h2 class="font-headline-sm text-headline-sm text-on-surface leading-snug">
+            二叉平衡树 (AVL) 与红黑树在插入节点后的旋转调整判定
+          </h2>
+<p class="font-body-md text-body-md text-on-surface-variant">
+            在一棵含有 7 个节点的 AVL 树中依次插入关键字序列 <code class="font-code-sm text-primary bg-surface-container px-1 py-0.5 rounded">〔23, 17, 31, 12, 19, 27, 40〕</code> 后，若再次插入关键字 <code class="font-code-sm text-primary bg-surface-container px-1 py-0.5 rounded">21</code>，引起失衡的最小子树根节点及调整类型分别为？
+          </p>
+</div>
+<!-- 选项与答题还原对比 -->
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-2 my-1">
+<div class="p-3 rounded-lg bg-surface-container-low flex items-start gap-2.5">
+<span class="w-5 h-5 rounded-full bg-surface-container-highest text-on-surface-variant font-code-sm text-label-sm flex items-center justify-center shrink-0">A</span>
+<span class="font-body-sm text-body-sm text-on-surface">根节点 23，执行 LL 旋转</span>
+</div>
+<div class="p-3 rounded-lg bg-error-container/40 flex items-start gap-2.5">
+<span class="w-5 h-5 rounded-full bg-error text-on-error font-code-sm text-label-sm flex items-center justify-center shrink-0">B</span>
+<div class="flex flex-col">
+<span class="font-body-sm text-body-sm text-error font-medium">节点 17，执行 LR 旋转</span>
+<span class="font-label-sm text-label-sm text-error/80 mt-0.5">你的初次作答 (混淆了失衡最小子树的判定层级)</span>
+</div>
+</div>
+<div class="p-3 rounded-lg bg-primary-container/10 flex items-start gap-2.5">
+<span class="w-5 h-5 rounded-full bg-primary-container text-on-primary font-code-sm text-label-sm flex items-center justify-center shrink-0">C</span>
+<div class="flex flex-col">
+<span class="font-body-sm text-body-sm text-primary font-semibold">节点 19，执行 RL 旋转 (正确答案)</span>
+<span class="font-label-sm text-label-sm text-primary/80 mt-0.5">标准正确选项</span>
+</div>
+</div>
+<div class="p-3 rounded-lg bg-surface-container-low flex items-start gap-2.5">
+<span class="w-5 h-5 rounded-full bg-surface-container-highest text-on-surface-variant font-code-sm text-label-sm flex items-center justify-center shrink-0">D</span>
+<span class="font-body-sm text-body-sm text-on-surface">节点 27，执行 RR 旋转</span>
+</div>
+</div>
+<!-- AI 考点深度解析模块 -->
+<div class="p-space-md rounded-xl bg-surface-container-low/80 flex flex-col gap-2">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2 text-primary font-label-md text-label-md font-semibold">
+<span class="material-symbols-outlined text-[18px]">psychology_alt</span>
+<span>AI 考点归纳与溯源诊断</span>
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant bg-surface-container px-2 py-0.5 rounded-full">高频易错雷区 · 难度 ★★★★☆</span>
+</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant space-y-1.5 leading-relaxed">
+<p><strong>错误根因分析：</strong>受试者在计算平衡因子 (Balance Factor) 时，自底向上回溯过程中忽略了新插入节点对祖父节点 <code class="font-code-sm">17</code> 与父节点 <code class="font-code-sm">19</code> 的动态传递关系，误将子树失衡点定位至上一代节点。</p>
+<p><strong>避坑口诀：</strong>「看路径、找祖父、取两步、定类型」。插入 <code class="font-code-sm">21</code> 后，<code class="font-code-sm">17</code> 的右孩子为 <code class="font-code-sm">19</code>，<code class="font-code-sm">19</code> 的右孩子为 <code class="font-code-sm">21</code>，破坏平衡的最贴近节点为 17，路径为 R-R 或 R-L，需注意平衡因子符号判断。</p>
+</div>
+</div>
+<!-- 交互与操作工具栏 -->
+<div class="flex flex-wrap items-center justify-between gap-space-sm pt-2">
+<div class="flex items-center gap-2">
+<button class="px-3 py-1.5 rounded-lg bg-surface-container text-on-surface-variant hover:text-on-surface font-label-md text-label-md flex items-center gap-1 transition-colors" type="button">
+<span class="material-symbols-outlined text-[16px]">edit</span>
+<span>个人心得手记 (2)</span>
+</button>
+<button class="px-3 py-1.5 rounded-lg bg-surface-container text-on-surface-variant hover:text-on-surface font-label-md text-label-md flex items-center gap-1 transition-colors" type="button">
+<span class="material-symbols-outlined text-[16px]">hub</span>
+<span>关联知识图谱</span>
+</button>
+</div>
+<div class="flex items-center gap-2">
+<button class="px-3 py-1.5 rounded-lg text-outline hover:text-on-surface font-label-md text-label-md flex items-center gap-1 transition-colors" type="button">
+<span class="material-symbols-outlined text-[18px]">check_circle</span>
+<span>标记已吃透</span>
+</button>
+<button class="px-4 py-2 rounded-lg bg-primary text-on-primary hover:bg-primary-container font-label-md text-label-md font-semibold flex items-center gap-1.5 shadow-sm transition-all" type="button">
+<span class="material-symbols-outlined text-[18px]">replay</span>
+<span>再练一次</span>
+</button>
+</div>
+</div>
+</article>
+<!-- 卡片 2: 「虚拟内存缺页中断与 LRU 页面置换算法」 -->
+<article class="rounded-xl bg-surface-container-lowest/90 backdrop-blur-xl p-space-md sm:p-space-lg shadow-sm flex flex-col gap-space-sm hover:shadow-md transition-shadow">
+<div class="flex flex-wrap items-center justify-between gap-2">
+<div class="flex flex-wrap items-center gap-2">
+<span class="px-2.5 py-1 rounded-full bg-secondary-fixed text-on-secondary-fixed font-label-md text-label-md font-semibold flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">priority_high</span>
+<span>错误 1 次</span>
+</span>
+<span class="px-2.5 py-1 rounded-full bg-surface-container-high text-on-surface font-label-md text-label-md">
+              操作系统随堂小测 · 计算大题
+            </span>
+<span class="px-2 py-0.5 rounded bg-surface-container text-on-surface-variant font-code-sm text-label-sm">
+              #OS-MEM-LRU-08
+            </span>
+</div>
+<div class="flex items-center gap-1.5 text-outline font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[16px]">update</span>
+<span>3 天前提交</span>
+</div>
+</div>
+<div class="flex flex-col gap-2 mt-1">
+<h2 class="font-headline-sm text-headline-sm text-on-surface leading-snug">
+            虚拟内存缺页中断次数与 LRU (最近最少使用) 页面置换综合推演
+          </h2>
+<p class="font-body-md text-body-md text-on-surface-variant">
+            分配给某进程的物理块数为 3，页面引用串为 <code class="font-code-sm text-secondary bg-surface-container px-1 py-0.5 rounded">7, 0, 1, 2, 0, 3, 0, 4, 2, 3, 0, 3, 2, 1, 2, 0, 1, 7, 0, 1</code>。初始时物理块为空。采用 LRU 置换算法时，求缺页中断发生的总次数与页面置换发生的次数？
+          </p>
+</div>
+<!-- 答题对比条块 -->
+<div class="p-3.5 rounded-lg bg-surface-container-low flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-error-container text-error flex items-center justify-center font-code-sm text-label-md font-bold">
+              !
+            </div>
+<div class="flex flex-col">
+<span class="font-body-sm text-body-sm text-on-surface">原答案：缺页 15 次，置换 12 次</span>
+<span class="font-label-sm text-label-sm text-error">错因：忽视了初始物理块装入不属于「置换」操作</span>
+</div>
+</div>
+<div class="flex items-center gap-3 self-end sm:self-center">
+<div class="flex flex-col text-right">
+<span class="font-body-sm text-body-sm text-primary font-semibold">标答：缺页 12 次，置换 9 次</span>
+<span class="font-label-sm text-label-sm text-outline">缺页率：60.0%</span>
+</div>
+</div>
+</div>
+<!-- AI 智能变式题推荐条目 -->
+<div class="p-3.5 rounded-xl bg-surface-container-high/60 flex items-center justify-between gap-3">
+<div class="flex items-center gap-3 min-w-0">
+<span class="material-symbols-outlined text-[20px] text-tertiary shrink-0">neurology</span>
+<div class="flex flex-col min-w-0">
+<span class="font-label-md text-label-md text-on-surface font-semibold truncate">AI 推荐针对性变式题：CLOCK (时钟置换) 算法带修改位二次机会</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant truncate">强化考查「访问位A」与「修改位M」的轮转置换扫描顺序</span>
+</div>
+</div>
+<button class="px-3 py-1.5 rounded-lg bg-surface-container-lowest text-primary hover:bg-primary-container hover:text-on-primary font-label-md text-label-md font-semibold transition-all shrink-0 shadow-sm" type="button">
+            开始变式训练
+          </button>
+</div>
+<!-- 卡片底部操作 -->
+<div class="flex items-center justify-between pt-2">
+<span class="font-label-sm text-label-sm text-outline">已纳入复习计划 · 下次复习将在 2 天后推送</span>
+<div class="flex items-center gap-2">
+<button class="px-3.5 py-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md text-label-md transition-colors" type="button">
+              查看评阅溯源
+            </button>
+<button class="px-4 py-2 rounded-lg bg-primary text-on-primary hover:bg-primary-container font-label-md text-label-md font-semibold flex items-center gap-1.5 shadow-sm transition-all" type="button">
+<span class="material-symbols-outlined text-[18px]">replay</span>
+<span>再练一次</span>
+</button>
+</div>
+</div>
+</article>
+<!-- 优雅空状态备选展示区 (展示完全清理后的正向反馈) -->
+<div class="p-space-lg rounded-xl bg-surface-container-lowest/60 backdrop-blur-md flex flex-col sm:flex-row items-center justify-between gap-space-md shadow-sm">
+<div class="flex items-center gap-space-md">
+<div class="w-12 h-12 rounded-full bg-secondary-fixed flex items-center justify-center text-primary shrink-0">
+<span class="material-symbols-outlined text-[24px]">task_alt</span>
+</div>
+<div class="flex flex-col">
+<span class="font-headline-sm text-headline-sm text-on-surface">计网「应用层协议」错题已清零</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">该模块下连续 3 次重练正确率达 100%，已自动打上「完全攻克」标签。</span>
+</div>
+</div>
+<button class="px-4 py-2 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md text-label-md font-medium shrink-0 transition-colors" type="button">
+          查看已掌握档案库
+        </button>
+</div>
+</div>
+<!-- 右侧 4 列：「小测复习与评阅溯源」常驻抽屉面板 -->
+<div class="xl:col-span-4 flex flex-col gap-space-md">
+<div class="sticky top-20 rounded-xl bg-surface-container-lowest/90 backdrop-blur-xl p-space-md flex flex-col gap-space-md shadow-sm">
+<!-- 抽屉标题 -->
+<div class="flex items-center justify-between pb-space-sm border-b border-surface-container-high/60">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-primary animate-pulse"></span>
+<span class="font-headline-sm text-headline-sm text-on-surface">小测评阅溯源抽屉</span>
+</div>
+<span class="px-2 py-0.5 rounded-full bg-surface-container font-code-sm text-label-sm text-outline">实时诊断</span>
+</div>
+<!-- 盲区雷达指标 (SVG 科技感微图表) -->
+<div class="flex flex-col gap-2 p-space-md rounded-xl bg-surface-container-low/70">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md text-on-surface font-semibold">408 核心薄弱考点雷达</span>
+<span class="font-label-sm text-label-sm text-primary font-code-sm">Top 5 Risk</span>
+</div>
+<!-- 简洁极简 SVG 雷达多边形 -->
+<div class="relative w-full h-44 flex items-center justify-center">
+<svg class="w-full h-full max-h-40" viewbox="0 0 200 200">
+<!-- 底网 -->
+<polygon class="text-surface-container-highest" fill="none" points="100,20 176,75 147,165 53,165 24,75" stroke="currentColor" stroke-width="1"></polygon>
+<polygon class="text-surface-container-high" fill="none" points="100,45 151,82 131,143 69,143 49,82" stroke="currentColor" stroke-width="1"></polygon>
+<polygon class="text-surface-container-high" fill="none" points="100,70 125,89 115,121 85,121 75,89" stroke="currentColor" stroke-width="1"></polygon>
+<!-- 轴线 -->
+<line class="text-surface-container-highest" stroke="currentColor" stroke-width="0.8" x1="100" x2="100" y1="100" y2="20"></line>
+<line class="text-surface-container-highest" stroke="currentColor" stroke-width="0.8" x1="100" x2="176" y1="100" y2="75"></line>
+<line class="text-surface-container-highest" stroke="currentColor" stroke-width="0.8" x1="100" x2="147" y1="100" y2="165"></line>
+<line class="text-surface-container-highest" stroke="currentColor" stroke-width="0.8" x1="100" x2="53" y1="100" y2="165"></line>
+<line class="text-surface-container-highest" stroke="currentColor" stroke-width="0.8" x1="100" x2="24" y1="100" y2="75"></line>
+<!-- 数据分布面 -->
+<polygon fill="rgba(79, 70, 229, 0.22)" points="100,35 160,80 120,150 70,135 40,85" stroke="#4F46E5" stroke-width="2"></polygon>
+<!-- 数据点 -->
+<circle class="fill-primary" cx="100" cy="35" r="3"></circle>
+<circle class="fill-primary" cx="160" cy="80" r="3"></circle>
+<circle class="fill-primary" cx="120" cy="150" r="3"></circle>
+<circle class="fill-primary" cx="70" cy="135" r="3"></circle>
+<circle class="fill-primary" cx="40" cy="85" r="3"></circle>
+</svg>
+<!-- 标签标注 -->
+<span class="absolute top-1 font-label-sm text-[10px] text-outline">AVL旋转 (78%)</span>
+<span class="absolute right-1 top-12 font-label-sm text-[10px] text-error font-medium">LRU算法 (86%)</span>
+<span class="absolute right-4 bottom-1 font-label-sm text-[10px] text-outline">TCP拥塞 (54%)</span>
+<span class="absolute left-4 bottom-1 font-label-sm text-[10px] text-outline">流水线冒险 (62%)</span>
+<span class="absolute left-1 top-12 font-label-sm text-[10px] text-outline">B+树分裂 (70%)</span>
+</div>
+<span class="font-label-sm text-label-sm text-outline text-center">综合诊断：近期失分集中在「非线性数据结构」与「内存虚拟化」</span>
+</div>
+<!-- 作答轮次历史对比记录 -->
+<div class="flex flex-col gap-2">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md text-on-surface font-semibold">多轮复练对比溯源</span>
+<span class="font-code-sm text-label-sm text-outline">3 次记录</span>
+</div>
+<div class="space-y-2">
+<div class="p-3 rounded-lg bg-surface-container-low flex items-center justify-between">
+<div class="flex items-center gap-2.5">
+<span class="w-6 h-6 rounded-full bg-error-container text-error flex items-center justify-center font-code-sm text-label-sm font-semibold">R1</span>
+<div class="flex flex-col">
+<span class="font-body-sm text-body-sm text-on-surface">初次作答 · 随堂测验</span>
+<span class="font-label-sm text-label-sm text-outline">耗时 5m 20s · 答错</span>
+</div>
+</div>
+<span class="font-code-sm text-label-sm text-error font-medium">0 / 10 分</span>
+</div>
+<div class="p-3 rounded-lg bg-surface-container-low flex items-center justify-between">
+<div class="flex items-center gap-2.5">
+<span class="w-6 h-6 rounded-full bg-error-container text-error flex items-center justify-center font-code-sm text-label-sm font-semibold">R2</span>
+<div class="flex flex-col">
+<span class="font-body-sm text-body-sm text-on-surface">复习重练 · 艾宾浩斯D+1</span>
+<span class="font-label-sm text-label-sm text-outline">耗时 3m 12s · 计算失误</span>
+</div>
+</div>
+<span class="font-code-sm text-label-sm text-error font-medium">4 / 10 分</span>
+</div>
+<div class="p-3 rounded-lg bg-primary-container/10 flex items-center justify-between">
+<div class="flex items-center gap-2.5">
+<span class="w-6 h-6 rounded-full bg-primary-container text-on-primary flex items-center justify-center font-code-sm text-label-sm font-semibold">R3</span>
+<div class="flex flex-col">
+<span class="font-body-sm text-body-sm text-primary font-semibold">变式强化 · 今日推荐</span>
+<span class="font-label-sm text-label-sm text-primary/80">耗时 1m 45s · 完美攻克</span>
+</div>
+</div>
+<span class="font-code-sm text-label-sm text-primary font-bold">10 / 10 分</span>
+</div>
+</div>
+</div>
+<!-- AI 导师总结建议 -->
+<div class="p-3.5 rounded-lg bg-surface-container-high/50 flex flex-col gap-1.5">
+<div class="flex items-center gap-1.5 text-tertiary font-label-md text-label-md font-semibold">
+<span class="material-symbols-outlined text-[16px]">verified</span>
+<span>学涯 AI 导师学习心法</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
+            你已彻底攻克了「最小失衡树判断法则」。建议今晚 21:00 抽空完成 1 组红黑树与 B+ 树的对比联想记忆，彻底固定长期记忆连接。
+          </p>
+</div>
+<!-- 底部快捷操作 -->
+<button class="w-full py-2.5 rounded-lg bg-surface-container-high hover:bg-surface-variant text-on-surface font-label-md text-label-md font-semibold transition-colors flex items-center justify-center gap-1.5" type="button">
+<span class="material-symbols-outlined text-[18px]">download_for_offline</span>
+<span>下载本题归纳白皮书 (Markdown)</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- 交互微动效与筛选响应交互逻辑 -->
+<script>
+  (function() {
+    // 过滤与标签切换的高亮与激活态处理
+    const filterButtons = document.querySelectorAll('button');
+    filterButtons.forEach(btn => {
+      btn.addEventListener('click', function() {
+        if (this.closest('.p-1.rounded-lg.bg-surface-container-low')) {
+          const siblings = this.parentElement.querySelectorAll('button');
+          siblings.forEach(s => {
+            s.className = 'px-3.5 py-1.5 rounded-md hover:bg-surface-container text-on-surface-variant font-label-md text-label-md transition-all flex items-center gap-1.5';
+          });
+          this.className = 'px-3.5 py-1.5 rounded-md bg-surface-container-lowest text-primary font-label-md text-label-md font-semibold shadow-sm transition-all flex items-center gap-1.5';
+        }
+      });
+    });
+  })();
+</script></div></main></div></body></html>

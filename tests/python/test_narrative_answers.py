@@ -33,7 +33,10 @@ async def test_reviewed_prose_is_delivered_instead_of_claim_list():
 @pytest.mark.asyncio
 async def test_valid_claims_do_not_authorize_unverified_prose():
     result = await finalize_answer(json.dumps(payload()), [SOURCE], 'fixture', review=Reviewer(True), narrative=True)
+    # The unverified prose is never published and is not replaced by a
+    # mechanical excerpt list; the caller falls back to a natural answer.
     assert result['answerStatus'] == 'unavailable'
+    assert result['verification'] == 'not-generated'
     assert PROSE not in result['answer']
 
 @pytest.mark.asyncio

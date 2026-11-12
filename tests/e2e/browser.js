@@ -1,4 +1,4 @@
-const {chromium}=require('playwright');
+﻿const {chromium}=require('playwright');
 const fs=require('node:fs');
 const path=require('node:path');
 const http=require('node:http');
@@ -64,7 +64,7 @@ const outputDirectory=path.join(root,'test-results/browser');
     assert.match(await page.locator('.ai-message').last().innerText(),/入度为零/);
     await page.locator('.ai-message .workflow-details summary').first().click();
     assert.match(await page.locator('.ai-message .workflow-details').first().innerText(),/原文和引用位置已核对/);
-    assert.match(await page.locator('#engineStatus').innerText(),/MiMo 在线/);
+    assert.match(await page.locator('#engineStatus').innerText(),/在线/);
     await page.locator('.ai-message .citation-chip').first().click();
     assert.match(await page.locator('#sourceContent').innerText(),/协作验证.md/);
     await page.getByRole('button',{name:'关闭原文',exact:true}).click();

@@ -106,9 +106,12 @@ def test_forged_citation_is_rejected_before_review(tmp_path, bad):
 def test_keep_supported_explanation_and_omit_an_unsupported_claim(tmp_path):
     app, calls = host(tmp_path, [claim(), claim('队列可以保证所有问题最快得到解决。')], ['supported', 'unsupported'])
     result, events = ask(app)
-    assert TEXT not in result['answer'] and '所有问题最快' not in dumps(events)
+    # The rejected prose is never published and is not replaced by mechanical
+    # excerpts; with no general fallback configured the answer stays unavailable.
     assert result['answerStatus'] == 'unavailable'
-    assert result['verification'] == 'not-generated' and len(calls) == 2
+    assert result['verification'] == 'not-generated'
+    assert TEXT not in result['answer'] and '所有问题最快' not in dumps(events)
+    assert len(calls) == 2
 
 
 def test_review_cannot_bypass_shared_model_budget(tmp_path):

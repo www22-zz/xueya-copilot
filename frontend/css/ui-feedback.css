@@ -1,6 +1,4 @@
 /* Teammate UI applies outside the preserved overview and conversation. */
-html:not(.workspace-original) ::selection{background:#c6d3ff;color:#142344;text-shadow:none}
-html:not(.workspace-original)[data-theme=dark] ::selection{background:#abc2ff;color:#101c35}
 html:not(.workspace-original) .study-title{padding-block:8px}
 html:not(.workspace-original) .study-title .title-lens{display:none}
 html:not(.workspace-original) .study-title .title-letter:hover{transform:none}

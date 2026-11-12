@@ -11,7 +11,7 @@ from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse, Res
 from pydantic import ValidationError
 from .agent import Agent, normalize_request
 from .common import AppError, dumps, identifier, require
-from .config import Config, load_config
+from .config import Config, UI_BUILD, load_config
 from .jobs import TERMINAL
 from .mcp_core import open_session, platform_registry
 from .parse_worker import parse_artifact
@@ -157,6 +157,7 @@ def create_app(config: Config | None = None, *, provider=None, start_jobs=True):
     async def health():
         platform = app.state.platform
         return success(engine="xiaomi-mimo" if config.api_key else "local-fallback", model=config.model,
+                       uiBuild=UI_BUILD,
                        ragGeneralFallbackEnabled=config.rag_general_fallback,
                        **({"instanceId": app.state.instance_id} if app.state.instance_id else {}),
                        **({"platform": {"schemaVersion": "1.0", "storage": "sqlite", "inference": "external-api-only", "resources": platform.resources.stats()}} if platform else {}))
@@ -232,9 +233,14 @@ def create_app(config: Config | None = None, *, provider=None, start_jobs=True):
     async def api(request: Request, task: str):
         if task.startswith("platform/"):
             return await platform_route(request, "/"+task[len("platform/"):])
-        require(task in ("ai", "ai/stream", "agent", "agent/stream", "topics", "questions"), "NOT_FOUND")
+        require(task in ("ai", "ai/stream", "agent", "agent/stream", "topics", "questions", "suggestions", "agent/suggestions"), "NOT_FOUND")
         value = await json_body(request)
         agent = app.state.agent
+        if task in ("suggestions", "agent/suggestions"):
+            try:
+                return await connected_work(request, agent.suggestions(value))
+            except Exception as error:
+                return {"ok": False, "error": ai_error_code(error, ('INVALID_REQUEST', 'EMPTY_QUESTION'))}
         if task in ("topics", "questions"):
             try:
                 return await connected_work(request, agent.practice(task, value))
@@ -412,7 +418,7 @@ def create_app(config: Config | None = None, *, provider=None, start_jobs=True):
     async def static(request: Request, path: str):
         requested = "/"+path if path else "/index.html"
         shared = requested in PUBLIC_SHARED
-        frontend = requested in ("/index.html", "/algorithm-demo.html", "/sw.js") or bool(re.fullmatch(r"/(?:css/(?:[a-zA-Z0-9_-]+/)*[a-zA-Z0-9_-]+\.css|js/(?:[a-zA-Z0-9_-]+/)*[a-zA-Z0-9_-]+\.js|assets/[a-zA-Z0-9_-]+\.(?:svg|png|jpg|woff2))", requested))
+        frontend = requested in ("/index.html", "/algorithm-demo.html", "/reset.html", "/sw.js") or bool(re.fullmatch(r"/(?:css/(?:[a-zA-Z0-9_-]+/)*[a-zA-Z0-9_-]+\.css|js/(?:[a-zA-Z0-9_-]+/)*[a-zA-Z0-9_-]+\.js|assets/[a-zA-Z0-9_-]+\.(?:svg|png|jpg|woff2))", requested))
         if not shared and not frontend:
             return PlainTextResponse("Not found", status_code=404)
         root = config.root if shared else config.root / "frontend"

@@ -1,4 +1,4 @@
-const test=require('node:test');
+﻿const test=require('node:test');
 const assert=require('node:assert/strict');
 const {readSSE}=require('../../shared/agent/sse.js');
 const {createChatService}=require('../../frontend/js/services/chat-service.js');
@@ -23,7 +23,7 @@ test('a server autonomous fallback resets partial text and never inherits course
       sources:[cited.id],sourceDetails:[cited],verification:'general-knowledge-not-course-verified',fallback});
   const service=createChatService({fetchImpl:async()=>new Response(body(stream),{headers:{'Content-Type':'text/event-stream'}})});
   const result=await service.stream({question:'解释队列。',sources:[cited]},{workflow:true,onUpdate:u=>updates.push(u)});
-  assert.equal(result.engine,'MiMo 自主回答');assert.equal(result.online,true);
+  assert.equal(result.engine,'通用回答');assert.equal(result.online,true);
   assert.deepEqual(result.sources,[]);assert.deepEqual(result.fallback,fallback);
   assert.equal(result.verification,'general-knowledge-not-course-verified');
   const reset=updates.findIndex(u=>u.answer==='');assert.ok(reset>=0);

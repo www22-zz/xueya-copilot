@@ -29,7 +29,12 @@ class MimoProvider:
             timing, model_started = current_timing.get(), None
             state = {'usage': None, 'complete': False, 'usable': False, 'finishReason': None, 'outputLimit': output_limit}
             if self.platform:
-                release = (lambda: None) if api_permit_held(self.platform) else self.platform.resources.acquire('api')
+                if api_permit_held(self.platform):
+                    release = (lambda: None)
+                else:
+                    # Queue instead of failing instantly; timeout <= 0 keeps the
+                    # legacy fail-fast API_BUSY contract for existing callers.
+                    release = await self.platform.resources.acquire_wait('api', getattr(self.config, 'api_queue_timeout', 0.0))
                 require(release is not None, 'API_BUSY')
             try:
                 state['reservedCost'] = budget.model(messages, output_limit, capability=capability, model=model or self.config.model)
@@ -50,8 +55,12 @@ class MimoProvider:
                 state['errorType'] = type(error).__name__
                 raise
             finally:
-                if timing and model_started is not None:
-                    timing.model_ms += (perf_counter()-model_started)*1000
+                if timing:
+                    if model_started is not None:
+                        timing.model_ms += (perf_counter()-model_started)*1000
+                    # Exactly one usage accrual per dispatched call, including
+                    # failures and budget-unknown outcomes (None is ignored).
+                    timing.note_usage(state.get('usage'))
                 try:
                     if request_id:
                         status = 'succeeded' if state['usable'] else 'failed' if state['complete'] else 'unknown'

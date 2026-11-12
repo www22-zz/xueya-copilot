@@ -244,7 +244,7 @@
       const box = target.querySelector('[data-cg-video]');
       if (!box) return;
       const matching = courses.filter(c => c.subject === subject && /^https?:\/\//i.test(c.sourceUrl || ''));
-      box.innerHTML = `<h4>相关视频课程</h4>${matching.map(c => `<a class="cg-video-link" href="#space/courses/${e(c.id)}/${e(c.episodes?.[0]?.id||'')}" data-concept-video="${e(c.id)}">${e(c.title)} ↗</a>`).join('') || `<p>${videoError ? '课程目录暂时无法读取。' : '暂无匹配的课程入口。'}</p>`}<p class="cg-muted">${matching.length ? '本科目课程总览，尚未定位到此知识点的具体分集。' : '没有匹配视频时，不添加占位链接。'}</p>`;
+      box.innerHTML = `<h4>相关视频课程</h4>${matching.map(c => `<a class="cg-video-link" href="#space/courses/${e(c.id)}/${e(c.episodes?.[0]?.id||'')}" data-concept-video="${e(c.id)}">${e(c.title)} ↗</a>`).join('') || `<p>${videoError ? '课程目录暂时无法读取。' : '暂无匹配的课程入口。'}</p>`}<p class="cg-muted">${matching.length ? '已核验的本科目课程入口；尚未定位到该知识点的具体分集。' : '没有匹配视频时，不添加占位链接。'}</p>`;
     }
     target.addEventListener('click',event=>{const link=event.target.closest('[data-concept-video]');if(link)sessionStorage.setItem((window.XueyaDataKey||((k)=>k))('xueya-video-context'),JSON.stringify({courseId:link.dataset.conceptVideo,label:concepts.get(selected)?.label||subject,returnHash:location.hash,returnTab:directory?'graph':'corpus'}));});
     const videoPromise = window.XueyaPlatform.spaceFetch('/api/learning/space/courses').then(async response => {

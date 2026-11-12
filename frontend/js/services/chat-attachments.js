@@ -18,7 +18,7 @@ window.XueyaChatAttachments={async respond(files,request,options={}){
  const question=request.question+(transcripts.length?'\n\n用户已核对的语音提问：\n'+transcripts.join('\n\n'):'');
  if(question.length>4000)throw new Error('语音文字和问题超过 4000 字，请缩短录音或文字后发送。');
  let result;
- if(images.length){onUpdate({progress:'正在结合图片和问题回答…'});const response=await api('chat/respond',{...request,question,media:images});const known=request.sources;result={...response,sources:(response.sources||[]).map(id=>known.find(s=>s.id===id)).filter(Boolean),engine:response.online?'MiMo 图文问答':'图片回答暂不可用',online:response.online===true};}
+ if(images.length){onUpdate({progress:'正在结合图片和问题回答…'});const response=await api('chat/respond',{...request,question,media:images});const known=request.sources;result={...response,sources:(response.sources||[]).map(id=>known.find(s=>s.id===id)).filter(Boolean),engine:response.online?'图文回答':'图片回答暂不可用',online:response.online===true};}
  else{onUpdate({progress:'正在根据已核对的语音问题回答…'});result=await window.XueyaChat.createChatService().stream({...request,question},{...options,workflow:true});}
  return {...result,transcript:transcripts.join('\n\n')};
 }};

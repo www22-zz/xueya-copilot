@@ -40,6 +40,8 @@
   titles.algorithms='算法学习';renders.algorithms=()=>'<div id="algorithmLearning"></div>';
   titles.exams='408考研学习';renders.exams=()=>'<div id="examLearning"></div>';
   const chatService=window.XueyaChat.createChatService();
+  const chatHelpers=window.XueyaChat;
+  const typewriter=typeof chatHelpers?.createTypewriter==='function'?chatHelpers.createTypewriter({reducedMotion:typeof chatHelpers.prefersReducedMotion==='function'?chatHelpers.prefersReducedMotion(window):false}):null;
   const experience=window.XueyaExperience?.create({state});
   let activeChat;
   const historyLayout=window.XueyaHistoryLayout?.create();
@@ -141,7 +143,7 @@
     const clean=question.trim()||(workspace.attachments.length?'请根据附件内容帮我解答。':'');if(!clean||state.pending||!workspace.canAsk())return;
     const {history,previousSources,previousAnswerKind}=workspace.historyFor(clean);
     const sources=state.selectedDocuments.length?allSources().filter(s=>state.selectedDocuments.includes(s.documentId)):allSources();
-    const request={courseId:state.courseId,question:clean,mode:state.mode,sources,history,previousSources,previousAnswerKind,learning:{questions:[],records:[]},webSearch:Boolean(state.webSearch)};
+    const request={courseId:state.courseId,question:clean,mode:state.mode,sources,history,previousSources,previousAnswerKind,learning:{questions:[],records:[]},webSearch:Boolean(state.webSearch),deepThink:Boolean(state.deepThink)};
     const courseDocuments=state.documents.filter(d=>d.remote&&!d.superseded&&!d.archived).map(d=>d.id);
     if(courseDocuments.length)request.documentIds=state.selectedDocuments.length?[...state.selectedDocuments]:courseDocuments;
     try{const scope=JSON.parse(localStorage.getItem((window.XueyaDataKey||((key)=>key))('xueya-c-learning:'+state.courseId+':scope:'+state.sessionId)));if(Array.isArray(scope))request.documentIds=scope;else if(state.selectedDocuments.length)request.documentIds=[...state.selectedDocuments];}catch{}
@@ -150,7 +152,7 @@
     state.draft='';state.followupIndex=null;state.pending=true;const userMessage={id:crypto.randomUUID(),role:'user',text:clean,createdAt:new Date().toISOString()};const batch=workspace.takeAttachments(userMessage);state.messages.push(userMessage,ai);persist();
     if(state.view!=='ask')location.hash='space/ask';else render();
     const thinkStart=Date.now();
-    let thinkingDuration=null,userScrolledUp=false,isProgrammaticScroll=false,scrollRafId=null;
+    let thinkingDuration=null,userScrolledUp=false,isProgrammaticScroll=false,scrollRafId=null,typing=false,thinkingCollapsed=false;
     const thread=$('#chatThread');
     function updateScrollState(){
       if(isProgrammaticScroll){isProgrammaticScroll=false;return;}
@@ -179,14 +181,68 @@
       thread.addEventListener('wheel',onWheel,{passive:true});
       thread.addEventListener('touchmove',onTouch,{passive:true});
     }
+    /* Single paint path for the in-flight assistant message: streaming updates, the
+       final-answer typewriter and the done transition all go through here. */
+    function paintAi(){
+      if(state.view!=='ask')return;
+      const body=$$('#chatThread .ai-message .message-body').at(-1);
+      if(body){
+        const generating=ai.engine==='正在回答';
+        const thinkingText=ai.reasoning||ai.progress||'';
+        const showThinking=Boolean(generating||thinkingText);
+        let thinkingBox=body.querySelector('.thinking-box');
+        if(showThinking){
+          const durationSec=Number.isFinite(ai.thinkingSeconds)?ai.thinkingSeconds:Number.isFinite(ai.timings?.totalMs)?Math.max(1,Math.round(ai.timings.totalMs/1000)):null;
+          const label=generating?'思考中…':('已思考'+(durationSec?'（用时 '+durationSec+' 秒）':''));
+          const content=thinkingText||'正在思考并核查课程依据…';
+          if(!thinkingBox){
+            const meta=body.querySelector('.message-meta');
+            const boxEl=document.createElement('details');boxEl.className='thinking-box';boxEl.open=generating;
+            boxEl.innerHTML='<summary class="thinking-summary"><span class="thinking-spark">✳</span><span class="thinking-label"></span><span class="thinking-arrow">▾</span></summary><div class="thinking-content"></div>';
+            if(meta&&meta.nextSibling)meta.parentNode.insertBefore(boxEl,meta.nextSibling);else body.prepend(boxEl);
+            thinkingBox=boxEl;
+          }
+          const lbl=thinkingBox.querySelector('.thinking-label');if(lbl)lbl.textContent=label;
+          const cnt=thinkingBox.querySelector('.thinking-content');if(cnt)cnt.textContent=content;
+          if(generating)thinkingBox.open=true;
+          else if(!thinkingCollapsed){thinkingBox.open=false;thinkingCollapsed=true;}
+        }else if(thinkingBox)thinkingBox.remove();
+        let richEl=body.querySelector('.rich-content');
+        if(richEl){
+          richEl.hidden=false;
+          if(ai.text)richEl.innerHTML=window.XueyaRich.render(ai.text)+((generating||typing)?'<span class="stream-cursor" aria-hidden="true"></span>':'');
+          else richEl.innerHTML='';
+        }
+        let draftBadge=body.querySelector('.draft-badge');
+        if(ai.draft){
+          if(!draftBadge){draftBadge=document.createElement('span');draftBadge.className='draft-badge';draftBadge.setAttribute('role','status');draftBadge.textContent='正在组织答案…';if(richEl)richEl.before(draftBadge);else body.append(draftBadge);}
+        }else if(draftBadge)draftBadge.remove();
+        const streamP=body.querySelector('.stream-text');if(streamP)streamP.hidden=true;
+      }
+      const t=$('#chatThread');
+      if(t&&!userScrolledUp&&!scrollRafId){
+        scrollRafId=requestAnimationFrame(()=>{
+          scrollRafId=null;
+          if(!userScrolledUp&&t){
+            isProgrammaticScroll=true;
+            t.scrollTop=t.scrollHeight;
+            const activeMsg=body?.closest('.ai-message');
+            if(activeMsg){
+              const rect=activeMsg.getBoundingClientRect();
+              if(rect.bottom>window.innerHeight-24)window.scrollBy({top:rect.bottom-(window.innerHeight-24),behavior:'instant'});
+            }
+          }
+        });
+      }
+    }
     try{
       const stream=batch.length?((input,options)=>workspace.imageChat(input,options,batch)):chatService.stream.bind(chatService);
       const planning=!batch.length&&window.XueyaPlatform?.available?await window.XueyaStudyChat?.handle({question:clean,history:request.history,sessionId:state.sessionId,operationId:userMessage.id},{signal:controller.signal,onReference(reference){ai.artifacts={studyPlanning:reference};persist();}}):null;
       const quiz=!planning&&!batch.length&&window.XueyaPlatform?.available?await window.XueyaStudyQuiz?.tryChat({question:clean,sessionId:state.sessionId,operationId:userMessage.id},{signal:controller.signal,onReference(reference){ai.artifacts={quiz:reference};persist();}}):null;
       const result=planning||quiz||await stream(request,{workflow:true,signal:controller.signal,onUpdate(update){
-        if(typeof update.answer==='string')ai.text=update.answer;
-        if(update.progress)ai.progress=update.progress;
-        if(typeof update.reasoning==='string')ai.reasoning=update.reasoning;
+        if(!update||typeof update!=='object')return;
+        if(typeof window.XueyaChat.applyStreamUpdate==='function')window.XueyaChat.applyStreamUpdate(ai,update);
+        else{if(typeof update.answer==='string')ai.text=update.answer;if(typeof update.draft==='boolean')ai.draft=update.draft;if(update.progress)ai.progress=update.progress;if(typeof update.reasoning==='string')ai.reasoning=update.reasoning;}
         if(update.agent){ai.agent=update.agent;ai.toolCalls=window.XueyaMCPTrace.collect(ai.toolCalls,update.agent);}
         if(update.toolCalls)ai.toolCalls=update.toolCalls;
         if(update.runId)ai.runId=update.runId;
@@ -195,69 +251,47 @@
           thinkingDuration=Math.max(1,Math.round((Date.now()-thinkStart)/1000));
           ai.thinkingSeconds=thinkingDuration;
         }
-        if(state.view==='ask'){
-          const body=$$('#chatThread .ai-message .message-body').at(-1);
-          if(body){
-            const hasReasoning=Boolean(ai.reasoning||ai.progress||!ai.text);
-            let thinkingBox=body.querySelector('.thinking-box');
-            if(hasReasoning){
-              const label=ai.text?('已深度思考'+(thinkingDuration?' (用时 '+thinkingDuration+' 秒)':'')):(ai.reasoning?'思考中…':(ai.progress||'思考中…'));
-              const content=ai.reasoning||ai.progress||'正在思考并核查课程依据…';
-              if(!thinkingBox){
-                const meta=body.querySelector('.message-meta');
-                const boxEl=document.createElement('details');boxEl.className='thinking-box';boxEl.open=!ai.text;
-                boxEl.innerHTML=`<summary class="thinking-summary"><span class="thinking-spark">✳</span><span class="thinking-label">${e(label)}</span><span class="thinking-arrow">▾</span></summary><div class="thinking-content">${e(content)}</div>`;
-                if(meta&&meta.nextSibling)meta.parentNode.insertBefore(boxEl,meta.nextSibling);else body.prepend(boxEl);
-              }else{
-                const lbl=thinkingBox.querySelector('.thinking-label');if(lbl)lbl.textContent=label;
-                const cnt=thinkingBox.querySelector('.thinking-content');if(cnt)cnt.textContent=content;
-                if(ai.text&&thinkingBox.open&&!ai.reasoning){thinkingBox.open=false;}
-              }
-            }else if(thinkingBox&&ai.text&&!ai.reasoning){
-              thinkingBox.remove();
-            }
-            let richEl=body.querySelector('.rich-content');
-            if(richEl){
-              richEl.hidden=false;
-              if(ai.text){
-                richEl.innerHTML=window.XueyaRich.render(ai.text)+'<span class="stream-cursor" aria-hidden="true"></span>';
-              }else if(!hasReasoning){
-                richEl.innerHTML='<p class="streaming-placeholder">正在组织回答…</p>';
-              }else{
-                richEl.innerHTML='';
-              }
-            }
-            const streamP=body.querySelector('.stream-text');if(streamP)streamP.hidden=true;
-          }
-          const t=$('#chatThread');
-          if(t&&!userScrolledUp){
-            if(!scrollRafId){
-              scrollRafId=requestAnimationFrame(()=>{
-                scrollRafId=null;
-                if(!userScrolledUp&&t){
-                  isProgrammaticScroll=true;
-                  t.scrollTop=t.scrollHeight;
-                  const activeMsg=body?.closest('.ai-message');
-                  if(activeMsg){
-                    const rect=activeMsg.getBoundingClientRect();
-                    if(rect.bottom>window.innerHeight-24){
-                      window.scrollBy({top:rect.bottom-(window.innerHeight-24),behavior:'instant'});
-                    }
-                  }
-                }
-              });
-            }
-          }
-        }
+        paintAi();
       }});
       controller.signal.throwIfAborted();
       if(result.transcript)userMessage.transcript=result.transcript;
-      Object.assign(ai,{text:result.answer,reasoning:result.reasoning||'',sources:result.sources,engine:result.engine,failed:result.answerStatus==='unavailable',...(result.answerStatus?{answerStatus:result.answerStatus}:{}),...(result.reason?{reason:result.reason}:{}),...(result.verification?{verification:result.verification}:{}),...(result.fallback?{fallback:result.fallback}:{}),...(result.timings?{timings:result.timings}:{}),...(result.agent?{agent:result.agent}:{}),...(result.workflow?{workflow:result.workflow}:{}),...(result.artifacts?{artifacts:result.artifacts}:{})});
+      const finalAnswer=typeof result.answer==='string'?result.answer:'';
+      const suggested=Array.isArray(result.suggestedQuestions)?result.suggestedQuestions.filter(item=>typeof item==='string'&&item.trim()).slice(0,3):[];
+      Object.assign(ai,{reasoning:result.reasoning||'',sources:result.sources,engine:result.engine,failed:result.answerStatus==='unavailable',...(result.answerStatus?{answerStatus:result.answerStatus}:{}),...(result.reason?{reason:result.reason}:{}),...(result.verification?{verification:result.verification}:{}),...(result.fallback?{fallback:result.fallback}:{}),...(result.timings?{timings:result.timings}:{}),...(result.agent?{agent:result.agent}:{}),...(result.workflow?{workflow:result.workflow}:{}),...(result.artifacts?{artifacts:result.artifacts}:{})});
+      ai.draft=false;
+      if(suggested.length)ai.suggestedQuestions=suggested;
       if(result.agent)ai.toolCalls=window.XueyaMCPTrace.collect(ai.toolCalls,result.agent);
       if(result.toolCalls)ai.toolCalls=result.toolCalls;
       if(result.runId)ai.runId=result.runId;
-      $('#engineStatus').textContent=result.answerStatus==='unavailable'?'回答未完成':result.engine==='应用信息'?'应用信息':result.online?'MiMo 在线':result.workflow?'本地学习模式':'本地检索模式';
+      if(!ai.thinkingSeconds&&!Number.isFinite(ai.timings?.totalMs))ai.thinkingSeconds=Math.max(1,Math.round((Date.now()-thinkStart)/1000));
+      $('#engineStatus').textContent=result.answerStatus==='unavailable'?'回答未完成':result.engine==='应用信息'?'应用信息':result.online?'在线':result.workflow?'本地模式':'本地检索模式';
       $('#engineStatus').classList.toggle('online',result.online);
+      if(!suggested.length&&result.online&&!result.artifacts?.studyPlanning&&!result.artifacts?.quiz){
+        const suggestionsPromise=window.XueyaChat.requestSuggestions?.({courseId:state.courseId,question:clean,answer:finalAnswer,history:request.history});
+        suggestionsPromise?.then(questions=>{
+          if(!Array.isArray(questions)||!questions.length)return;
+          ai.suggestedQuestions=questions;
+          if(state.pending)return;
+          persist();
+          if(state.view==='ask'&&!$('#spacePage').hidden)render();
+        });
+      }
+      paintAi();
+      // Always replay the verified final answer from the beginning unless the
+      // same prose was already painted progressively by streamed content
+      // events (general/联网 answers). Re-typing an already typed answer would
+      // visibly duplicate it.
+      const alreadyTyped=result.streamed===true&&typeof ai.text==='string'&&ai.text.trim()!==''&&
+        (ai.text===finalAnswer||finalAnswer.startsWith(ai.text));
+      typing=true;
+      if(typewriter&&!ai.failed&&!ai.cancelled&&!alreadyTyped){
+        ai.text='';
+        paintAi();
+        await typewriter.start(finalAnswer,partial=>{ai.text=partial;paintAi();},{signal:controller.signal});
+      }else ai.text=finalAnswer;
+      typing=false;
+      ai.text=finalAnswer;
+      paintAi();
     }catch(error){
       const cancelled=controller.signal.aborted||error.name==='AbortError';
       Object.assign(ai,{text:cancelled?'已停止生成。你可以修改问题或重新发送。':({IMAGE_MODEL_NOT_CONFIGURED:'图片服务未配置，请在更多中的服务设置查看。',ASR_NOT_CONFIGURED:'语音识别服务未配置，请在更多中的服务设置查看。',AI_UNAVAILABLE:'服务暂不可用，请在更多中的服务设置查看。'}[error.code]||'这次回答未能完成，请检查服务设置后重试。'),reasoning:'',sources:[],engine:cancelled?'已停止':'回答未完成',cancelled,failed:!cancelled});
@@ -272,7 +306,8 @@
         t.removeEventListener('touchmove',onTouch);
       }
       if(activeChat===controller)activeChat=undefined;
-      delete ai.progress;
+      if(ai.reasoning)delete ai.progress;
+      delete ai.draft;delete ai.organizing;
       if(thinkingDuration&&!ai.thinkingSeconds)ai.thinkingSeconds=thinkingDuration;
       state.pending=false;persist();
       if(state.view==='ask'&&!$('#spacePage').hidden){
@@ -293,8 +328,9 @@
   function mount(){
     agentRuns?.mount();
     workspace.mount();practiceUI?.initialize?.();route();window.addEventListener('hashchange',route);
-    if(location.protocol==='file:')$('#engineStatus').textContent='本地检索模式';
-    else fetch('/api/health',{signal:AbortSignal.timeout(5000)}).then(r=>r.json()).then(p=>{$('#engineStatus').textContent=p.engine==='xiaomi-mimo'?'MiMo 已配置':'本地检索模式';}).catch(()=>{$('#engineStatus').textContent='本地检索模式';});
+    if(location.protocol==='file:')$('#engineStatus').textContent='本地模式';
+    else fetch('/api/health',{signal:AbortSignal.timeout(5000)}).then(r=>r.json()).then(p=>{$('#engineStatus').textContent=p.engine==='xiaomi-mimo'?'已就绪':'本地模式';
+      if(p.uiBuild&&window.XUEYA_UI_BUILD&&p.uiBuild!==window.XUEYA_UI_BUILD){try{const key='xueya-ui-build-reload';if(sessionStorage.getItem(key)!==p.uiBuild){sessionStorage.setItem(key,p.uiBuild);location.reload();}}catch{}}}).catch(()=>{$('#engineStatus').textContent='本地模式';});
     $('#spaceContent').addEventListener('submit',event=>{event.preventDefault();if(workspace.handleSubmit(event))return;if(event.target.id==='chatForm')ask($('#chatInput').value);});
     $('#spaceContent').addEventListener('input',event=>{if(workspace.handleInput(event))return;if(event.target.id==='chatInput')state.draft=event.target.value;if(event.target.id==='librarySearch'){state.libraryQuery=event.target.value;$('#documentList').innerHTML=documentRows(state.libraryQuery);icons();}if(event.target.id==='cardSearch'){state.cardQuery=event.target.value;$('#cardList').innerHTML=cardRows(state.cardQuery);icons();}});
     $('#spaceContent').addEventListener('keydown',event=>{if(event.target.id==='chatInput'&&event.key==='Enter'&&!event.shiftKey&&!event.isComposing){event.preventDefault();event.target.form.requestSubmit();}});

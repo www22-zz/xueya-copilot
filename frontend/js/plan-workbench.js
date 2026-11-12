@@ -853,7 +853,7 @@
           const binding = resource.type === 'question'
             ? (url ? `<a href="${e(url)}">${e(clampText(resource.title || '本地题目', 60))}</a>` : '本地固定题目')
             : resource.type === 'course'
-              ? (url ? `<a href="${e(url)}">课程总览（非精确分集）</a>` : '课程总览（未提供链接）')
+              ? (url ? `<a href="${e(url)}">课程入口（站内可播）</a>` : '课程入口（未提供链接）')
               : '未绑定本地题目';
           return `<li class="${task.completed ? 'is-done' : ''}">
             <span class="pw-task-title">${e(task.title || '学习任务')}</span>

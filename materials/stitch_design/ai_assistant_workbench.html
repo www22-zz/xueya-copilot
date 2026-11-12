@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>学涯 Copilot - AI 伴学助手与沉浸式研学工作台</title>
+<!-- Tailwind CSS v3 with Plugins -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Google Fonts: Plus Jakarta Sans -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&amp;family=Noto+Sans+SC:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              200: '#c7d2fe',
+              300: '#a5b4fc',
+              400: '#818cf8',
+              500: '#6366f1',
+              600: '#4f46e5', // Design System Primary
+              700: '#4338ca',
+              800: '#3730a3',
+              900: '#312e81',
+            },
+            surface: {
+              base: '#faf8ff',
+              dim: '#f3f4fa',
+              container: '#ffffff',
+            }
+          },
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', '"Noto Sans SC"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
+          },
+          boxShadow: {
+            'glass': '0 8px 32px 0 rgba(79, 70, 229, 0.07)',
+            'subtle': '0 2px 10px rgba(0, 0, 0, 0.03)',
+            'float': '0 20px 40px -15px rgba(79, 70, 229, 0.12)',
+          }
+        }
+      }
+    }
+  </script>
+<style data-purpose="custom-scrollbars-and-glass">
+    /* Subtle custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(148, 163, 184, 0.25);
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(99, 102, 241, 0.4);
+    }
+    /* Glassmorphism helpers */
+    .glass-panel {
+      background: rgba(255, 255, 255, 0.82);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(226, 232, 240, 0.8);
+    }
+    .glass-card {
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(224, 231, 255, 0.65);
+    }
+    .mesh-gradient-bg {
+      background: radial-gradient(at 0% 0%, #f4f3ff 0px, transparent 50%),
+                  radial-gradient(at 100% 0%, #eef2ff 0px, transparent 40%),
+                  radial-gradient(at 50% 100%, #f5f3ff 0px, transparent 60%),
+                  #fcfbfe;
+    }
+  </style>
+</head>
+<body class="mesh-gradient-bg text-slate-800 font-sans h-screen flex flex-col overflow-hidden antialiased select-none">
+<!-- BEGIN: TopGlobalNavigation -->
+<header class="h-16 border-b border-indigo-100/70 bg-white/80 backdrop-blur-md px-5 flex items-center justify-between shrink-0 z-30 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
+<!-- Left Logo & Workspace Tag -->
+<div class="flex items-center gap-3.5 min-w-[240px]">
+<div class="relative flex items-center justify-center w-9 h-9 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-500 shadow-md shadow-brand-500/20 text-white">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewbox="0 0 24 24">
+<path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span class="absolute -bottom-1 -right-1.5 px-1 py-0.2 text-[9px] font-extrabold bg-amber-400 text-amber-950 rounded tracking-tighter uppercase ring-1 ring-white">M3</span>
+</div>
+<div>
+<div class="flex items-center gap-1.5">
+<h1 class="text-sm font-bold tracking-tight text-slate-900 leading-tight">学涯 Copilot</h1>
+</div>
+<p class="text-[11px] font-medium text-slate-400 tracking-wide">Study Workspace 3.0</p>
+</div>
+</div>
+<!-- Center Navigation Tabs & Global Search -->
+<div class="flex items-center gap-4 max-w-2xl w-full justify-center">
+<!-- Mode Segmented Control -->
+<nav aria-label="Mode selector" class="flex p-1 bg-slate-100/90 rounded-full border border-slate-200/70">
+<button class="flex items-center gap-1.5 px-3.5 py-1 text-xs font-semibold text-brand-600 bg-white rounded-full shadow-sm shadow-slate-200 transition-all">
+<svg class="w-3.5 h-3.5 text-brand-600 animate-pulse" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M13 10V3L4 14h7v7l9-11h-7z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+          AI 伴学助手
+        </button>
+<button class="flex items-center gap-1.5 px-3.5 py-1 text-xs font-medium text-slate-600 hover:text-slate-900 rounded-full transition-colors">
+<svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+          学习中心
+        </button>
+</nav>
+<!-- Global Search Bar -->
+<div class="relative w-80">
+<div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</div>
+<input class="w-full pl-9 pr-12 py-1.5 bg-slate-50/80 hover:bg-slate-100/80 focus:bg-white text-xs text-slate-800 placeholder-slate-400 border border-slate-200/90 rounded-full focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 transition-all shadow-inner" placeholder="搜索资料、笔记与操作..." type="text"/>
+<div class="absolute inset-y-0 right-0 pr-2 flex items-center pointer-events-none">
+<kbd class="px-1.5 py-0.5 text-[10px] font-semibold text-slate-400 bg-white border border-slate-200 rounded-md shadow-xs">⌘K</kbd>
+</div>
+</div>
+</div>
+<!-- Right Controls: Knowledge Graph Status & Profile -->
+<div class="flex items-center gap-3">
+<!-- Knowledge Base Mounted Indicator -->
+<div class="flex items-center gap-2 px-2.5 py-1 bg-indigo-50/80 border border-indigo-100 rounded-lg text-xs font-medium text-brand-700 hover:bg-indigo-100/60 cursor-pointer transition-colors" title="当前关联核心课程库">
+<svg class="w-3.5 h-3.5 text-brand-600" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M4 7v10c0 2 1.5 3 3.5 3h9c2 0 3.5-1 3.5-3V7c0-2-1.5-3-3.5-3h-9C5.5 4 4 5 4 7zM9 4v16" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+<span>数据结构</span>
+<svg class="w-3 h-3 text-brand-400" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</div>
+<!-- Engine Status Indicator -->
+<div class="flex items-center gap-1.5 px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-600">
+<span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+<span class="text-[11px] font-medium text-slate-500">MiMo 3.5 已配置</span>
+</div>
+<!-- Quick Action Icons -->
+<div class="flex items-center border-l border-slate-200 pl-2 gap-1 text-slate-500">
+<button class="p-1.5 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors" title="随记笔记">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</button>
+<button class="p-1.5 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors" title="导出知识文档">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</button>
+<button class="p-1.5 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors" title="全局偏好">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</button>
+</div>
+<!-- User Profile Pill -->
+<div class="flex items-center gap-2 pl-2">
+<div class="w-8 h-8 rounded-full bg-gradient-to-tr from-brand-600 to-indigo-400 flex items-center justify-center text-white text-xs font-bold ring-2 ring-white shadow-sm">
+          学
+        </div>
+<div class="text-left hidden lg:block">
+<div class="text-xs font-semibold text-slate-800 leading-snug">Linus C.</div>
+<div class="text-[10px] text-slate-400 leading-none">CS 专业 · 大三</div>
+</div>
+</div>
+</div>
+</header>
+<!-- END: TopGlobalNavigation -->
+<!-- BEGIN: MainContainerLayout -->
+<div class="flex flex-1 overflow-hidden relative">
+<!-- BEGIN: LeftStudySidebar -->
+<aside class="w-64 border-r border-slate-200/80 bg-white/70 backdrop-blur-md flex flex-col justify-between shrink-0 select-none z-20">
+<div class="p-3.5 space-y-5 overflow-y-auto">
+<!-- Section: Learning Core -->
+<div>
+<div class="flex items-center justify-between text-[11px] font-semibold tracking-wider text-slate-400 px-2 uppercase mb-2">
+<span>学习中心核心模块</span>
+<button class="hover:text-slate-600 transition-colors p-0.5 rounded" title="折叠侧边栏">
+<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</button>
+</div>
+<div class="space-y-1">
+<a class="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-brand-600 bg-brand-50/70 border border-brand-100/80 transition-all" href="#">
+<svg class="w-4 h-4 text-brand-600" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+<span>AI 实时互动解析</span>
+</a>
+</div>
+</div>
+<!-- Section: Materials & Frameworks -->
+<div>
+<div class="flex items-center justify-between text-[11px] font-semibold tracking-wider text-slate-400 px-2 uppercase mb-2">
+<span>学习资料与框架</span>
+</div>
+<div class="space-y-1">
+<button class="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors">
+<div class="flex items-center gap-2">
+<svg class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+<span>个人参考资料</span>
+</div>
+<span class="text-[10px] font-semibold bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded-full">3</span>
+</button>
+<button class="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors">
+<div class="flex items-center gap-2">
+<svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+<span>知识框架历史</span>
+</div>
+</button>
+</div>
+</div>
+<!-- Section: Recent AI Q&A Sessions -->
+<div>
+<div class="flex items-center justify-between text-[11px] font-semibold tracking-wider text-slate-400 px-2 uppercase mb-2">
+<span>近期 AI 答疑</span>
+<button class="hover:text-brand-600 p-0.5 text-slate-400 transition-colors" title="新建答疑会话">
+<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M12 4v16m8-8H4" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</button>
+</div>
+<div class="space-y-1">
+<!-- Active Topic Item -->
+<a class="group relative flex items-start gap-2 px-2.5 py-2 rounded-lg bg-indigo-50/70 border border-indigo-200/60 text-xs font-medium text-brand-900 transition-all shadow-xs" href="#">
+<svg class="w-3.5 h-3.5 text-brand-600 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+<div class="overflow-hidden">
+<p class="truncate font-semibold text-slate-800">继续深入探索上次学习的：AVL 树...</p>
+<span class="text-[10px] text-brand-600 font-normal">正在对话 · 刚才</span>
+</div>
+</a>
+<!-- Other Session Item -->
+<a class="group flex items-start gap-2 px-2.5 py-2 rounded-lg hover:bg-slate-100/80 text-xs font-medium text-slate-600 transition-colors" href="#">
+<svg class="w-3.5 h-3.5 text-slate-400 mt-0.5 shrink-0 group-hover:text-slate-600" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+<div class="overflow-hidden">
+<p class="truncate text-slate-600 group-hover:text-slate-900">哈夫曼树的构造规则与带权路径...</p>
+<span class="text-[10px] text-slate-400">昨天 16:42</span>
+</div>
+</a>
+</div>
+</div>
+</div>
+<!-- Sidebar Footer Settings -->
+<div class="p-3 border-t border-slate-200/80 bg-slate-50/50">
+<button class="w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-xs font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors">
+<div class="flex items-center gap-2">
+<svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+<path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+<span>系统设置</span>
+</div>
+<span class="text-[10px] text-slate-400 font-mono">v3.2</span>
+</button>
+</div>
+</aside>
+<!-- END: LeftStudySidebar -->
+<!-- BEGIN: WorkspaceMainContent -->
+<main class="flex-1 flex flex-col overflow-hidden relative">
+<!-- Scrollable Dialogue & Notes Stream -->
+<div class="flex-1 overflow-y-auto px-6 py-5 pb-36 space-y-6" id="chat-stream">
+<!-- Top Plan & Action Banner -->
+<div class="glass-panel p-2.5 px-4 rounded-xl flex items-center justify-between border border-slate-200/70 shadow-xs">
+<div class="flex items-center gap-6">
+<span class="text-xs font-semibold text-brand-600 flex items-center gap-1.5 cursor-pointer hover:underline">
+<span class="w-1.5 h-1.5 rounded-full bg-brand-600"></span>我的计划
+            </span>
+<span class="text-xs font-medium text-slate-600 hover:text-brand-600 cursor-pointer transition-colors">
+              继续学习课程
+            </span>
+<span class="text-xs font-medium text-slate-600 hover:text-brand-600 cursor-pointer transition-colors flex items-center gap-1">
+              复习错题
+              <span class="bg-red-100 text-red-600 text-[10px] font-bold px-1.5 rounded-full">2</span>
+</span>
+</div>
+<!-- Document Action Buttons -->
+<div class="flex items-center gap-1 text-slate-400">
+<button class="p-1.5 hover:text-slate-700 hover:bg-slate-100 rounded-md transition-colors" title="分栏视图">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</button>
+<button class="p-1.5 hover:text-slate-700 hover:bg-slate-100 rounded-md transition-colors" title="快速草稿">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</button>
+<button class="p-1.5 hover:text-slate-700 hover:bg-slate-100 rounded-md transition-colors" title="加入批注">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</button>
+</div>
+</div>
+<!-- User Prompt Bubble -->
+<div class="flex justify-end pr-2" data-purpose="user-query-container">
+<div class="max-w-2xl bg-gradient-to-r from-brand-600 to-indigo-600 text-white p-3.5 px-5 rounded-2xl rounded-tr-sm shadow-md shadow-brand-500/15 text-sm leading-relaxed">
+<p class="font-normal">
+              继续深入探索上次学习的：「<strong class="font-semibold text-white tracking-wide">AVL 树与红黑树在插入和查找性能上有什么异同与开销差异？</strong>」
+            </p>
+</div>
+</div>
+<!-- AI Copilot Response Card -->
+<div class="glass-card rounded-2xl p-6 sm:p-7 shadow-glass border border-indigo-100/90 space-y-6" data-purpose="ai-response-card">
+<!-- AI Response Header Status -->
+<div class="flex items-center justify-between pb-4 border-b border-slate-100">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-brand-50 border border-brand-200/70 flex items-center justify-center text-brand-600 shadow-xs">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M13 10V3L4 14h7v7l9-11h-7z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2"></path>
+</svg>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<span class="text-xs font-bold text-slate-900 tracking-tight">学涯 Copilot</span>
+<span class="px-2 py-0.5 text-[10px] font-medium bg-indigo-50 text-indigo-700 rounded-md border border-indigo-100">MiMo 自主回答</span>
+<span class="text-[11px] text-slate-400">· 0 个来源 · 耗时 48.2 秒</span>
+</div>
+<div class="text-[11px] text-slate-400 mt-0.5">模型自主推理分析（已融合大纲《数据结构与算法高阶分析》）</div>
+</div>
+</div>
+<!-- Response Quick Controls -->
+<div class="flex items-center gap-1.5">
+<button class="px-2.5 py-1 text-xs font-medium text-slate-600 hover:text-brand-600 hover:bg-slate-100 rounded-lg transition-colors flex items-center gap-1" title="复制全文字">
+<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+                复制
+              </button>
+<button class="px-2.5 py-1 text-xs font-medium text-slate-600 hover:text-brand-600 hover:bg-slate-100 rounded-lg transition-colors flex items-center gap-1" title="保存至研学笔记">
+<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+                收藏笔记
+              </button>
+</div>
+</div>
+<!-- Structured Content Body -->
+<article class="prose prose-slate max-w-none space-y-5 text-[13.5px] leading-relaxed text-slate-700">
+<!-- Title -->
+<h2 class="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
+              AVL 树与红黑树：插入与查找性能的深入对比
+            </h2>
+<p class="text-slate-600">
+              上次我们已经了解了两者的基本自平衡概念，这次深入到性能差异的<strong>根源</strong>——为什么会有这些差异，以及差异在实际工程与高频并发中到底有多大。
+            </p>
+<div class="h-px bg-slate-100 my-3"></div>
+<!-- Chapter 1 -->
+<div>
+<h3 class="text-base font-bold text-slate-900 flex items-center gap-2 mb-2">
+<span class="w-1.5 h-4 bg-brand-600 rounded-full"></span>
+                一、先明确一个核心事实：查找性能几乎相同
+              </h3>
+<p class="text-slate-600 mb-4">
+                两者查找复杂度理论上限都是 <code class="px-1.5 py-0.5 text-xs bg-slate-100 text-brand-700 rounded font-mono font-bold">O(log n)</code>，但常数因子由于平衡严格度而有细微差别：
+              </p>
+<!-- Comparison Table -->
+<div class="overflow-hidden rounded-xl border border-indigo-100/80 shadow-xs bg-white/70">
+<table class="w-full text-left border-collapse text-xs">
+<thead>
+<tr class="bg-indigo-50/50 border-b border-indigo-100/70 text-slate-700 font-semibold">
+<th class="p-3 pl-4">对比维度</th>
+<th class="p-3 text-brand-700 font-bold">AVL 树 (高度平衡)</th>
+<th class="p-3 text-rose-700 font-bold">红黑树 (弱平衡)</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-slate-100 font-normal">
+<tr class="hover:bg-slate-50/50 transition-colors">
+<td class="p-3 pl-4 font-medium text-slate-800">最大树高 (Height)</td>
+<td class="p-3 text-slate-700">更矮（约 <span class="font-mono font-semibold">1.44 log₂n</span>）</td>
+<td class="p-3 text-slate-700">略高（最多 <span class="font-mono font-semibold">2 log₂(n+1)</span>）</td>
+</tr>
+<tr class="hover:bg-slate-50/50 transition-colors">
+<td class="p-3 pl-4 font-medium text-slate-800">查找比较次数</td>
+<td class="p-3 text-emerald-700 font-medium">略少（平均比红黑树快 5%~10%）</td>
+<td class="p-3 text-slate-600">略多</td>
+</tr>
+<tr class="hover:bg-slate-50/50 transition-colors">
+<td class="p-3 pl-4 font-medium text-slate-800">查找时是否需要看颜色/平衡因子</td>
+<td class="p-3 text-slate-600">否（仅纯二叉搜索）</td>
+<td class="p-3 text-slate-600">是（但对分支预测无额外开销）</td>
+</tr>
+<tr class="hover:bg-slate-50/50 transition-colors">
+<td class="p-3 pl-4 font-medium text-slate-800">插入/删除维持平衡旋转代价</td>
+<td class="p-3 text-amber-700 font-medium">最多发生 O(log n) 次旋转 (删除时)</td>
+<td class="p-3 text-emerald-700 font-bold">至多 2 次旋转 (插入) / 3 次旋转 (删除)</td>
+</tr>
+<tr class="hover:bg-slate-50/50 transition-colors">
+<td class="p-3 pl-4 font-medium text-slate-800">额外空间存储开销</td>
+<td class="p-3 text-slate-600">每个节点维护 Balance Factor (通常存 int 或 2 bits)</td>
+<td class="p-3 text-slate-600">仅需 1 bit 标识红色/黑色 (可借指针位压缩)</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Table Summary Pill -->
+<div class="mt-3.5 p-3 rounded-lg bg-indigo-50/40 border border-indigo-100/60 text-xs text-slate-700 flex items-start gap-2">
+<svg class="w-4 h-4 text-brand-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+<span><strong>结论：</strong>纯查找场景，AVL 略优，但差距通常在常数级几次指令以内。真正拉开差距的是高并发写下的<strong>插入和删除再平衡成本</strong>。</span>
+</div>
+</div>
+<!-- Chapter 2 -->
+<div>
+<h3 class="text-base font-bold text-slate-900 flex items-center gap-2 mb-2">
+<span class="w-1.5 h-4 bg-brand-600 rounded-full"></span>
+                二、核心工程选择：为什么 STL / Linux 内核选红黑树？
+              </h3>
+<p class="text-slate-600 leading-relaxed">
+                在 C++ STL 的 <code class="font-mono text-xs bg-slate-100 text-slate-800 px-1 py-0.5 rounded">std::map</code>、Java 的 <code class="font-mono text-xs bg-slate-100 text-slate-800 px-1 py-0.5 rounded">TreeMap</code> 以及 Linux 虚拟内存管理（VMA）中，普遍采用<strong>红黑树</strong>。
+                原因在于现实系统往往是“读写混合”场景：红黑树通过放宽“绝对平衡”条件（最长路径不超过最短路径 2 倍），使得<strong>插入最多仅需 2 次旋转</strong>，而 AVL 树需要严格回溯调整高度，重构开销过重。
+              </p>
+</div>
+</article>
+<!-- Interactive Action Tools -->
+<div class="pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
+<div class="flex items-center gap-2">
+<span class="text-xs text-slate-400">下一步研学建议：</span>
+<button class="px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 hover:bg-brand-50 hover:text-brand-600 text-slate-600 transition-colors">
+                🔍 给出 C++ 旋转代码实现
+              </button>
+<button class="px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 hover:bg-brand-50 hover:text-brand-600 text-slate-600 transition-colors">
+                ✏️ 生成 408 考研真题强化练习
+              </button>
+</div>
+<div class="flex items-center gap-2 text-slate-400 text-xs">
+<button class="p-1.5 hover:text-slate-700 hover:bg-slate-100 rounded-md transition-colors" title="点赞回答">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</button>
+<button class="p-1.5 hover:text-slate-700 hover:bg-slate-100 rounded-md transition-colors" title="重新生成">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- BEGIN: FloatingCopilotInputDock -->
+<div class="absolute bottom-5 inset-x-0 mx-auto max-w-4xl px-4 z-30 pointer-events-none">
+<div class="glass-panel p-2.5 rounded-2xl shadow-float border border-indigo-200/90 pointer-events-auto bg-white/95">
+<!-- Quick Suggestion Pills -->
+<div class="flex items-center gap-2 overflow-x-auto pb-2 px-1 text-[11px] text-slate-500 no-scrollbar">
+<span class="text-slate-400 shrink-0 font-medium">快速追问:</span>
+<button class="px-2 py-0.5 rounded-md bg-indigo-50/70 hover:bg-indigo-100 text-brand-700 whitespace-nowrap transition-colors">
+              🌱 AVL 树的双旋转 (LR / RL) 发生条件是什么？
+            </button>
+<button class="px-2 py-0.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700 whitespace-nowrap transition-colors">
+              📐 画出黑高（Black Height）的性质推导
+            </button>
+<button class="px-2 py-0.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700 whitespace-nowrap transition-colors">
+              🎯 测试我的掌握度（生成 3 道选择题）
+            </button>
+</div>
+<!-- Main Input Line -->
+<div class="flex items-center gap-2 bg-slate-50/80 border border-slate-200/70 rounded-xl px-3 py-2 focus-within:border-brand-500 focus-within:ring-2 focus-within:ring-brand-500/20 transition-all">
+<!-- Context Indicator -->
+<button class="flex items-center gap-1 px-2 py-1 bg-white rounded-lg text-slate-500 hover:text-slate-800 text-xs border border-slate-200 transition-colors shadow-2xs" title="附加研学资料上下文">
+<svg class="w-3.5 h-3.5 text-brand-600" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+<span>数据结构大纲</span>
+</button>
+<!-- Text Field -->
+<input class="flex-1 bg-transparent border-none text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-0 px-2 py-1" placeholder="向 AI 伴学助手追问或输入新概念推导..." type="text"/>
+<!-- Multimodal & Send Tools -->
+<div class="flex items-center gap-1.5 text-slate-400">
+<button class="p-1.5 hover:text-slate-700 hover:bg-white rounded-lg transition-colors" title="语音提问">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</button>
+<button class="p-1.5 hover:text-slate-700 hover:bg-white rounded-lg transition-colors" title="截屏问答">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</button>
+<button class="p-1.5 bg-brand-600 hover:bg-brand-700 text-white rounded-lg transition-all shadow-sm shadow-brand-500/30 ml-1 active:scale-95" title="发送">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M5 10l7-7m0 0l7 7m-7-7v18" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- END: FloatingCopilotInputDock -->
+</main>
+<!-- END: WorkspaceMainContent -->
+</div>
+<!-- END: MainContainerLayout -->
+</body></html>

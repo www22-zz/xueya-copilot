@@ -55,7 +55,7 @@ def test_chat_tts_requires_token_and_uses_main_invocation_ledger(tmp_path):
 
 def test_chat_tts_respects_shared_api_permit_and_unpriced_monetary_budget(tmp_path):
     calls = []
-    app = speech_app(tmp_path / 'slots', lambda request: calls.append(request))
+    app = speech_app(tmp_path / 'slots', lambda request: calls.append(request), api_queue_timeout=0)
     with TestClient(app, base_url='http://127.0.0.1') as client:
         authorized(client)
         release = app.state.platform.resources.acquire('api')
@@ -66,7 +66,7 @@ def test_chat_tts_respects_shared_api_permit_and_unpriced_monetary_budget(tmp_pa
         finally:
             release()
     app = speech_app(tmp_path / 'budget', lambda request: calls.append(request), run_budget_cny='1',
-                     input_cny_per_million='1', output_cny_per_million='2')
+                     input_cny_per_million='1', output_cny_per_million='2', api_queue_timeout=0)
     with TestClient(app, base_url='http://127.0.0.1') as client:
         authorized(client)
         result = client.post('/api/tts', json={'text': '正文'}).json()

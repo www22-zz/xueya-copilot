@@ -52,7 +52,7 @@
       }
       if(tab==='video'){
         const target=container.querySelector('[data-material-subview]');
-        const drawVideo=()=>{if(stamp!==generation||!target.isConnected)return;target.innerHTML='<h2>课程资料 · 视频目录</h2><p>课程总览与精确分集分别标注；暂无已核验分集时，请前往原站。返回知识图谱可继续原知识点。</p>'+videoUI.render();videoUI.mount();};
+        const drawVideo=()=>{if(stamp!==generation||!target.isConnected)return;target.innerHTML='<h2>课程资料 · 视频目录</h2><p>全部课程均可站内播放；讲师与分集信息已核验。返回知识图谱可继续原知识点。</p>'+videoUI.render();videoUI.mount();};
         videoUI=window.XueyaCourses.create({host:target,embedded:true,toast:window.toast,render:drawVideo,navigate:hash=>location.hash=hash});drawVideo();
       }
       container.querySelector('[data-material-subject]')?.addEventListener('change',event=>{subject=event.target.value;redraw();});

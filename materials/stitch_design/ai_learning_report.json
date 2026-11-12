@@ -1,0 +1,29 @@
+{
+  "id": 4,
+  "jsonrpc": "2.0",
+  "result": {
+    "content": [
+      {
+        "text": "{\"name\":\"projects/560289792652862844/screens/9aa5ab5b13294e65bacb97650ec10601\",\"title\":\"学涯 Copilot - AI 学情诊断报告\",\"screenshot\":{\"name\":\"projects/560289792652862844/screens/9aa5ab5b13294e65bacb97650ec10601/fileEntries/screenshot\",\"downloadUrl\":\"https://stitch.googleapis.com/v1/projects/560289792652862844/files/screenshot_00065f61d07f202001ee4198d20de3ed:download\",\"mimeType\":\"image/png\"},\"htmlCode\":{\"name\":\"projects/560289792652862844/screens/9aa5ab5b13294e65bacb97650ec10601/fileEntries/html\",\"downloadUrl\":\"https://stitch.googleapis.com/v1/projects/560289792652862844/files/9aa5ab5b13294e65bacb97650ec10601:download\",\"mimeType\":\"text/html\"},\"width\":\"2560\",\"height\":\"3188\",\"deviceType\":\"DESKTOP\"}",
+        "type": "text"
+      }
+    ],
+    "structuredContent": {
+      "deviceType": "DESKTOP",
+      "height": "3188",
+      "htmlCode": {
+        "downloadUrl": "https://stitch.googleapis.com/v1/projects/560289792652862844/files/9aa5ab5b13294e65bacb97650ec10601:download",
+        "mimeType": "text/html",
+        "name": "projects/560289792652862844/screens/9aa5ab5b13294e65bacb97650ec10601/fileEntries/html"
+      },
+      "name": "projects/560289792652862844/screens/9aa5ab5b13294e65bacb97650ec10601",
+      "screenshot": {
+        "downloadUrl": "https://stitch.googleapis.com/v1/projects/560289792652862844/files/screenshot_00065f61d07f202001ee4198d20de3ed:download",
+        "mimeType": "image/png",
+        "name": "projects/560289792652862844/screens/9aa5ab5b13294e65bacb97650ec10601/fileEntries/screenshot"
+      },
+      "title": "学涯 Copilot - AI 学情诊断报告",
+      "width": "2560"
+    }
+  }
+}

@@ -3,6 +3,7 @@ from backend.core import check_cancel
 from .common import dumps, digest
 from .qa_latency import current_timing
 from time import perf_counter
+import asyncio
 import json
 
 SYSTEM = """你是课程回答的证据核对员，仅检查下面给出的结论与引文是否一致，不补写答案。
@@ -18,6 +19,10 @@ question明确给出的数值、初始状态、待模拟的操作序列可作为
 仅输出 JSON：{"verdicts":[{"index":0,"status":"supported"}]}。
 必须覆盖每个给定 index 且各出现一次；status 仅可为 supported、unsupported 或 uncertain。不要输出答案、引文、解释或思维链。"""
 
+STATUSES = ('supported', 'unsupported', 'uncertain')
+MAX_CLAIMS = 12
+MAX_PAYLOAD_BYTES = 96000
+
 
 class EvidenceReviewer:
     narrative = True
@@ -27,48 +32,83 @@ class EvidenceReviewer:
         self.question = question[:4000]
         self.verdicts = {}
         self.prepared = False
+        # An early review may run while the answer is still streaming and the
+        # final review may follow it; serialize so no claim is sent twice.
+        self._lock = asyncio.Lock()
+
+    def _payload(self, entries):
+        """Batch payload; the model's verdict indices are local to this batch."""
+        values = [{'index': index, 'kind': claim['kind'], 'text': claim['text'],
+                   'evidence': [{'sourceId': ref['sourceId'], 'quote': ref['quote']}
+                                for ref in claim['evidence']]}
+                  for index, (_, claim) in enumerate(entries)]
+        return dumps({'claims': values, **({'question': self.question} if self.question else {})})
+
+    def _shard_count(self, count):
+        config = self.provider.config
+        shards = getattr(config, 'review_shards', 2)
+        minimum = getattr(config, 'review_shard_min_claims', 4)
+        if count >= minimum:
+            # Never dispatch an empty shard: parallel review must not cost a call
+            # that carries nothing.
+            return max(1, min(shards, count))
+        return 1
+
+    async def _review(self, entries, signal=None):
+        """One strict verdict batch; raises instead of partially authorizing."""
+        check_cancel(signal)
+        response = await self.provider.generate([{'role': 'system', 'content': SYSTEM},
+            {'role': 'user', 'content': self._payload(entries)}], scope=self.scope, temperature=0,
+            timeout=60, max_output_tokens=min(1536, self.provider.config.max_output_tokens),
+            response_format={'type': 'json_object'}, thinking={'type': 'disabled'})
+        check_cancel(signal)
+        data = json.loads(response['content'])
+        verdicts = data.get('verdicts') if isinstance(data, dict) else None
+        if not isinstance(verdicts, list) or len(verdicts) != len(entries):
+            raise ValueError('invalid verdict batch')
+        seen = set()
+        for row in verdicts:
+            if (not isinstance(row, dict) or set(row) != {'index', 'status'}
+                    or type(row['index']) is not int or not 0 <= row['index'] < len(entries)
+                    or row['index'] in seen or row['status'] not in STATUSES):
+                raise ValueError('invalid verdict batch')
+            seen.add(row['index'])
+        return {digest(entries[row['index']][1], canonical=True): row['status'] == 'supported'
+                for row in verdicts}
 
     async def prepare(self, claims, signal=None):
         check_cancel(signal)
-        if self.prepared:
-            return
-        self.prepared = True
-        pending = [c for c in claims if c['kind'] != 'excerpt']
-        if not pending or len(pending) > 12:
-            return
-        values = [{'index': i, 'kind': c['kind'], 'text': c['text'],
-                   'evidence': [{'sourceId': r['sourceId'], 'quote': r['quote']} for r in c['evidence']]}
-                  for i, c in enumerate(pending)]
-        payload = dumps({'claims': values, **({'question': self.question} if self.question else {})})
-        if len(payload.encode('utf-8')) > 96000:
-            return
-        started = perf_counter()
-        try:
-            response = await self.provider.generate([{'role': 'system', 'content': SYSTEM},
-                {'role': 'user', 'content': payload}], scope=self.scope, temperature=0,
-                timeout=60, max_output_tokens=min(1536, self.provider.config.max_output_tokens),
-                response_format={'type': 'json_object'}, thinking={'type': 'disabled'})
+        async with self._lock:
             check_cancel(signal)
-            data = json.loads(response['content'])
-            verdicts = data.get('verdicts') if isinstance(data, dict) else None
-            if not isinstance(verdicts, list) or len(verdicts) != len(pending):
+            self.prepared = True
+            pending = [(index, claim) for index, claim in enumerate(claims)
+                       if claim['kind'] != 'excerpt' and digest(claim, canonical=True) not in self.verdicts]
+            if not pending or len(pending) > MAX_CLAIMS:
                 return
-            seen = set()
-            for row in verdicts:
-                if (not isinstance(row, dict) or set(row) != {'index', 'status'}
-                        or type(row['index']) is not int or not 0 <= row['index'] < len(pending)
-                        or row['index'] in seen or row['status'] not in ('supported', 'unsupported', 'uncertain')):
-                    return
-                seen.add(row['index'])
-            self.verdicts = {digest(pending[row['index']], canonical=True): row['status'] == 'supported' for row in verdicts}
-        except Exception:
-            # No review retry; unavailable/unknown/budget-denied results stay unverified.
-            self.verdicts = {}
-        finally:
-            timing = current_timing.get()
-            if timing:
-                timing.phases['evidenceReview'] = timing.phases.get('evidenceReview', 0)+(perf_counter()-started)*1000
-        check_cancel(signal)
+            if len(self._payload(pending).encode('utf-8')) > MAX_PAYLOAD_BYTES:
+                return
+            count = self._shard_count(len(pending))
+            shards = [[] for _ in range(count)]
+            for position, entry in enumerate(pending):
+                shards[position % count].append(entry)
+            started, calls = perf_counter(), len(shards)
+            try:
+                results = await asyncio.gather(*(self._review(shard, signal) for shard in shards),
+                                               return_exceptions=True)
+                for result in results:
+                    if isinstance(result, asyncio.CancelledError):
+                        raise result
+                    if isinstance(result, BaseException):
+                        # One failed/invalid shard only leaves its own claims
+                        # unverified; valid verdicts from other shards still count.
+                        continue
+                    self.verdicts.update(result)
+            finally:
+                timing = current_timing.get()
+                if timing:
+                    timing.phases['evidenceReview'] = timing.phases.get('evidenceReview', 0)+(perf_counter()-started)*1000
+                    timing.review_calls = getattr(timing, 'review_calls', 0)+calls
+            check_cancel(signal)
 
     async def __call__(self, claim, signal=None):
         check_cancel(signal)

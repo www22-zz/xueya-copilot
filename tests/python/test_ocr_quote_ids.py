@@ -21,7 +21,7 @@ async def test_ocr_quote_ids_restore_exact_original_and_keep_review_required():
             await validate_claims([{**claim, 'evidence': [ref]}], pack)
     request = {'mode': 'ask', 'history': [], 'question': '栈是什么？'}
     materials = json.loads(build_messages(request, [source])[-1]['content'])['materials']
-    assert materials[0]['quoteSpans'][1] == {'quoteId': 'q2', 'quote': '元素具有后进先出特性'}
+    assert materials[0]['quoteSpans'] == [{'quoteId': 'q0', 'quote': source['quote']}]
     assert 'quoteSpans' not in source
 
 

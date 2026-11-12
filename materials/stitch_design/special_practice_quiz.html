@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_dashboard" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&family=Plus+Jakarta+Sans:wght@100..900&display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{colors:{"on-tertiary":"#ffffff","on-secondary-fixed-variant":"#004395","surface":"#faf8ff","surface-variant":"#dae2fd","on-primary-container":"#dad7ff","secondary-container":"#2170e4","secondary-fixed":"#d8e2ff","on-secondary":"#ffffff","tertiary-fixed-dim":"#d0bcff","on-secondary-fixed":"#001a42","on-primary-fixed":"#0f0069","background":"#faf8ff","primary-fixed":"#e2dfff","surface-tint":"#4d44e3","secondary":"#0058be","secondary-fixed-dim":"#adc6ff","primary-fixed-dim":"#c3c0ff","error":"#ba1a1a","tertiary":"#571ac0","surface-container":"#eaedff","primary":"#3525cd","surface-container-low":"#f2f3ff","on-primary-fixed-variant":"#3323cc","outline-variant":"#c7c4d8","outline":"#777587","inverse-primary":"#c3c0ff","surface-container-high":"#e2e7ff","on-secondary-container":"#fefcff","surface-dim":"#d2d9f4","on-tertiary-fixed":"#23005c","inverse-surface":"#283044","surface-container-lowest":"#ffffff","on-surface":"#131b2e","surface-container-highest":"#dae2fd","inverse-on-surface":"#eef0ff","on-primary":"#ffffff","on-error-container":"#93000a","tertiary-container":"#6f3dd9","error-container":"#ffdad6","tertiary-fixed":"#e9ddff","on-error":"#ffffff","surface-bright":"#faf8ff","on-surface-variant":"#464555","on-tertiary-container":"#e3d5ff","on-tertiary-fixed-variant":"#5516be","primary-container":"#4f46e5","on-background":"#131b2e"},borderRadius:{DEFAULT:"0.25rem",lg:"0.5rem",xl:"0.75rem",full:"9999px"},spacing:{"space-lg":"1.5rem","gutter-mobile":"0.75rem",margin:"2rem","space-2xl":"3rem","margin-mobile":"1rem",gutter:"1.25rem","space-md":"1rem","space-sm":"0.5rem","space-xl":"2rem","space-xs":"0.25rem"},fontFamily:{"headline-lg":["Plus Jakarta Sans"],"headline-md":["Plus Jakarta Sans"],"headline-lg-mobile":["Plus Jakarta Sans"],"display-lg":["Plus Jakarta Sans"],"body-lg":["Inter"],"label-sm":["Inter"],"label-md":["Inter"],"body-sm":["Inter"],"code-sm":["JetBrains Mono"],"body-md":["Inter"],"headline-sm":["Plus Jakarta Sans"]},fontSize:{"headline-lg":["28px",{lineHeight:"36px",letterSpacing:"-0.02em",fontWeight:"700"}],"headline-md":["20px",{lineHeight:"28px",letterSpacing:"-0.01em",fontWeight:"600"}],"headline-lg-mobile":["22px",{lineHeight:"30px",letterSpacing:"-0.015em",fontWeight:"700"}],"display-lg":["36px",{lineHeight:"44px",letterSpacing:"-0.025em",fontWeight:"700"}],"body-lg":["16px",{lineHeight:"26px",fontWeight:"400"}],"label-sm":["11px",{lineHeight:"14px",fontWeight:"500"}],"label-md":["12px",{lineHeight:"16px",letterSpacing:"0.04em",fontWeight:"600"}],"body-sm":["13px",{lineHeight:"18px",fontWeight:"400"}],"code-sm":["13px",{lineHeight:"20px",fontWeight:"400"}],"body-md":["14px",{lineHeight:"22px",fontWeight:"400"}],"headline-sm":["16px",{lineHeight:"24px",fontWeight:"600"}]}}}};</script></head><body class="bg-background font-body-md text-on-surface min-h-screen"><header class="fixed top-0 left-0 right-0 h-16 bg-surface-container-lowest/80 backdrop-blur-xl z-50 shadow-[0_1px_8px_rgba(0,0,0,0.03)]"><div class="h-16 w-full px-margin flex items-center justify-between gap-space-md"><div class="flex items-center gap-space-md min-w-[240px]"><img alt="学涯 Copilot Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1X92TAI0zokI7ftf4Kja0CaUkhDIuAYyzvzO5-qW6GvpV0MI1w9uSCSJjqzFxcH5igxle8mviQhHK-T-AWqbjAXcQTYcOKDhJLiXlZmzQ9aw-VZhx9ZdHRjH7GyyKO3WbE5Y2X-j5swzIb8ns-BYMP_oBjexNmtAPu21nRFVM1AGln3qezztMcDgOSJFkIKmrvsyHXTljQPsnBzj2ksx5fDUBmx8tKajZ4WpNQZplE"/><div class="flex flex-col"><span class="font-headline-sm text-headline-sm text-on-surface font-semibold tracking-tight">学涯 Copilot</span><span class="font-label-sm text-label-sm text-on-surface-variant font-medium">Study Workspace</span></div></div><div class="flex items-center gap-space-lg flex-1 justify-center max-w-2xl"><div class="flex items-center bg-surface-container-low px-space-xs py-space-xs rounded-full p-1"><button class="px-space-md py-1.5 rounded-full font-label-md text-label-md text-on-surface-variant hover:text-on-surface transition-all flex items-center gap-1.5" type="button"><span class="material-symbols-outlined text-[16px]">auto_awesome</span>AI 助手</button><button class="px-space-md py-1.5 rounded-full font-label-md text-label-md bg-surface-container-lowest text-primary shadow-sm font-semibold flex items-center gap-1.5" type="button"><span class="material-symbols-outlined text-[16px]">school</span>学习中心</button></div><div class="flex items-center bg-surface-container-low px-space-md py-1.5 rounded-full w-72 text-on-surface-variant hover:bg-surface-container transition-colors cursor-pointer"><span class="material-symbols-outlined text-[18px] mr-space-sm text-outline">search</span><span class="font-body-sm text-body-sm flex-1 text-on-surface-variant">全局快速检索资料、笔记...</span><kbd class="font-code-sm text-label-sm bg-surface-container-lowest text-on-surface-variant px-1.5 py-0.5 rounded shadow-sm">⌘K</kbd></div></div><div class="flex items-center gap-space-md justify-end min-w-[240px]"><button class="w-9 h-9 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" title="AI 工具集" type="button"><span class="material-symbols-outlined text-[20px]">construction</span></button><button class="relative w-9 h-9 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" title="消息通知" type="button"><span class="material-symbols-outlined text-[20px]">notifications</span><span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full"></span></button><div class="h-4 w-px bg-surface-container-high"></div><div class="flex items-center gap-space-sm pl-1"><img alt="Profile" class="w-8 h-8 rounded-full object-cover ring-2 ring-surface-variant" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCzehY6ceo6sHe5J4cvkn96VQNGjfQZbY0Ji9KxcV435A3aRcU4eYzCHR3N1N3VANfJZOrG8mt1GJnwjbq83RvgdBkajcrRafBtDY8uO0kh3p9kSryD-C1wVwEVC7a_ivV4tkB2pNRZNdFpq6yGXCrQQAF2Q0TBJHYshipqm44M_n1_eedGyQlDVsfc5bYp_QX-RQPUm0bCH4zYnCr3GVq0AcW0lqL914PBxR7VQQ"/><div class="hidden xl:flex flex-col text-left"><span class="font-label-md text-label-md text-on-surface font-semibold leading-tight">Linus C.</span><span class="font-label-sm text-label-sm text-primary font-medium">CS 专业 · 大三</span></div></div></div></div></header><aside class="fixed left-0 top-16 bottom-0 w-64 bg-surface-container-lowest/70 backdrop-blur-xl z-40 flex flex-col justify-between py-space-md shadow-[0_1px_8px_rgba(0,0,0,0.02)]"><div class="flex flex-col gap-space-md px-space-md"><div class="flex items-center justify-between px-space-sm py-space-xs"><span class="font-label-sm text-label-sm text-outline font-semibold tracking-wider uppercase">学习中心核心模块</span><button class="text-on-surface-variant hover:text-on-surface transition-colors" title="折叠侧栏" type="button"><span class="material-symbols-outlined text-[18px]">dock_to_right</span></button></div><nav class="flex flex-col gap-1.5" data-active-classes="bg-primary-container text-on-primary font-semibold shadow-[0_4px_16px_rgba(79,70,229,0.18)]"><a class="flex items-center gap-3 px-space-md py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all font-body-md text-body-md" data-path="course-study" href="#"><span class="material-symbols-outlined text-[20px]">play_lesson</span><span>课程学习</span></a><a aria-current="page" class="flex items-center gap-3 px-space-md py-2.5 rounded-lg transition-all bg-primary-container text-on-primary font-semibold shadow-[0_4px_16px_rgba(79,70,229,0.18)]" data-path="practice-quiz" href="#"><span class="material-symbols-outlined text-[20px]">quiz</span><span>专项练习</span></a><a class="flex items-center gap-3 px-space-md py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all font-body-md text-body-md" data-path="review-notebook" href="#"><span class="material-symbols-outlined text-[20px]">edit_note</span><span>错题复习</span></a><a class="flex items-center gap-3 px-space-md py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all font-body-md text-body-md" data-path="learning-analytics" href="#"><span class="material-symbols-outlined text-[20px]">insights</span><span>学情分析</span></a></nav><div class="mt-space-sm pt-space-sm"><div class="flex items-center justify-between px-space-sm mb-2"><span class="font-label-sm text-label-sm text-outline font-semibold tracking-wider uppercase">近期 AI 答疑</span><button class="text-on-surface-variant hover:text-on-surface transition-colors" title="查看全部记录" type="button"><span class="material-symbols-outlined text-[16px]">chevron_right</span></button></div><div class="flex flex-col gap-1"><a class="flex items-center gap-2 px-space-sm py-2 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all text-body-sm font-body-sm truncate" href="#"><span class="material-symbols-outlined text-[16px] text-tertiary">forum</span><span class="truncate">TCP 三次握手状态迁移解析</span></a><a class="flex items-center gap-2 px-space-sm py-2 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all text-body-sm font-body-sm truncate" href="#"><span class="material-symbols-outlined text-[16px] text-tertiary">forum</span><span class="truncate">红黑树旋转平衡代码推导</span></a><a class="flex items-center gap-2 px-space-sm py-2 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all text-body-sm font-body-sm truncate" href="#"><span class="material-symbols-outlined text-[16px] text-tertiary">forum</span><span class="truncate">虚拟内存段页式存储计算题</span></a></div></div></div><div class="px-space-md pt-space-sm flex flex-col gap-1"><a class="flex items-center gap-3 px-space-md py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all font-body-md text-body-md" data-path="settings" href="#"><span class="material-symbols-outlined text-[20px]">settings</span><span>系统设置</span></a></div></aside><div class="pl-64"><main class="relative pt-16 min-h-screen bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(226,223,255,0.45),rgba(250,248,255,1))]"><div class="w-full px-margin py-space-lg max-w-[1600px] mx-auto"><div class="flex flex-col w-full">
+<!-- Subtle ambient glow background decoration -->
+<div class="relative w-full">
+<div class="absolute -top-12 -left-20 w-96 h-96 bg-primary-fixed/30 rounded-full blur-3xl pointer-events-none -z-10"></div>
+<div class="absolute top-40 right-10 w-[500px] h-[500px] bg-tertiary-fixed/25 rounded-full blur-3xl pointer-events-none -z-10"></div>
+<!-- HERO WORKSPACE BANNER -->
+<section class="w-full rounded-2xl bg-surface-container-lowest/85 backdrop-blur-xl p-space-xl shadow-[0_8px_32px_rgba(79,70,229,0.06)] relative overflow-hidden mb-space-xl">
+<!-- Decorative background wave/grid pattern -->
+<div class="absolute -right-24 -bottom-24 w-96 h-96 rounded-full bg-gradient-to-tr from-primary/10 via-secondary/5 to-transparent blur-2xl pointer-events-none"></div>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-space-xl items-center relative z-10">
+<!-- Left: Vision & Intent -->
+<div class="lg:col-span-7 flex flex-col gap-space-md">
+<div class="inline-flex items-center gap-space-xs px-3 py-1 rounded-full bg-surface-container text-primary font-label-md text-label-md w-fit">
+<span class="material-symbols-outlined text-[15px]" style="font-variation-settings: 'FILL' 1;">bolt</span>
+<span>PRACTICE, WITH PURPOSE</span>
+</div>
+<div class="flex flex-col gap-space-xs">
+<h1 class="font-display-lg text-display-lg text-on-surface tracking-tight">
+              把理解，练成自己的能力。
+            </h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-xl">
+              从经典算法、课程巩固到 408 备考，找到最适合你现在节奏的针对性练习。基于你的薄弱认知图谱，AI 实时生成解题支架。
+            </p>
+</div>
+<div class="flex flex-wrap items-center gap-space-md pt-space-xs">
+<div class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-surface-container-low text-on-surface font-body-sm text-body-sm">
+<span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+<span>今日建议练习量：<strong class="font-code-sm text-primary font-semibold">12 题</strong></span>
+</div>
+<div class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-surface-container-low text-on-surface font-body-sm text-body-sm">
+<span class="material-symbols-outlined text-[16px] text-tertiary">history</span>
+<span>连续坚持：<strong class="font-code-sm text-tertiary font-semibold">19 天</strong></span>
+</div>
+<div class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-surface-container-low text-on-surface font-body-sm text-body-sm">
+<span class="material-symbols-outlined text-[16px] text-secondary">verified</span>
+<span>408 知识点覆盖：<strong class="font-code-sm text-secondary font-semibold">68.4%</strong></span>
+</div>
+</div>
+</div>
+<!-- Right: LeetCode Hot 100 Highlight Glass Card -->
+<div class="lg:col-span-5">
+<div class="relative group rounded-xl p-space-lg bg-gradient-to-br from-surface-container-low/95 via-surface-container-lowest/90 to-surface-container/60 shadow-[0_4px_24px_rgba(53,37,205,0.08)] backdrop-blur-md transition-all duration-300 hover:shadow-[0_12px_36px_rgba(53,37,205,0.12)]">
+<div class="flex items-start justify-between mb-space-sm">
+<div class="flex items-center gap-2.5">
+<div class="w-10 h-10 rounded-lg bg-primary-container text-on-primary flex items-center justify-center shadow-sm">
+<span class="material-symbols-outlined text-[22px]">terminal</span>
+</div>
+<div>
+<span class="font-label-sm text-label-sm text-primary font-semibold tracking-wider uppercase">算法专项精炼</span>
+<h3 class="font-headline-md text-headline-md text-on-surface">力扣 Hot 100</h3>
+</div>
+</div>
+<span class="px-2.5 py-1 rounded-full bg-secondary-fixed text-on-secondary-fixed font-label-sm text-label-sm font-semibold">
+                阶段 4 / 17
+              </span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mb-space-md">
+              100 道经典算法，沿着 17 个专题一步步练出解题思路。强化双指针、动态规划与图论。
+            </p>
+<!-- Progress bar -->
+<div class="flex flex-col gap-1.5 mb-space-lg bg-surface-container-lowest/80 p-3 rounded-lg">
+<div class="flex justify-between items-center font-label-md text-label-md">
+<span class="text-on-surface-variant">当前：哈希表与滑动窗口</span>
+<span class="font-code-sm text-primary font-bold">28 / 100 题 (28%)</span>
+</div>
+<div class="w-full h-2 rounded-full bg-surface-container overflow-hidden">
+<div class="h-full bg-gradient-to-r from-primary to-tertiary rounded-full transition-all duration-500" style="width: 28%"></div>
+</div>
+</div>
+<!-- CTA Row -->
+<div class="flex items-center gap-space-sm">
+<button class="flex-1 h-10 px-space-md rounded-lg bg-primary text-on-primary font-headline-sm text-headline-sm flex items-center justify-center gap-2 shadow-[0_4px_16px_rgba(53,37,205,0.25)] hover:bg-surface-tint active:scale-[0.99] transition-all" type="button">
+<span>开始算法练习</span>
+<span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+</button>
+<button class="h-10 px-3 rounded-lg bg-surface-container text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors flex items-center justify-center" title="查看 17 个专题全景路线" type="button">
+<span class="material-symbols-outlined text-[20px]">account_tree</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- CORE EXERCISE MODULES GRID -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-space-xl mb-space-xl">
+<!-- MODULE A: MY QUIZ & SUBMISSIONS (Col 7) -->
+<section class="lg:col-span-7 flex flex-col gap-space-md bg-surface-container-lowest/90 rounded-2xl p-space-xl shadow-[0_4px_24px_rgba(0,0,0,0.03)] backdrop-blur-md">
+<!-- Section Header -->
+<div class="flex items-start justify-between flex-wrap gap-2">
+<div class="flex flex-col gap-1">
+<div class="flex items-center gap-2">
+<span class="font-code-sm text-label-sm text-primary font-bold px-2 py-0.5 rounded bg-primary-fixed">QUIZ / 02</span>
+<span class="font-label-sm text-label-sm text-tertiary bg-tertiary-fixed px-2 py-0.5 rounded font-semibold">本人题目与评阅 · 独家定制</span>
+</div>
+<h2 class="font-headline-lg text-headline-lg text-on-surface">我的小测与作答</h2>
+</div>
+<button class="h-9 px-3.5 rounded-lg bg-primary-container text-on-primary font-body-sm text-body-sm font-semibold flex items-center gap-1.5 shadow-sm hover:opacity-95 transition-all" type="button">
+<span class="material-symbols-outlined text-[16px]">add_circle</span>
+<span>发起新小测</span>
+</button>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant">
+          从聊天主动请求小测，或在这里生成练习。保留原答案、AI 评阅、复核与人工修正，题目仅本人可见。
+        </p>
+<!-- Quiz List Cards -->
+<div class="flex flex-col gap-space-sm pt-space-xs">
+<!-- Quiz Item 1: In Progress / Needs Review -->
+<div class="p-space-md rounded-xl bg-surface-container-low hover:bg-surface-container transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-space-sm group">
+<div class="flex items-start gap-3">
+<div class="w-9 h-9 rounded-lg bg-surface-container-highest text-primary flex items-center justify-center shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[20px]">grading</span>
+</div>
+<div class="flex flex-col">
+<div class="flex items-center gap-2">
+<span class="font-headline-sm text-headline-sm text-on-surface font-semibold group-hover:text-primary transition-colors">操作系统：死锁避免与银行家算法演练</span>
+<span class="px-2 py-0.5 rounded-full bg-error-container text-on-error-container font-label-sm text-label-sm font-semibold">错题 2 道</span>
+</div>
+<div class="flex items-center gap-3 font-label-md text-label-md text-on-surface-variant mt-1">
+<span>共 6 题</span>
+<span>·</span>
+<span>AI 综合得分：<strong class="font-code-sm text-on-surface">78分</strong></span>
+<span>·</span>
+<span>评阅耗时 1.8s</span>
+<span>·</span>
+<span class="text-outline">昨天 22:15</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-2 self-end sm:self-center">
+<button class="px-3 py-1.5 rounded-md bg-surface-container-lowest text-primary font-label-md text-label-md font-semibold hover:bg-primary hover:text-on-primary transition-all" type="button">
+                回顾与修正
+              </button>
+</div>
+</div>
+<!-- Quiz Item 2: Perfect Score -->
+<div class="p-space-md rounded-xl bg-surface-container-low hover:bg-surface-container transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-space-sm group">
+<div class="flex items-start gap-3">
+<div class="w-9 h-9 rounded-lg bg-secondary-fixed text-secondary flex items-center justify-center shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[20px]">task_alt</span>
+</div>
+<div class="flex flex-col">
+<div class="flex items-center gap-2">
+<span class="font-headline-sm text-headline-sm text-on-surface font-semibold group-hover:text-primary transition-colors">计算机网络：TCP 拥塞控制四阶段状态机</span>
+<span class="px-2 py-0.5 rounded-full bg-surface-container-highest text-secondary font-label-sm text-label-sm font-semibold">全对通关</span>
+</div>
+<div class="flex items-center gap-3 font-label-md text-label-md text-on-surface-variant mt-1">
+<span>共 8 题</span>
+<span>·</span>
+<span>AI 综合得分：<strong class="font-code-sm text-on-surface">100分</strong></span>
+<span>·</span>
+<span>已归档至知识卡</span>
+<span>·</span>
+<span class="text-outline">3天前</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-2 self-end sm:self-center">
+<button class="px-3 py-1.5 rounded-md bg-surface-container-lowest text-on-surface-variant font-label-md text-label-md font-medium hover:text-on-surface hover:bg-surface-container-high transition-all" type="button">
+                查看解析
+              </button>
+</div>
+</div>
+<!-- Quiz Item 3: Quick Draft -->
+<div class="p-space-md rounded-xl bg-surface-container-low hover:bg-surface-container transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-space-sm group">
+<div class="flex items-start gap-3">
+<div class="w-9 h-9 rounded-lg bg-tertiary-fixed text-tertiary flex items-center justify-center shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[20px]">psychology</span>
+</div>
+<div class="flex flex-col">
+<div class="flex items-center gap-2">
+<span class="font-headline-sm text-headline-sm text-on-surface font-semibold group-hover:text-primary transition-colors">数据结构：B+ 树插入与分裂平衡推演</span>
+<span class="px-2 py-0.5 rounded-full bg-secondary-fixed text-on-secondary-fixed font-label-sm text-label-sm font-semibold">未完成 · 剩 2 题</span>
+</div>
+<div class="flex items-center gap-3 font-label-md text-label-md text-on-surface-variant mt-1">
+<span>共 5 题</span>
+<span>·</span>
+<span>来自 AI 课后启发提问</span>
+<span>·</span>
+<span class="text-outline">4天前</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-2 self-end sm:self-center">
+<button class="px-3 py-1.5 rounded-md bg-primary-container text-on-primary font-label-md text-label-md font-semibold hover:opacity-90 transition-all" type="button">
+                继续作答
+              </button>
+</div>
+</div>
+</div>
+<!-- Bottom interactive prompt bar inside quiz module -->
+<div class="mt-space-xs p-3 rounded-xl bg-surface-container flex items-center justify-between gap-space-md">
+<div class="flex items-center gap-2 text-on-surface-variant font-body-sm text-body-sm">
+<span class="material-symbols-outlined text-[18px] text-primary">chat</span>
+<span>想要专项小测？直接在对话框键入：「给我出 3 道虚拟内存综合题」</span>
+</div>
+<button class="text-primary font-label-md text-label-md font-semibold hover:underline flex items-center gap-0.5" type="button">
+<span>试一试</span>
+<span class="material-symbols-outlined text-[14px]">chevron_right</span>
+</button>
+</div>
+</section>
+<!-- MODULE C: AI ADAPTIVE TARGETED DRILL (Col 5) -->
+<section class="lg:col-span-5 flex flex-col gap-space-md bg-surface-container-lowest/90 rounded-2xl p-space-xl shadow-[0_4px_24px_rgba(0,0,0,0.03)] backdrop-blur-md">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="font-code-sm text-label-sm text-tertiary font-bold px-2 py-0.5 rounded bg-tertiary-fixed">TARGET / 01</span>
+<span class="font-label-sm text-label-sm text-primary font-semibold">智能自适应</span>
+</div>
+<span class="flex h-2.5 w-2.5 relative">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+<span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-primary"></span>
+</span>
+</div>
+<div>
+<h2 class="font-headline-lg text-headline-lg text-on-surface">AI 弱项靶向攻坚</h2>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1">
+            智能捕捉昨日错题生成的 5 道相似变形题，逐个攻破概念盲区。
+          </p>
+</div>
+<!-- Radar / Diagnostic Visualization Card -->
+<div class="p-space-md rounded-xl bg-surface-container-low flex flex-col gap-space-sm">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md text-on-surface font-semibold">四科掌握度雷达诊断</span>
+<span class="font-label-sm text-label-sm text-outline">更新于今日 08:30</span>
+</div>
+<!-- Inline SVG Radar Visualization -->
+<div class="relative w-full h-44 flex items-center justify-center">
+<svg class="w-full h-full max-h-44 text-primary" viewbox="0 0 200 200">
+<!-- Concentric Polygons -->
+<polygon fill="none" points="100,25 165,65 165,135 100,175 35,135 35,65" stroke="currentColor" stroke-opacity="0.1" stroke-width="1"></polygon>
+<polygon fill="none" points="100,45 145,75 145,125 100,155 55,125 55,75" stroke="currentColor" stroke-opacity="0.15" stroke-width="1"></polygon>
+<polygon fill="none" points="100,65 125,85 125,115 100,135 75,115 75,85" stroke="currentColor" stroke-opacity="0.1" stroke-width="1"></polygon>
+<!-- Radial Axes -->
+<line stroke="currentColor" stroke-opacity="0.15" stroke-width="1" x1="100" x2="100" y1="100" y2="25"></line>
+<line stroke="currentColor" stroke-opacity="0.15" stroke-width="1" x1="100" x2="165" y1="100" y2="65"></line>
+<line stroke="currentColor" stroke-opacity="0.15" stroke-width="1" x1="100" x2="165" y1="100" y2="135"></line>
+<line stroke="currentColor" stroke-opacity="0.15" stroke-width="1" x1="100" x2="100" y1="100" y2="175"></line>
+<line stroke="currentColor" stroke-opacity="0.15" stroke-width="1" x1="100" x2="35" y1="100" y2="135"></line>
+<line stroke="currentColor" stroke-opacity="0.15" stroke-width="1" x1="100" x2="35" y1="100" y2="65"></line>
+<!-- Filled Mastery Area -->
+<polygon fill="currentColor" fill-opacity="0.18" points="100,38 152,72 135,122 100,160 52,118 48,70" stroke="currentColor" stroke-width="2"></polygon>
+<!-- Data points -->
+<circle class="fill-primary" cx="100" cy="38" r="3.5"></circle>
+<circle class="fill-secondary" cx="152" cy="72" r="3.5"></circle>
+<circle class="fill-tertiary" cx="135" cy="122" r="3.5"></circle>
+<circle class="fill-primary" cx="100" cy="160" r="3.5"></circle>
+<circle class="fill-error" cx="52" cy="118" r="3.5"></circle>
+<circle class="fill-primary" cx="48" cy="70" r="3.5"></circle>
+</svg>
+<!-- Labels outside SVG -->
+<span class="absolute top-1 font-label-sm text-label-sm text-on-surface-variant font-medium">数据结构 85%</span>
+<span class="absolute right-2 top-10 font-label-sm text-label-sm text-on-surface-variant font-medium">组成原理 72%</span>
+<span class="absolute bottom-2 font-label-sm text-label-sm text-error font-medium">虚存机制 41% (亟需强化)</span>
+<span class="absolute left-2 top-10 font-label-sm text-label-sm text-on-surface-variant font-medium">计网协议 79%</span>
+</div>
+<!-- Recommended Drill Packet -->
+<div class="bg-surface-container-lowest p-3 rounded-lg flex items-center justify-between mt-1">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[20px] text-error">target</span>
+<div class="flex flex-col">
+<span class="font-headline-sm text-headline-sm text-on-surface font-semibold">今日推荐：TLB快表与缺页异常综合变形</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">针对昨日 2 道错题聚类推荐 · 预计 15 分钟</span>
+</div>
+</div>
+<button class="px-3.5 py-1.5 rounded-lg bg-primary text-on-primary font-label-md text-label-md font-semibold hover:bg-surface-tint shadow-sm transition-all whitespace-nowrap" type="button">
+              即刻开练
+            </button>
+</div>
+</div>
+<div class="flex items-center justify-between text-on-surface-variant font-label-md text-label-md px-1">
+<span>错题库累积：<strong class="font-code-sm text-on-surface">34 道</strong></span>
+<a class="text-primary hover:underline flex items-center gap-0.5" href="#">
+<span>进入错题智能本</span>
+<span class="material-symbols-outlined text-[14px]">arrow_outward</span>
+</a>
+</div>
+</section>
+</div>
+<!-- MODULE B: 408 POSTGRADUATE EXAM QUESTION BANK (Full Width) -->
+<section class="w-full bg-surface-container-lowest/90 rounded-2xl p-space-xl shadow-[0_4px_24px_rgba(0,0,0,0.03)] backdrop-blur-md mb-space-xl">
+<!-- Section Header -->
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-space-md mb-space-lg">
+<div class="flex flex-col gap-1.5">
+<div class="flex items-center gap-2 flex-wrap">
+<span class="font-code-sm text-label-sm text-secondary font-bold px-2 py-0.5 rounded bg-secondary-fixed">POSTGRADUATE / 03</span>
+<span class="px-2.5 py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed font-label-sm text-label-sm font-semibold">
+              240 单选 · 60 综合 · 历年全覆盖
+            </span>
+<span class="px-2.5 py-0.5 rounded-full bg-surface-container text-on-surface-variant font-label-sm text-label-sm">
+              考研 408 核心大纲全要素适配
+            </span>
+</div>
+<h2 class="font-headline-lg text-headline-lg text-on-surface">408 考研真题与模拟题库</h2>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-3xl">
+            覆盖四科，按知识点分组。151 道历年考点改编与 149 道原创模拟，题干、解答均可直接查看并随时唤起 AI 逐行答疑。
+          </p>
+</div>
+<!-- Subject Switcher Pills -->
+<div class="flex items-center gap-1.5 bg-surface-container p-1 rounded-xl shrink-0 overflow-x-auto">
+<button class="px-3.5 py-1.5 rounded-lg bg-surface-container-lowest text-primary font-label-md text-label-md font-semibold shadow-sm transition-all" type="button">
+            全部 (300)
+          </button>
+<button class="px-3.5 py-1.5 rounded-lg text-on-surface-variant hover:text-on-surface font-label-md text-label-md transition-colors" type="button">
+            数据结构 (80)
+          </button>
+<button class="px-3.5 py-1.5 rounded-lg text-on-surface-variant hover:text-on-surface font-label-md text-label-md transition-colors" type="button">
+            计算机组成 (75)
+          </button>
+<button class="px-3.5 py-1.5 rounded-lg text-on-surface-variant hover:text-on-surface font-label-md text-label-md transition-colors" type="button">
+            操作系统 (75)
+          </button>
+<button class="px-3.5 py-1.5 rounded-lg text-on-surface-variant hover:text-on-surface font-label-md text-label-md transition-colors" type="button">
+            计算机网络 (70)
+          </button>
+</div>
+</div>
+<!-- Question Cards 4-Col Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-space-md">
+<!-- Question Item 1 -->
+<div class="flex flex-col justify-between p-space-md rounded-xl bg-surface-container-low hover:bg-surface-container-high transition-all group cursor-pointer shadow-sm">
+<div class="flex flex-col gap-2">
+<div class="flex items-center justify-between font-label-sm text-label-sm">
+<span class="px-2 py-0.5 rounded bg-primary-fixed text-on-primary-fixed font-semibold">数据结构 · 树与二叉树</span>
+<span class="font-code-sm text-outline">Q408-019</span>
+</div>
+<h4 class="font-headline-sm text-headline-sm text-on-surface group-hover:text-primary transition-colors line-clamp-2">
+              平衡二叉树在插入节点失衡后的最小旋转子树根节点判定
+            </h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant line-clamp-2">
+              设一棵 AVL 树已含有 12 个节点，若依次插入节点关键字为 35, 18, 42，则导致 RL 型旋转的根节点关键字是...
+            </p>
+</div>
+<div class="flex items-center justify-between pt-space-md mt-space-sm">
+<span class="inline-flex items-center gap-1 font-label-sm text-label-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-[15px] text-primary">auto_awesome</span>
+              AI 已生成考点图解
+            </span>
+<span class="material-symbols-outlined text-[18px] text-outline group-hover:translate-x-1 group-hover:text-primary transition-all">chevron_right</span>
+</div>
+</div>
+<!-- Question Item 2 -->
+<div class="flex flex-col justify-between p-space-md rounded-xl bg-surface-container-low hover:bg-surface-container-high transition-all group cursor-pointer shadow-sm">
+<div class="flex flex-col gap-2">
+<div class="flex items-center justify-between font-label-sm text-label-sm">
+<span class="px-2 py-0.5 rounded bg-secondary-fixed text-on-secondary-fixed font-semibold">计组 · 存储系统</span>
+<span class="font-code-sm text-outline">Q408-084</span>
+</div>
+<h4 class="font-headline-sm text-headline-sm text-on-surface group-hover:text-primary transition-colors line-clamp-2">
+              两级 Cache 缺失率与平均访存时间 (AMAT) 计算
+            </h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant line-clamp-2">
+              CPU 时钟频率 2.5GHz，L1 Cache 命中时间为 1 个时钟周期，局部缺失率为 4%；L2 Cache 访问耗时...
+            </p>
+</div>
+<div class="flex items-center justify-between pt-space-md mt-space-sm">
+<span class="inline-flex items-center gap-1 font-label-sm text-label-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-[15px] text-tertiary">bolt</span>
+              高频考点改编真题
+            </span>
+<span class="material-symbols-outlined text-[18px] text-outline group-hover:translate-x-1 group-hover:text-primary transition-all">chevron_right</span>
+</div>
+</div>
+<!-- Question Item 3 -->
+<div class="flex flex-col justify-between p-space-md rounded-xl bg-surface-container-low hover:bg-surface-container-high transition-all group cursor-pointer shadow-sm">
+<div class="flex flex-col gap-2">
+<div class="flex items-center justify-between font-label-sm text-label-sm">
+<span class="px-2 py-0.5 rounded bg-tertiary-fixed text-on-tertiary-fixed font-semibold">操作系统 · 内存管理</span>
+<span class="font-code-sm text-outline">Q408-142</span>
+</div>
+<h4 class="font-headline-sm text-headline-sm text-on-surface group-hover:text-primary transition-colors line-clamp-2">
+              64位系统四级页表地址转换与 TLB 命中判定
+            </h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant line-clamp-2">
+              页面大小 4KB，页表项 8 字节，进程访问逻辑地址 0x0000 7FFF FFFF 1234 时发生缺页中断的临界条件...
+            </p>
+</div>
+<div class="flex items-center justify-between pt-space-md mt-space-sm">
+<span class="inline-flex items-center gap-1 font-label-sm text-label-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-[15px] text-primary">auto_awesome</span>
+              支持逐行问答解析
+            </span>
+<span class="material-symbols-outlined text-[18px] text-outline group-hover:translate-x-1 group-hover:text-primary transition-all">chevron_right</span>
+</div>
+</div>
+<!-- Question Item 4 -->
+<div class="flex flex-col justify-between p-space-md rounded-xl bg-surface-container-low hover:bg-surface-container-high transition-all group cursor-pointer shadow-sm">
+<div class="flex flex-col gap-2">
+<div class="flex items-center justify-between font-label-sm text-label-sm">
+<span class="px-2 py-0.5 rounded bg-surface-variant text-on-surface font-semibold">计网 · 传输层</span>
+<span class="font-code-sm text-outline">Q408-208</span>
+</div>
+<h4 class="font-headline-sm text-headline-sm text-on-surface group-hover:text-primary transition-colors line-clamp-2">
+              TCP 拥塞窗口 cwnd 与滑动窗口 rwnd 的动态协同计算
+            </h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant line-clamp-2">
+              在慢开始阶段门限 ssthresh=16，收到 3 个重复 ACK 后的快速重传与恢复状态转移时序推导题...
+            </p>
+</div>
+<div class="flex items-center justify-between pt-space-md mt-space-sm">
+<span class="inline-flex items-center gap-1 font-label-sm text-label-sm text-secondary font-semibold">
+              真题经典考法 (2022年408)
+            </span>
+<span class="material-symbols-outlined text-[18px] text-outline group-hover:translate-x-1 group-hover:text-primary transition-all">chevron_right</span>
+</div>
+</div>
+</div>
+<!-- Action Footer for Question Bank -->
+<div class="flex flex-col sm:flex-row items-center justify-between gap-space-md mt-space-lg pt-space-md">
+<div class="flex items-center gap-3 font-body-sm text-body-sm text-on-surface-variant">
+<span class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px] text-primary">filter_alt</span>
+            支持按题型（单选/大题综合）与真题年份快速过滤
+          </span>
+</div>
+<div class="flex items-center gap-space-sm">
+<button class="px-4 py-2 rounded-lg bg-surface-container text-on-surface font-label-md text-label-md font-semibold hover:bg-surface-container-high transition-colors" type="button">
+            模拟大题答题纸模式
+          </button>
+<button class="px-4 py-2 rounded-lg bg-primary-container text-on-primary font-label-md text-label-md font-semibold hover:opacity-95 shadow-sm transition-all flex items-center gap-1" type="button">
+<span>浏览全部 300 道题库</span>
+<span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+</button>
+</div>
+</div>
+</section>
+<!-- ORIGINAL WORKSPACE CONTEXT & INSPIRATION (Subtle Reference Card) -->
+<section class="w-full bg-surface-container-lowest/60 rounded-2xl p-space-lg backdrop-blur-md mb-space-lg">
+<div class="flex items-center justify-between mb-space-sm">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-outline">photo_library</span>
+<span class="font-headline-sm text-headline-sm text-on-surface font-semibold">原工作台系统基准参照</span>
+<span class="font-label-sm text-label-sm text-outline">（已根据新视觉语言升级为高质感玻璃拟态与模块化层级）</span>
+</div>
+<button class="font-label-sm text-label-sm text-primary hover:underline flex items-center gap-1" id="toggle-preview-btn" type="button">
+<span id="preview-text">收起基准对照</span>
+<span class="material-symbols-outlined text-[14px]">expand_less</span>
+</button>
+</div>
+<div class="transition-all duration-300 overflow-hidden" id="preview-container">
+<div class="rounded-xl overflow-hidden shadow-sm max-w-4xl mx-auto">
+<img alt="原系统页面基准对照图" class="w-full h-auto object-cover max-h-72 opacity-85 hover:opacity-100 transition-opacity" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDb--WJsoMXgkrkS4IQmQgHDe7IQAnynU1HyOwQhLeVn5oKbxjSW796tqKDQDkCYFxfpbFrYaE9Tn8p77m0s-X8fH6RkhTVNnh3L07o0s_OLPfFVf-rhWUaFv47LBtNbFUYnZQSlQs-_FqjKqwH_401q7rg6YZPfJlpRFLQ75YluF_toG9N3YjR-GqdZd9M4t3Y9OlFCFNLTamS36wF8o2Yl9s04y8icctshtvazgSdtQt5xXKGQpw"/>
+</div>
+</div>
+</section>
+<!-- BOTTOM QUICK ACTION BAR -->
+<aside class="sticky bottom-4 z-30 w-full max-w-3xl mx-auto rounded-2xl bg-surface-container-lowest/90 backdrop-blur-2xl p-3 shadow-[0_16px_40px_rgba(19,27,46,0.08)] flex items-center justify-between gap-space-md">
+<div class="flex items-center gap-3 pl-2">
+<div class="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]">psychology_alt</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-on-surface font-semibold leading-tight">AI 伴学教练就绪</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">当前会话已加载当前练习上下文</span>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<button class="h-9 px-3 rounded-lg bg-surface-container text-on-surface-variant hover:text-on-surface font-label-md text-label-md flex items-center gap-1.5 transition-colors" type="button">
+<span class="material-symbols-outlined text-[16px]">menu_book</span>
+<span>公式速查</span>
+</button>
+<button class="h-9 px-4 rounded-lg bg-primary text-on-primary font-label-md text-label-md font-semibold flex items-center gap-1.5 shadow-sm hover:bg-surface-tint transition-all" type="button">
+<span class="material-symbols-outlined text-[16px]">bolt</span>
+<span>唤起 AI 逐行答疑</span>
+</button>
+</div>
+</aside>
+</div>
+</div>
+<script>
+  // Simple interactive preview toggle
+  const toggleBtn = document.getElementById('toggle-preview-btn');
+  const previewContainer = document.getElementById('preview-container');
+  const previewText = document.getElementById('preview-text');
+  let isExpanded = true;
+
+  if (toggleBtn && previewContainer) {
+    toggleBtn.addEventListener('click', () => {
+      isExpanded = !isExpanded;
+      if (isExpanded) {
+        previewContainer.style.maxHeight = '500px';
+        previewContainer.style.opacity = '1';
+        previewText.textContent = '收起基准对照';
+      } else {
+        previewContainer.style.maxHeight = '0px';
+        previewContainer.style.opacity = '0';
+        previewText.textContent = '展开基准对照';
+      }
+    });
+  }
+</script></div></main></div></body></html>

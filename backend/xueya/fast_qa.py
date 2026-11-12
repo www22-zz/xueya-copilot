@@ -21,7 +21,11 @@ def ordinary_question(request, intent):
 
 def fast_messages(messages):
     messages[0] = {**messages[0], 'content': messages[0]['content'] +
-        '这是资料教学问答，请结合相关片段组织完整、通俗且有依据的讲解，不要规划任务或堆砌原文。除非用户要求简答，先给结论，再解释机制和原因，结合题设给出具体例子或逐步推导，最后澄清易混淆点；不为凑长度重复内容。请先输出 claims 数组，再输出 answer、sources、knowledgePoints。'
+        '这是资料教学问答，请结合相关片段组织完整、通俗且有依据的讲解，不要规划任务或堆砌原文。除非用户要求简答，先给结论，再解释机制和原因，结合题设给出具体例子或逐步推导，最后澄清易混淆点；不为凑长度重复内容。'
+        '除非用户明确要求详细展开，answer 控制在 150–350 字，claims 最多 4 项且不要重复同一事实。请先输出 claims 数组，再输出 answer、sources、knowledgePoints。'
+        'claims 必须全部使用逐字原文整句（kind 设为 excerpt，text 必须与所选 quoteId 的 quoteSpans 原文完全一致），不要写改写型 claims；自己的解释全部写在 answer 里。这样服务端可以立即核对，回答也更快。'
+        '给定材料只是参考资料，请不要机械照抄原文，要用自己的话组织自然、完整的 answer；资料与问题无关或不足时设 answerable=false。'
+        'suggestedQuestions 根据本轮问题和回答预测 3 个用户可能追问的问题，每条不超过 40 字，不要重复原问题。'
         '最多给出一项与问题直接相关且语义完整的原文摘录，优先选s开头的完整句编号。OCR噪声或断行使原句不清楚时，不要逐行粘贴，直接用paraphrase解释并提供依据；'
         '随后的段落再用自己的话展开通俗解释或推导（kind 设为 paraphrase 或 inference，evidence.quote 必须逐字引用资料）。先直观结论再解释原因，按需要给出完整的解释，各项保持语义连贯。'
         'evidence可以只填写sourceId与quoteId，由服务端恢复所选原文，避免重抄OCR字形；直接摘录的text仍需与原文完全一致。不得为了提前输出而编造证据。'
@@ -51,6 +55,7 @@ class ClaimStream:
         self.accepted = []
         self.source_ids = []
         self.wait_for_review = False
+        self.claims_closed = False
 
     def feed(self, text):
         self.buffer += text
@@ -105,6 +110,7 @@ class ClaimStream:
                 if char == ']':
                     self.pos += 1
                     self.state = 'separator'
+                    self.claims_closed = True
                     continue
                 try:
                     claim, end = self.decoder.raw_decode(self.buffer, self.pos)
@@ -120,6 +126,8 @@ class ClaimStream:
                     break
                 self.pos += 1
                 self.state = 'claim' if char == ',' else 'separator'
+                if char == ']':
+                    self.claims_closed = True
             elif self.state == 'separator':
                 if char != ',':
                     break
@@ -143,3 +151,127 @@ class ClaimStream:
             if ref['sourceId'] not in self.source_ids:
                 self.source_ids.append(ref['sourceId'])
         return item['text'] + ''.join(f" [{self.source_ids.index(source_id)+1}]" for source_id in dict.fromkeys(r['sourceId'] for r in item['evidence']))
+
+
+class DraftStream:
+    """Extract the top-level `answer` string from a streaming JSON response.
+
+    This is a display-only preview: content is never validated, stored or
+    forwarded as a final answer. The authoritative answer remains the `done`
+    event. Callers must label the emitted fragments as unverified.
+    """
+    def __init__(self):
+        self.buffer = ''
+        self.pos = 0
+        self.state = 'root'
+        self.key = None
+        self.decoder = json.JSONDecoder()
+        self.quoted = False
+        self.finished = False
+        self.started = False
+
+    def feed(self, text):
+        if self.finished or not isinstance(text, str) or not text:
+            return ''
+        self.buffer += text
+        out = []
+        while not self.finished:
+            if self.quoted:
+                chunk, done = self._read_string()
+                if chunk:
+                    out.append(chunk)
+                if done:
+                    self.finished = True
+                break
+            while self.pos < len(self.buffer):
+                while self.pos < len(self.buffer) and self.buffer[self.pos].isspace():
+                    self.pos += 1
+                if self.pos >= len(self.buffer):
+                    return ''.join(out)
+                char = self.buffer[self.pos]
+                if self.state == 'root':
+                    if self.buffer.startswith('```', self.pos):
+                        newline = self.buffer.find('\n', self.pos)
+                        if newline == -1:
+                            return ''.join(out)
+                        self.pos = newline+1
+                        continue
+                    if char != '{':
+                        return ''.join(out)
+                    self.pos += 1
+                    self.state = 'key'
+                    continue
+                if self.state == 'key':
+                    if char == '}':
+                        return ''.join(out)
+                    try:
+                        key, end = self.decoder.raw_decode(self.buffer, self.pos)
+                    except ValueError:
+                        return ''.join(out)
+                    if not isinstance(key, str):
+                        return ''.join(out)
+                    self.key, self.pos, self.state = key, end, 'colon'
+                    continue
+                if self.state == 'colon':
+                    if char != ':':
+                        return ''.join(out)
+                    self.pos += 1
+                    self.state = 'value'
+                    continue
+                if self.state == 'value':
+                    if self.key == 'answer' and char == '"':
+                        self.pos += 1
+                        self.quoted = self.started = True
+                        break
+                    try:
+                        _, self.pos = self.decoder.raw_decode(self.buffer, self.pos)
+                    except ValueError:
+                        return ''.join(out)
+                    self.state = 'separator'
+                    continue
+                if self.state == 'separator':
+                    if char != ',':
+                        return ''.join(out)
+                    self.pos += 1
+                    self.state = 'key'
+                    continue
+                return ''.join(out)
+            else:
+                # Buffer exhausted without reaching a complete value: wait for more.
+                return ''.join(out)
+        return ''.join(out)
+    def _read_string(self):
+        raw, i, out = self.buffer, self.pos, []
+        escapes = {'"': '"', '\\': '\\', '/': '/', 'b': '\b', 'f': '\f', 'n': '\n', 'r': '\r', 't': '\t'}
+        while i < len(raw):
+            char = raw[i]
+            if char == '\\':
+                if i+1 >= len(raw):
+                    break
+                escape = raw[i+1]
+                if escape == 'u':
+                    if i+6 > len(raw):
+                        break
+                    try:
+                        out.append(json.loads('"'+raw[i:i+6]+'"'))
+                    except ValueError:
+                        self.finished = True
+                        break
+                    i += 6
+                    continue
+                if escape in escapes:
+                    out.append(escapes[escape])
+                    i += 2
+                    continue
+                self.finished = True
+                break
+            if char == '"':
+                self.pos = i+1
+                return ''.join(out), True
+            end = i
+            while end < len(raw) and raw[end] not in '\\"':
+                end += 1
+            out.append(raw[i:end])
+            i = end
+        self.pos = i
+        return ''.join(out), False

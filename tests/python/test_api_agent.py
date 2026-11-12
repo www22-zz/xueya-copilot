@@ -227,7 +227,7 @@ def test_provider_usage_api_limits_and_unknown_outcomes(platform):
             ready.set()
             await finish.wait()
             return httpx.Response(200, json={"choices": [{"message": {"content": "result"}}], "usage": {"total_tokens": 20}})
-        provider = MimoProvider(Config(api_key="test-only"), platform, httpx.MockTransport(upstream))
+        provider = MimoProvider(Config(api_key="test-only", api_queue_timeout=0), platform, httpx.MockTransport(upstream))
         one = asyncio.create_task(provider.generate([], scope=platform.scope()))
         two = asyncio.create_task(provider.generate([], scope=platform.scope()))
         await ready.wait()
@@ -241,7 +241,7 @@ def test_provider_usage_api_limits_and_unknown_outcomes(platform):
 
         async def fail(request):
             raise httpx.ReadError("ambiguous network failure")
-        broken = MimoProvider(Config(api_key="test-only"), platform, httpx.MockTransport(fail))
+        broken = MimoProvider(Config(api_key="test-only", api_queue_timeout=0), platform, httpx.MockTransport(fail))
         with pytest.raises(httpx.ReadError):
             await broken.generate([], scope=platform.scope())
         assert platform.db.one("SELECT count(*) n FROM invocations WHERE status='unknown'")["n"] == 1

@@ -187,9 +187,10 @@ async def test_omitted_explanation_is_not_reported_as_completed():
         {'text': '队列是后进先出。', 'kind': 'paraphrase', 'evidence': [{'sourceId': 's', 'quote': source['quote']}]},
     ]}
     result = await finalize_answer(json.dumps(value), [source], 'controlled', review=lambda *a, **k: {'supported': False})
-    assert result['answerStatus'] == 'unavailable' and result['omittedClaims'] == 1
+    assert result['answerStatus'] == 'unavailable' and result['reason'] == 'CLAIMS_NEED_REVIEW'
     assert '队列是后进先出' not in result['answer']
-    assert source['quote'] in result['answer'] and '尚未完成' in result['answer']
+    assert source['quote'] not in result['answer']
+    assert result['sourceDetails'][0]['quote'] == source['quote']
 
 
 async def test_insufficient_evidence_returns_clean_refusal_without_unrelated_quotes():

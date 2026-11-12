@@ -20,7 +20,7 @@
 
 ## 启动
 
-Windows 双击根目录的 **启动学涯.cmd**，或安装 Python 3.11+ 后在项目根目录运行：
+Windows 双击根目录的 **一键启动学涯.cmd**，或安装 Python 3.11+ 后在项目根目录运行：
 
 ```powershell
 python -m venv .venv
