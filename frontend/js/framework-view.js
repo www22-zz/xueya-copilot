@@ -92,14 +92,16 @@
               ${node.description ? `<p class="kf-node-desc">${e(node.description)}</p>` : ''}
               <div class="kf-node-actions">
                 ${node.materialId&&node.conceptId?`<a class="button button-small button-outline" href="#space/materials/${e(node.materialId)}/${e(node.conceptId)}">打开资料知识点与练习</a>`:''}
-                ${(node.questionIds||[]).slice(0,4).map(id=>`<a class="button button-small button-outline" href="#space/practice/ai/${e(id)}">练习题</a>`).join('')}
+                ${(node.questionIds||[]).slice(0,4).map((id,index)=>`<a class="button button-small button-outline" href="#space/practice/ai/${e(id)}">练习 ${index+1}</a>`).join('')}
                 ${node.video?.url?`<a class="button button-small button-outline" href="${e(node.video.url)}">${e(node.video.title||'相关课程')}</a>`:node.materialId?'<small>暂无已匹配视频分集</small>':''}
                 ${(currentFramework.nodes||[]).some(n=>n.parentId===node.id)?`<button type="button" class="button button-small button-outline" data-kf-collapse="${e(node.id)}">${collapsed.has(node.id)?'展开':'收起'}</button>`:''}
                 <button type="button" class="button button-small button-outline" data-kf-ask="${e(node.label)}" title="围绕该节点向 AI 提问">答疑</button>
+                <details class="kf-node-tools"><summary>编辑节点</summary><div class="kf-edit-actions">
                 <button type="button" class="button button-small button-outline" data-kf-add-child="${e(node.id)}">＋添加子节点</button>
                 <button type="button" class="button button-small button-outline" data-kf-edit="${e(node.id)}">编辑</button>
                 <button type="button" class="button button-small button-outline" data-kf-ai="${e(node.id)}">AI 细化</button>
                 ${node.level > 0 ? `<button type="button" class="button button-small button-outline" data-kf-del="${e(node.id)}">删除</button>` : ''}
+                </div></details>
               </div>
             </div>
             ${collapsed.has(node.id)?'':renderTree(nodes, node.id)}
@@ -114,12 +116,14 @@
         <div class="kf-workspace panel">
           <div class="kf-toolbar">
             <div class="kf-title-area">
-              <h2>${currentFramework ? e(currentFramework.title) : '知识框架导图'}</h2>
-              <p>概念与知识点结构关系图 · 独立于日程任务</p>${currentFramework?.planId?'<a href="#space/analysis/plans">查看关联计划</a>':''}
+              <h2>知识框架</h2>
+              <p class="kf-purpose">保存和回看知识点的层级结构，从节点进入资料、练习或 AI 答疑；学习日期与每日任务请到关联计划查看。</p>
+              <h3>${currentFramework ? e(currentFramework.title) : '尚未选择框架'}</h3>
+              ${currentFramework?.planId?'<a href="#space/analysis/plans">查看关联计划</a>':''}
               ${currentFramework?.undo?.length?'<button type="button" class="button button-small button-outline" data-kf-undo>撤销上次修改</button>':''}
             </div>
             <div class="kf-actions">
-              <select id="kfSubjectSelect" class="filter-select">
+              <select id="kfSubjectSelect" class="filter-select" aria-label="生成框架的学科">
                 <option value="数据结构">数据结构</option>
                 <option value="计算机组成原理">计算机组成原理</option>
                 <option value="操作系统">操作系统</option>
@@ -130,10 +134,10 @@
             </div>
           </div>
 
-          <div class="kf-history-filters"><label>历史学科<select data-kf-filter-subject><option value="">全部</option>${[...new Set(frameworksList.map(f=>f.subject))].map(s=>`<option value="${e(s)}" ${s===historySubject?'selected':''}>${e(s)}</option>`).join('')}</select></label><label>专题筛选<input data-kf-filter-topic value="${e(historyTopic)}" maxlength="200"></label></div>
+          <div class="kf-history-filters"><label>筛选学科<select data-kf-filter-subject><option value="">全部</option>${[...new Set(frameworksList.map(f=>f.subject))].map(s=>`<option value="${e(s)}" ${s===historySubject?'selected':''}>${e(s)}</option>`).join('')}</select></label><label>专题筛选<input data-kf-filter-topic placeholder="搜索已保存框架" value="${e(historyTopic)}" maxlength="200"></label></div>
           ${frameworksList.length ? `
             <div class="kf-history-strip">
-              <span class="kf-strip-label">框架历史：</span>
+              <span class="kf-strip-label">已保存框架：</span>
               ${frameworksList.filter(f=>(!historySubject||f.subject===historySubject)&&(!historyTopic||(f.topic+' '+f.title).includes(historyTopic))).map(fw => `
                 <button type="button" class="button button-small ${fw.id === currentFramework?.id ? 'button-blue' : 'button-outline'}" data-kf-switch="${e(fw.id)}">
                   ${e(fw.title)}

@@ -656,3 +656,17 @@ POST /plan/adopt继续要求confirmed=true、业务expectedRevision及operationI
 - **追问建议**：资料回答的 JSON 可包含 `suggestedQuestions`（最多 3 条，每条 ≤80 字），宿主校验后随 `done.suggestedQuestions` 返回；通用回答没有该字段时，前端可调用 `POST /api/agent/suggestions`，请求 `{courseId,question,answer,history}`，返回 `{ok:true,questions:[...]}`（最多 3 条；复用主平台限流、预算与调用账本）。失败时前端保留静态兜底，不重试。
 - **去品牌化**：浏览器展示的引擎名改为“资料问答/通用回答/AI 学习规划”等，不再显示模型名称；身份类问题仍按宿主配置回答。RAG 失败后的通用兜底去掉“未使用知识库证据/模型自主回答”前缀，直接给自然答案；`engine='general-chat'`、`verification='general-knowledge-not-course-verified'` 等机器字段保留。
 - **来源展示**：资料引用仍用 citation chips；联网搜索的网页来源使用站点域名作为 chip 文案并可点击打开原网页。
+
+
+## 学习计划复用固定题库（2026-11-12）
+
+`POST /api/learning/space/plan/{plan_id}/practice`，请求体 `{ "nodeIds": ["task-id"] }`（1–20个字符串）；沿用本机Origin、登录账号与X-Xueya-Token校验。返回 `{ok:true, plan}`，plan为最新视图。
+
+- 只处理当前账号的active/draft计划、且请求中的全部节点必须属于该计划；非法节点整次拒绝。不支持修改历史计划。
+- 只为尚无题目的节点绑定现有固定题库单选题；不调用模型，不创建后台作业，不改题干/答案/解析或题库原难度。按任务主题选取，至多6题；不承诺与原计划难度完全一致。
+- 原有题组完全保留。首次处理后设置`fixedPracticePrepared:true`；重复请求不换题、不重复写入或递增版本。保存的questions引用含id/revision/sourceRevision/sourceType=`fixed-bank`/originalQuestionId。导入题按账号隔离，public_question仍去除正确答案。
+- 固定题组的requiredCount为真实绑定题量，plannedQuestionCount保留处理前目标量；有题则readiness=`ready`，无匹配则`questions-needed`且不伪造题量。完成条件仍为该节点全部已绑定题目的有效提交。
+- 使用数据库事务按最新计划做增量绑定，仅实际处理时递增plan.revision和updatedAt，不替换排程/节点/其他题组。客户端必须使用返回的plan刷新本地版本。
+- `/plan/list`及计划视图在节点中增加`taskSummary`与`knowledgePoints`，由本地任务主题规则给出简短学习提示；不读取教材全文，不表示模型生成的教材摘要。
+- `/quiz/attempts`复用既有作答与错题链。固定题引用校验planId/nodeId/题目版本和原题ID；不依赖教材conceptId。教材生成题继续执行原资料访问校验。
+- 可能错误：`INVALID_PLAN_NODES`、`PLAN_NOT_FOUND`、`PLAN_NODE_NOT_FOUND`、`PLAN_NOT_ACTIVE`；原有认证与题目版本错误保持不变。

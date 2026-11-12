@@ -7,7 +7,7 @@ from backend.xueya.config import Config
 
 
 def assert_learning_navigation(html):
-    """Check the user-approved four peers, rather than a legacy video label."""
+    """Check the five unified learning links approved on 2026-11-12."""
     class Sidebar(HTMLParser):
         def __init__(self):
             super().__init__()
@@ -45,7 +45,10 @@ def assert_learning_navigation(html):
         ('#space/practice/hot100', 'algorithms', '算法学习'),
         ('#space/exams', 'exams', '408考研学习'),
         ('#space/review', 'review', '错题本'),
+        ('#space/knowledge', 'knowledge', '个人资料库'),
     ]
+    assert 'data-view="frameworks"' not in html
+    assert '学习资料与框架' not in html
     assert 'learning-secondary-tools' not in html, 'Retired auxiliary navigation must not return'
 
 

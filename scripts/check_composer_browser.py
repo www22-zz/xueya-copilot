@@ -79,7 +79,7 @@ def main():
                 real_click(browser,'[data-add-audio]')
                 browser.wait('document.querySelector(".composer-mic").getAttribute("aria-pressed")==="true"')
                 browser.wait('window.composerTest.context.currentTime>.5')
-                assert browser.evaluate('document.querySelector("#chatForm .send-button").disabled && document.querySelector("#courseSelect").disabled')
+                assert browser.evaluate('document.querySelector("#chatForm .send-button").disabled && !document.querySelector("#courseSelect")')
                 browser.screenshot(output/'recording.png')
                 real_click(browser,'[data-add-audio]')
                 browser.wait('document.querySelector("#chatInput")?.value.includes("请解释队列")')

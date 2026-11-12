@@ -43,7 +43,7 @@ def main():
                 browser.wait('document.querySelector(".pw-entry-nav")?.textContent.includes("定制计划") && document.querySelector(".pw-entry-nav")?.textContent.includes("我的计划")')
                 assert not browser.evaluate(modal)
                 browser.wait('document.querySelector(".material-learning") && !document.querySelector(".material-learning").textContent.includes("签到记录")')
-                browser.wait('document.querySelector("[data-material-manage]")?.textContent === "个人资料库"')
+                browser.wait('document.querySelectorAll("[data-material-manage]").length === 0')
                 browser.click('[data-attendance]')
                 browser.wait('document.querySelector("[data-attendance]")?.textContent==="今日已签到"')
                 browser.evaluate("sessionStorage.setItem(window.XueyaDataKey('xueya-material-return'),JSON.stringify({hash:'#space/materials/test/topic',name:'学习计划.docx'}))")

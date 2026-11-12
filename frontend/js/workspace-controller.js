@@ -141,7 +141,6 @@ function createWorkspace(ctx){
   function enhance(base){views=globalThis.XueyaWorkspaceViews.createViews({...ctx,rich,service,isSpeaking:text=>globalThis.XueyaTTS?.isPlaying(text),getAttachments:()=>attachments,getMessageImage:ref=>messageImages?.source(ref)||'',getVoiceState:()=>voice?.status,getQueue:()=>queue},base);return views;}
   function beforeRender(){
     voice?.mount();
-    const course=store.courses.find(c=>c.id===state.courseId),select=$('#courseSelect');if(select){select.innerHTML=store.courses.filter(c=>!c.archived).map(c=>`<option value="${e(c.id)}" ${c.id===state.courseId?'selected':''}>${e(c.name)}</option>`).join('');select.disabled=state.pending||state.working||uploading||!!voice?.busy||!!state.mediaJob?.running;}if($('#courseLabel'))$('#courseLabel').textContent=course?.name||'我的课程';
   }
   function afterRender(){
     messageImages?.mount();
@@ -246,7 +245,6 @@ function createWorkspace(ctx){
     });
     const dialog=document.createElement('dialog');dialog.id='workspaceDialog';dialog.className='source-dialog workspace-dialog';dialog.setAttribute('aria-labelledby','workspaceDialogTitle');dialog.innerHTML=`<div class="dialog-head"><h2 id="workspaceDialogTitle"></h2><button type="button" class="icon-button" data-close-dialog aria-label="关闭编辑面板">×</button></div><div id="workspaceDialogBody"></div>`;document.body.append(dialog);
     dialog.addEventListener('submit',async event=>{if(event.target.id!=='workspaceForm')return;event.preventDefault();if(!editorSubmit)return;const submit=event.submitter;if(submit)submit.disabled=true;try{const result=await editorSubmit(new FormData(event.target));if(result!==false)dialog.close();}catch(error){$('#editorError').textContent=error.message||'保存失败，请重试。';}finally{if(submit)submit.disabled=false;}});
-    $('#courseSelect').addEventListener('change',event=>selectCourse(event.target.value));
 
     globalThis.addEventListener('xueya:sidebar-ask', event => {
       const { text, messageIndex } = event.detail || {};

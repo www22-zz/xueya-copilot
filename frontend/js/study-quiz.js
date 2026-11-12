@@ -43,18 +43,23 @@
       }).join('')}</details><p><a href="#space/practice/ai/${e(attempt.questionId)}/${e(attempt.id)}">在练习打开同一次作答</a></p>`;
   }
   function draftKey(id){return (root.XueyaDataKey||((k)=>k))('xueya-quiz-answer:'+id);}
-  function mount(container){
+  function mount(container,{readOnly=false}={}){
     container?.querySelectorAll('[data-quiz-card]').forEach(async node=>{
       if(node.dataset.mounted)return;node.dataset.mounted='1';const id=node.dataset.quizCard;
       try{
         const {question:q}=await api('quiz/question/'+encodeURIComponent(id));
         if(node.dataset.planRevision&&Number(node.dataset.planRevision)!==q.revision)throw Error('题目版本已变化，当前计划保留原引用；请调整计划后再练习。');
+        if(readOnly){
+          if(!node.isConnected)return;
+          node.innerHTML=`<header><strong>${e(({single:'单选题',multiple:'多选题',boolean:'判断题',fill:'填空题',short:'主观题'})[q.type]||'练习题')}</strong></header><p class="study-quiz-prompt">${e(q.prompt)}</p>${q.options?.length?`<ol class="route-preview-options" type="A">${q.options.map(option=>`<li>${e(option)}</li>`).join('')}</ol>`:''}`;
+          return;
+        }
         const directory=await api('quiz/list');
         let attempt=node.dataset.attemptId?(await api('quiz/attempts/'+encodeURIComponent(node.dataset.attemptId))).attempt:directory.attempts.find(a=>a.questionId===id&&(!node.dataset.planId||(a.planId===node.dataset.planId&&a.nodeId===node.dataset.planNode)));
         let draft='';try{draft=sessionStorage.getItem(draftKey(id))||'';}catch{}
         function draw(){
           if(!node.isConnected)return;
-          node.innerHTML=`<header><strong>${e(q.sourceType==='fixed-reference'?'固定题参考评阅':q.sourceType==='fixed'?'固定题库':'AI 生成题（未独立审校）')} · ${e(({single:'单选题',multiple:'多选题（全对得分）',boolean:'判断题',fill:'填空题（未匹配待复核）',short:'主观题'})[q.type])}</strong><h3>${e(q.subject)}</h3></header><p class="study-quiz-prompt">${e(q.prompt)}</p>${(q.limitations||[]).map(text=>`<p>${e(text)}</p>`).join('')}
+          node.innerHTML=`<header><strong>${e(q.sourceType==='fixed-reference'?'固定题参考评阅':q.sourceType==='fixed'?'固定题库':'AI 生成题（未独立审校）')} · ${e(({single:'单选题',multiple:'多选题（全对得分）',boolean:'判断题',fill:'填空题（未匹配待复核）',short:'主观题'})[q.type])}${q.difficulty?' · '+e(q.difficulty):''}</strong><h3>${e(q.subject)}</h3></header><p class="study-quiz-prompt">${e(q.prompt)}</p>${(q.limitations||[]).map(text=>`<p>${e(text)}</p>`).join('')}
             ${attempt?`<details><summary>本次原始答案（题目版本 ${e(attempt.questionRevision??'旧记录未保存')}）</summary><p>${e(attempt.questionSnapshotView?.prompt||'旧记录未保存完整题目快照')}</p><p>${e(q.type==='single'&&attempt.questionSnapshotView?.options?attempt.questionSnapshotView.options[attempt.answer]:attempt.answer)}</p></details>`:''}
             <form data-quiz-answer>${['single','multiple','boolean'].includes(q.type)?(q.type==='boolean'?['正确','错误']:q.options).map((option,index)=>`<label class="study-quiz-option"><input type="${q.type==='multiple'?'checkbox':'radio'}" name="answer" value="${index}" ${q.type!=='multiple'?'required':''}>${e(option)}</label>`).join(''):q.type==='fill'?Array.from({length:q.blankCount},(_,i)=>`<label>第${i+1}空<input name="answer" maxlength="500" required></label>`).join(''):`<label>完整答案<textarea name="answer" rows="5" maxlength="20000" required>${e(draft)}</textarea></label>`}
 

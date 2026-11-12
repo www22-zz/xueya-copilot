@@ -254,6 +254,13 @@ def install_study_space(app):
                 srv.repo.put(scope,'plan',plan_id,plan,row['version'])
         return success(plan=srv.plan_view(account,plan))
 
+    @router.post('/plan/{plan_id}/practice')
+    async def prepare_plan_practice(request: Request, plan_id: str):
+        authorize(request)
+        data=await json_body(request,16384)
+        from .plan_practice import prepare
+        return success(plan=prepare(service(),account_id(request),plan_id,data.get('nodeIds')))
+
     @router.post("/plan/adopt")
     async def adopt_plan(request: Request):
         authorize(request)

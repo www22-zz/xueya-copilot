@@ -39,12 +39,11 @@
       try{localStorage.setItem(selectionKey,JSON.stringify({selected,selectedDocument,subject,nodeId}));}catch{}
       const status={parsing:'正在解析资料',queued:'等待出题',running:'正在生成',succeeded:'已生成',failed:'生成失败',unknown:'调用状态待核对',cancelled:'已取消','not-generated':'待准备'};
       container.innerHTML=`<section class="panel material-learning"><h1 class="visually-hidden">课程资料学习</h1>
-        <nav class="heading-actions material-workflow" aria-label="资料学习流程"><button class="button button-outline" data-material-tab="corpus" aria-pressed="${tab==='corpus'}">课程书架与知识图谱</button><button class="button button-outline" data-material-tab="video" aria-pressed="${tab==='video'}">视频目录</button><button class="button button-outline" data-material-tab="plan" aria-pressed="${tab==='plan'}">个性化学习</button><a class="button button-outline" href="#space/knowledge" data-material-manage>个人资料库</a><a class="button button-outline" href="#space/practice/legacy">课程固定练习</a><button class="button button-blue" type="button" data-attendance ${attendance.signed?'disabled':''}>${attendance.signed?'今日已签到':'每日签到'}</button></nav>
+        <nav class="heading-actions material-workflow" aria-label="资料学习流程"><button class="button button-outline" data-material-tab="corpus" aria-pressed="${tab==='corpus'}">课程书架与知识图谱</button><button class="button button-outline" data-material-tab="video" aria-pressed="${tab==='video'}">视频目录</button><button class="button button-outline" data-material-tab="plan" aria-pressed="${tab==='plan'}">个性化学习</button><a class="button button-outline" href="#space/practice/legacy">课程固定练习</a><button class="button button-blue" type="button" data-attendance ${attendance.signed?'disabled':''}>${attendance.signed?'今日已签到':'每日签到'}</button></nav>
         <div data-material-subview></div>
         <p role="status" data-material-status></p></section>`;
       container.dataset.renderedTab=tab;
       container.querySelectorAll('[data-material-tab]').forEach(button=>button.onclick=()=>{tab=button.dataset.materialTab;redraw();});
-      container.querySelector('[data-material-manage]').onclick=()=>{try{sessionStorage.setItem((window.XueyaDataKey||((key)=>key))('xueya-material-return'),JSON.stringify({hash:'#space/materials/'+selected+'/'+nodeId,name:material?.name||'课程资料学习'}));}catch{}};
       if(tab==='corpus'){window.XueyaCourseGraph.mount(container.querySelector('[data-material-subview]'),courseId,location.hash.split('/')[2]);}
       if(tab==='plan'){
         const target=container.querySelector('[data-material-subview]');target.innerHTML='<div data-material-plan></div>';

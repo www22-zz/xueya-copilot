@@ -58,6 +58,10 @@ def validate_attempt(service, account, value, question):
     plan = row['value']
     node = next((n for n in nodes(plan.get('learningRoute',{'phases':[]})) if n['id'] == value.get('nodeId')), None)
     require(node and any(q['id']==question['id'] and q['revision']==question['revision'] for q in node['questions']), 'PLAN_QUESTION_MISMATCH')
+    fixed_ref=next((ref for ref in node['questions'] if ref['id']==question['id'] and ref.get('sourceType')=='fixed-bank'),None)
+    if fixed_ref:
+        require(question.get('sourceType')=='fixed' and question.get('originalQuestionId')==fixed_ref.get('originalQuestionId'), 'PLAN_QUESTION_MISMATCH')
+        return {'planId':plan['id'], 'nodeId':node['id']}
     materials=getattr(service.platform,'material_learning',None)
     if materials:
         from .concept_practice import context
@@ -71,11 +75,15 @@ def view(service, account, plan):
     route = copy.deepcopy(plan.get('learningRoute'))
     if not route:
         return None
+    from .plan_practice import task_brief
+    tasks={task['id']:task for day in plan['days'] for task in day.get('tasks',[])}
     attempts = [a for a in service.repo.all(service._scope(account),'attempt') if a.get('planId') == plan['id']]
     for phase in route['phases']:
         first_results = []; report_attempts = []; attempted=0; correct=0; graded=0; repeats=0
         for stage in phase['stages']:
             for node in stage['nodes']:
+                brief=task_brief(tasks.get(node['id'],{'title':stage['title']}))
+                node.update({key:brief[key] for key in ('taskSummary','knowledgePoints')})
                 valid = []
                 for ref in node['questions']:
                     rows = sorted((a for a in attempts if a.get('nodeId')==node['id'] and a['questionId']==ref['id']

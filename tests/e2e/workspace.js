@@ -89,7 +89,7 @@ const root=path.resolve(__dirname,'../..'),output=path.join(root,'test-results/w
 
     phase('course isolation, archive/restore and unavailable capabilities');
     await page.getByRole('button',{name:'管理课程',exact:true}).click();await dialog().locator('[name=name]').fill('数学课程');await dialog().getByRole('button',{name:'创建课程',exact:true}).click();const mathCourse=(await saved()).courseId;assert.equal((await saved()).cards.length,0);assert.equal((await saved()).documents.length,0);assert.equal((await saved()).messages.length,0);
-    await page.locator('#courseSelect').selectOption('course-default');assert.equal((await saved()).cards[0].title,'拓扑学习札记');await page.getByRole('button',{name:'管理课程',exact:true}).click();await dialog().locator(`[data-archive-course="${mathCourse}"]`).click();assert.equal(await page.locator(`#courseSelect option[value="${mathCourse}"]`).count(),0);await dialog().locator(`[data-restore-course="${mathCourse}"]`).click();await close();
+    await page.getByRole('button',{name:'管理课程',exact:true}).click();await dialog().locator('[data-select-course="course-default"]').click();assert.equal((await saved()).cards[0].title,'拓扑学习札记');await page.getByRole('button',{name:'管理课程',exact:true}).click();await dialog().locator(`[data-archive-course="${mathCourse}"]`).click();assert.equal(await dialog().locator(`[data-select-course="${mathCourse}"]`).count(),0);await dialog().locator(`[data-restore-course="${mathCourse}"]`).click();await close();
     await nav('media');assert.equal(await page.locator('[data-media-run=transcribe]').isDisabled(),true);assert.match(await page.locator('.media-grid').innerText(),/尚未接通/);
 
     phase('responsive layout, keyboard, screenshots');
