@@ -32,7 +32,7 @@
   });
   const workspace=window.XueyaWorkspace.createWorkspace({state,L:viewLearning,store,e,icon,persist,toast,render,sourceById,allSources,libraryService:window.XueyaLibrary});
   const {titles,renders,documentRows,currentQuestions}=workspace.enhance(window.XueyaViews.createViews({state,L:viewLearning,e,icon,sourceById}));
-  titles.ask='AI 助手';titles.overview='工作台概览';titles.knowledge='个人参考资料';renders.knowledge=()=>'';
+  titles.ask='AI 助手';titles.overview='工作台概览';titles.knowledge='个人资料库';renders.knowledge=()=>'';
   renders.overview=()=>window.XueyaOverview?window.XueyaOverview.render({state,store}):'';
   renders.practice=()=>'<div id="practiceModule"></div>';
   titles.review='错题本';renders.review=()=>'<div id="practiceModule"></div>';
@@ -98,7 +98,10 @@
     const pool=currentQuestions();if(state.quizIndex>=pool.length)state.quizIndex=0;
     workspace.beforeRender();$('#spaceContent').innerHTML=renders[state.view]();$('#documentCount').textContent=window.XueyaWorkspaceAppearance.isOriginal()?state.documents.filter(d=>!d.superseded).length:Number.isInteger(state.documentCount)?state.documentCount:window.XueyaPlatform?.available?'…':state.documents.filter(d=>!d.superseded&&!d.archived).length;icons();if(state.view==='exams')window.XueyaExamWorkspace.mount($('#examLearning'),location.hash.split('/')[2]);if(state.view==='algorithms')window.XueyaAlgorithmDemo.mount($('#algorithmLearning'),location.hash.split('/')[2]);if(state.view==='materials')window.XueyaMaterialLearning.mount($('#materialLearning'),state.courseId);workspace.afterRender();workbench?.prepare();libraryUI?.mount();workbench?.mount();experience?.mount();mediaUI?.mount();historyLayout?.mount();knowledgeUI?.mount();if(!window.XueyaWorkspaceAppearance.isOriginal())knowledgeUI?.refreshCount();const practiceModule=$('#practiceModule');if(practiceModule){if(state.view==='practice'&&location.hash.split('/')[2]==='ai')window.XueyaStudyQuiz?.directory(practiceModule,location.hash.split('/')[3],location.hash.split('/')[4]);else if(state.view==='review')practiceUI?.mountReview(practiceModule,{area:location.hash.split('/')[2]});else practiceUI?.mountPractice(practiceModule,{page:location.hash.split('/')[2],questionId:decodeURIComponent(location.hash.split('/')[3]||''),category:({foundation:'basic',interview:'interview',legacy:'legacy',hot100:'hot100',exam408:'exam408'})[location.hash.split('/')[2]]});}
     if(['knowledge','courses','analysis','frameworks','practice'].includes(state.view)){
-      try{const context=JSON.parse(sessionStorage.getItem((window.XueyaDataKey||((key)=>key))('xueya-material-return'))||'null');if(context&&/^#space\/materials\//.test(context.hash))$('#spaceContent').insertAdjacentHTML('afterbegin',`<nav class="material-return" aria-label="学习位置"><a href="${e(context.hash)}">← 返回资料与知识点</a><span>${e(context.name)}</span><span>当前位置：${e(titles[state.view])}</span></nav>`);}catch{}
+      const isMyPlans=state.view==='analysis'&&location.hash.split('/')[2]==='plans';
+      let context=null;try{context=JSON.parse(sessionStorage.getItem((window.XueyaDataKey||((key)=>key))('xueya-material-return'))||'null');}catch{}
+      const hasMaterialContext=context&&/^#space\/materials\//.test(context.hash);
+      if(hasMaterialContext||isMyPlans)$('#spaceContent').insertAdjacentHTML('afterbegin',`<nav class="material-return" aria-label="学习位置"><a href="${e(hasMaterialContext?context.hash:'#space/materials/plan')}">← ${hasMaterialContext?'返回资料与知识点':'返回个性化学习'}</a>${state.view==='knowledge'||isMyPlans?'':`<span>${e(context.name)}</span>`}<span>当前位置：${e(isMyPlans?'我的学习计划':titles[state.view])}</span></nav>`);
     }
     const thread=$('#chatThread');if(thread)thread.scrollTop=!state.messages.length?0:!sameSession||nearBottom?thread.scrollHeight:scrollTop;
     agentRuns?.refresh();

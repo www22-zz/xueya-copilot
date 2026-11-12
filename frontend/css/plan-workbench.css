@@ -10,6 +10,38 @@
   min-width: 0;
 }
 
+.pw-entry-nav { display:flex; flex-wrap:wrap; gap:8px; padding:5px; width:fit-content; border:1px solid var(--stitch-outline-variant); border-radius:14px; background:var(--stitch-surface-container-low); }
+.pw-entry-nav > :is(span,a) { display:inline-flex; align-items:center; justify-content:center; gap:12px; min-height:42px; padding:10px 24px; border-radius:10px; font-size:14px; font-weight:600; color:var(--stitch-on-surface-variant); }
+.pw-entry-nav > [aria-current] { background:var(--stitch-primary); color:var(--stitch-on-primary); }
+.pw-entry-nav a:hover, .pw-entry-nav a:focus-visible { color:var(--stitch-primary); background:var(--stitch-surface-container-high); }
+.pw-result:empty { display:none; }
+.pw-draft-resume { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px; padding:16px 18px; border:1px solid var(--stitch-outline-variant); border-radius:14px; background:var(--stitch-surface-container-lowest); }
+.pw-draft-resume strong { font-size:14px; overflow-wrap:anywhere; }
+.pw-draft-resume p { margin:5px 0 0; font-size:12px; color:var(--stitch-on-surface-variant); }
+.pw-review-dialog { width:min(1160px,calc(100vw - 40px)); max-width:none; max-height:calc(100dvh - 40px); padding:0; margin:auto; border:1px solid var(--stitch-outline-variant); border-radius:22px; background:var(--stitch-surface-container-lowest); color:var(--stitch-on-surface); box-shadow:0 28px 90px #090e2955; overflow:hidden; }
+.pw-review-dialog[open] { display:flex; flex-direction:column; }
+.pw-review-dialog :is(h2,h3,h4) { color:var(--stitch-on-surface); }
+.pw-review-dialog::backdrop { background:#0d122a88; backdrop-filter:blur(7px); }
+.pw-review-header { display:flex; flex:none; align-items:flex-start; justify-content:space-between; gap:16px; padding:20px 24px; border-bottom:1px solid var(--stitch-outline-variant); }
+.pw-review-header h2 { font-size:20px; }
+.pw-review-header p { margin:6px 0 0; font-size:12px; color:var(--stitch-on-surface-variant); }
+.pw-review-close { flex:none; width:40px; height:40px; border:1px solid var(--stitch-outline-variant); border-radius:50%; background:transparent; color:var(--stitch-on-surface); font-size:23px; cursor:pointer; }
+.pw-review-close:hover { background:var(--stitch-surface-container-high); }
+.pw-review-content { min-height:0; overflow:auto; padding:18px 24px; }
+.pw-review-content .pw-draft-v2 { padding:0; border:0; border-radius:0; }
+.pw-review-footer { display:flex; flex:none; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; padding:16px 24px; border-top:1px solid var(--stitch-outline-variant); background:var(--stitch-surface-container-lowest); }
+.pw-review-footer small { color:var(--stitch-on-surface-variant); font-size:12px; }
+.pw-review-footer .pw-adopt-error { flex-basis:100%; margin:0; padding:10px 12px; border:1px solid var(--stitch-error); border-radius:10px; color:var(--stitch-error); font-size:13px; line-height:1.6; }
+.pw-review-footer > div { display:flex; flex-wrap:wrap; gap:10px; }
+.pw-review-footer .pw-adopt-primary { background:#465fd3; border:1px solid #465fd3; color:#fff; min-height:42px; }
+.pw-review-footer .pw-regenerate { background:#b93245; border:1px solid #b93245; color:#fff; min-height:42px; }
+.pw-review-footer .button:hover { filter:brightness(1.12); }
+.pw-review-footer .button:disabled { opacity:.55; cursor:not-allowed; }
+.pw-daily-schedule > summary { cursor:pointer; padding:12px; border:1px solid var(--stitch-outline-variant); border-radius:10px; font-size:13px; color:var(--stitch-primary); }
+.pw-daily-schedule[open] > summary { margin-bottom:10px; }
+.pw-review-dialog :is(button,a,summary):focus-visible { outline:2px solid var(--stitch-primary); outline-offset:3px; }
+@media(max-width:600px){ .pw-review-dialog { width:calc(100vw - 20px); max-height:calc(100dvh - 20px); border-radius:16px; } .pw-review-header,.pw-review-content,.pw-review-footer { padding:14px; } .pw-review-footer > div { width:100%; } .pw-review-footer .button { flex:1; } .pw-entry-nav { width:100%; } .pw-entry-nav > :is(a,span) { flex:1; padding:10px; } }
+
 .plan-workbench h2,
 .plan-workbench h3,
 .plan-workbench h4 {

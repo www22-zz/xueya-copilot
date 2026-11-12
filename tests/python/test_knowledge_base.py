@@ -62,9 +62,9 @@ def test_upload_chapter_dedup_across_keys_search_and_actual_citation(client):
     data = catalog(client, course)
     assert data['summary']['documents'] == 1 and data['summary']['sources'] > 0
     doc = data['documents'][0]
-    assert doc['chapter'] == '第3章' and 'chunks' not in doc and 'fileHash' not in doc
+    assert doc['chapter'] == 'week4 第3章_栈和队列' and 'chunks' not in doc and 'fileHash' not in doc
     assert doc['task']['status'] == 'succeeded' and not doc['vectorReady']
-    search = post(client, 'search', {'courseId': course, 'query': '后进先出', 'chapter': '第3章'}).json()['evidence']
+    search = post(client, 'search', {'courseId': course, 'query': '后进先出', 'chapter': doc['chapter']}).json()['evidence']
     assert search['sources'] and not search['warnings']
     for source in search['sources']:
         assert client.post('/api/platform/rag/validate', json={'courseId': course, 'citation': source}, headers=client.platform_headers).json()['valid']

@@ -37,7 +37,8 @@
     PLAN_NOT_ACTIVE: '这份计划当前不在执行中。',
     PLAN_NOT_DRAFT: '这份计划已经不是草稿，无需再次采用。',
     PLAN_REVISION_CONFLICT: '计划版本已变化，请刷新后重试。',
-    PLAN_CURRENT_CHANGED: '当前执行计划已发生变化，请刷新后重新预览。',
+    PLAN_CURRENT_CHANGED: '当前执行计划刚刚发生变化，本次没有替换。请再次点击“采用计划”，核对最新计划后确认。',
+    INVALID_CURRENT_PLAN: '当前计划校验信息不完整，请刷新后重试。',
     REPLAN_SOURCE_CHANGED: '来源计划已变化，请刷新后重试。',
     GENERATION_NOT_COMPLETED: '计划仍在生成（或关联导图未完成），暂不能采用；请等待作业结束。',
     CONFIRMATION_REQUIRED: '需要明确确认后才能采用计划。',
@@ -132,6 +133,8 @@
     let stamp = 0;
     let timer = null;
     let controller = null;
+    let reviewDialog = null;
+    let reviewReturnToForm = false;
     let materials = { loaded: false, subjects: [], concepts: 0, questions: 0, available: false, error: '' };
     let state = {
       form: defaultForm(),
@@ -145,7 +148,9 @@
       treeFor: '',
       treeOpen: false,
       busyAction: '',
-      notice: ''
+      adoptError: '',
+      notice: '',
+      reviewOpen: false
     };
 
     const formDom = () => host && host.querySelector('[data-pw-form]');
@@ -214,7 +219,8 @@
     async function apiFetch(path, options) {
       const client = platform();
       if (!client) throw Object.assign(new Error('本地服务未连接，请刷新页面后重试。'), { code: 'SERVICE_UNAVAILABLE' });
-      return client.spaceFetch(path, options);
+      try { return await client.spaceFetch(path, options); }
+      catch(error) { const code=error.code||error.message;if(ERROR_TEXT[code]){error.code=code;error.message=ERROR_TEXT[code];}throw error; }
     }
     async function apiJson(path, options) {
       const response = await apiFetch(path, options);
@@ -458,7 +464,7 @@
     }
 
     async function generate() {
-      if (state.step === 'submitting') return;
+      if (state.step === 'submitting' || state.step === 'polling') return;
       const checked = formPayload();
       if (checked.errors.length) { showFormError(checked.errors, checked.invalid); notify(checked.errors[0]); return; }
       showFormError([], []);
@@ -498,7 +504,7 @@
         renderResult();
         notify(state.error);
       } finally {
-        setBusy(false);
+        setBusy(state.step === 'polling');
       }
     }
 
@@ -546,14 +552,15 @@
 
     async function finishJob(job) {
       state.job = job;
-      if (job && job.status === 'succeeded') {
+      if (job && (job.status === 'succeeded' || (job.checkpoint && job.checkpoint.planId))) {
         const planId = (job.result && job.result.planId) || (job.checkpoint && job.checkpoint.planId) || '';
         state.step = 'result';
         state.error = '';
-        state.notice = '';
+        state.notice = job.status === 'succeeded' ? '' : failureText(job);
         savePending(null);
         await loadDraft(planId);
-        notify('计划草稿已生成；请核对阶段、任务与资源绑定后再采用。');
+        state.reviewOpen = Boolean(state.draft && state.draft.status !== 'active');
+        if(state.draft?.status==='draft')notify('计划草稿已生成；请核对阶段、任务与资源绑定后再采用。');
       } else {
         state.step = 'failed';
         state.error = failureText(job);
@@ -573,6 +580,7 @@
         state.jobs = data.jobs || [];
         const match = all.find(plan => plan && plan.id === planId) || (planId ? null : (data.drafts || [])[0] || null);
         if (match) {
+          if(match.status!=='draft'){state.draft=null;state.step='form';state.reviewOpen=false;state.notice='';return match;}
           state.draft = match;
           state.tree = null;
           state.treeFor = '';
@@ -590,10 +598,22 @@
     async function adopt() {
       const draft = state.draft;
       if (!draft || !draft.id || state.busyAction) return;
-      if (!root.confirm('确认将此草稿设定为当前执行计划吗？原有计划将自动转入历史。')) return;
       state.busyAction = 'adopt';
+      state.adoptError = '';
       renderResult();
       try {
+        const listing = await apiJson('/api/learning/space/plan/list');
+        if(!host)return;
+        const current=listing.active||null;
+        if(current?.id===draft.id){adoptionSucceeded(current);return;}
+        const latest=[...(listing.drafts||[]),...(listing.history||[])].find(p=>p.id===draft.id);
+        if(!latest)throw Object.assign(new Error(ERROR_TEXT.PLAN_NOT_FOUND),{code:'PLAN_NOT_FOUND'});
+        state.draft=latest;
+        if(latest.revision!==draft.revision)throw Object.assign(new Error(ERROR_TEXT.PLAN_REVISION_CONFLICT),{code:'PLAN_REVISION_CONFLICT'});
+        if(latest.status!=='draft')throw Object.assign(new Error(ERROR_TEXT.PLAN_NOT_DRAFT),{code:'PLAN_NOT_DRAFT'});
+        if(latest.canAdopt===false)throw Object.assign(new Error(ERROR_TEXT.GENERATION_NOT_COMPLETED),{code:'GENERATION_NOT_COMPLETED'});
+        const expectedCurrent=current?{id:current.id,revision:current.revision}:null;
+        if(!root.confirm('确认采用“'+(latest.title||'这份草稿')+'”为当前执行计划吗？'+(current?'\n当前执行计划“'+(current.title||'未命名计划')+'”将转入历史，已有学习记录会保留。':'')))return;
         const data = await apiJson('/api/learning/space/plan/adopt', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -601,17 +621,25 @@
             planId: draft.id,
             expectedRevision: draft.revision,
             confirmed: true,
-            operationId: 'workbench-adopt-' + draft.id + '-' + draft.revision
+            expectedCurrent,
+            operationId: 'workbench-adopt-' + draft.id + '-' + draft.revision + '-' + (current?current.id+'-'+current.revision:'none')
           })
         });
-        state.draft = Object.assign({}, draft, data.plan || {}, { canAdopt: false });
-        notify('已采用为当前执行计划。');
+        adoptionSucceeded(data.plan);
       } catch (error) {
-        notify('采用失败：' + (error && error.message ? error.message : '请刷新后重试。'));
+        state.adoptError=ERROR_TEXT[error.code||error.message]||error.message||'采用未完成，请稍后重试。';
+        notify(state.adoptError);
       } finally {
         state.busyAction = '';
         if (host) renderResult();
       }
+    }
+
+    function adoptionSucceeded(plan) {
+      state.draft=null;state.step='form';
+      state.reviewOpen=false;state.adoptError='';state.notice='';state.error='';reviewDialog?.close();
+      notify('采用成功');
+      navigate('#space/analysis/plans');
     }
 
     // ------------------------------------------------------------------- map
@@ -714,7 +742,49 @@
       const target = resultHost();
       if (!target) return;
       target.innerHTML = resultMarkup();
-      bindResult();
+      bindResult(target);
+      setBusy(state.step === 'polling' || state.step === 'submitting');
+      if (state.reviewOpen && state.step === 'result' && state.draft?.status==='draft') renderReview();
+      else if (reviewDialog?.open) reviewDialog.close();
+    }
+
+    function renderReview() {
+      if (!host) return;
+      if (!reviewDialog) {
+        reviewDialog = document.createElement('dialog');
+        reviewDialog.className = 'pw-review-dialog';
+        reviewDialog.setAttribute('aria-labelledby', 'pwReviewTitle');
+        reviewDialog.innerHTML = `<header class="pw-review-header"><div><h2 id="pwReviewTitle">核对学习计划</h2><p>查看阶段安排，决定采用或调整条件后重新生成。</p></div><button type="button" class="pw-review-close" data-pw-review-close aria-label="关闭计划预览">×</button></header><div class="pw-review-content" data-pw-review-content></div><footer class="pw-review-footer"><p class="pw-adopt-error" data-pw-adopt-error role="alert" hidden></p><small>关闭窗口后，草稿仍会保留。</small><div><button type="button" class="button pw-regenerate" data-pw-regenerate>重新生成</button><button type="button" class="button pw-adopt-primary" data-pw-adopt>采用计划</button></div></footer>`;
+        document.body.append(reviewDialog);
+        reviewDialog.querySelector('[data-pw-review-close]').addEventListener('click', () => reviewDialog.close());
+        reviewDialog.addEventListener('close', () => {
+          state.reviewOpen = false;
+          if (host) { renderResult(); host.querySelector(reviewReturnToForm ? '[data-pw-goal]' : '[data-pw-openreview]')?.focus({preventScroll:true}); }
+          reviewReturnToForm = false;
+        });
+      }
+      const scroll = reviewDialog.querySelector('[data-pw-review-content]');
+      const oldScroll = scroll.scrollTop;
+      scroll.innerHTML = (state.notice ? `<p class="pw-notice">${e(state.notice)}</p>` : '') + draftMarkup(state.draft);
+      scroll.scrollTop = oldScroll;
+      const errorMessage=reviewDialog.querySelector('[data-pw-adopt-error]');errorMessage.hidden=!state.adoptError;errorMessage.textContent=state.adoptError;
+      const adoptButton = reviewDialog.querySelector('[data-pw-adopt]');
+      adoptButton.disabled = Boolean(state.busyAction || state.draft.canAdopt === false || state.draft.status === 'active');
+      adoptButton.textContent = state.busyAction === 'adopt' ? '正在采用…' : state.draft.status === 'active' ? '已采用' : '采用计划';
+      reviewDialog.querySelector('[data-pw-regenerate]').disabled = Boolean(state.busyAction);
+      bindResult(reviewDialog);
+      if (!reviewDialog.open) reviewDialog.showModal();
+    }
+
+    function regenerate() {
+      if (state.busyAction) return;
+      state.reviewOpen = false;
+      reviewReturnToForm = true;
+      reviewDialog?.close();
+      notify('已返回定制计划。原条件和草稿保留；调整后点击“生成草稿”。');
+      const form = formDom();
+      form?.scrollIntoView({block:'start',behavior:'smooth'});
+      form?.querySelector('[data-pw-goal]')?.focus({preventScroll:true});
     }
 
     function jobBanner() {
@@ -842,7 +912,7 @@
             </section>
             <section class="pw-draft-section">
               <header class="pw-section-head"><div><h4>每日排期</h4><p>共 ${days.length} 天，已安排 ${scheduledDays} 天</p></div><span>${tasks.length} 个任务</span></header>
-              <div class="pw-days">${dayRows || '<p class="pw-hint">草稿中暂无每日排期。</p>'}</div>
+              <details class="pw-daily-schedule"><summary>查看每日排期与任务（${days.length} 天）</summary><div class="pw-days">${dayRows || '<p class="pw-hint">草稿中暂无每日排期。</p>'}</div></details>
             </section>
           </div>
           <aside class="pw-draft-side">
@@ -861,10 +931,8 @@
               ${framework ? `<p class="pw-framework">${framework}</p>` : ''}
             </section>
             <section class="pw-side-card pw-side-actions">
-              <h5>下一步</h5>
+              <h5>路线工具</h5>
               <div class="pw-draft-actions">
-                <button type="button" class="button button-blue" data-pw-adopt ${canAdopt ? '' : 'disabled'}>${draft.status === 'active' ? '已采用' : '采用此计划'}</button>
-                <button type="button" class="button button-outline" data-pw-view>查看我的计划</button>
                 <button type="button" class="button button-outline" data-pw-export ${state.busyAction === 'download-xmind' ? 'disabled' : ''}>${state.busyAction === 'download-xmind' ? '正在导出…' : '导出思维导图 (.xmind)'}</button>
                 <button type="button" class="button button-outline" data-pw-mm ${state.busyAction === 'download-mm' ? 'disabled' : ''}>${state.busyAction === 'download-mm' ? '正在导出…' : '下载 .mm 兜底'}</button>
                 <button type="button" class="button button-outline" data-pw-preview>${state.treeOpen ? '收起路线树预览' : '预览路线树'}</button>
@@ -946,18 +1014,17 @@
       const banner = state.notice && state.step !== 'result' ? `<p class="pw-notice" role="status">${e(state.notice)}</p>` : '';
       const failed = (state.step === 'failed' || (state.step === 'form' && state.error)) ? jobBanner() : '';
       const polling = (state.step === 'polling' || state.step === 'submitting') ? jobBanner() : '';
-      const draft = state.step === 'result' && state.draft ? draftMarkup(state.draft) : '';
-      const empty = (!draft && !polling && !failed)
-        ? `<div class="pw-empty panel"><h3>还没有生成中的计划草稿</h3><p>填写左侧目标与时间条件并生成草稿；生成会调用配置好的外部模型。若你已有最近生成的草稿，会显示在这里。</p></div>`
-        : '';
+      const draft = state.step === 'result' && state.draft?.status==='draft' ? `<div class="pw-draft-resume"><div><strong>草稿已保存：${e(state.draft.title)}</strong><p>可打开预览，核对阶段与每日安排。</p></div><button type="button" class="button button-outline" data-pw-openreview>查看草稿</button></div>` : '';
+      const empty = '';
       return banner + polling + failed + draft + empty;
     }
 
-    function bindResult() {
-      const target = resultHost();
+    function bindResult(target) {
       if (!target) return;
       const find = selector => target.querySelector(selector);
-      find('[data-pw-adopt]')?.addEventListener('click', adopt);
+      const adoptButton = find('[data-pw-adopt]');if(adoptButton)adoptButton.onclick=adopt;
+      const regenerateButton = find('[data-pw-regenerate]');if(regenerateButton)regenerateButton.onclick=regenerate;
+      find('[data-pw-openreview]')?.addEventListener('click',()=>{state.reviewOpen=true;renderResult();});
       find('[data-pw-view]')?.addEventListener('click', () => { try { navigate('#space/analysis/plans'); } catch (_) { /* navigation optional */ } });
       find('[data-pw-export]')?.addEventListener('click', () => download('xmind'));
       find('[data-pw-mm]')?.addEventListener('click', () => download('mm'));
@@ -977,12 +1044,13 @@
         const data = await apiJson('/api/learning/space/plan/list');
         if (!host) return;
         state.jobs = data.jobs || [];
-        const drafts = Array.isArray(data.drafts) ? data.drafts : [];
+        const drafts = (Array.isArray(data.drafts) ? data.drafts : []).filter(plan=>plan.status==='draft'&&plan.id!==data.active?.id);
         if (drafts.length) {
           state.draft = drafts[0];
           state.step = 'result';
-          state.notice = '已载入最近生成的计划草稿；可在下方核对或导出思维导图。';
+          state.notice = '';
         } else {
+          state.draft = null;
           state.step = 'form';
           state.notice = '';
         }
@@ -1043,9 +1111,11 @@
             savePending(null);
             state.step = 'result';
             await loadDraft((data.job.result && data.job.result.planId) || '');
+            state.reviewOpen = Boolean(state.draft && state.draft.status !== 'active');
             renderResult();
             return;
           }
+          if (data.job && data.job.checkpoint && data.job.checkpoint.planId) { await finishJob(data.job); return; }
           if (data.job) {
             state.step = 'failed';
             state.job = data.job;
@@ -1072,6 +1142,7 @@
       <button type="button" class="button button-outline button-small" data-pw-connectivity>检查模型连接（不生成）</button>
     </div>
   </header>
+  <nav class="pw-entry-nav" aria-label="个性化学习导航"><span aria-current="page">定制计划</span><a href="#space/analysis/plans" data-pw-my-plans>我的计划 <span aria-hidden="true">→</span></a></nav>
   <div class="pw-grid">
     <form class="pw-form panel" data-pw-form novalidate>
       <fieldset class="pw-fieldset">
@@ -1199,7 +1270,7 @@
         renderProjection();
         showFormError([], []);
         renderResult();
-        notify('已重置表单；已有草稿仍保留在下方。');
+        notify('已重置表单；已有草稿仍保留，可点击“查看草稿”。');
       });
       host.querySelector('[data-pw-connectivity]').addEventListener('click', async event => {
         const button = event.currentTarget;
@@ -1221,6 +1292,7 @@
     function mount(node) {
       if (!node) return;
       host = node;
+      state.reviewOpen = false;
       stamp += 1;
       clearTimeout(timer);
       loadStore();
@@ -1239,6 +1311,8 @@
       clearTimeout(timer);
       if (controller) { try { controller.abort(); } catch (_) { /* ignore */ } controller = null; }
       host = null;
+      state.reviewOpen = false;
+      if(reviewDialog){reviewDialog.close();reviewDialog.remove();reviewDialog=null;}
     }
 
     return { mount, unmount };

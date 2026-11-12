@@ -82,11 +82,18 @@ class Browser:
             '--remote-debugging-port=0', '--user-data-dir='+str(directory/'chrome'), 'about:blank'], stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL, creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0)
         file = directory/'chrome/DevToolsActivePort'
+        port = None
         for _ in range(200):
-            if file.exists():
+            try:
+                port = int(file.read_text().splitlines()[0])
                 break
+            except (OSError, ValueError, IndexError):
+                pass  # Chrome can briefly hold the new file open on Windows.
             time.sleep(.04)
-        port = int(file.read_text().splitlines()[0])
+        if port is None:
+            self.process.terminate()
+            self.process.wait(timeout=10)
+            raise RuntimeError('Test browser did not publish its debugging port')
         tabs = json.load(urlopen(f'http://127.0.0.1:{port}/json/list', timeout=5))
         target = next(t for t in tabs if t['type'] == 'page')
         self.ws = connect(target['webSocketDebuggerUrl'], max_size=32*1024*1024, open_timeout=5)

@@ -55,7 +55,7 @@ def main():
                 browser.wait('document.querySelectorAll(".kb-document").length === 1')
                 assert browser.evaluate('document.querySelectorAll("#kbSearch,.lw-probe,[data-kb=jump-search]").length') == 0
                 assert browser.evaluate('document.querySelectorAll("#knowledgeWorkspace a[href=\\\"#space/library/manage\\\"],#lwConfigBody,[aria-labelledby=lwConfigTitle]").length') == 0
-                assert browser.evaluate('document.querySelector("#kbBase option:checked").textContent') == '栈与队列知识库'
+                assert browser.evaluate('document.querySelector("#courseSelect option:checked").textContent') == '栈与队列知识库'
                 if shared:
                     assert browser.evaluate('document.querySelector("#lwScaleBody").textContent.includes("1 / 1")')
                     browser.click('[data-kb=index]')
@@ -76,7 +76,7 @@ def main():
                     assert browser.evaluate("(async()=> (await fetch('/.env.team-embedding')).status)()") == 404
                 else:
                     assert browser.evaluate('document.querySelector(".kb-document").textContent.includes("已有缓存，服务未配置")')
-                assert browser.evaluate('document.querySelector("#lwOverviewStats li strong").textContent') == '1'
+                assert browser.evaluate('document.querySelectorAll(".kb-document").length') == 1
                 browser.screenshot(out/('fresh-clone-shared.png' if shared else 'fresh-clone-no-keys.png'))
                 retrieval = browser.evaluate('''(async()=>{const b=await(await fetch('/api/platform/bootstrap')).json();const r=await fetch('/api/platform/knowledge/search',{method:'POST',headers:{'Content-Type':'application/json','X-Xueya-Token':b.token},body:JSON.stringify({courseId:'course-default',query:'循环队列',mode:'lexical'})});const v=await r.json();return {ok:v.ok,hits:v.evidence?.sources?.length};})()''')
                 assert retrieval['ok'] and retrieval['hits'] > 0

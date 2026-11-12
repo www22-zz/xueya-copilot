@@ -443,9 +443,13 @@ class RagService:
         with self.p.db.transaction():
             doc = self.document(scope, document_id)
             require(doc["version"] == expected_version, "VERSION_CONFLICT")
-            self.repo.put(scope, "document", document_id, {**doc, "deleted": True}, expected_version, deleted=True)
+            self.repo.put(scope, "document", document_id, {**doc, "deleted": True, "indexStatus": "deleted", "embeddingIdentity": None, "chunks": []}, expected_version, deleted=True)
             self._retire(scope, document_id)
             self._prune_vectors(scope)
+            import json
+            for row in self.p.db.all("SELECT id,input FROM jobs WHERE user_id=? AND course_id=? AND status IN ('queued','running') AND type IN ('rag-parse','rag-index','rag-ocr','rag-visual-apply','rag-prepared-pdf')", (scope.user_id, scope.course_id)):
+                if json.loads(row['input']).get('documentId') == document_id:
+                    self.p.jobs.cancel(row['id'], scope.user_id)
         return {"removed": True, "retainedForRecovery": True}
 
     def export(self, scope, document_id):
