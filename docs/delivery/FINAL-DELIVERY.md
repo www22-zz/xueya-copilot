@@ -796,3 +796,24 @@ main 保留运行源码、依赖锁、测试与夹具、启动／维护／验收
   - `scripts/check_workspace_styles.py`：深/浅主题 × 1440/1024/768/390 × 概览/问答共 **16 组通过**，0 运行时错误、0 外网请求、0 付费调用。
 - 说明：本机 Python 进程写入系统 TEMP 被 ACL 拒绝（PermissionError），浏览器检查统一以工作区 `.tmp/pw-tmp` 作为 TEMP/TMP/TMPDIR 运行；不影响应用行为。
 - 本轮仅在本地任务分支 `codex/sidebar-hub` 提交，未合并、未推送。
+
+### 2026-11-13 追加：视频课程随堂内联问答与 Ask 侧栏滚轮
+
+按用户三张标注图完成：课程页顶部两处提示条（账号记录 / 来源核验）移除；播放器“算法机制演练屏”入口及其画布模拟移除；随堂快速提问与自定义提问改为在当前课程页内流式回答，不再跳转 AI 对话助手，适用于全部视频课程；Ask 页左侧栏恢复鼠标滚轮滚动。
+
+- rontend/js/courses-workspace.js：删除顶部账号/核验提示条与算法演练入口、画布函数、相关事件；新增按“课程 + 分集”保存的本节问答线程（提问气泡、流式回答、停止/重试/清空、参考资料计数、Markdown/公式/代码渲染），整页重渲染后自动恢复；快速提问与输入框回车均在本页发起，不再修改 location.hash。
+- rontend/js/app.js：新增 window.XueyaAskInline，复用 XueyaChat 的 SSE 流式服务，只读课程资料与当前会话上下文，不写全局对话、不改路由、不会自动重试付费调用。
+- rontend/css/courses.css：新增 .cs-inclass-* 样式，覆盖深/浅主题、代码块、表格、公式与减少动态效果；回答区最高 360px 内部滚动。
+- rontend/css/chat-history-layout.css、rontend/css/sidebar-hub.css：历史会话滚动样式限定到 #chatHistoryPanel，近期会话列表不再用 overscroll-behavior:contain 吞掉滚轮事件；列表以 55vh 为上限内部滚动，侧栏容器仍可整体滚动。
+- 缓存：rontend/index.html 的 XUEYA_UI_BUILD 与 ackend/xueya/config.py 的 UI_BUILD 同步为 2026-11-13-video-course-inline-1；rontend/sw.js 公共壳缓存版本更新。
+- 验证：
+  - 新增 scripts/check_video_course_browser.py（隔离临时账号、模拟流、阻断全部非本机请求）：**9 项通过**——顶部提示条移除、算法演练入口移除、课程目录提示条移除、快速提问内联回答、自定义提问回车内联回答、重渲染后线程保留、清空线程、所有视频课程共用、Ask 侧栏鼠标滚轮滚动；1440 深色与浅色截图在 	est-results/video-course/，0 页面错误、0 外网 API 请求、0 付费调用。
+  - 既有 scripts/check_sidebar_hub_browser.py：**10 项仍通过**（首页/Ask/学习中心/平板/手机），0 页面错误。
+  - 前端：JS 语法检查与 scripts.check_js_balance 通过，node scripts/test.js --frontend **77 passed**。
+  - Python：课程与侧栏专项 **3 passed**；完整 pytest -q 为 **1066 passed, 25 failed, 4 skipped**（729 秒）。25 项失败均为本机既有环境/数据问题（C 参考代码编译 10、资料练习 4、队列计算 5、便携知识缓存 2、计划采用 1、平台快照 1、跨课程 1、Hot100 文本评阅 1），不读取本轮改动的前端文件；本轮未改后端逻辑，仅同步 UI_BUILD 常量。
+  - 说明：本机 Python 写入系统 TEMP 受限，Playwright 检查统一以工作区 .tmp/pt-temp 作为 TEMP/TMP 运行。
+- 本轮仅在本地任务分支 codex/sidebar-hub 修改，未合并、未推送。
+
+### 2026-11-13 上传前复核
+
+用户授权将本地侧栏与视频课程更新同步到 main。上传前重新执行：系统 Python `python -m pytest -q` 为 **1095 passed、0 failed、3 条依赖弃用警告**（317.40 秒）；前端 **77 passed**；视频课程浏览器 **9 项通过**、侧栏浏览器 **10 项通过**，页面错误均为 0，真实付费 API 调用为 0。浏览器使用项目测试临时目录。此前虚拟环境的失败记录保留，以上为本次系统 Python 环境实际复核结果。

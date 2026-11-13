@@ -6,7 +6,7 @@ import os
 ROOT = Path(__file__).resolve().parents[2]
 # Bumped together with the inline constant in frontend/index.html. A stale page
 # compares this against /api/health and reloads once after a deployment.
-UI_BUILD = '2026-11-13-sidebar-hub-1'
+UI_BUILD = '2026-11-13-video-course-inline-1'
 
 
 @dataclass(frozen=True)

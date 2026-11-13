@@ -711,9 +711,212 @@
     let categoryFilter = 'all';
     let searchQuery = '';
     let isAddModalOpen = false;
-    let activeSource = 'bilibili'; // 'bilibili' | 'html5' | 'algo-demo'
+    let activeSource = 'bilibili'; // 'bilibili' | 'html5'
     let mountController;
     const localVideosMap = {}; // key: "courseId:epId" -> { url, name }
+    /* Per-lecture in-class Q&A. Answers render inside the course page instead of
+       navigating to the global AI assistant, so video playback is never lost. */
+    const inClassThreads = new Map(); // key: "courseId:episodeId" -> { messages, pending, controller }
+    let inClassPaintFrame = null;
+    let inClassStreaming = null;
+
+    function inClassKey(courseId, episodeId) {
+      return String(courseId || '') + ':' + String(episodeId || '');
+    }
+
+    function getInClassThread(courseId, episodeId) {
+      const key = inClassKey(courseId, episodeId);
+      let thread = inClassThreads.get(key);
+      if (!thread) {
+        thread = { messages: [], pending: false, controller: null };
+        inClassThreads.set(key, thread);
+      }
+      return thread;
+    }
+
+    function inClassContext(course, episode) {
+      return `关于《${course?.title || '计算机课程'}》${episode?.title ? '「' + episode.title + '」' : ''}：`;
+    }
+
+    function inClassActive() {
+      const course = getAllCourses().find(c => c.id === activeCourseId);
+      const episode = course?.episodes?.find(e => e.id === activeEpisodeId) || course?.episodes?.[0];
+      return { course, episode, thread: course && episode ? getInClassThread(course.id, episode.id) : null };
+    }
+
+    function renderInClassMessages(thread) {
+      if (!thread?.messages?.length) return '';
+      return thread.messages.map((message, index) => {
+        if (message.role === 'user') {
+          return `<div class="cs-inclass-msg is-user"><div class="cs-inclass-user-bubble">${escapeHTML(message.text)}</div></div>`;
+        }
+        const answer = message.text
+          ? (window.XueyaRich?.render ? window.XueyaRich.render(message.text) : `<p>${escapeHTML(message.text)}</p>`)
+          : '';
+        const pending = message.pending
+          ? `<div class="cs-inclass-pending" role="status"><span class="cs-inclass-typing" aria-hidden="true"><i></i><i></i><i></i></span><span>${escapeHTML(message.progress || '正在回答…')}</span></div>`
+          : '';
+        const actions = message.pending
+          ? '<button type="button" class="cs-inclass-action" data-inclass-stop>停止生成</button>'
+          : `${message.failed ? `<button type="button" class="cs-inclass-action" data-inclass-retry="${index}">重新回答</button>` : ''}${message.sources?.length ? `<span class="cs-inclass-sources">已参考 ${message.sources.length} 条资料</span>` : ''}`;
+        const cursor = message.pending && message.text ? '<span class="stream-cursor" aria-hidden="true"></span>' : '';
+        return `<div class="cs-inclass-msg is-ai">
+          <div class="cs-inclass-avatar" aria-hidden="true"><span class="material-symbols-outlined">smart_toy</span></div>
+          <div class="cs-inclass-bubble">
+            <div class="cs-inclass-meta"><strong>学涯 Copilot</strong><span>${escapeHTML(message.engine || '随堂伴学')}</span></div>
+            ${pending}
+            <div class="cs-inclass-answer">${answer}${cursor}</div>
+            ${actions ? `<div class="cs-inclass-actions">${actions}</div>` : ''}
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    function paintInClassThread() {
+      const container = document.getElementById('csInClassThread');
+      if (!container) return;
+      const { course, episode, thread } = inClassActive();
+      const key = inClassKey(course?.id, episode?.id);
+      const active = Boolean(thread && (thread.messages.length || thread.pending));
+      container.hidden = !active;
+      if (!active) {
+        container.innerHTML = '';
+        container.dataset.threadKey = '';
+        return;
+      }
+      container.dataset.threadKey = key;
+      container.innerHTML = `<div class="cs-inclass-head">
+          <span class="material-symbols-outlined" aria-hidden="true">forum</span>
+          <span>本节随堂问答</span>
+          <button type="button" class="cs-inclass-clear" data-inclass-clear>清空</button>
+        </div>
+        <div class="cs-inclass-list">${renderInClassMessages(thread)}</div>`;
+      const list = container.querySelector('.cs-inclass-list');
+      if (list) list.scrollTop = list.scrollHeight;
+    }
+
+    function scheduleInClassPaint() {
+      if (inClassPaintFrame) return;
+      inClassPaintFrame = requestAnimationFrame(() => {
+        inClassPaintFrame = null;
+        paintInClassThread();
+      });
+    }
+
+    function cancelInClassAnswer(showNotice = true, targetThread = null) {
+      const thread = targetThread || inClassActive().thread;
+      if (!thread || !thread.pending) return;
+      const controller = thread.controller;
+      thread.pending = false;
+      thread.controller = null;
+      if (inClassStreaming?.thread === thread) inClassStreaming = null;
+      if (controller) controller.abort();
+      const message = [...thread.messages].reverse().find(item => item.role === 'ai' && item.pending);
+      if (message) {
+        message.pending = false;
+        message.draft = false;
+        message.progress = '';
+        message.text = showNotice ? '已停止生成。' : message.text;
+        message.cancelled = true;
+      }
+      paintInClassThread();
+    }
+
+    async function askInClass(question, prompt) {
+      const course = getAllCourses().find(c => c.id === activeCourseId);
+      const episode = course?.episodes?.find(e => e.id === activeEpisodeId) || course?.episodes?.[0];
+      const clean = String(question || '').trim();
+      if (!course || !episode || !clean) return;
+      const thread = getInClassThread(course.id, episode.id);
+      if (thread.pending) { toast?.('正在回答中，请稍候'); return; }
+      const inlineAsk = window.XueyaAskInline;
+      const history = thread.messages
+        .filter(message => !message.pending && message.text)
+        .slice(-8)
+        .map(message => ({ role: message.role === 'user' ? 'user' : 'assistant', content: message.text }));
+      const previousSources = [...thread.messages].reverse().find(message => message.role === 'ai' && message.sources?.length)?.sources || [];
+      const userMessage = { id: 'q-' + Date.now(), role: 'user', text: clean };
+      const answerMessage = { id: 'a-' + Date.now(), role: 'ai', text: '', pending: true, progress: '', draft: false, engine: '', sources: [] };
+      thread.messages.push(userMessage, answerMessage);
+      thread.pending = true;
+      const controller = new AbortController();
+      thread.controller = controller;
+      inClassStreaming = { thread, message: answerMessage, controller };
+      paintInClassThread();
+      try {
+        document.getElementById('csInClassThread')?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      } catch {}
+      const input = document.getElementById('inClassCustomInput');
+      if (input) input.value = '';
+      if (typeof inlineAsk !== 'function') {
+        answerMessage.pending = false;
+        answerMessage.failed = true;
+        answerMessage.text = '当前页面无法直接生成回答，请点击下方「打开完整对话台」继续提问。';
+        thread.pending = false;
+        thread.controller = null;
+        inClassStreaming = null;
+        paintInClassThread();
+        return;
+      }
+      const sendPrompt = prompt || (inClassContext(course, episode) + clean);
+      try {
+        const result = await inlineAsk(sendPrompt, {
+          courseId: state?.courseId,
+          history,
+          previousSources,
+          signal: controller.signal,
+          onUpdate(update) {
+            if (!update || typeof update !== 'object') return;
+            if (typeof update.draft === 'boolean') answerMessage.draft = update.draft;
+            if (typeof update.reasoning === 'string' && update.reasoning) answerMessage.reasoning = update.reasoning;
+            if (typeof update.progress === 'string' && update.progress) answerMessage.progress = update.progress;
+            if (update.draft !== true && typeof update.answer === 'string') answerMessage.text = update.answer;
+            scheduleInClassPaint();
+          },
+        });
+        if (controller.signal.aborted) throw new DOMException('已停止生成', 'AbortError');
+        answerMessage.text = typeof result?.answer === 'string' ? result.answer : '';
+        answerMessage.engine = result?.engine || '随堂伴学';
+        answerMessage.sources = Array.isArray(result?.sources) ? result.sources : [];
+        answerMessage.failed = Boolean(result?.failed) || result?.answerStatus === 'unavailable';
+        answerMessage.pending = false;
+        answerMessage.draft = false;
+        answerMessage.progress = '';
+      } catch (error) {
+        const aborted = controller.signal.aborted || error?.name === 'AbortError';
+        answerMessage.pending = false;
+        answerMessage.draft = false;
+        answerMessage.progress = '';
+        if (aborted) {
+          answerMessage.text = answerMessage.text || '已停止生成。';
+          answerMessage.cancelled = true;
+        } else {
+          answerMessage.failed = true;
+          answerMessage.text = answerMessage.text || '这次回答未能完成，请稍后重试。';
+        }
+      } finally {
+        if (thread.controller === controller) {
+          thread.pending = false;
+          thread.controller = null;
+        }
+        if (inClassStreaming?.controller === controller) inClassStreaming = null;
+        paintInClassThread();
+      }
+    }
+
+    function retryInClass(index) {
+      const { thread } = inClassActive();
+      if (!thread || thread.pending) return;
+      const message = thread.messages[index];
+      if (!message || message.role !== 'ai') return;
+      let userIndex = index - 1;
+      while (userIndex >= 0 && thread.messages[userIndex].role !== 'user') userIndex -= 1;
+      if (userIndex < 0) return;
+      const question = thread.messages[userIndex].text;
+      thread.messages.splice(userIndex, index - userIndex + 1);
+      paintInClassThread();
+      askInClass(question).catch(() => {});
+    }
 
     function getAllCourses() {
       if(serverCurrent())return serverData.courses.filter(c=>!subjects||(c.verification==='verified-metadata'&&subjects.includes(c.subject)));
@@ -1047,10 +1250,6 @@
                 <span class="material-symbols-outlined text-[16px]">video_library</span>
                 <span>本地无损 / HTML5 播放器</span>
               </button>
-              <button type="button" class="px-3.5 py-1.5 rounded-lg font-label-sm text-label-sm font-semibold flex items-center gap-1.5 transition-all ${activeSource === 'algo-demo' ? 'bg-surface-container-lowest text-primary shadow-sm' : 'text-on-surface-variant hover:text-on-surface'}" data-switch-source="algo-demo">
-                <span class="material-symbols-outlined text-[16px]">animation</span>
-                <span>算法机制演练屏</span>
-              </button>
             </div>
 
             <div class="flex items-center gap-2">
@@ -1078,33 +1277,20 @@
                       <p class="text-sm text-slate-300">当前浏览器未能加载站内嵌入播放器，可前往官方原站观看。</p>
                       <a class="button button-blue" href="${escapeHTML(course.sourceUrl)}" target="_blank" rel="noopener noreferrer">前往原站课程</a>
                     </div>
-                  ` : activeSource === 'html5' ? `
-                    ${videoSrc ? `
-                      <video id="csVideoPlayer" class="w-full h-full object-contain" controls preload="metadata" src="${escapeHTML(videoSrc)}">
-                        <p>您的浏览器不支持 HTML5 视频播放。</p>
-                      </video>
-                    ` : `
-                      <div class="w-full h-full bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 flex flex-col items-center justify-center p-6 text-center text-white">
-                        <div class="w-16 h-16 rounded-2xl bg-white/10 flex items-center justify-center text-3xl mb-3 shadow-inner">🎬</div>
-                        <h3 class="text-lg font-bold">选取电脑上的视频文件即可立即播放</h3>
-                        <p class="text-sm text-slate-400 mt-1 mb-4 max-w-md">支持电脑中的 MP4、WebM、MKV 视频文件，零网络延迟，超清流畅播放！</p>
-                        <label class="px-4 py-2 rounded-xl bg-primary text-white font-semibold cursor-pointer hover:bg-primary-container transition shadow flex items-center gap-2">
-                          <span class="material-symbols-outlined text-[18px]">upload_file</span>
-                          <span>选取电脑上的视频文件</span>
-                          <input type="file" id="localVideoFileInputInner" accept="video/*" hidden>
-                        </label>
-                      </div>
-                    `}
+                  ` : videoSrc ? `
+                    <video id="csVideoPlayer" class="w-full h-full object-contain" controls preload="metadata" src="${escapeHTML(videoSrc)}">
+                      <p>您的浏览器不支持 HTML5 视频播放。</p>
+                    </video>
                   ` : `
-                    <div class="w-full h-full bg-slate-950 flex flex-col items-center justify-center p-4">
-                      <canvas id="algoCanvas" class="w-full max-w-[720px] aspect-[16/9] bg-slate-900 rounded-xl shadow-inner border border-slate-800" width="800" height="450"></canvas>
-                      <div class="flex items-center justify-between w-full max-w-[720px] mt-3 px-2 text-xs text-slate-400">
-                        <button type="button" class="px-3 py-1.5 rounded-lg bg-primary text-white font-semibold flex items-center gap-1.5 hover:bg-primary-container transition" data-run-algo-demo>
-                          <span class="material-symbols-outlined text-[14px]">replay</span>
-                          <span>重新开始动态演练</span>
-                        </button>
-                        <span>二叉搜索树（BST）插入、中序遍历与平衡树旋转机制动态可视化模拟</span>
-                      </div>
+                    <div class="w-full h-full bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 flex flex-col items-center justify-center p-6 text-center text-white">
+                      <div class="w-16 h-16 rounded-2xl bg-white/10 flex items-center justify-center text-3xl mb-3 shadow-inner">🎬</div>
+                      <h3 class="text-lg font-bold">${activeSource === 'html5' ? '选取电脑上的视频文件即可立即播放' : '当前课程暂未提供站内播放源'}</h3>
+                      <p class="text-sm text-slate-400 mt-1 mb-4 max-w-md">支持电脑中的 MP4、WebM、MKV 视频文件，零网络延迟，超清流畅播放！</p>
+                      <label class="px-4 py-2 rounded-xl bg-primary text-white font-semibold cursor-pointer hover:bg-primary-container transition shadow flex items-center gap-2">
+                        <span class="material-symbols-outlined text-[18px]">upload_file</span>
+                        <span>选取电脑上的视频文件</span>
+                        <input type="file" id="localVideoFileInputInner" accept="video/*" hidden>
+                      </label>
                     </div>
                   `}
 
@@ -1113,7 +1299,7 @@
                     <div class="flex items-center gap-2 pointer-events-auto">
                       <span class="px-2.5 py-1 rounded-md bg-inverse-surface/85 backdrop-blur-md text-inverse-on-surface font-label-sm text-label-sm flex items-center gap-1.5 shadow-sm text-white">
                         <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
-                        ${activeSource==='html5'?'HTML5 本机播放':activeSource==='algo-demo'?'算法示意':'B 站官方嵌入 · 已核验可播'}
+                        ${activeSource==='html5'?'HTML5 本机播放':'B 站官方嵌入 · 已核验可播'}
                       </span>
                       <span class="px-2.5 py-1 rounded-md bg-primary/85 backdrop-blur-md text-white font-label-sm text-label-sm font-semibold">
                         当前：${escapeHTML(currentEp?.title || '正在学习')}
@@ -1196,7 +1382,7 @@
                 <div class="px-4 py-2.5 bg-surface-container-low flex flex-col gap-2 border-b border-outline-variant/20">
                   <div class="flex items-center gap-1 text-xs text-primary font-semibold">
                     <span class="material-symbols-outlined text-[14px]">tips_and_updates</span>
-                    <span>针对本节快速提问（点击即问）：</span>
+                    <span>针对本节快速提问（点击即答）：</span>
                   </div>
                   <div class="flex flex-col gap-1.5">
                     ${(currentEp?.copilotPrompts || [
@@ -1212,6 +1398,9 @@
                   </div>
                 </div>
 
+                <!-- In-class answers stay on this page so the video never stops -->
+                <div id="csInClassThread" class="cs-inclass" role="log" aria-live="polite" aria-label="本节随堂问答" hidden></div>
+
                 <!-- Copilot In-Class Custom Question Input -->
                 <div class="p-4 flex flex-col gap-3">
                   <div class="relative w-full">
@@ -1222,7 +1411,7 @@
                     </button>
                   </div>
                   <div class="flex items-center justify-between text-xs text-on-surface-variant px-1">
-                    <span>支持 LaTeX 公式与代码推导</span>
+                    <span>回答显示在本页 · 支持 LaTeX</span>
                     <a href="#space/ask" class="text-primary hover:underline flex items-center gap-0.5">
                       <span>打开完整对话台</span>
                       <span class="material-symbols-outlined text-[12px]">open_in_new</span>
@@ -1315,87 +1504,6 @@
       `;
     }
 
-    function drawAlgoDemoCanvas() {
-      const canvas = document.getElementById('algoCanvas');
-      if (!canvas) return;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return;
-
-      const w = canvas.width;
-      const h = canvas.height;
-      let frame = 0;
-      let animId = null;
-
-      const nodes = [
-        { val: 50, x: w / 2, y: 70, parent: null },
-        { val: 30, x: w / 2 - 140, y: 160, parent: 0 },
-        { val: 70, x: w / 2 + 140, y: 160, parent: 0 },
-        { val: 20, x: w / 2 - 210, y: 260, parent: 1 },
-        { val: 40, x: w / 2 - 70, y: 260, parent: 1 },
-        { val: 60, x: w / 2 + 70, y: 260, parent: 2 },
-        { val: 85, x: w / 2 + 210, y: 260, parent: 2 }
-      ];
-
-      function renderFrame() {
-        ctx.fillStyle = '#0f172a';
-        ctx.fillRect(0, 0, w, h);
-
-        // Title
-        ctx.fillStyle = '#94a3b8';
-        ctx.font = '14px sans-serif';
-        ctx.fillText('二叉搜索树（BST）与 AVL 平衡因子动态演练模拟', 24, 34);
-
-        // Draw edges
-        ctx.lineWidth = 2;
-        nodes.forEach((n, idx) => {
-          if (n.parent !== null) {
-            const p = nodes[n.parent];
-            ctx.strokeStyle = '#334155';
-            ctx.beginPath();
-            ctx.moveTo(p.x, p.y);
-            ctx.lineTo(n.x, n.y);
-            ctx.stroke();
-          }
-        });
-
-        // Current active node in traversal
-        const activeIdx = Math.floor((frame / 40) % (nodes.length + 2));
-
-        // Draw nodes
-        nodes.forEach((n, idx) => {
-          const isActive = idx === activeIdx;
-          ctx.beginPath();
-          ctx.arc(n.x, n.y, 22, 0, Math.PI * 2);
-          ctx.fillStyle = isActive ? '#2563eb' : '#1e293b';
-          ctx.fill();
-          ctx.strokeStyle = isActive ? '#60a5fa' : '#3b82f6';
-          ctx.lineWidth = isActive ? 3 : 2;
-          ctx.stroke();
-
-          ctx.fillStyle = '#fff';
-          ctx.font = 'bold 13px sans-serif';
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          ctx.fillText(String(n.val), n.x, n.y);
-        });
-
-        // Status caption
-        ctx.fillStyle = '#38bdf8';
-        ctx.font = '13px sans-serif';
-        ctx.textAlign = 'left';
-        if (activeIdx < nodes.length) {
-          ctx.fillText(`查找中序遍历序列: 节点 [${nodes[activeIdx].val}] 比较成功 (左子树 < 根 < 右子树)`, 24, h - 55);
-        } else {
-          ctx.fillText('BST 保持中序递增序：[20, 30, 40, 50, 60, 70, 85]，查找复杂度 O(log n)', 24, h - 55);
-        }
-
-        frame++;
-        animId = requestAnimationFrame(renderFrame);
-      }
-
-      renderFrame();
-      return () => { if (animId) cancelAnimationFrame(animId); };
-    }
 
     function renderView() {
       const all = getAllCourses();
@@ -1405,11 +1513,9 @@
       if (activeCourseId) {
         activeCourse = all.find(c => c.id === activeCourseId);
       }
-      const restore=online()&&!embedded?'<p class="panel">课程与手动完成记录保存在当前账号。<button type="button" class="button button-small button-outline" data-import-local-courses>导入本账号的本机旧记录</button></p>':'';
       const privateControl=activeCourse&&!activeCourse.platform&&online()?`<button type="button" class="button button-small button-outline" data-delete-private-course="${escapeHTML(activeCourse.id)}">删除本人私人课程</button>`:'';
-      const status=activeCourse?`<p class="panel">${activeCourse.platform?'平台课程':'本人私人课程'} · ${['verified-playback','verified-metadata'].includes(activeCourse.verification)?'课程来源、讲师和分集已核验；通过 B 站官方嵌入播放器在站内在线播放，不下载视频到本地':'视频来源由本人提供'}。完成状态是手动确认，不表示掌握。官方嵌入播放器不提供本站可读的真实进度。</p>`:'';
       let contextBanner='';try{const ctx=JSON.parse(sessionStorage.getItem((window.XueyaDataKey||((k)=>k))('xueya-video-context'))||'null');if(ctx&&activeCourse?.id===ctx.courseId&&ctx.returnHash?.startsWith('#space/'))contextBanner=`<p class="panel">关联学习位置：${escapeHTML(ctx.label)} · 已核验课程入口，尚未定位到该学习位置的具体分集。<a href="${escapeHTML(ctx.returnHash)}" data-video-learning-return>返回原学习位置</a></p>`;}catch{}
-      return contextBanner+restore+status+privateControl+(activeCourse ? renderPlayer(activeCourse) : renderCatalog()) + renderAddModal();
+      return contextBanner+privateControl+(activeCourse ? renderPlayer(activeCourse) : renderCatalog()) + renderAddModal();
     }
 
     function mount() {
@@ -1476,10 +1582,8 @@
         activeCourseId=decodeURIComponent(route[2]);activeEpisodeId=decodeURIComponent(route[3]||'')||getAllCourses().find(c=>c.id===activeCourseId).episodes[0]?.id;
       }
 
-      // Draw canvas if in algo-demo mode
-      if (activeSource === 'algo-demo') {
-        setTimeout(drawAlgoDemoCanvas, 50);
-      }
+      // Restore the in-class answer thread after every re-render.
+      paintInClassThread();
 
       // Handle local file selection
       const handleFileSelect = e => {
@@ -1511,13 +1615,6 @@
         if (srcBtn) {
           activeSource = srcBtn.dataset.switchSource;
           if (render) render();
-          return;
-        }
-
-        // Run algo demo
-        const runDemoBtn = e.target.closest('[data-run-algo-demo]');
-        if (runDemoBtn) {
-          drawAlgoDemoCanvas();
           return;
         }
 
@@ -1599,33 +1696,53 @@
           return;
         }
 
-        // In-class prompt click -> transfer to Ask Copilot
+        // In-class quick prompt -> answer inline on the current page
         const inClassPrompt = e.target.closest('[data-ask-in-class]');
         if (inClassPrompt) {
-          const prompt = decodeURIComponent(inClassPrompt.dataset.askInClass);
-          location.hash = 'space/ask';
-          setTimeout(() => {
-            if (window.XueyaAsk) window.XueyaAsk(prompt);
-          }, 60);
+          const question = decodeURIComponent(inClassPrompt.dataset.askInClass || '');
+          if (question) askInClass(question).catch(() => {});
           return;
         }
 
-        // Send in-class custom ask
+        // In-class custom question -> answer inline on the current page
         const sendInClass = e.target.closest('[data-send-in-class]');
         if (sendInClass) {
           const inp = document.getElementById('inClassCustomInput');
           const val = inp?.value?.trim();
           if (val) {
-            const course = getAllCourses().find(c => c.id === activeCourseId);
-            const currentEp = course?.episodes?.find(ep => ep.id === activeEpisodeId);
-            const prompt = `关于《${course?.title || '计算机课程'}》${currentEp?.title ? '「' + currentEp.title + '」' : ''}：${val}`;
-            location.hash = 'space/ask';
-            setTimeout(() => {
-              if (window.XueyaAsk) window.XueyaAsk(prompt);
-            }, 60);
+            const { course, episode } = inClassActive();
+            askInClass(val, inClassContext(course, episode) + val).catch(() => {});
           }
           return;
         }
+
+        // Stop / retry / clear the in-class answer thread
+        if (e.target.closest('[data-inclass-stop]')) {
+          cancelInClassAnswer();
+          return;
+        }
+        const retryBtn = e.target.closest('[data-inclass-retry]');
+        if (retryBtn) {
+          retryInClass(Number(retryBtn.dataset.inclassRetry));
+          return;
+        }
+        const clearBtn = e.target.closest('[data-inclass-clear]');
+        if (clearBtn) {
+          const { thread } = inClassActive();
+          if (thread) {
+            if (thread.pending) cancelInClassAnswer(false, thread);
+            thread.messages.length = 0;
+            paintInClassThread();
+          }
+          return;
+        }
+      }, listenerOptions);
+
+      // Enter sends the in-class question without leaving the video page.
+      container.addEventListener('keydown', e => {
+        if (e.target.id !== 'inClassCustomInput' || e.key !== 'Enter' || e.shiftKey || e.isComposing) return;
+        e.preventDefault();
+        container.querySelector('[data-send-in-class]')?.click();
       }, listenerOptions);
 
       // Search input

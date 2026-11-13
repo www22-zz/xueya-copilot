@@ -43,6 +43,17 @@
   const chatService=window.XueyaChat.createChatService();
   const chatHelpers=window.XueyaChat;
   const typewriter=typeof chatHelpers?.createTypewriter==='function'?chatHelpers.createTypewriter({reducedMotion:typeof chatHelpers.prefersReducedMotion==='function'?chatHelpers.prefersReducedMotion(window):false}):null;
+  /* Page-scoped answer stream for surfaces that render answers themselves (video
+     courses). It never touches the global chat state or the route. */
+  async function askInline(question,{courseId,history=[],previousSources=[],onUpdate=()=>{},signal}={}){
+    const clean=String(question||'').trim();
+    if(!clean)throw new Error('EMPTY_QUESTION');
+    const request={courseId:typeof courseId==='string'&&courseId?courseId:state.courseId,question:clean,mode:'ask',sources:allSources(),history:Array.isArray(history)?history:[],previousSources:Array.isArray(previousSources)?previousSources:[],learning:{questions:[],records:[]},webSearch:false,deepThink:false};
+    const documents=state.documents.filter(document=>document.remote&&!document.superseded&&!document.archived).map(document=>document.id);
+    if(documents.length)request.documentIds=documents;
+    return chatService.stream(request,{workflow:true,signal,onUpdate});
+  }
+  window.XueyaAskInline=askInline;
   const experience=window.XueyaExperience?.create({state});
   let activeChat;
   const historyLayout=window.XueyaHistoryLayout?.create();

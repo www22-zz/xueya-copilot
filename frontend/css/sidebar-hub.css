@@ -381,6 +381,17 @@
 }
 
 /* ---------- Recent AI sessions ---------- */
+/* The rail itself is the scroll container; the session list keeps its own wheel
+   scrolling instead of swallowing wheel events meant for the rail. */
+#spacePage .stitch-sidebar #stitchRecentSessions {
+  flex: 0 1 auto;
+  min-height: 0;
+  max-height: 55vh;
+  overflow-y: auto;
+  overscroll-behavior: auto;
+  scrollbar-width: thin;
+}
+
 .sidebar-recent #stitchSessionSearchBox { padding: 0 2px; }
 
 .sidebar-session-more {

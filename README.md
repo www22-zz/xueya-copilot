@@ -89,6 +89,8 @@ node scripts/test.js --frontend
 .venv/Scripts/python.exe -m scripts.check_workbench_http --base http://127.0.0.1:4199
 # 408/个性化学习/资料库/Hot100 页面截图与控制台、横向溢出检查（需 Playwright 与浏览器）
 .venv/Scripts/python.exe -m scripts.check_redesign_browser --base http://127.0.0.1:4199 --out test-results/redesign-shots
+# 视频课程页（顶部提示删除、算法演示入口删除、随堂内联问答）与 Ask 侧栏滚轮检查（隔离数据库、模拟流、无付费调用）
+.venv/Scripts/python.exe -m scripts.check_video_course_browser
 ```
 
 Node.js 20+ 用于前端回归。可选浏览器检查为 `node tests/e2e/browser.js`、`workspace.js`、`platform.js`，需要 Playwright 和浏览器，可设置 `CHROME_PATH`。测试使用临时数据库及受控上游，不等于真实模型质量验收。生成文件统一位于被 Git 忽略的 `test-results/`。
