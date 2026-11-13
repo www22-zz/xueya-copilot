@@ -538,7 +538,8 @@ function createViews(ctx,base){
   }
   function explicitScope(){try{const v=JSON.parse(localStorage.getItem((window.XueyaDataKey||((key)=>key))('xueya-c-learning:'+state.courseId+':scope:'+state.sessionId)));return Array.isArray(v)?v:null;}catch{return null;}}
   
-  function renderSessionListContent(){
+  function renderSessionListContent(limit){
+    const limitCount = Number.isInteger(limit) && limit > 0 ? limit : 0;
     const q = (state.sessionQuery || '').trim().toLowerCase();
     const filtered = state.sessions.filter(s => {
       if (!q) return true;
@@ -546,23 +547,32 @@ function createViews(ctx,base){
       return fullText.includes(q);
     });
     const activeSessions = filtered.filter(s => !s.archived);
-    const pinnedList = activeSessions.filter(s => s.pinned);
-    const recentList = activeSessions.filter(s => !s.pinned);
-    const archivedList = filtered.filter(s => s.archived);
+    const archivedList = limitCount ? [] : filtered.filter(s => s.archived);
+    const pool = limitCount ? activeSessions.filter(s => (s.messages || []).length) : activeSessions;
+    const ordered = limitCount ? pool : [...pool.filter(s => s.pinned), ...pool.filter(s => !s.pinned)];
+    const shown = limitCount ? ordered.slice(0, limitCount) : ordered;
+    const pinnedList = shown.filter(s => s.pinned);
+    const recentList = shown.filter(s => !s.pinned);
 
-    return (activeSessions.length || archivedList.length) ? (
-      (pinnedList.length ? `<div class="stitch-session-group-title session-group-title">已置顶</div>${pinnedList.map(renderSessionItem).join('')}` : '') +
+    if (!shown.length && !archivedList.length) {
+      return limitCount
+        ? `<div class="sidebar-session-empty"><span>还没有 AI 对话</span><a href="#space/ask">问第一个问题 <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></a></div>`
+        : '<p class="panel-description px-2 py-1 text-xs text-on-surface-variant">没有匹配的对话。</p>';
+    }
+
+    return (pinnedList.length ? `<div class="stitch-session-group-title session-group-title">已置顶</div>${pinnedList.map(renderSessionItem).join('')}` : '') +
       (recentList.length ? `<div class="stitch-session-group-title session-group-title">最近</div>${recentList.map(renderSessionItem).join('')}` : '') +
-      `<details class="session-group-archived" ${state.archivedOpen || archivedList.some(s=>s.id===state.sessionId)?'open':''}>`+
-        `<summary class="stitch-session-group-title session-group-title session-archived-summary" data-toggle-archived>`+
-          `<span class="archived-summary-left">${archiveIconSvg}<span>已归档 (${archivedList.length})</span></span>`+
-          `<span class="archived-arrow">▾</span>`+
-        `</summary>`+
-        `<div class="archived-session-list">`+
-          (archivedList.length ? archivedList.map(renderSessionItem).join('') : '<p class="panel-description panel-description-sm px-2 py-1 text-xs text-on-surface-variant">暂无已归档对话</p>')+
-        `</div>`+
-      `</details>`
-    ) : '<p class="panel-description px-2 py-1 text-xs text-on-surface-variant">没有匹配的对话。</p>';
+      (limitCount
+        ? `<a class="sidebar-session-more" href="#space/ask">查看全部对话<span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></a>`
+        : `<details class="session-group-archived" ${state.archivedOpen || archivedList.some(s=>s.id===state.sessionId)?'open':''}>`+
+            `<summary class="stitch-session-group-title session-group-title session-archived-summary" data-toggle-archived>`+
+              `<span class="archived-summary-left">${archiveIconSvg}<span>已归档 (${archivedList.length})</span></span>`+
+              `<span class="archived-arrow">▾</span>`+
+            `</summary>`+
+            `<div class="archived-session-list">`+
+              (archivedList.length ? archivedList.map(renderSessionItem).join('') : '<p class="panel-description panel-description-sm px-2 py-1 text-xs text-on-surface-variant">暂无已归档对话</p>')+
+            `</div>`+
+          `</details>`);
   }
   globalThis.XueyaWorkspaceSessionList = renderSessionListContent;
 function chat(){

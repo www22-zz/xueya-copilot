@@ -25,6 +25,7 @@
   function persist(){const saved=store.persist();$('#storageNotice')?.toggleAttribute('hidden',saved);if(!saved)toast(store.error);return saved;}
   let toastTimer;function toast(text){$('#toast').textContent=text;$('#toast').classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('#toast').classList.remove('show'),3500);}
   window.toast=toast;
+  const sidebarHub=window.XueyaSidebarHub?.create({state,store,toast,platform:window.XueyaPlatform});
   window.XueyaAsk=ask;
   window.addEventListener('xueya:course-completed',async event=>{
     try{await window.XueyaPlatform.spaceFetch('/api/learning/space/plan/sync-course',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(event.detail)});}
@@ -94,7 +95,14 @@
   }
   function render(){
     window.XueyaMaterialLearning?.unmount();analysisUI?.unmount();frameworkUI?.unmount?.();
-    const inCenter=['exams','algorithms','materials','courses','practice','review','analysis','knowledge','frameworks'].includes(state.view);document.body.classList.toggle('learning-center',inCenter);document.querySelector('[data-ai-session-section]').hidden=state.view!=='ask';document.querySelector('.learning-center-nav').hidden=!inCenter;document.querySelectorAll('[data-area]').forEach(a=>a.setAttribute('aria-current',(a.dataset.area==='center')===inCenter?'page':'false'));
+    const inCenter=['exams','algorithms','materials','courses','practice','review','analysis','knowledge','frameworks'].includes(state.view);
+    const sidebarOverview=state.view==='overview';
+    document.body.classList.toggle('learning-center',inCenter);
+    document.querySelector('[data-ai-session-section]').hidden=!(state.view==='ask'||sidebarOverview);
+    document.querySelector('.learning-center-nav').hidden=!inCenter;
+    const navSection=document.querySelector('#stitchNavSection');if(navSection)navSection.hidden=!inCenter;
+    document.querySelectorAll('[data-area]').forEach(a=>a.setAttribute('aria-current',(a.dataset.area==='center')===inCenter?'page':'false'));
+    sidebarHub?.sync(state.view);
     practiceUI?.beforeRender();
     const prior=$('#chatThread'),sameSession=prior?.dataset.sessionId===state.sessionId,scrollTop=prior?.scrollTop||0,nearBottom=!prior||prior.scrollHeight-prior.scrollTop-prior.clientHeight<90;
     const pool=currentQuestions();if(state.quizIndex>=pool.length)state.quizIndex=0;
@@ -114,7 +122,7 @@
     const stitchRecent=$('#stitchRecentSessions');
     if(stitchRecent&&state.sessions){
       if(typeof globalThis.XueyaWorkspaceSessionList==='function'){
-        stitchRecent.innerHTML=globalThis.XueyaWorkspaceSessionList();
+        stitchRecent.innerHTML=globalThis.XueyaWorkspaceSessionList(state.view==='overview'?4:undefined);
       }
     }
     const searchBox=$('#stitchSessionSearchBox');

@@ -22,7 +22,7 @@
     document.documentElement.style.colorScheme=theme;
   })();
   </script>
-  <script>window.XUEYA_UI_BUILD='2026-11-11-deep-think-typing-2';</script>
+  <script>window.XUEYA_UI_BUILD='2026-11-13-sidebar-hub-1';</script>
   <link rel="icon" href="assets/mark.svg" type="image/svg+xml">
   <!-- Icon font is multi-MB; start it before the render-blocking stylesheets. -->
   <link rel="preload" href="assets/material-symbols-outlined.woff2" as="font" type="font/woff2" crossorigin>
@@ -47,6 +47,7 @@
   <link rel="stylesheet" href="css/code-workbench.css">
   <link rel="stylesheet" href="css/framework-workbench.css">
   <link rel="stylesheet" href="css/learning-orbit.css">
+  <link rel="stylesheet" href="css/sidebar-hub.css">
   <noscript><style>html:not(.icons-ready) .material-symbols-outlined{visibility:visible}</style></noscript>
   <script>
   /* Runs after the stylesheets, so the @font-face is registered: reveal icon
@@ -127,6 +128,7 @@
   <script src="js/algorithm-demo.js" defer></script>
   <script src="js/exam-workspace.js" defer></script>
   <script src="js/overview-view.js" defer></script>
+  <script src="js/sidebar-hub.js" defer></script>
   <script src="js/app.js" defer></script>
 </head>
 <body>
@@ -324,16 +326,52 @@
         </div>
       </header>
 
-      <!-- Stitch Global Left Sidebar -->
-      <aside id="stitchSidebar" class="stitch-sidebar flex flex-col justify-between py-4">
-        <div class="flex flex-col gap-4 px-3">
-          <!-- Sidebar Section 1: Core Modules -->
-          <div class="flex flex-col gap-1">
-            <div class="flex items-center justify-between px-3 py-1">
-              <span class="sidebar-section-title font-label-sm text-[11px] text-outline font-semibold tracking-wider uppercase">学习中心</span>
-              <button id="stitchSidebarCollapseBtn" class="text-on-surface-variant hover:text-on-surface transition-colors hidden lg:block" title="折叠/展开侧栏" type="button">
-                <span class="material-symbols-outlined text-[16px]">dock_to_right</span>
-              </button>
+      <!-- Stitch Global Left Sidebar: current space, today's plan, navigation, recent chats and account footer. -->
+      <aside id="stitchSidebar" class="stitch-sidebar">
+        <div class="stitch-sidebar-top">
+          <div class="stitch-sidebar-head">
+            <span class="sidebar-section-title stitch-sidebar-caption">学习空间</span>
+            <button id="stitchSidebarCollapseBtn" class="stitch-sidebar-toggle" title="折叠/展开侧栏" type="button" aria-label="折叠/展开侧栏">
+              <span class="material-symbols-outlined text-[16px]">dock_to_right</span>
+            </button>
+          </div>
+
+          <!-- Current space and resume learning -->
+          <section id="stitchSpaceCard" class="sidebar-space-card" aria-label="当前学习空间">
+            <button type="button" class="sidebar-space-main" data-manage-courses title="切换课程" aria-label="切换课程">
+              <span class="sidebar-space-badge" id="stitchSpaceInitial" aria-hidden="true">数</span>
+              <span class="sidebar-space-copy">
+                <span class="sidebar-space-name" id="stitchSpaceName">数据结构</span>
+                <span class="sidebar-space-meta" id="stitchSpaceMeta">0 份资料</span>
+              </span>
+              <span class="material-symbols-outlined sidebar-space-switch" aria-hidden="true">unfold_more</span>
+            </button>
+            <a class="sidebar-resume" id="stitchResumeLink" href="#space/courses">
+              <span class="material-symbols-outlined sidebar-resume-icon" aria-hidden="true">play_circle</span>
+              <span class="sidebar-resume-copy">
+                <span class="sidebar-resume-label" id="stitchResumeLabel">开始学习</span>
+                <span class="sidebar-resume-title" id="stitchResumeTitle">打开课程学习中心</span>
+              </span>
+              <span class="material-symbols-outlined sidebar-resume-arrow" aria-hidden="true">arrow_forward</span>
+            </a>
+          </section>
+        </div>
+
+        <div class="stitch-sidebar-scroll">
+          <!-- Today's study plan (overview only) -->
+          <section id="stitchTodaySection" class="sidebar-block" aria-label="今日学习" hidden>
+            <div class="sidebar-block-head">
+              <span class="sidebar-section-title">今日学习</span>
+              <span class="sidebar-block-count" id="stitchTodayCount">0/0</span>
+            </div>
+            <div id="stitchTodayTasks" class="sidebar-task-list"></div>
+            <a class="sidebar-block-link" id="stitchTodayPlanLink" href="#space/analysis/plans">制定学习计划<span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></a>
+          </section>
+
+          <!-- Learning center navigation -->
+          <section id="stitchNavSection" class="sidebar-block" aria-label="学习中心导航">
+            <div class="sidebar-block-head">
+              <span class="sidebar-section-title">学习中心</span>
             </div>
             <nav class="space-nav learning-center-nav flex flex-col gap-1" aria-label="学习中心导航">
               <a href="#space/materials" data-view="materials" class="sidebar-nav-item flex items-center gap-3 px-3 py-2 rounded-xl text-on-surface-variant"><span class="material-symbols-outlined">account_tree</span><span class="sidebar-text">课程资料学习</span></a>
@@ -342,18 +380,17 @@
               <a href="#space/review" data-view="review" class="sidebar-nav-item flex items-center gap-3 px-3 py-2 rounded-xl text-on-surface-variant"><span class="material-symbols-outlined">edit_note</span><span class="sidebar-text">错题本</span></a>
               <a href="#space/knowledge" data-view="knowledge" class="sidebar-nav-item flex items-center gap-3 px-3 py-2 rounded-xl text-on-surface-variant"><span class="material-symbols-outlined">folder</span><span class="sidebar-text">个人资料库</span><span id="documentCount" class="font-code-sm">…</span></a>
             </nav>
+          </section>
 
-          </div>
-
-          <!-- Sidebar Section 2: Recent AI Sessions -->
-          <div data-ai-session-section class="flex flex-col gap-1 border-t border-outline-variant/20 pt-3">
-            <div class="flex items-center justify-between px-3 py-1">
-              <span class="sidebar-section-title font-label-sm text-[11px] text-outline font-semibold tracking-wider uppercase">近期 AI 答疑</span>
+          <!-- Recent AI sessions (ask + overview) -->
+          <section data-ai-session-section class="sidebar-block sidebar-recent" aria-label="近期 AI 答疑">
+            <div class="sidebar-block-head">
+              <span class="sidebar-section-title">近期 AI 答疑</span>
               <div class="flex items-center gap-1">
-                <button type="button" class="text-on-surface-variant hover:text-primary transition-colors p-1 rounded" data-toggle-session-search title="搜索历史对话" aria-label="搜索历史对话">
+                <button type="button" class="stitch-sidebar-icon-btn" data-toggle-session-search title="搜索历史对话" aria-label="搜索历史对话">
                   <span class="material-symbols-outlined text-[16px]">search</span>
                 </button>
-                <button type="button" class="text-on-surface-variant hover:text-primary transition-colors p-1 rounded" data-new-session title="开启新对话" aria-label="开启新对话">
+                <button type="button" class="stitch-sidebar-icon-btn" data-new-session title="开启新对话" aria-label="开启新对话">
                   <span class="material-symbols-outlined text-[16px]">add</span>
                 </button>
               </div>
@@ -361,13 +398,21 @@
             <div id="stitchSessionSearchBox" class="px-2 py-1" hidden>
               <input class="w-full px-2.5 py-1 text-xs bg-surface-container-low border border-outline-variant/40 rounded-lg outline-none focus:border-primary text-on-surface placeholder:text-outline" id="sessionSearch" aria-label="搜索历史对话" placeholder="搜索标题与内容…">
             </div>
-            <div id="stitchRecentSessions" class="session-list flex flex-col gap-0.5 overflow-y-auto max-h-[calc(100vh-380px)]"></div>
-          </div>
+            <div id="stitchRecentSessions" class="session-list flex flex-col gap-0.5"></div>
+          </section>
         </div>
 
-        <!-- Sidebar Bottom Footer -->
-        <div class="px-3 pt-3 border-t border-outline-variant/20 flex flex-col gap-1">
-          <button type="button" class="sidebar-nav-item flex items-center gap-3 px-3 py-2 rounded-xl text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all text-sm font-medium w-full text-left" data-open-settings>
+        <!-- Account and settings footer -->
+        <div class="stitch-sidebar-foot">
+          <button type="button" class="sidebar-account" data-open-settings title="我的账号与系统设置" aria-label="我的账号与系统设置">
+            <span class="sidebar-account-avatar" aria-hidden="true">学</span>
+            <span class="sidebar-account-copy">
+              <span class="sidebar-account-name">我的账号</span>
+              <span class="sidebar-account-meta"><span class="sidebar-sync-dot" aria-hidden="true"></span>本地学习空间</span>
+            </span>
+            <span class="material-symbols-outlined sidebar-account-arrow" aria-hidden="true">chevron_right</span>
+          </button>
+          <button type="button" class="sidebar-nav-item sidebar-settings-row" data-open-settings>
             <span class="material-symbols-outlined text-[19px]">settings</span>
             <span class="sidebar-text">系统设置</span>
           </button>

@@ -778,3 +778,21 @@ main 保留运行源码、依赖锁、测试与夹具、启动／维护／验收
 本轮重新验证：全量Python **1079 passed, 15 skipped**（0失败，报告位于忽略目录test-results/main-release.xml）；前端 **77 passed**；星图浏览器深浅主题×1440/1024/390六组与当日学习页深浅主题×1440/390四组全部通过，涵盖状态、长标题、日期隔离、题目绑定/保存恢复、只读预览、返回位置及减少动态效果。未调用付费模型或运行GPU验证。
 
 逐项核对上传清单并扫描常见凭证格式，未发现凭证；不包含.env、私人资料/数据库、交接ZIP、Figma原包、依赖目录、截图、日志、运行/构建产物或测试结果目录。前文“未推送”均为各阶段完成时的历史状态，本节记录最终发布前检查。
+
+### 2026-11-13 追加：学习侧栏学习中枢（P0）
+
+按用户确认的改进建议落地首页侧栏四项：恢复首页侧栏内容、补齐底部账户区、顶部“当前空间 + 继续上次学习”卡、今日任务卡。未改动后端 HTTP 契约，未调用付费模型。
+
+- `frontend/index.html`：侧栏重构为“固定顶部（学习空间标题 + 当前空间卡）+ 可滚动中部（今日学习 / 学习中心五项导航 / 近期 AI 答疑）+ 固定底部（账户与系统设置）”。学习中心五项导航的 DOM、顺序和 `learning-center-nav` 契约保持不变。
+- `frontend/css/sidebar-hub.css`（新增）：侧栏布局与视觉；桌面 260px、折叠 72px 图标栏、≤1023px 抽屉；使用既有 stitch token 支持深浅主题与 reduced-motion；新增块在折叠态隐藏或收敛为图标。
+- `frontend/js/sidebar-hub.js`（新增）：侧栏数据模块。课程名/资料数读取本地 workspace store；继续学习与今日任务复用 `/api/learning/space/today`、`/plan/active` 与 `/plan/task/toggle`（勾选带 expectedRevision 与 operationId）；服务不可用、无计划或同步失败均有诚实空态与“重新同步”，不阻塞页面、不伪造数据。
+- `frontend/js/app.js`：首页同时显示“今日学习”和“近期 AI 答疑”，学习中心视图仍只显示五项导航、Ask 视图仍显示全量会话；新增 `XueyaSidebarHub.sync()`。
+- `frontend/js/ui/workspace-views.js`：会话列表渲染支持可选 limit；首页取最近 4 条有消息的会话并显示“查看全部对话”，不传 limit 时保持 Ask 页原行为（全量 + 已归档分组）。
+- 缓存：`frontend/index.html` 的 `XUEYA_UI_BUILD` 与 `backend/xueya/config.py` 的 `UI_BUILD` 同步为 `2026-11-13-sidebar-hub-1`；`frontend/sw.js` 公共壳缓存版本更新，避免旧样式残留。
+- 验证：
+  - 前端回归：**77 passed**。
+  - Python 全量：**1090 passed, 4 skipped**（本轮实现后运行）；新增 `tests_python/test_sidebar_hub.py` 静态契约测试，侧栏相关 3 项通过。
+  - 新增 `scripts/check_sidebar_hub_browser.py`（隔离临时账号 + 只 mock 学习空间计划接口、阻断全部非本机请求）：**10 项检查通过**——当前空间卡与继续学习、今日任务渲染、勾选同步 payload、首页最近会话、底部账户打开设置、空间卡打开课程管理、桌面折叠栏、Ask 全量会话、学习中心导航、平板/手机抽屉；1440/1024/768/390 无页面错误、无横向溢出、0 外网请求、0 付费调用。截图见 `test-results/sidebar-hub/`。
+  - `scripts/check_workspace_styles.py`：深/浅主题 × 1440/1024/768/390 × 概览/问答共 **16 组通过**，0 运行时错误、0 外网请求、0 付费调用。
+- 说明：本机 Python 进程写入系统 TEMP 被 ACL 拒绝（PermissionError），浏览器检查统一以工作区 `.tmp/pw-tmp` 作为 TEMP/TMP/TMPDIR 运行；不影响应用行为。
+- 本轮仅在本地任务分支 `codex/sidebar-hub` 提交，未合并、未推送。
