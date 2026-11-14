@@ -7,6 +7,7 @@ import json
 import re
 import unicodedata
 from .common import digest, require
+from .markdown_outline import markdown_outline
 
 JOB = 'course-graph-range'
 SIZE = 1800
@@ -37,15 +38,17 @@ class CourseGraph:
             if identity in seen:
                 continue
             seen.add(identity)
-            document = {'id': identity, 'name': doc['name'], 'subject': name,
+            document = {'id': identity, 'name': doc['name'], 'title': doc.get('chapter') or doc['name'], 'subject': name,
                         'ready': self.m.ready(doc), 'revision': doc.get('contentRevision'),
                         'parseStatus': doc.get('status'), 'ranges': 0,
                         'pendingParse': (source_scope.user_id, source_scope.course_id, doc['id']) in parsing}
             documents.append(document)
             if not document['ready']:
                 continue
+            sources = self.m.rag.sources(source_scope, document_ids=[doc['id']])
+            document['_outline'] = markdown_outline(identity, sources) if doc.get('kind') == 'md' else []
             batches, parts, used = [], [], 0
-            for source in self.m.rag.sources(source_scope, document_ids=[doc['id']]):
+            for source in sources:
                 text = source.get('quote', '')
                 for start in range(0, len(text), SIZE):
                     end = min(start+SIZE, len(text))
@@ -104,6 +107,16 @@ class CourseGraph:
                 edge = {'source': item['documentId'], 'target': key, 'relation': 'contains'}
                 if edge not in edges:
                     edges.append(edge)
+        represented = {edge['source'] for edge in edges if edge['target'] in concepts}
+        outline_count = 0
+        for doc in documents:
+            outline = doc.pop('_outline', [])
+            if doc['id'] in represented:
+                continue
+            for node in outline:
+                concepts[node['id']] = node
+                edges.append({'source': doc['id'], 'target': node['id'], 'relation': 'contains'})
+                outline_count += 1
         from .practice_catalog import workspace_catalog
         from .graph_practice import attach_practice
         catalog = workspace_catalog(self.m.app.state.practice_generation, account)
@@ -122,7 +135,7 @@ class CourseGraph:
                              'remainingCalls': sum(not r['saved'] and not r['job'] for r in ranges),
                              'unreadyDocuments': sum(not d['ready'] for d in documents),
                              'inputComplete': bool(ranges) and done == len(ranges),
-                             'independentlyReviewed': False, 'questions': len(question_ids)},
+                             'independentlyReviewed': False, 'questions': len(question_ids), 'outlineNodes': outline_count},
                 'blocked': blocked, 'available': bool(self.m.app.state.config.api_key)}
 
     def submit(self, account, owner, course, subject, limit):

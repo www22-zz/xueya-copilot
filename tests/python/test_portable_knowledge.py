@@ -46,7 +46,8 @@ def test_fresh_clone_accounts_get_cache_without_model_calls_and_restart_is_idemp
         docs = p.repo.all(scope, 'document')
         assert len(docs) == 1 and docs[0]['indexStatus'] == 'ready'
         assert len(p.repo.all(scope, 'vector')) == 178
-        assert p.repo.courses(owner)[0]['name'] == '栈与队列知识库'
+        assert p.repo.courses(owner)[0]['name'] == '数据结构'
+        assert docs[0]['name'] == '栈与队列知识库.md' and docs[0]['chapter'] == '栈与队列'
         # A matching provider can consume imported vectors with a single query
         # embedding. The controlled fixture does not claim real model accuracy.
         import httpx, asyncio
@@ -101,3 +102,27 @@ def test_archived_material_is_not_automatically_restored_on_restart(tmp_path):
         p = client.app.state.platform
         assert len(p.repo.all(p.scope(), 'document')) == 1
         assert p.repo.all(p.scope(), 'document')[0]['archived']
+
+
+@pytest.mark.parametrize('legacy_name', ['栈与队列知识库', '自定义科目'])
+def test_existing_bundle_subject_repair_preserves_content_and_custom_names(tmp_path, legacy_name):
+    config = Config(root=prepare_root(tmp_path), data_dir=tmp_path/'data', auto_import_stack=True)
+    with TestClient(create_app(config), base_url='http://127.0.0.1') as client:
+        client.get('/api/platform/bootstrap')
+        p = client.app.state.platform
+        scope = p.scope()
+        profile_id = 'source-bound-knowledge-base'
+        profile = p.repo.read(scope, 'artifact', profile_id)
+        p.repo.put(scope, 'artifact', profile_id, {**profile['value'], 'name': legacy_name}, profile['version'])
+        p.repo.ensure_course(scope.user_id, {'id': scope.course_id, 'name': legacy_name})
+        documents = p.repo.all(scope, 'document')
+        vectors = p.repo.all(scope, 'vector')
+        expected = '数据结构' if legacy_name == '栈与队列知识库' else legacy_name
+        boot = client.get('/api/platform/bootstrap').json()
+        assert boot['courses'][0]['name'] == expected
+        assert p.repo.all(scope, 'document') == documents
+        assert p.repo.all(scope, 'vector') == vectors
+        assert not p.db.one('SELECT id FROM invocations')
+        before = p.db.one('SELECT count(*) AS n FROM revisions')['n']
+        client.get('/api/platform/bootstrap')
+        assert p.db.one('SELECT count(*) AS n FROM revisions')['n'] == before

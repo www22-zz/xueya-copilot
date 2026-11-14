@@ -55,7 +55,7 @@ def main():
                 browser.wait('document.querySelectorAll(".kb-document").length === 1')
                 assert browser.evaluate('document.querySelectorAll("#kbSearch,.lw-probe,[data-kb=jump-search]").length') == 0
                 assert browser.evaluate('document.querySelectorAll("#knowledgeWorkspace a[href=\\\"#space/library/manage\\\"],#lwConfigBody,[aria-labelledby=lwConfigTitle]").length') == 0
-                assert browser.evaluate('document.querySelector("#courseSelect option:checked").textContent') == '栈与队列知识库'
+                assert browser.evaluate("(async()=> (await(await fetch('/api/platform/bootstrap')).json()).courses.find(c=>c.id==='course-default').name)()") == '数据结构'
                 if shared:
                     assert browser.evaluate('document.querySelector("#lwScaleBody").textContent.includes("1 / 1")')
                     browser.click('[data-kb=index]')
@@ -82,6 +82,24 @@ def main():
                 assert retrieval['ok'] and retrieval['hits'] > 0
                 browser.reload()
                 browser.wait('document.querySelectorAll(".kb-document").length === 1')
+                browser.call('Page.navigate', url=base+'/#space/materials/corpus')
+                browser.wait('document.querySelectorAll("[data-cg-book]").length === 1')
+                assert browser.evaluate('document.querySelector("[data-cg-book]").dataset.cgBook') == '数据结构'
+                browser.click('[data-cg-book]')
+                browser.wait('!!document.querySelector(".cg-star-root")')
+                assert browser.evaluate('document.querySelector(".cg-star-root").getAttribute("aria-label")') == '数据结构与算法'
+                assert browser.evaluate('document.querySelector("[data-star-doc]").getAttribute("aria-label")') == '栈与队列'
+                assert browser.evaluate('document.querySelectorAll("[data-cg-node]").length') == 12
+                first = browser.evaluate('document.querySelector("[data-cg-node]").dataset.cgNode')
+                browser.evaluate('document.querySelector("[data-cg-node]").dispatchEvent(new MouseEvent("click",{bubbles:true}))')
+                assert browser.evaluate('document.querySelector("[data-cg-detail]").textContent.includes("来自MD标题")')
+                assert browser.evaluate('document.querySelector("[data-cg-detail] h3").textContent') == '阅读路线与通用约定'
+                assert not browser.evaluate('document.querySelector("[data-cg-detail]").textContent.includes("[平台资料正文受保护]")')
+                browser.click('[data-cg-page="1"]')
+                assert browser.evaluate('document.querySelector("[data-cg-node]").dataset.cgNode') != first
+                browser.click('[data-cg-page="-1"]')
+                assert browser.evaluate('document.querySelector("[data-cg-node]").dataset.cgNode') == first
+                browser.screenshot(out/'data-structures-subject.png')
                 assert not browser.errors, browser.errors
                 p = app.state.platform
                 assert not p.db.one('SELECT id FROM invocations')

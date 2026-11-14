@@ -25,9 +25,9 @@ def test_narrowing_retires_only_prior_import_and_retains_originals(platform):
     assert all(row['onlySelectedFile'] for row in result['checks'])
     assert result['providerRequests'] == 0
     p.repo.ensure_course(p.user_id, {'id': 'course-default', 'name': '数据结构'})
-    assert p.repo.courses(p.user_id)[0]['name'] == '栈与队列知识库'
+    assert p.repo.courses(p.user_id)[0]['name'] == '数据结构'
     workspace = {'version': 3, 'activeId': 'course-default', 'courses': [
         {'id': 'course-default', 'name': '数据结构', 'data': {'documents': [], 'messages': []}}]}
     saved = p.repo.save_workspace(p.user_id, workspace)
-    assert saved['data']['courses'][0]['name'] == '栈与队列知识库'
-    assert p.repo.get_workspace(p.user_id)['data']['courses'][0]['name'] == '栈与队列知识库'
+    assert saved['data']['courses'][0]['name'] == '数据结构'
+    assert p.repo.get_workspace(p.user_id)['data']['courses'][0]['name'] == '数据结构'

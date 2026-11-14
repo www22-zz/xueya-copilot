@@ -62,7 +62,20 @@ class ConversationPlanning:
     def validate(value):
         require(isinstance(value.get('goal'),str) and 0<len(value['goal'])<=1000,'PLAN_GOAL_REQUIRED')
         require(type(value.get('daysCount')) is int and 1<=value['daysCount']<=366,'INVALID_PLAN_DATES')
-        require(type(value.get('dailyMinutes')) is int and 15<=value['dailyMinutes']<=480,'INVALID_DAILY_MINUTES')
+        require(value.get('schedulingMode','fixed-budget') in ('fixed-budget','by-days'),'INVALID_SCHEDULING_MODE')
+        if value.get('schedulingMode') != 'by-days':
+            require(type(value.get('dailyMinutes')) is int and 15<=value['dailyMinutes']<=480,'INVALID_DAILY_MINUTES')
+        else:
+            rest = value.get('restDays', [7])
+            require(isinstance(rest,list) and all(type(d) is int and 1<=d<=7 for d in rest),'INVALID_REST_DAYS')
+            try:
+                start = datetime.date.fromisoformat(value.get('startDate') or datetime.datetime.now(ZoneInfo('Asia/Shanghai')).date().isoformat())
+                end = datetime.date.fromisoformat(value['endDate']) if value.get('endDate') else start + datetime.timedelta(days=value['daysCount']-1)
+            except (ValueError,TypeError):
+                raise AppError('INVALID_PLAN_DATES') from None
+            count = (end-start).days+1
+            require(1<=count<=366,'INVALID_PLAN_DATES')
+            require(any((start+datetime.timedelta(days=i)).isoweekday() not in rest for i in range(count)),'NO_STUDY_DAYS')
         require(value.get('difficulty','基础') in ('基础','进阶','挑战'),'INVALID_DIFFICULTY')
 
     async def connectivity(self):
@@ -74,7 +87,7 @@ class ConversationPlanning:
 
     def submit(self, account, value, *, session_id=None, origins=None, assumptions=None):
         self.validate(value)
-        conditions={key:value[key] for key in ('title','goal','daysCount','dailyMinutes','restDays','subjects','startDate','endDate','difficulty') if key in value}
+        conditions={key:value[key] for key in ('title','goal','daysCount','dailyMinutes','restDays','subjects','startDate','endDate','difficulty','schedulingMode') if key in value}
         scope=self.service._scope(account)
         return self.p.jobs.submit(scope.user_id,{'type':JOB,'courseId':scope.course_id,'resource':'api','maxAttempts':1,
             'idempotencyKey':identifier(value.get('operationId')),

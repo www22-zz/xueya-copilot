@@ -64,13 +64,15 @@ def main():
                     expect(page.locator('.orbit-star-node.is-done')).to_have_count(1)
                     expect(page.locator('.orbit-star-node.is-current')).to_have_count(1)
                     expect(page.locator('.orbit-star-node.is-pending')).to_have_count(11)
-                    assert page.locator('.orbit-phase').nth(2).locator('.orbit-star-path').count()==2
+                    expect(page.locator('.orbit-route-links path')).to_have_count(12)
+                    expect(page.locator('[data-orbit-zoom="fit"]')).to_be_visible()
+                    expect(page.locator('.orbit-hero')).to_have_count(0)
                     expect(page.locator('.orbit-rest-footer')).to_contain_text('3月14日')
                     assert page.locator('.orbit-unscheduled img').count()==0
                     assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
                     # All long labels fit their buttons and every label is visible by default.
-                    assert page.locator('.orbit-star-copy strong').evaluate_all('els=>els.every(e=>e.scrollWidth<=e.clientWidth+1)')
-                    expect(page.locator('.orbit-star-meta').last).to_have_css('opacity','1')
+                    assert page.locator('.orbit-canvas-node > strong').evaluate_all('els=>els.length===13&&els.every(e=>e.scrollWidth<=e.clientWidth+1)')
+                    expect(page.locator('.orbit-node-time').last).to_have_css('opacity','1')
                     report=page.locator('[data-orbit-report]').nth(1)
                     report.click();expect(report).to_have_attribute('aria-expanded','true')
                     expect(page.locator('.orbit-report').nth(1)).to_be_visible();report.click()

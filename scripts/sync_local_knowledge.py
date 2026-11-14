@@ -68,7 +68,7 @@ async def install(p, scope, items):
     with p.db.transaction():
         profile_id = 'source-bound-knowledge-base'
         profile = p.repo.read(scope, 'artifact', profile_id)
-        p.repo.put(scope, 'artifact', profile_id, {'kind': profile_id, 'name': '栈与队列知识库',
+        p.repo.put(scope, 'artifact', profile_id, {'kind': profile_id, 'name': '数据结构',
                    'documentId': doc_id, 'fileHash': item['sha256']}, profile['version'] if profile else 0)
         for other in p.repo.all(scope, 'document'):
             if other['id'] == doc_id or other.get('archived') or other.get('superseded'):
@@ -77,14 +77,14 @@ async def install(p, scope, items):
             if (other.get('origin') or {}).get('type') == 'repository-corpus' or is_demo_placeholder(other):
                 host.state.library.organize(scope, {'documentId': other['id'], 'version': other['version'], 'action': 'archive'})
                 retired.append(other['id'])
-        p.repo.ensure_course(scope.user_id, {'id': scope.course_id, 'name': '栈与队列知识库'})
+        p.repo.ensure_course(scope.user_id, {'id': scope.course_id, 'name': '数据结构'})
         workspace = p.repo.get_workspace(scope.user_id)
         if workspace:
             value = workspace['data']
             for course in value['courses']:
                 if course['id'] != scope.course_id:
                     continue
-                course['name'] = '栈与队列知识库'
+                course['name'] = '数据结构'
                 data = course['data']
                 data['documents'] = [d for d in data.get('documents', []) if d.get('id') not in retired]
                 data['documentCount'] = 1

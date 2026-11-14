@@ -1739,7 +1739,7 @@ body.in-space #spacePage:not([hidden]) { width: 100% !important; max-width: none
 #materialLearning .material-learning p { font-size:14px; line-height:1.75; }
 #materialLearning .material-learning .button { min-height:38px; padding:8px 15px; border-radius:12px; font-size:13px; gap:8px; }
 #materialLearning .material-workflow { border-bottom:1px solid var(--stitch-outline-variant); padding-bottom:16px; }
-#materialLearning .material-workflow [aria-pressed=true] { background:var(--stitch-primary-fixed); color:var(--stitch-on-surface); border-color:var(--stitch-primary); }
+#materialLearning .material-workflow :is([aria-pressed=true],[aria-current=page]) { background:var(--stitch-primary-fixed); color:var(--stitch-on-surface); border-color:var(--stitch-primary); }
 #materialLearning [data-material-graph-view] { display:flex; flex-direction:column; gap:14px; min-width:0; }
 #materialLearning .materials-list { max-height:180px; overflow:auto; align-content:start; padding:4px; }
 #materialLearning .material-graph { border:1px solid var(--stitch-outline-variant); border-radius:16px; overflow:hidden; padding:12px; background:var(--stitch-surface-container-low); }

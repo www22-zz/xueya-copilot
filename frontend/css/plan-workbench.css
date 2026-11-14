@@ -845,111 +845,6 @@
   padding: 8px 14px;
 }
 
-/* -------------------------------------------------------------- map preview */
-.pw-map {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: 14px;
-  border-radius: 14px;
-  border: 1px solid var(--stitch-outline-variant);
-  background: var(--stitch-surface-container-low);
-  min-width: 0;
-}
-
-.pw-map-head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 6px;
-}
-
-.pw-map-head h4 {
-  margin: 0;
-  font-size: 14px;
-}
-
-.pw-map-head span {
-  font-size: 11.5px;
-  color: var(--stitch-on-surface-variant);
-}
-
-.pw-map-legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  font-size: 11.5px;
-  color: var(--stitch-on-surface-variant);
-}
-
-.pw-map-legend-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-}
-
-.pw-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 3px;
-  border: 1px solid var(--stitch-outline-variant);
-  background: var(--stitch-surface-container-lowest);
-}
-
-.pw-dot.is-done {
-  border-color: var(--stitch-primary);
-  background: var(--stitch-primary-fixed);
-}
-
-.pw-map-scroll {
-  max-height: 62vh;
-  overflow: auto;
-  border-radius: 10px;
-  background: var(--stitch-surface-container-lowest);
-  border: 1px solid var(--stitch-outline-variant);
-  padding: 6px;
-}
-
-.pw-map-svg {
-  display: block;
-  max-width: none;
-}
-
-.pw-map-svg .pw-edge {
-  fill: none;
-  stroke: var(--stitch-outline-variant);
-  stroke-width: 1.4;
-}
-
-.pw-map-svg .pw-node-box {
-  fill: var(--stitch-surface-container-low);
-  stroke: var(--stitch-outline-variant);
-  stroke-width: 1.2;
-}
-
-.pw-map-svg .pw-node.is-done .pw-node-box {
-  fill: var(--stitch-primary-fixed);
-  stroke: var(--stitch-primary);
-}
-
-.pw-map-svg .pw-node.is-root .pw-node-box {
-  fill: var(--stitch-primary-container);
-  stroke: var(--stitch-primary);
-}
-
-.pw-map-svg .pw-node.is-root .pw-node-text {
-  fill: var(--stitch-on-primary-container);
-}
-
-.pw-map-svg .pw-node-text {
-  fill: var(--stitch-on-surface);
-  font-size: 11.5px;
-  font-weight: 600;
-  font-family: inherit;
-  pointer-events: none;
-}
-
 /* ------------------------------------------------------------- responsive */
 @media (max-width: 1023px) {
   .pw-grid {
@@ -1044,6 +939,13 @@ html[data-theme=dark] .pw-phase-facts span{background:var(--stitch-surface-conta
 .pw-side-card .pw-draft-explanation{font-size:12px;line-height:1.7}
 .pw-side-card .pw-draft-stats{gap:6px}
 .pw-side-card .pw-draft-stats span{font-size:11px;padding:3px 8px}
+.pw-resource-details{font-size:12px;line-height:1.7;overflow-wrap:anywhere}
+.pw-resource-details summary{cursor:pointer;font-weight:600;color:var(--stitch-primary)}
+.pw-resource-details p{margin:8px 0;color:var(--stitch-on-surface-variant)}
+.pw-resource-details ul{padding:0;list-style:none;margin:8px 0;display:grid;gap:10px}
+.pw-resource-details li{display:flex;flex-direction:column;gap:3px;border-top:1px solid var(--stitch-outline-variant);padding-top:8px}
+.pw-resource-details li span{font-size:11px;color:var(--stitch-on-surface-variant)}
+.pw-resource-details a{color:var(--stitch-primary);text-decoration:underline}
 .pw-side-actions .pw-draft-actions{flex-direction:column;align-items:stretch;padding-top:0}
 .pw-side-actions .button{width:100%;justify-content:center;min-height:36px}
 .pw-draft-v2 .pw-days{gap:8px}

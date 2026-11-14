@@ -168,7 +168,9 @@ def _plan_summary(plan, budget):
             span += f"（{days} 天）"
         facts.append(("计划周期", span, "fact"))
     minutes = _minutes(plan.get("dailyMinutes"))
-    if minutes:
+    if plan.get('schedulingMode') == 'by-days':
+        facts.append(('排程方式', '按可学习天数均分完整任务；每天耗时为估计，不设置时长上限。', 'fact'))
+    elif minutes:
         facts.append(("每日可用时间", f"{minutes} 分钟", "fact"))
     facts.append(("固定休息日", _rest_days_label(plan.get("restDays")), "fact"))
     subjects = plan.get("subjects") if isinstance(plan.get("subjects"), list) else []

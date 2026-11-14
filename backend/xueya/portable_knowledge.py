@@ -15,6 +15,8 @@ from .rag_search import normalize
 
 log = logging.getLogger(__name__)
 MARKER = 'portable-stack-queue-v1'
+SUBJECT = '数据结构'
+MATERIAL_HASH = '7a36da9a2a222b39d22c13a720f587f7f2d21073dbfbcccc9b2769c222d0652a'
 MAX_CACHE = 16*1024*1024
 
 
@@ -56,10 +58,12 @@ class PortableKnowledge:
             self.p.repo.require_course(scope)
             prior = self.p.repo.read(scope, 'artifact', MARKER)
             if prior:
+                if prior['value'].get('status') == 'completed':
+                    self.repair_subject(scope)
                 return prior['value']
             # Even archived/deleted history must not be silently repopulated.
             existing = self.p.repo.all(scope, 'document')
-            matching = [d for d in existing if d.get('fileHash') == '7a36da9a2a222b39d22c13a720f587f7f2d21073dbfbcccc9b2769c222d0652a'
+            matching = [d for d in existing if d.get('fileHash') == MATERIAL_HASH
                         and not any(d.get(k) for k in ('archived', 'deleted', 'superseded'))]
             history = self.p.db.one("SELECT id FROM entities WHERE user_id=? AND course_id=? AND kind='document' LIMIT 1", (owner, scope.course_id))
             if history and not matching:
@@ -95,6 +99,16 @@ class PortableKnowledge:
                 self.p.repo.put(scope, 'artifact', MARKER, result, 0)
                 return result
 
+    def repair_subject(self, scope):
+        """Correct only the bundled chapter's legacy subject label, in place."""
+        profile_id = 'source-bound-knowledge-base'
+        with self.p.db.transaction():
+            old = self.p.repo.read(scope, 'artifact', profile_id)
+            if not old or old['value'].get('name') != '栈与队列知识库' or old['value'].get('fileHash') != MATERIAL_HASH:
+                return
+            self.p.repo.put(scope, 'artifact', profile_id, {**old['value'], 'name': SUBJECT}, old['version'])
+            self.p.repo.ensure_course(scope.user_id, {'id': scope.course_id, 'name': SUBJECT})
+
     def publish(self, scope, doc, manifest, cache):
         rag = self.kb.rag
         sources = rag.sources(scope, document_ids=[doc['id']])
@@ -123,7 +137,7 @@ class PortableKnowledge:
                     self.p.repo.put(scope, 'vector', key, row, old['version'] if old else 0)
             if current.get('embeddingIdentity') != identity or current.get('indexStatus') != 'ready':
                 self.p.repo.put(scope, 'document', doc['id'], {**current, 'embeddingIdentity': identity, 'indexStatus': 'ready'}, current['version'])
-            name = '栈与队列知识库'
+            name = SUBJECT
             profile_id = 'source-bound-knowledge-base'
             old = self.p.repo.read(scope, 'artifact', profile_id)
             profile = {'kind': profile_id, 'name': name, 'documentId': doc['id'], 'fileHash': doc['fileHash']}

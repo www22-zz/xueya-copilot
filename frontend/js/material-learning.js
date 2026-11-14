@@ -9,6 +9,27 @@
     const reply=await window.XueyaPlatform.spaceFetch('/api/learning/space/'+path,body?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}:{});
     return reply.json();
   }
+  function workflowMarkup(active,attendance){
+    return `<nav class="heading-actions material-workflow" aria-label="资料学习流程"><button class="button button-outline" data-material-tab="corpus" aria-pressed="${active==='corpus'}">课程书架与知识图谱</button><button class="button button-outline" data-material-tab="video" aria-pressed="${active==='video'}">视频目录</button><button class="button button-outline" data-material-tab="plan" aria-pressed="${active==='plan'}">个性化学习</button><a class="button button-outline" href="#space/practice/legacy" ${active==='practice'?'aria-current="page"':''}>课程固定练习</a><button class="button button-blue" type="button" data-attendance ${attendance.signed!==false?'disabled':''}>${attendance.signed===null?'正在读取签到…':attendance.signed?'今日已签到':'每日签到'}</button></nav>`;
+  }
+  async function mountWorkflow(container){
+    if(!container)return;
+    let attendance={signed:null};
+    const draw=()=>{
+      if(!container.isConnected)return;
+      container.innerHTML=workflowMarkup('practice',attendance);
+      container.querySelectorAll('[data-material-tab]').forEach(button=>button.onclick=()=>{location.hash='#space/materials/'+button.dataset.materialTab;});
+      container.querySelector('[data-attendance]').onclick=async event=>{
+        event.stopPropagation();
+        event.currentTarget.disabled=true;
+        try{attendance=await api('attendance',{});draw();}
+        catch{draw();window.toast?.('签到未完成，请稍后重试。');}
+      };
+    };
+    draw();
+    try{attendance=await api('attendance');draw();}
+    catch{if(container.isConnected)container.querySelector('[data-attendance]').textContent='签到状态暂不可用';}
+  }
   async function mount(container,courseId='course-default',local=false){
     if(!container)return;const entering=!container.dataset.materialMounted,stamp=++generation;clearTimeout(timer);
     try{
@@ -39,7 +60,7 @@
       try{localStorage.setItem(selectionKey,JSON.stringify({selected,selectedDocument,subject,nodeId}));}catch{}
       const status={parsing:'正在解析资料',queued:'等待出题',running:'正在生成',succeeded:'已生成',failed:'生成失败',unknown:'调用状态待核对',cancelled:'已取消','not-generated':'待准备'};
       container.innerHTML=`<section class="panel material-learning"><h1 class="visually-hidden">课程资料学习</h1>
-        <nav class="heading-actions material-workflow" aria-label="资料学习流程"><button class="button button-outline" data-material-tab="corpus" aria-pressed="${tab==='corpus'}">课程书架与知识图谱</button><button class="button button-outline" data-material-tab="video" aria-pressed="${tab==='video'}">视频目录</button><button class="button button-outline" data-material-tab="plan" aria-pressed="${tab==='plan'}">个性化学习</button><a class="button button-outline" href="#space/practice/legacy">课程固定练习</a><button class="button button-blue" type="button" data-attendance ${attendance.signed?'disabled':''}>${attendance.signed?'今日已签到':'每日签到'}</button></nav>
+        ${workflowMarkup(tab,attendance)}
         <div data-material-subview></div>
         <p role="status" data-material-status></p></section>`;
       container.dataset.renderedTab=tab;
@@ -55,7 +76,7 @@
         videoUI=window.XueyaCourses.create({host:target,embedded:true,toast:window.toast,render:drawVideo,navigate:hash=>location.hash=hash});drawVideo();
       }
       container.querySelector('[data-material-subject]')?.addEventListener('change',event=>{subject=event.target.value;redraw();});
-      container.querySelector('[data-attendance]').onclick=async()=>{try{cached.attendance=await api('attendance',{});redraw();}catch(error){container.querySelector('[data-material-status]').textContent=error.message;}};
+      container.querySelector('[data-attendance]').onclick=async event=>{event.stopPropagation();try{cached.attendance=await api('attendance',{});redraw();}catch(error){container.querySelector('[data-material-status]').textContent=error.message;}};
       container.querySelector('[data-material-prepare]')?.addEventListener('click',async()=>{try{await api('materials/prepare',{documentId:material.documentId,sourceCourseId:material.sourceCourseId,public:material.public,courseId});mount(container,courseId);}catch(error){container.querySelector('[data-material-status]').textContent=error.message;}});
       container.querySelectorAll('[data-material]').forEach(button=>button.onclick=()=>{selected=button.dataset.material;nodeId='';redraw();});
       // Existing accessible materials are prepared once; each document batch is
@@ -69,5 +90,5 @@
 
     }catch(error){if(stamp===generation&&container.isConnected)container.innerHTML=`<p role="alert">资料学习暂不可用：${e(error.message)}</p>`;}
   }
-  window.XueyaMaterialLearning={mount,unmount(){if(!location.hash.startsWith('#space/materials'))mountedLocation='';generation++;clearTimeout(timer);planUI?.unmount();videoUI?.unmount();window.XueyaCourseGraph?.unmount();cached=null;signature='';}};
+  window.XueyaMaterialLearning={mount,mountWorkflow,unmount(){if(!location.hash.startsWith('#space/materials'))mountedLocation='';generation++;clearTimeout(timer);planUI?.unmount();videoUI?.unmount();window.XueyaCourseGraph?.unmount();cached=null;signature='';}};
 })();

@@ -28,6 +28,7 @@
     PLAN_GOAL_REQUIRED: '请填写学习目标。',
     INVALID_PLAN_DATES: '日期范围不合法：请检查开始/结束日期（1–366 天）。',
     INVALID_DAILY_MINUTES: '每日可用时间需为 15–480 分钟。',
+    NO_STUDY_DAYS: '当前周期全部为休息日，请增加天数或调整休息日。',
     INVALID_DIFFICULTY: '难度档位不合法。',
     INVALID_REST_DAYS: '固定休息日设置不合法。',
     INVALID_SUBJECTS: '学科/专题设置不合法。',
@@ -86,13 +87,6 @@
     const list = Array.isArray(days) ? days : [];
     return list.length ? list.map(weekdayLabel).filter(Boolean).join('、') : '无';
   }
-  function minutesLabel(minutes) {
-    const value = Number(minutes);
-    if (!Number.isFinite(value) || value <= 0) return '—';
-    if (value < 60) return value + ' 分钟';
-    const hours = value / 60;
-    return (Number.isInteger(hours) ? hours : hours.toFixed(1)) + ' 小时';
-  }
   function clampText(value, limit) {
     const text = String(value == null ? '' : value).trim();
     return text.length > limit ? text.slice(0, limit) : text;
@@ -100,13 +94,6 @@
   function safeUrl(value) {
     const url = String(value || '');
     return /^(#space\/|https?:\/\/)/.test(url) ? url : '';
-  }
-  function fileNameFromDisposition(header, fallback) {
-    if (!header) return fallback;
-    const utf = /filename\*=UTF-8''([^;]+)/i.exec(header);
-    if (utf) { try { return decodeURIComponent(utf[1].trim()); } catch (_) { /* fall through */ } }
-    const plain = /filename="?([^";]+)"?/i.exec(header);
-    return plain ? plain[1].trim() : fallback;
   }
   function storeKey() {
     return (root.XueyaDataKey || (key => key))('xueya-plan-workbench-v1');
@@ -121,7 +108,6 @@
       startDate: today,
       endDate: addDays(today, 13),
       daysCount: 14,
-      dailyMinutes: 60,
       restDays: [7],
       subjects: [],
       customSubjects: ''
@@ -144,9 +130,6 @@
       error: '',
       draft: null,
       jobs: [],
-      tree: null,
-      treeFor: '',
-      treeOpen: false,
       busyAction: '',
       adoptError: '',
       notice: '',
@@ -180,7 +163,7 @@
         if (!saved || typeof saved !== 'object') return {};
         if (saved.form && typeof saved.form === 'object') {
           const form = defaultForm();
-          ['title', 'goal', 'difficulty', 'startDate', 'endDate', 'daysCount', 'dailyMinutes', 'customSubjects'].forEach(key => {
+          ['title', 'goal', 'difficulty', 'startDate', 'endDate', 'daysCount', 'customSubjects'].forEach(key => {
             if (typeof saved.form[key] === 'string' || typeof saved.form[key] === 'number') form[key] = saved.form[key];
           });
           if (Array.isArray(saved.form.subjects)) form.subjects = saved.form.subjects.filter(s => typeof s === 'string').slice(0, 20);
@@ -188,8 +171,6 @@
           if (!parseISO(form.startDate)) form.startDate = defaultForm().startDate;
           if (!parseISO(form.endDate)) form.endDate = addDays(form.startDate, 13);
           if (!DIFFICULTIES.some(item => item.value === form.difficulty)) form.difficulty = '基础';
-          const minutes = Number(form.dailyMinutes);
-          form.dailyMinutes = Number.isFinite(minutes) ? Math.max(15, Math.min(480, Math.round(minutes / 5) * 5)) : 60;
           state.form = form;
         }
         return saved;
@@ -265,8 +246,6 @@
           cursor.setDate(cursor.getDate() + 1);
         }
       }
-      const dailyMinutes = Number(form.dailyMinutes) || 0;
-      const totalMinutes = studyDays * dailyMinutes;
       const subjects = effectiveSubjects();
       let conceptCount = 0, questionCount = 0, materialCount = 0;
       if (materials.loaded) {
@@ -279,7 +258,7 @@
           concepts.forEach(concept => { questionCount += Array.isArray(concept.questionIds) ? concept.questionIds.length : 0; });
         });
       }
-      return { totalDays, studyDays, restCount, dailyMinutes, totalMinutes, subjects, conceptCount, questionCount, materialCount };
+      return { totalDays, studyDays, restCount, subjects, conceptCount, questionCount, materialCount };
     }
 
     function renderProjection() {
@@ -301,8 +280,7 @@
           <div><dt>计划周期</dt><dd>${value.totalDays ? value.totalDays + ' 天' : '—'}</dd></div>
           <div><dt>可学习日</dt><dd>${value.totalDays ? value.studyDays + ' 天' : '—'}</dd></div>
           <div><dt>固定休息日</dt><dd>${value.totalDays ? value.restCount + ' 天' : '—'}</dd></div>
-          <div><dt>每日可用时间</dt><dd>${value.dailyMinutes ? value.dailyMinutes + ' 分钟' : '—'}</dd></div>
-          <div class="pw-projection-total"><dt>总可投入时间</dt><dd>${value.totalMinutes ? minutesLabel(value.totalMinutes) : '—'}</dd></div>
+          <div class="pw-projection-wide"><dt>任务分配方式</dt><dd>按可学习天数均分</dd><p class="pw-hint">保留完整任务与先修顺序；天数少时每天任务更多。预计耗时在生成草稿后显示。</p></div>
           <div class="pw-projection-wide"><dt>可关联资源上限</dt><dd>${e(coverage)}</dd></div>
           <div class="pw-projection-wide"><dt>难度档位</dt><dd>${e(difficultyHint())} 该档位只作为生成条件提交，程序无法预知模型会划分几个阶段。</dd></div>
         </dl>
@@ -335,8 +313,6 @@
       form.querySelector('[data-pw-start]').value = state.form.startDate;
       form.querySelector('[data-pw-end]').value = state.form.endDate;
       form.querySelector('[data-pw-days]').value = state.form.daysCount;
-      form.querySelector('[data-pw-minutes]').value = state.form.dailyMinutes;
-      form.querySelector('[data-pw-minutes-out]').textContent = state.form.dailyMinutes + ' 分钟';
       form.querySelector('[data-pw-custom-subjects]').value = state.form.customSubjects;
       form.querySelector('[data-pw-goal-count]').textContent = state.form.goal.length + '/1000';
       renderDifficulty();
@@ -416,8 +392,6 @@
         }
         if (studyDays === 0) { errors.push('固定休息日覆盖了整个周期，没有可学习的日子。'); focus('[data-pw-rest]'); }
       }
-      const dailyMinutes = Number(form.dailyMinutes);
-      if (!Number.isInteger(dailyMinutes) || dailyMinutes < 15 || dailyMinutes > 480) { errors.push('每日可用时间需为 15–480 分钟。'); focus('[data-pw-minutes]'); }
       if (!DIFFICULTIES.some(item => item.value === form.difficulty)) { errors.push('难度档位不合法。'); }
       if (!Array.isArray(form.restDays) || form.restDays.some(day => !Number.isInteger(day) || day < 1 || day > 7)) {
         errors.push('固定休息日设置不合法。'); focus('[data-pw-rest]');
@@ -435,7 +409,7 @@
           startDate: form.startDate,
           endDate: form.endDate,
           daysCount,
-          dailyMinutes,
+          schedulingMode: 'by-days',
           restDays: form.restDays.slice().sort((a, b) => a - b),
           subjects
         }
@@ -478,7 +452,6 @@
       state.jobId = '';
       state.error = '';
       state.notice = '';
-      state.tree = null;
       renderResult();
       setBusy(true);
       try {
@@ -582,8 +555,6 @@
         if (match) {
           if(match.status!=='draft'){state.draft=null;state.step='form';state.reviewOpen=false;state.notice='';return match;}
           state.draft = match;
-          state.tree = null;
-          state.treeFor = '';
         } else if (planId) {
           state.draft = null;
         }
@@ -640,101 +611,6 @@
       state.reviewOpen=false;state.adoptError='';state.notice='';state.error='';reviewDialog?.close();
       notify('采用成功');
       navigate('#space/analysis/plans');
-    }
-
-    // ------------------------------------------------------------------- map
-    function treePayload() {
-      const draft = state.draft;
-      if (draft && draft.id) return { planId: draft.id };
-      if (draft) return { draft: mapDraftShape(draft) };
-      return null;
-    }
-    function mapDraftShape(draft) {
-      return {
-        title: draft.title, goal: draft.goal, difficulty: draft.difficulty,
-        startDate: draft.startDate, endDate: draft.endDate, daysCount: draft.daysCount,
-        dailyMinutes: draft.dailyMinutes, restDays: draft.restDays, subjects: draft.subjects,
-        explanation: draft.explanation,
-        days: (draft.days || []).map(day => ({
-          date: day.date, isRestDay: day.isRestDay, budgetMinutes: day.budgetMinutes,
-          tasks: (draft.days || []).map(day => ({
-            date: day.date, isRestDay: day.isRestDay, budgetMinutes: day.budgetMinutes,
-            tasks: (day.tasks || []).map(task => {
-              const counted = task.resource && task.resource.type === 'question' ? 1 : 0;
-              return {
-                id: task.id, title: task.title, phase: task.phase, minutes: task.minutes,
-                completed: task.completed, difficulty: task.difficulty, resource: task.resource,
-                boundCount: counted, requiredCount: counted, submittedCount: counted
-              };
-            })
-          })),
-        })),
-        learningRoute: draft.learningRoute || undefined
-      };
-    }
-    async function fetchTree() {
-      const payload = treePayload();
-      if (!payload) throw Object.assign(new Error('先生成或选择一份计划，再预览思维导图。'), { code: 'INVALID_MAP_REQUEST' });
-      const data = await apiJson('/api/learning/space/workbench/map/tree', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      if (!data.tree || typeof data.tree !== 'object') throw Object.assign(new Error('思维导图数据为空。'), { code: 'INVALID_MAP_REQUEST' });
-      state.tree = data.tree;
-      state.treeFor = state.draft && state.draft.id ? state.draft.id : '';
-    }
-    async function togglePreview(button) {
-      if (state.tree && state.treeFor === (state.draft && state.draft.id ? state.draft.id : '')) {
-        state.treeOpen = !state.treeOpen;
-        renderResult();
-        return;
-      }
-      const original = button ? button.textContent : '';
-      if (button) { button.disabled = true; button.textContent = '正在整理路线树…'; }
-      try {
-        await fetchTree();
-        state.treeOpen = true;
-        renderResult();
-      } catch (error) {
-        notify('预览失败：' + (error && error.message ? error.message : '请稍后重试。'));
-        if (button && button.isConnected) { button.disabled = false; button.textContent = original; }
-      }
-    }
-
-    async function download(format) {
-      if (state.busyAction) return;
-      const payload = treePayload();
-      if (!payload) { notify('先生成或选择一份计划，再导出思维导图。'); return; }
-      state.busyAction = 'download-' + format;
-      renderResult();
-      try {
-        const response = await apiFetch('/api/learning/space/workbench/map/' + (format === 'mm' ? 'mm' : 'export'), {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        const blob = await response.blob();
-        const fallback = '学涯-学习计划.' + (format === 'mm' ? 'mm' : 'xmind');
-        const name = fileNameFromDisposition(response.headers.get('content-disposition'), fallback);
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = name;
-        link.rel = 'noopener';
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        setTimeout(() => URL.revokeObjectURL(url), 2000);
-        notify('已开始下载 ' + name + (format === 'mm'
-          ? '（FreeMind 格式，可作 .xmind 的兜底）。'
-          : '（XMind Zen 兼容格式；若打开异常请下载 .mm 或使用站内预览）。'));
-      } catch (error) {
-        notify('导出失败：' + (error && error.message ? error.message : '请稍后重试。'));
-      } finally {
-        state.busyAction = '';
-        if (host) renderResult();
-      }
     }
 
     // -------------------------------------------------------------- rendering
@@ -822,7 +698,9 @@
       const days = Array.isArray(draft.days) ? draft.days : [];
       const tasks = days.reduce((list, day) => list.concat((day.tasks || []).map(task => Object.assign({ date: day.date }, task))), []);
       const bound = tasks.filter(task => task.resource && task.resource.type === 'question').length;
-      const unbound = tasks.length - bound;
+      const courseTasks = tasks.filter(task => task.resource?.type === 'course');
+      const selfStudyTasks = tasks.filter(task => !['question', 'course'].includes(task.resource?.type));
+      const unbound = selfStudyTasks.length;
       const studyDays = days.filter(day => !day.isRestDay).length;
       const scheduledDays = days.filter(day => (day.tasks || []).length).length;
       const phaseCards = route.map((phase, index) => {
@@ -841,7 +719,6 @@
       const status = draft.status === 'active' ? '<span class="pw-badge is-active">当前执行中</span>'
         : draft.canAdopt === false ? '<span class="pw-badge is-warn">暂不可采用</span>'
           : '<span class="pw-badge">草稿待采用</span>';
-      const canAdopt = draft.canAdopt !== false && draft.status !== 'active';
       const dayRows = days.map((day, dayIndex) => {
         const weekday = weekdayLabel(isoWeekday(day.date));
         const dateText = String(day.date || '');
@@ -864,26 +741,34 @@
         return `<details class="pw-day ${day.isRestDay ? 'is-rest' : ''}" ${dayIndex === 0 ? 'open' : ''}>
           <summary>
             <span class="pw-day-date"><strong>${e(dateLabel)}</strong><span>${weekday ? e(weekday) : ''}</span></span>
-            <span class="pw-day-meta">${day.isRestDay ? '固定休息日' : (day.budgetMinutes == null ? '预算未提供' : day.budgetMinutes + ' 分钟')}${count ? ' · ' + count + ' 个任务' : ' · 无任务'}</span>
+            <span class="pw-day-meta">${day.isRestDay ? '固定休息日' : (day.budgetMinutes == null ? '耗时未提供' : (draft.schedulingMode === 'by-days' ? '预计 ' : '') + day.budgetMinutes + ' 分钟')}${count ? ' · ' + count + ' 个任务' : ' · 无任务'}</span>
           </summary>
           ${items ? '<ul class="pw-task-list">' + items + '</ul>' : '<p class="pw-hint">当日没有安排任务。</p>'}
         </details>`;
       }).join('');
-      const remaining = Array.isArray(draft.remaining) ? draft.remaining.length : 0;
+      const pendingTasks = Array.isArray(draft.remaining) ? draft.remaining : [];
+      const remaining = pendingTasks.length;
+      const minutesOf = rows => rows.reduce((sum, task) => sum + (Number(task.minutes) || 0), 0);
+      const scheduledMinutes = minutesOf(tasks), pendingMinutes = minutesOf(pendingTasks);
+      const capacity = days.reduce((sum, day) => sum + (day.isRestDay ? 0 : Number(day.budgetMinutes ?? draft.dailyMinutes) || 0), 0);
+      const resourceDetails = courseTasks.length || unbound ? `<details class="pw-resource-details"><summary>查看课程与自主学习任务（${courseTasks.length + unbound} 项）</summary>
+        <p>这些任务已排入日程。课程任务已关联视频入口，但未绑定具体练习题；自主学习任务需自行准备资源。</p>
+        <ul>${[...courseTasks, ...selfStudyTasks].map(task => {
+          const resource = task.resource || {}, url = safeUrl(resource.url);
+          return `<li><strong>${e(task.title)}</strong><span>${e(task.date)} · ${e(task.minutes)} 分钟</span>${resource.type === 'course' ? (url ? `<a href="${e(url)}">${e(resource.title || '打开课程')}</a>` : '<span>课程入口未提供链接</span>') : '<span>自主学习 · 未绑定课程或题目</span>'}</li>`;
+        }).join('')}</ul></details>` : '';
+      const pendingDetails = remaining ? `<details class="pw-resource-details pw-pending-details"><summary>查看未排入本期的 ${remaining} 项任务</summary>
+        <p>本期可用 ${e(capacity)} 分钟，已安排 ${e(scheduledMinutes)} 分钟；另有 ${e(pendingMinutes)} 分钟的任务未排入。可延长周期、增加每日时间或缩小目标后调整计划。</p>
+        <p>以下任务仍保留在草稿中，尚未分配日期，也未计入上方阶段路线和学习任务数。</p>
+        <ul>${pendingTasks.map(task => `<li><strong>${e(task.title)}</strong><span>${e(task.phase || '学习')} · 待安排 ${e(task.minutes)} 分钟</span></li>`).join('')}</ul></details>` : '';
       const facts = [
         ['难度', draft.difficulty || '—'],
         ['周期', (draft.startDate || '—') + ' 至 ' + (draft.endDate || '—')],
         ['持续天数', draft.daysCount ? draft.daysCount + ' 天' : '—'],
-        ['每日可用', draft.dailyMinutes ? draft.dailyMinutes + ' 分钟' : '—'],
+        [draft.schedulingMode === 'by-days' ? '日均预计耗时' : '每日可用', draft.dailyMinutes ? draft.dailyMinutes + ' 分钟' : '—'],
         ['固定休息日', restDaysLabel(draft.restDays)],
         ['学科范围', (draft.subjects || []).join('、') || '未指定'],
       ];
-      const framework = draft.frameworkId
-        ? `<a href="#space/frameworks/${e(draft.frameworkId)}">打开关联知识框架${draft.frameworkCoverage && draft.frameworkCoverage.partial ? '（部分覆盖）' : ''}</a>`
-        : draft.frameworkStatus === 'failed'
-          ? '<span class="pw-hint">关联导图生成失败；计划排程已保存，可以采用，不会自动重新调用模型。</span>'
-          : draft.generationStatus && draft.generationStatus !== 'completed'
-            ? '<span class="pw-hint">计划与关联导图仍在处理中。</span>' : '';
       return `<section class="pw-draft pw-draft-v2" aria-label="生成的计划草稿">
         <header class="pw-draft-hero">
           <div class="pw-draft-hero-copy">
@@ -893,14 +778,14 @@
             <div class="pw-draft-meta">
               <span>${e(draft.difficulty || '—')}</span>
               <span>${e(draft.startDate || '—')} 至 ${e(draft.endDate || '—')}</span>
-              <span>每日 ${e(draft.dailyMinutes || '—')} 分钟</span>
+              <span>${draft.schedulingMode === 'by-days' ? '按天数均分 · 日均预计' : '每日'} ${e(draft.dailyMinutes || '—')} 分钟</span>
             </div>
           </div>
           <dl class="pw-draft-hero-stats">
             <div><dt>学习日</dt><dd>${scheduledDays}<small>/${studyDays}</small></dd></div>
             <div><dt>任务</dt><dd>${tasks.length}</dd></div>
             <div><dt>绑定题目</dt><dd>${bound}</dd></div>
-            <div class="${unbound ? 'is-warn' : ''}"><dt>未绑定</dt><dd>${unbound}</dd></div>
+            <div class="${unbound ? 'is-warn' : ''}"><dt>课程 / 自主学习</dt><dd>${courseTasks.length} / ${unbound}</dd></div>
           </dl>
         </header>
         <div class="pw-draft-columns">
@@ -925,89 +810,17 @@
               ${draft.explanation ? `<p class="pw-draft-explanation">${e(draft.explanation)}</p>` : ''}
               <div class="pw-draft-stats">
                 <span>任务 ${tasks.length} 项</span>
-                <span class="${unbound ? 'is-warn' : ''}">未绑定题目 ${unbound} 项</span>
-                ${remaining ? `<span class="is-warn">另有 ${remaining} 项未排入</span>` : ''}
+                <span>题目练习 ${bound} 项</span>
+                <span>课程学习 ${courseTasks.length} 项</span>
+                ${unbound ? `<span class="is-warn">自主学习 ${unbound} 项</span>` : ''}
+                ${remaining ? `<span class="is-warn">本期未排入 ${remaining} 项</span>` : ''}
               </div>
-              ${framework ? `<p class="pw-framework">${framework}</p>` : ''}
+              ${resourceDetails}${pendingDetails}
             </section>
-            <section class="pw-side-card pw-side-actions">
-              <h5>路线工具</h5>
-              <div class="pw-draft-actions">
-                <button type="button" class="button button-outline" data-pw-export ${state.busyAction === 'download-xmind' ? 'disabled' : ''}>${state.busyAction === 'download-xmind' ? '正在导出…' : '导出思维导图 (.xmind)'}</button>
-                <button type="button" class="button button-outline" data-pw-mm ${state.busyAction === 'download-mm' ? 'disabled' : ''}>${state.busyAction === 'download-mm' ? '正在导出…' : '下载 .mm 兜底'}</button>
-                <button type="button" class="button button-outline" data-pw-preview>${state.treeOpen ? '收起路线树预览' : '预览路线树'}</button>
-              </div>
-            </section>
-            <p class="pw-hint">.xmind 为 XMind Zen（XMind 2020+）兼容的 JSON 工作簿格式；本站未在真实 XMind 客户端中验证打开效果，如打开异常请下载 .mm（FreeMind）或使用站内预览。</p>
-            ${canAdopt ? '' : '<p class="pw-hint">草稿仍在生成或关联导图未完成时不能采用；采用后原计划会转入历史。</p>'}
+            <p class="pw-hint">采用计划后，在“我的计划”查看逐个节点的学习路线和每日任务。</p>
           </aside>
         </div>
-        ${mapPreviewMarkup()}
       </section>`;
-    }
-
-    function mapPreviewMarkup() {
-      if (!state.treeOpen) return '';
-      if (!state.tree) return '<section class="pw-map panel"><p class="pw-hint" role="status">正在整理路线树…</p></section>';
-      const tree = state.tree;
-      const stats = tree.stats || {};
-      const legend = `<div class="pw-map-legend"><span class="pw-map-legend-item"><i class="pw-dot is-done"></i>已完成</span><span class="pw-map-legend-item"><i class="pw-dot"></i>未完成</span><span>连线表示计划层级；数据来自已保存计划，未调用模型。</span></div>`;
-      return `<section class="pw-map panel" aria-label="学习路线思维导图预览">
-        <header class="pw-map-head"><h4>学习路线树预览</h4><span>${e(stats.phases || 0)} 阶段 · ${e(stats.tasks || 0)} 个任务/知识点 · ${e(stats.completed || 0)} 个已完成 · 绑定题目 ${e(stats.questionRefs || 0)} 道</span></header>
-        ${legend}
-        ${tree.truncated ? '<p class="pw-hint is-warn">节点过多，已按上限截断导出；完整路线请查看计划详情。</p>' : ''}
-        <div class="pw-map-scroll">${svgTree(tree.root)}</div>
-      </section>`;
-    }
-
-    function svgTree(rootNode) {
-      if (!rootNode || typeof rootNode !== 'object') return '<p class="pw-hint">没有可预览的路线节点。</p>';
-      const COL = 214, ROW = 46, NODE_W = 168, NODE_H = 34, PAD = 18;
-      const nodes = [];
-      let leafIndex = 0;
-      const walk = (node, depth) => {
-        const children = (Array.isArray(node.children) ? node.children : []).filter(child => child && typeof child === 'object');
-        let y;
-        if (children.length) {
-          const centers = children.map(child => walk(child, depth + 1));
-          y = (centers[0] + centers[centers.length - 1]) / 2;
-        } else {
-          y = leafIndex * ROW;
-          leafIndex += 1;
-        }
-        const item = { node, depth, x: PAD + depth * COL, y: PAD + y };
-        nodes.push(item);
-        children.forEach(child => { child.__parent = item; });
-        return y;
-      };
-      walk(rootNode, 0);
-      const maxDepth = nodes.reduce((max, item) => Math.max(max, item.depth), 0);
-      const width = PAD * 2 + maxDepth * COL + NODE_W;
-      const height = PAD * 2 + Math.max(leafIndex * ROW, NODE_H + ROW);
-      const edges = nodes.map(item => {
-        const parent = item.node.__parent;
-        if (!parent) return '';
-        const x1 = parent.x + NODE_W, y1 = parent.y + NODE_H / 2;
-        const x2 = item.x, y2 = item.y + NODE_H / 2;
-        const mid = (x1 + x2) / 2;
-        return `<path class="pw-edge" d="M${x1},${y1} C${mid},${y1} ${mid},${y2} ${x2},${y2}"/>`;
-      }).join('');
-      const boxes = nodes.map(item => {
-        const node = item.node;
-        const title = String(node.title || '未命名');
-        const first = title.slice(0, 13);
-        const second = title.length > 13 ? title.slice(13, 26) + (title.length > 26 ? '…' : '') : '';
-        const done = node.completed === true;
-        const titleMarkup = `<title>${e(title + (node.subtitle ? '\n' + node.subtitle : ''))}</title>`;
-        const textY = item.y + (second ? NODE_H / 2 - 4 : NODE_H / 2 + 4);
-        return `<g class="pw-node ${done ? 'is-done' : ''} ${item.depth === 0 ? 'is-root' : ''}">${titleMarkup}
-          <rect class="pw-node-box" x="${item.x}" y="${item.y}" width="${NODE_W}" height="${NODE_H}" rx="9" ry="9"/>
-          <text class="pw-node-text" x="${item.x + 10}" y="${textY}">${e(first)}${done ? ' ✓' : ''}</text>
-          ${second ? `<text class="pw-node-text" x="${item.x + 10}" y="${textY + 13}">${e(second)}</text>` : ''}
-        </g>`;
-      }).join('');
-      return `<svg class="pw-map-svg" viewBox="0 0 ${Math.max(320, width)} ${Math.max(120, height)}" width="${Math.max(320, width)}" height="${Math.max(120, height)}" role="img" aria-label="学习路线树，共 ${nodes.length} 个节点">
-        <title>学习路线树预览</title>${edges}${boxes}</svg>`;
     }
 
     function resultMarkup() {
@@ -1026,8 +839,6 @@
       const regenerateButton = find('[data-pw-regenerate]');if(regenerateButton)regenerateButton.onclick=regenerate;
       find('[data-pw-openreview]')?.addEventListener('click',()=>{state.reviewOpen=true;renderResult();});
       find('[data-pw-view]')?.addEventListener('click', () => { try { navigate('#space/analysis/plans'); } catch (_) { /* navigation optional */ } });
-      find('[data-pw-export]')?.addEventListener('click', () => download('xmind'));
-      find('[data-pw-mm]')?.addEventListener('click', () => download('mm'));
       find('[data-pw-dismiss]')?.addEventListener('click', async () => {
         savePending(null);
         state.error = '';
@@ -1035,8 +846,6 @@
         resultHost().innerHTML = '';
         await refreshDrafts();
       });
-      const preview = find('[data-pw-preview]');
-      if (preview) preview.addEventListener('click', () => togglePreview(preview));
     }
 
     async function refreshDrafts() {
@@ -1169,11 +978,7 @@
       <label class="form-field">计划名称<input type="text" data-pw-title maxlength="60" required></label>
       <label class="form-field">学习目标<textarea data-pw-goal rows="3" maxlength="1000" required placeholder="例如：两周内掌握图的遍历与最短路径，并完成配套练习"></textarea></label>
       <p class="pw-hint pw-counter" data-pw-goal-count>0/1000</p>
-      <div class="pw-slider-field">
-        <label for="pwDailyMinutes">每日可用时间 <output data-pw-minutes-out>60 分钟</output></label>
-        <input id="pwDailyMinutes" type="range" data-pw-minutes min="15" max="480" step="5" value="60">
-        <div class="pw-slider-scale"><span>15 分钟</span><span>4 小时</span><span>8 小时</span></div>
-      </div>
+      <p class="pw-hint">任务按可学习天数均分，不设置每日时长上限。请在草稿中核对每天任务量与预计耗时；休息日不安排任务。</p>
       <fieldset class="pw-fieldset">
         <legend>固定休息日（可多选，当天不安排任务）</legend>
         <div class="pw-chips" role="group" aria-label="固定休息日">
@@ -1240,13 +1045,6 @@
           if (parseISO(state.form.startDate)) state.form.endDate = addDays(state.form.startDate, state.form.daysCount - 1);
         }, { dates: true });
         applyFormToDom();
-      });
-      form.querySelector('[data-pw-minutes]').addEventListener('input', event => {
-        update(() => {
-          const value = parseInt(event.target.value, 10);
-          state.form.dailyMinutes = Number.isFinite(value) ? Math.max(15, Math.min(480, value)) : 60;
-        });
-        form.querySelector('[data-pw-minutes-out]').textContent = state.form.dailyMinutes + ' 分钟';
       });
       form.querySelectorAll('[data-pw-difficulty]').forEach(button => {
         button.addEventListener('click', () => update(() => { state.form.difficulty = button.dataset.pwDifficulty; }, { difficulty: true }));

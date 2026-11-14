@@ -71,9 +71,12 @@ class StudySpaceService:
         """Create a scheduled study plan draft with constraints check."""
         title = str(data.get("title") or "我的学习计划").strip()
         goal = str(data.get("goal") or "系统复习计算机核心课程").strip()
+        schedule_mode = data.get('schedulingMode', 'fixed-budget')
+        require(schedule_mode in ('fixed-budget', 'by-days'), 'INVALID_SCHEDULING_MODE')
+        by_days = schedule_mode == 'by-days'
         daily_minutes = data.get("dailyMinutes", 60)
-        require(type(daily_minutes) is int, "INVALID_DAILY_MINUTES")
-        require(15 <= daily_minutes <= 480, "INVALID_DAILY_MINUTES")
+        if not by_days:
+            require(type(daily_minutes) is int and 15 <= daily_minutes <= 480, "INVALID_DAILY_MINUTES")
 
         start_date = data.get("startDate") or datetime.datetime.now(ZoneInfo('Asia/Shanghai')).date().isoformat()
         end_date = data.get("endDate")
@@ -124,6 +127,9 @@ class StudySpaceService:
             require(ready is not None,'INVALID_TASK_DEPENDENCIES')
             waiting.remove(ready);ordered.append(ready[1]);finished.add(str(ready[1].get('key',ready[0])))
         candidates=ordered
+        study_days = sum((start_d + datetime.timedelta(days=i)).isoweekday() not in rest_days for i in range(days_count))
+        if by_days:
+            require(study_days > 0, 'NO_STUDY_DAYS')
         pending=[]
         from .course_records import CourseRecords
         courses=CourseRecords(self.platform).listing(account_id)['courses']
@@ -146,10 +152,23 @@ class StudySpaceService:
                             "links":copy.deepcopy(candidate.get('links',[])) if retained_ids else [],
                             "originalDate":candidate.get('originalDate') if retained_ids else None,
                             "completed":False,"completedAt":None,"delayCount":candidate.get('delayCount',0) if retained_ids else 0})
+        if by_days:
+            # Keep complete tasks and their dependency order. The estimate is
+            # descriptive, never a capacity limit that discards later tasks.
+            daily_minutes = (sum(task['minutes'] for task in pending) + study_days - 1) // study_days
+        study_days_left = study_days
         for i in range(days_count):
             day_iso=cur.isoformat();is_rest=cur.isoweekday() in rest_days
             budget=0 if is_rest else daily_minutes;free=budget;day_tasks=[]
-            while pending and free:
+            if by_days and not is_rest:
+                count = (len(pending) + study_days_left - 1) // study_days_left
+                day_tasks = pending[:count]
+                del pending[:count]
+                for task in day_tasks:
+                    task['originalDate'] = task.get('originalDate') or day_iso
+                budget = sum(task['minutes'] for task in day_tasks)
+                study_days_left -= 1
+            while not by_days and pending and free:
                 original=pending[0];used=min(free,original["minutes"])
                 task=copy.deepcopy(original);task.update(minutes=used,originalDate=original.get('originalDate') or day_iso)
                 day_tasks.append(task);free-=used
@@ -173,6 +192,7 @@ class StudySpaceService:
             "endDate": end_date,
             "daysCount": days_count,
             "dailyMinutes": daily_minutes,
+            "schedulingMode": schedule_mode,
             "restDays": rest_days,
             "subjects": subjects,
             "days": days,
@@ -455,7 +475,7 @@ class StudySpaceService:
             pending+=copy.deepcopy(source.get('remaining',[]))
             require(pending,'NO_PENDING_TASKS')
             start=max(source['startDate'],datetime.datetime.now(ZoneInfo('Asia/Shanghai')).date().isoformat())
-            draft=self.create_plan_draft(account_id,{**source,'startDate':start,**{k:data[k] for k in ('startDate','endDate','dailyMinutes','restDays') if k in data},
+            draft=self.create_plan_draft(account_id,{**source,'startDate':start,**{k:data[k] for k in ('startDate','endDate','dailyMinutes','restDays','schedulingMode') if k in data},
                 'tasks':pending,'generationMethod':'adjusted-existing-tasks'},retained_ids={t['id'] for t in pending},completed_history=completed)
             draft.update(sourcePlanId=source['id'],sourcePlanRevision=source['revision'],
                          changePreview={'dailyMinutes':{'before':source['dailyMinutes'],'after':draft['dailyMinutes']},
@@ -721,7 +741,10 @@ class StudySpaceService:
 
     async def generate_model_plan(self, account_id, provider, data):
         require(isinstance(data.get("goal"),str) and data["goal"].strip(), "PLAN_GOAL_REQUIRED")
-        require(type(data.get("dailyMinutes")) is int and 15 <= data["dailyMinutes"] <= 480, "INVALID_DAILY_MINUTES")
+        by_days = data.get('schedulingMode') == 'by-days'
+        require(data.get('schedulingMode', 'fixed-budget') in ('fixed-budget', 'by-days'), 'INVALID_SCHEDULING_MODE')
+        if not by_days:
+            require(type(data.get("dailyMinutes")) is int and 15 <= data["dailyMinutes"] <= 480, "INVALID_DAILY_MINUTES")
         require(type(data.get("daysCount")) is int and 1 <= data["daysCount"] <= 366, "INVALID_PLAN_DATES")
         from .study_resources import question_catalog
         subjects=data.get('subjects') or []
@@ -736,6 +759,8 @@ class StudySpaceService:
         days_count=(end-start).days+1
         require(1<=days_count<=366,'INVALID_PLAN_DATES')
         study_days=sum((start+datetime.timedelta(days=i)).isoweekday() not in rest_days for i in range(days_count))
+        if by_days:
+            require(study_days > 0, 'NO_STUDY_DAYS')
         # The model selects real identities; URLs, versions, concept/material IDs
         # and answer data remain local for match_task and the phase framework.
         representatives={}
@@ -761,22 +786,25 @@ class StudySpaceService:
                  for c in eligible[:16]]
         output_limit=min(4096,getattr(getattr(provider,'config',None),'max_output_tokens',4096))
         task_limit=max(1,min(20,(output_limit-256)//180))
+        scheduling_instruction = ('本次按天数安排，不设置每日时长上限。先按目标拆解完整任务，minutes仅估计实际学习耗时；程序按可学习日均分完整任务，天数越少单日任务越多，不要因每天60分钟等假定时限删减任务。'
+                                  if by_days else '按目标和难度组织多个阶段，任务工作量参考availableStudyMinutes，较长任务可由程序跨天拆分；未能覆盖的内容须明确说明。')
         result=await self.model_json(account_id, provider,
             '按学习目标拆解可执行任务，返回explanation及tasks数组。explanation简要说明阶段与取舍，最多180字。'
             f'tasks为1至{task_limit}项（不要逐日展开，不要为凑天数复制任务），每项key唯一字符串(至多24字符),title(至多60字),subject,phase(具体阶段名，至多24字),minutes正整数(1至480),dependsOn先修任务key数组。'
-            '按目标和难度组织多个阶段，任务工作量参考availableStudyMinutes，较长任务可由程序跨天拆分；未能覆盖的内容须明确说明。'
+            + scheduling_instruction +
             '可选questionId必须来自给定resources；可选courseId和episodeId必须来自给定courses。资源只展示每个知识点的代表题元信息，完整题目保留在本地；不要编造题目或课程ID。'
             '当前固定题为原创或考点改编，不是已核验逐字真题，不得在任务、阶段和说明中冒称真题。课程总览不代表已匹配到此知识点的精确分集。'
-            '关注本次目标，任务按阶段排列，依赖不得成环，不能虚构链接。找不到资源时明确自主学习。程序将校验依赖并按每日总预算排程。',
-            {**{k:v for k,v in data.items() if k in ("goal","dailyMinutes","subjects","restDays","difficulty","startDate","endDate")},
-             'daysCount':days_count,'availableStudyDays':study_days,'availableStudyMinutes':study_days*data['dailyMinutes'],'maxTasks':task_limit,
+            '关注本次目标，任务按阶段排列，依赖不得成环，不能虚构链接。找不到资源时明确自主学习。程序将校验依赖后排程。',
+            {**{k:v for k,v in data.items() if k in ("goal","subjects","restDays","difficulty","startDate","endDate") or (k=='dailyMinutes' and not by_days)},
+             'daysCount':days_count,'availableStudyDays':study_days,
+             **({'schedulingMode':'by-days'} if by_days else {'availableStudyMinutes':study_days*data['dailyMinutes']}),'maxTasks':task_limit,
              'resources':resources,'resourceSelection':{'availableTopics':len(candidates),'includedTopics':len(resources),'partial':len(resources)<len(candidates)},
              'courses':courses,'courseSelection':{'availableCourses':len(eligible),'includedCourses':len(courses),'maxEpisodesPerCourse':3}},
             timeout=120,max_output_tokens=output_limit)
         require(isinstance(result.get("tasks"),list) and 1<=len(result["tasks"])<=task_limit, "AI_INVALID_RESPONSE")
         explanation=result.get('explanation')
         if not isinstance(explanation,str) or not explanation.strip():
-            explanation=f"根据返回的{len(result['tasks'])}项任务，按{data['daysCount']}天、每天{data['dailyMinutes']}分钟和所选休息日排程。此说明由程序整理，模型未提供额外文字说明；以任务和未安排项为准。"
+            explanation=(f"根据返回的{len(result['tasks'])}项任务，按{study_days}个可学习日均分，预计耗时仅供参考。" if by_days else f"根据返回的{len(result['tasks'])}项任务，按{data['daysCount']}天、每天{data['dailyMinutes']}分钟和所选休息日排程。") + '此说明由程序整理，模型未提供额外文字说明；以保存的任务为准。'
         tasks=[{**task,**{key:self.generated_plan_text(task[key]) for key in ('title','phase') if key in task}}
                if isinstance(task,dict) else task for task in result['tasks']]
         return self.create_plan_draft(account_id,{**data,"tasks":tasks,"explanation":self.generated_plan_text(explanation),"generationMethod":"llm-with-validated-schedule"})

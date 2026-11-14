@@ -100,11 +100,11 @@ AI组卷候选经过科目筛选及数量限制。返回的ID必须存在于提�
 | 方法/路径 | 请求与结果 |
 | --- | --- |
 | POST `chat/plan` | `{question,sessionId,operationId,history?,useDefaults?}` → `handled:false`，或 `status:collecting/conditions/missing/answer`，或 `status:queued/jobId`。规划概念解释不创建作业；缺项补问与用户选择默认分开。 |
-| POST `plan/generate` | `{goal,daysCount,dailyMinutes,restDays?,subjects?,title?,operationId}` → `{job}`。与聊天走同一种持久生成，实际完成后保存草稿和独立框架；`result` 为 `{planId,frameworkId,sessionId}`。 |
+| POST `plan/generate` | `{goal,daysCount,dailyMinutes?,schedulingMode?,restDays?,subjects?,title?,operationId}` → `{job}`。`schedulingMode:"by-days"` 按可学习日均分完整任务，无需每日时长；缺省仍采用兼容的 `fixed-budget`，此时 `dailyMinutes` 必填。实际完成后保存草稿和独立框架；`result` 为 `{planId,frameworkId,sessionId}`。 |
 | GET `jobs/:id`；POST `jobs/:id/cancel` | 仅本人学习空间作业；复用真实 queued/running/succeeded/failed/cancelled/unknown。没有自动付费 retry 接口。 |
 | GET `plan/list`、`plan/:id`、`plan/active` | 既有 plan DTO 兼容增加 `jobs`、`generationStatus`、`frameworkId`、`sessionId`、条件来源和 `completedHistory`。`framework-pending` 部分草稿可核对但不可采用。 |
 | POST `plan/adopt` | `{planId,expectedRevision,confirmed:true,operationId?}`。新客户端必带 operationId；相同回执重放，不同请求复用 ID 冲突。事务中只留一个当前计划。 |
-| POST `plan/adjust-preview` | `{planId,expectedRevision,dailyMinutes?,endDate?,startDate?,restDays?,operationId?}` → 新 `plan` 草稿与 `changePreview`；不调用模型，不直接替换当前计划。采用时再次核对来源计划 revision，变化返回 `REPLAN_SOURCE_CHANGED`。 |
+| POST `plan/adjust-preview` | `{planId,expectedRevision,schedulingMode?,dailyMinutes?,endDate?,startDate?,restDays?,operationId?}` → 新 `plan` 草稿与 `changePreview`；`by-days` 保留全部未完成任务、先修顺序及完成历史，均分到可学习日，`dailyMinutes` 为日均估计而非上限，`day.budgetMinutes` 为该日任务预计总耗时。不调用模型、不直接替换当前计划。采用时再次核对来源计划 revision，变化返回 `REPLAN_SOURCE_CHANGED`。 |
 | POST `plan/task/toggle`、`plan/task/delay` | 旧字段兼容，新客户端加 `expectedRevision/operationId`。任务变更、事件及回执同一事务；重复完成不重复记事件，延期仍校验每日总预算/休息日/截止日期。 |
 | POST `plan/task/link` | `{planId,taskId,url,title?,expectedRevision,operationId}` → `{plan,resource}`。仅 http/https，无任意 HTML；用户提供、未做网站内容或可用性核验。 |
 | POST `chat/quiz` | `{question,sessionId,operationId}` → `handled:false`，或固定题 `questionIds`，或生成 `jobId`。主动命令才触发；唯一适合的固定单选优先，否则按主题生成，不能调用受保护 RAG。 |
@@ -670,3 +670,7 @@ POST /plan/adopt继续要求confirmed=true、业务expectedRevision及operationI
 - `/plan/list`及计划视图在节点中增加`taskSummary`与`knowledgePoints`，由本地任务主题规则给出简短学习提示；不读取教材全文，不表示模型生成的教材摘要。
 - `/quiz/attempts`复用既有作答与错题链。固定题引用校验planId/nodeId/题目版本和原题ID；不依赖教材conceptId。教材生成题继续执行原资料访问校验。
 - 可能错误：`INVALID_PLAN_NODES`、`PLAN_NOT_FOUND`、`PLAN_NODE_NOT_FOUND`、`PLAN_NOT_ACTIVE`；原有认证与题目版本错误保持不变。
+
+## Markdown 第三层目录
+
+`GET /api/learning/space/course-graph` 在已就绪 Markdown 尚无已保存的资料知识点时，直接从当前修订的校验片段 `sectionPath` 构建第三层节点，按原文顺序展示。节点的 `sourceType` 为 `markdown-outline`，`questionIds` 为空，出处绑定当前文档与片段；不提交作业、不生成题目、不计入 AI 完成批次。`coverage.outlineNodes` 表示本次目录节点数。文档新增 `title` 供中文章节名展示，`name` 仍保留原文件名。已有资料知识点优先，归档或被替换的文档不显示目录；原有资料正文保护继续生效。

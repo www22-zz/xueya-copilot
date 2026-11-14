@@ -142,3 +142,41 @@ html[data-theme="light"] :is(.learning-orbit,.orbit-detail) {
 }
 
 [data-orbit-returned="true"] .orbit-star-node { animation:none; }
+
+/* One compact route across phase boundaries. Labels stay HTML, not SVG text. */
+.learning-orbit.orbit-connected { padding:20px; }
+.orbit-compact-heading { display:flex; align-items:baseline; justify-content:space-between; flex-wrap:wrap; gap:8px 16px; }
+.learning-orbit .orbit-compact-heading h3 { margin:0; color:var(--orbit-text); font-size:18px; line-height:1.5; font-weight:600; overflow-wrap:anywhere; }
+.orbit-compact-heading > span { color:var(--orbit-muted); font-size:12px; }
+.orbit-connected .orbit-summary { margin-top:12px; padding:12px 0; }
+.orbit-connected .orbit-summary strong { font-size:20px; }
+.orbit-canvas-tools { display:flex; align-items:center; flex-wrap:wrap; gap:8px; margin:14px 0; }
+.orbit-canvas-tools button { min-height:36px; padding:6px 12px; border:1px solid var(--orbit-border); border-radius:9px; background:var(--orbit-surface); color:var(--orbit-text); font:inherit; font-size:12px; cursor:pointer; }
+.orbit-canvas-tools button:hover { border-color:var(--orbit-accent); }
+.orbit-canvas-tools button:disabled { opacity:.45; cursor:default; }
+.orbit-canvas-tools output { min-width:4ch; text-align:center; color:var(--orbit-accent); font-size:12px; font-variant-numeric:tabular-nums; }
+.orbit-connected:not(:has(.orbit-canvas-viewport)) .orbit-canvas-tools { display:none; }
+.orbit-canvas-tools > span { color:var(--orbit-muted); font-size:11px; }
+.orbit-canvas-viewport { position:relative; width:100%; min-width:0; box-sizing:border-box; height:clamp(360px,62vh,640px); overflow:auto; border:1px solid var(--orbit-border); border-radius:12px; background:var(--orbit-bg); overscroll-behavior:contain; cursor:grab; }
+.orbit-canvas-viewport:focus-visible { outline:2px solid var(--orbit-accent); outline-offset:3px; }
+.orbit-canvas-viewport.is-dragging { cursor:grabbing; user-select:none; }
+.orbit-canvas-size { position:relative; margin:8px auto; }
+.orbit-canvas-stage { position:absolute; left:0; top:0; transform-origin:0 0; }
+.orbit-canvas-stage svg.orbit-route-links { display:block; position:absolute; inset:0; width:100%; height:100%; max-width:none; max-height:none; fill:none; stroke:none; stroke-width:0; pointer-events:none; }
+.orbit-route-links path { fill:none; stroke-width:1.8; stroke-linecap:round; opacity:.8; }
+.orbit-route-links path.is-done { stroke:var(--orbit-accent); opacity:.75; }
+.orbit-route-links path.is-current { stroke:var(--orbit-accent); stroke-width:2.4; opacity:.95; filter:drop-shadow(0 0 4px var(--orbit-accent-soft)); }
+.learning-orbit .orbit-canvas-node { position:absolute; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; gap:5px; width:190px; height:142px; padding:6px 8px; box-sizing:border-box; border:1px solid transparent; border-radius:10px; background:transparent; color:var(--orbit-text); cursor:pointer; text-align:center; font:inherit; animation:none; }
+.learning-orbit .orbit-canvas-node:is(:hover,:focus-visible) { border-color:var(--orbit-border-strong); outline:none; background:var(--orbit-soft); }
+.orbit-canvas-node .orbit-star-orb,.orbit-canvas-node.is-current .orbit-star-orb { width:40px; height:40px; box-sizing:border-box; box-shadow:0 0 0 4px var(--orbit-accent-soft); }
+.orbit-canvas-node .orbit-star-orb svg { width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:1.7; }
+.orbit-canvas-node .orbit-orb-ring { inset:-4px; }
+.orbit-node-phase { display:block; width:100%; color:var(--orbit-blue); font-size:10px; line-height:15px; white-space:nowrap; text-overflow:ellipsis; overflow:hidden; }
+.orbit-canvas-node > strong { display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; width:100%; color:var(--orbit-text); font-size:12px; line-height:16px; font-weight:500; overflow-wrap:anywhere; }
+.orbit-node-time { color:var(--orbit-muted); font-size:10px; line-height:14px; }
+.orbit-phase-reports { display:flex; flex-wrap:wrap; gap:8px 14px; margin-top:12px; }
+.orbit-connected .orbit-compact-phase { padding:0; }
+.orbit-connected .orbit-compact-phase::before { content:none; }
+.orbit-connected .orbit-compact-phase .orbit-phase-label { width:auto; font-size:12px; color:var(--orbit-muted); }
+.orbit-connected .orbit-report { margin-top:8px; max-width:600px; }
+@media(max-width:600px) { .learning-orbit.orbit-connected { padding:14px; } .orbit-canvas-tools > span { width:100%; } }

@@ -125,7 +125,7 @@
         const response=await window.XueyaPlatform.spaceFetch('/api/learning/space/plan/adjust-preview',{
           method:'POST',headers:{'Content-Type':'application/json'},
           body:JSON.stringify({planId:activePlan.id,expectedRevision:activePlan.revision,operationId:crypto.randomUUID(),
-            dailyMinutes:formData.dailyMinutes,endDate:formData.endDate,restDays:formData.restDays})});
+            schedulingMode:'by-days',endDate:formData.endDate,restDays:formData.restDays})});
         const data=await response.json();if(!data.ok)throw Error(data.error);
         showCreateModal=false;adjusting=false;selectedView='drafts';await loadPlans();toast('调整草稿已保存，查看差异后采用生效。');
       } catch(error){toast(error.message);}
@@ -176,7 +176,7 @@
               <h2>我的学习计划</h2>
               <p>查看当前安排，或切换到草稿与历史计划。</p>
             </div>
-            ${activePlan&&selectedView==='current'?'<button type="button" class="button button-outline button-small" data-adjust-plan>调整每日时间与日期</button>':''}
+            ${activePlan&&selectedView==='current'?'<button type="button" class="button button-outline button-small" data-adjust-plan>调整学习周期与休息日</button>':''}
             <button type="button" class="button button-blue button-small" data-open-create-plan>
               ＋ 制定新计划
             </button>
@@ -208,7 +208,7 @@
                     <div class="plan-draft-heading"><strong>${e(d.title)}</strong> - <small>${e(d.goal)} · ${d.daysCount}天</small></div>
                     <div data-learning-route="${e(d.id)}"></div><details class="plan-draft-preview"><summary>查看说明与每日安排</summary>
                       <p>${e(d.explanation)}</p><p>已安排 ${(d.days||[]).filter(day=>day.tasks?.length).length} 个学习日 / ${(d.days||[]).filter(day=>!day.isRestDay).length} 个可学习日，合计 ${(d.days||[]).reduce((sum,day)=>sum+(day.tasks||[]).reduce((n,t)=>n+t.minutes,0),0)} 分钟；${(d.days||[]).filter(day=>!day.isRestDay&&!day.tasks?.length).length} 个非休息日尚无任务。</p>${d.frameworkId?`<a href="#space/frameworks/${e(d.frameworkId)}">${d.frameworkCoverage?.partial?'打开资料关联局部图（'+e(d.frameworkCoverage.representedPhases)+'/'+e(d.frameworkCoverage.totalPhases)+'阶段）':'打开关联知识框架'}</a>`:d.frameworkStatus==='failed'?'<p>计划排程已保存，可以采用；关联导图未完成，不会自动重新调用AI。</p>':d.generationStatus?'<p>计划及关联导图仍在处理中，请等待当前作业结束。</p>':''}
-                      ${d.changePreview?`<p>调整预览：每日 ${e(d.changePreview.dailyMinutes.before)} → ${e(d.changePreview.dailyMinutes.after)} 分钟；截止 ${e(d.changePreview.endDate.before)} → ${e(d.changePreview.endDate.after)}；保留已完成 ${d.changePreview.retainedCompleted} 项。采用前原计划继续执行。</p>`:''}
+                      ${d.changePreview?`<p>调整预览：日均预计 ${e(d.changePreview.dailyMinutes.before)} → ${e(d.changePreview.dailyMinutes.after)} 分钟；截止 ${e(d.changePreview.endDate.before)} → ${e(d.changePreview.endDate.after)}；保留已完成 ${d.changePreview.retainedCompleted} 项。采用前原计划继续执行。</p>`:''}
                       ${(d.days||[]).map(day=>`<p><strong>${e(day.date)}</strong> · ${day.isRestDay?'休息日':e(day.budgetMinutes)+' 分钟'}<br>${(day.tasks||[]).map(t=>e(t.title)+'（'+e(t.minutes)+' 分钟）'+resourceLinks(t)).join('<br>')||'无任务'}</p>`).join('')}
                       ${d.remaining?.length?`<p>时间不足，另有 ${d.remaining.length} 项任务尚未排入。请增加天数或每日时间后重新生成。</p>`:''}
                     </details>
@@ -253,9 +253,7 @@
                   <textarea name="goal" rows="2" required ${adjusting?'readonly':''}>${e(adjusting?activePlan.goal:formDraft?.goal||'完成所选科目与专题的学习和练习')}</textarea>
                 </label>
                 <div class="form-row" style="display:flex;gap:12px;">
-                  <label class="form-field" style="flex:1;">每日可用时间 (分钟)
-                    <input type="number" name="dailyMinutes" min="15" max="480" value="${adjusting?activePlan.dailyMinutes:formDraft?.dailyMinutes||60}" required>
-                  </label>
+                  <p>按可学习天数均分全部待完成任务，每天显示预计耗时；休息日不安排任务。</p>
                   ${adjusting?`<label class="form-field" style="flex:1;">新的截止日期<input type="date" name="endDate" value="${e(activePlan.endDate)}" required></label>`:`<label class="form-field" style="flex:1;">持续天数<input type="number" name="daysCount" min="1" max="366" value="${e(formDraft?.daysCount||14)}" required></label>`}
                 </div>
                 <fieldset><legend>休息日</legend>${['一','二','三','四','五','六','日'].map((name,i)=>`<label><input type="checkbox" name="restDays" value="${i+1}" ${(adjusting?activePlan.restDays:formDraft?.restDays||[7]).includes(i+1)?'checked':''}>周${name} </label>`).join('')}</fieldset>
@@ -319,7 +317,7 @@
         (adjusting?previewAdjustment:createDraft)({
           title: fd.get('title'),
           goal: fd.get('goal'),
-          dailyMinutes: Number(fd.get('dailyMinutes')),
+          schedulingMode: 'by-days',
           daysCount: fd.get('startDate')&&fd.get('endDate')?Math.round((Date.parse(fd.get('endDate'))-Date.parse(fd.get('startDate')))/86400000)+1:Number(fd.get('daysCount')),endDate:fd.get('endDate'),
           ...(adjusting?{}:{startDate:fd.get('startDate'),subjects:fd.getAll('subjects'),difficulty:fd.get('difficulty')}),
           restDays: fd.getAll('restDays').map(Number)

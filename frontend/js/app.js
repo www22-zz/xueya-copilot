@@ -114,6 +114,7 @@
     const navSection=document.querySelector('#stitchNavSection');if(navSection)navSection.hidden=!inCenter;
     document.querySelectorAll('[data-area]').forEach(a=>a.setAttribute('aria-current',(a.dataset.area==='center')===inCenter?'page':'false'));
     sidebarHub?.sync(state.view);
+    window.XueyaStudyCompanion?.sync();
     practiceUI?.beforeRender();
     const prior=$('#chatThread'),sameSession=prior?.dataset.sessionId===state.sessionId,scrollTop=prior?.scrollTop||0,nearBottom=!prior||prior.scrollHeight-prior.scrollTop-prior.clientHeight<90;
     const pool=currentQuestions();if(state.quizIndex>=pool.length)state.quizIndex=0;
@@ -123,6 +124,13 @@
       let context=null;try{context=JSON.parse(sessionStorage.getItem((window.XueyaDataKey||((key)=>key))('xueya-material-return'))||'null');}catch{}
       const hasMaterialContext=context&&/^#space\/materials\//.test(context.hash);
       if(hasMaterialContext||isMyPlans)$('#spaceContent').insertAdjacentHTML('afterbegin',`<nav class="material-return" aria-label="学习位置"><a href="${e(hasMaterialContext?context.hash:'#space/materials/plan')}">← ${hasMaterialContext?'返回资料与知识点':'返回个性化学习'}</a>${state.view==='knowledge'||isMyPlans?'':`<span>${e(context.name)}</span>`}<span>当前位置：${e(isMyPlans?'我的学习计划':titles[state.view])}</span></nav>`);
+      if(state.view==='practice'&&(location.hash.split('/')[2]==='legacy'||(location.hash.split('/')[2]==='ai'&&hasMaterialContext))){
+        const content=$('#spaceContent'),workflow=document.createElement('div'),panel=document.createElement('section'),navigation=document.createElement('div');
+        workflow.id='materialLearning';panel.className='panel material-learning';panel.append(navigation);workflow.append(panel);
+        content.querySelector('.material-return')?.remove();
+        while(content.firstChild)panel.append(content.firstChild);
+        content.append(workflow);window.XueyaMaterialLearning?.mountWorkflow(navigation);
+      }
     }
     const thread=$('#chatThread');if(thread)thread.scrollTop=!state.messages.length?0:!sameSession||nearBottom?thread.scrollHeight:scrollTop;
     agentRuns?.refresh();
@@ -347,6 +355,7 @@
   function mount(){
     agentRuns?.mount();
     workspace.mount();practiceUI?.initialize?.();route();window.addEventListener('hashchange',route);
+    window.XueyaStudyCompanion?.mount({ask:askInline,getCourseId:()=>state.courseId,getBusy:()=>state.pending,openSource,navigate:hash=>{if(location.hash===hash)window.dispatchEvent(new HashChangeEvent('hashchange'));else location.hash=hash;}});
     if(location.protocol==='file:')$('#engineStatus').textContent='本地模式';
     else fetch('/api/health',{signal:AbortSignal.timeout(5000)}).then(r=>r.json()).then(p=>{$('#engineStatus').textContent=p.engine==='xiaomi-mimo'?'已就绪':'本地模式';
       if(p.uiBuild&&window.XUEYA_UI_BUILD&&p.uiBuild!==window.XUEYA_UI_BUILD){try{const key='xueya-ui-build-reload';if(sessionStorage.getItem(key)!==p.uiBuild){sessionStorage.setItem(key,p.uiBuild);location.reload();}}catch{}}}).catch(()=>{$('#engineStatus').textContent='本地模式';});
