@@ -288,7 +288,9 @@ def create_app(config: Config | None = None, *, provider=None, start_jobs=True):
         if path == "/bootstrap" and method == "GET":
             portable = getattr(app.state, 'portable_knowledge', None)
             prepared = await portable.ensure(user_id) if portable else None
-            return success(token=app.state.token, schemaVersion="1.0", workspace=repo.get_workspace(user_id), courses=repo.courses(user_id), jobs=p.jobs.list(user_id), resources=p.resources.stats(), **({'portableKnowledge': prepared} if prepared else {}))
+            corpus = getattr(app.state, 'portable_corpus', None)
+            prepared_corpus = await corpus.ensure(user_id) if corpus else None
+            return success(token=app.state.token, schemaVersion="1.0", workspace=repo.get_workspace(user_id), courses=repo.courses(user_id), jobs=p.jobs.list(user_id), resources=p.resources.stats(), **({'portableKnowledge': prepared} if prepared else {}), **({'portableCorpus': prepared_corpus} if prepared_corpus else {}))
         require(secrets.compare_digest(request.headers.get("x-xueya-token", ""), app.state.token), "AUTH_REQUIRED")
         binary = path in ("/documents/upload", "/documents/import-original")
         value = {}

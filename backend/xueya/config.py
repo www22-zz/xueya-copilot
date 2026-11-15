@@ -6,7 +6,7 @@ import os
 ROOT = Path(__file__).resolve().parents[2]
 # Bumped together with the inline constant in frontend/index.html. A stale page
 # compares this against /api/health and reloads once after a deployment.
-UI_BUILD = '2026-11-14-day-plan-workflow-1'
+UI_BUILD = '2026-11-15-course-shelf-cache-1'
 
 
 @dataclass(frozen=True)
@@ -22,6 +22,7 @@ class Config:
     platform_enabled: bool = True
     auto_import_demo: bool = False
     auto_import_stack: bool = False
+    auto_import_corpus: bool = False
     preserve_legacy_data: bool = False
     rag_general_fallback: bool = False
     tool_timeout: float = 5.0
@@ -112,6 +113,7 @@ def load_config() -> Config:
                   platform_enabled=env.get("XUEYA_PLATFORM_ENABLED", "1") != "0",
                   auto_import_demo=env.get('XUEYA_AUTO_IMPORT_DEMO', '0') == '1',
                   auto_import_stack=env.get('XUEYA_AUTO_IMPORT_STACK', '1') == '1',
+                  auto_import_corpus=env.get('XUEYA_AUTO_IMPORT_CORPUS', '1') == '1',
                   preserve_legacy_data=env.get('XUEYA_PRESERVE_LEGACY_DATA', '0') == '1',
                   rag_general_fallback=env.get('AI_RAG_GENERAL_FALLBACK', '0') == '1',
                   tool_timeout=max(.05, min(60, float(env.get("MCP_TOOL_TIMEOUT_MS", 5000))/1000)),

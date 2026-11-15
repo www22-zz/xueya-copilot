@@ -26,6 +26,7 @@ class CourseGraph:
     def inventory(self, account, owner, course, subject=''):
         scope = self.m.service._scope(account)
         documents, ranges, seen = [], [], set()
+        trusted_sources = {}
         parsing = {(r['user_id'], r['course_id'], json.loads(r['input']).get('documentId')) for r in self.p.db.all(
             "SELECT user_id,course_id,input FROM jobs WHERE type='rag-parse' AND status IN ('queued','running')")}
         artifacts = {r['id']: r for r in self.p.repo.all(scope, 'artifact')}
@@ -45,7 +46,16 @@ class CourseGraph:
             documents.append(document)
             if not document['ready']:
                 continue
-            sources = self.m.rag.sources(source_scope, document_ids=[doc['id']])
+            # Validate the current sources once per library, instead of rescanning
+            # every document/source for each book. Never cache access decisions
+            # or validated text across requests: edits/withdrawals take effect now.
+            source_key = (source_scope.user_id, source_scope.course_id)
+            if source_key not in trusted_sources:
+                by_document = {}
+                for source in self.m.rag.sources(source_scope):
+                    by_document.setdefault(source['documentId'], []).append(source)
+                trusted_sources[source_key] = by_document
+            sources = trusted_sources[source_key].get(doc['id'], [])
             document['_outline'] = markdown_outline(identity, sources) if doc.get('kind') == 'md' else []
             batches, parts, used = [], [], 0
             for source in sources:

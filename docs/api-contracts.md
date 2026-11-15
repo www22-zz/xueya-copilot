@@ -674,3 +674,8 @@ POST /plan/adopt继续要求confirmed=true、业务expectedRevision及operationI
 ## Markdown 第三层目录
 
 `GET /api/learning/space/course-graph` 在已就绪 Markdown 尚无已保存的资料知识点时，直接从当前修订的校验片段 `sectionPath` 构建第三层节点，按原文顺序展示。节点的 `sourceType` 为 `markdown-outline`，`questionIds` 为空，出处绑定当前文档与片段；不提交作业、不生成题目、不计入 AI 完成批次。`coverage.outlineNodes` 表示本次目录节点数。文档新增 `title` 供中文章节名展示，`name` 仍保留原文件名。已有资料知识点优先，归档或被替换的文档不显示目录；原有资料正文保护继续生效。
+
+
+## 2026-11-15 可分发MD向量包
+
+`GET /api/platform/bootstrap` 兼容增加可选的 `portableCorpus`：`{status,documentIds?,skippedFiles?,sources?,packageSources?,model?,newModelRequests:0,error?}`。默认将仓库七份MD和已校验的8B/4096维向量加入当前账号默认课程，原有 `portableKnowledge` 栈与队列安装结果保持不变。原文/压缩包/内容哈希或模型身份不匹配时返回失败，不付费修复；相同文件历史被归档/删除时跳过，重复启动不重新安装。无密钥支持关键词检索；语义问题向量仍使用本机配置的匹配外部模型。`XUEYA_AUTO_IMPORT_CORPUS=0` 关闭此包自动接入。

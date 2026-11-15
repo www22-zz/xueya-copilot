@@ -3,7 +3,8 @@
   'use strict';
   const e=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   let generation=0,timer,subject='',selected='',selectedDocument='',nodeId='',autoPrepared=0;
-  let cached=null,cacheCourse='',signature='',tab='corpus',planUI=null,videoUI=null,mountedLocation='',mountedCourse='';
+  let cacheCourse='',signature='',tab='corpus',planUI=null,videoUI=null,mountedLocation='',mountedCourse='';
+  const snapshots=new Map();
   const attempted=new Set();
   async function api(path,body){
     const reply=await window.XueyaPlatform.spaceFetch('/api/learning/space/'+path,body?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}:{});
@@ -33,17 +34,39 @@
   async function mount(container,courseId='course-default',local=false){
     if(!container)return;const entering=!container.dataset.materialMounted,stamp=++generation;clearTimeout(timer);
     try{
+      const cacheKey=(window.XueyaDataKey||((key)=>key))('material-view:'+courseId);
+      if(cacheCourse!==cacheKey){selected='';selectedDocument='';subject='';nodeId='';}
+      if(!snapshots.has(cacheKey)){
+        snapshots.set(cacheKey,{data:{materials:[],available:false},attendance:{signed:null}});
+        if(snapshots.size>6)snapshots.delete(snapshots.keys().next().value);
+      }
+      const snapshot=snapshots.get(cacheKey);
+      cacheCourse=cacheKey;
+      const alive=()=>stamp===generation&&container.isConnected&&(window.XueyaDataKey||((key)=>key))('material-view:'+courseId)===cacheKey;
+      const paintAttendance=()=>{
+        if(!alive())return;
+        const button=container.querySelector('[data-attendance]');if(!button)return;
+        button.disabled=snapshot.attendance.signed!==false;
+        button.textContent=snapshot.attendance.error?'签到状态暂不可用':snapshot.attendance.signed===null?'正在读取签到…':snapshot.attendance.signed?'今日已签到':'每日签到';
+      };
       if(!container.dataset.materialMounted){const parts=location.hash.split('/'),deep=parts[1]==='materials'?(parts[2]||''):'',namedTabs=['corpus','video','plan'];if(mountedLocation!==location.hash||mountedCourse!==courseId)tab=namedTabs.includes(deep)?deep:'corpus';mountedLocation=location.hash;mountedCourse=courseId;signature='';container.dataset.materialMounted='1';if(deep&&!namedTabs.includes(deep)&&deep!=='graph'){selected=deep;nodeId=parts[3]||'';subject='';}}
       const returnTabKey=(window.XueyaDataKey||((key)=>key))('xueya-material-return-tab');
       if(entering){const returnTab=sessionStorage.getItem(returnTabKey);if(['corpus','plan'].includes(returnTab)&&!['corpus','video','plan'].includes(location.hash.split('/')[2])){tab=returnTab;sessionStorage.removeItem(returnTabKey);}}
       const selectionKey=(window.XueyaDataKey||((key)=>key))('xueya-material-selection:'+courseId);
       if(!selected){try{const saved=JSON.parse(localStorage.getItem(selectionKey)||'{}');selected=saved.selected||'';selectedDocument=saved.selectedDocument||'';subject=saved.subject||'';nodeId=saved.nodeId||'';}catch{}}
-      if(!local||!cached||cacheCourse!==courseId){
-        const [data,attendance]=await Promise.all([api('materials?courseId='+encodeURIComponent(courseId)),api('attendance')]);
-        if(stamp!==generation||!container.isConnected)return;
-        cached={data,attendance};cacheCourse=courseId;
+      if(!local){
+        // Navigation renders immediately; neither metadata nor attendance gates the graph.
+        snapshot.materialRequest ||= api('materials?courseId='+encodeURIComponent(courseId))
+          .then(data=>{snapshot.data=data;}).catch(()=>{}).finally(()=>{snapshot.materialRequest=null;});
+        if(!snapshot.attendanceRequest){
+          const version=snapshot.attendanceVersion||0;
+          snapshot.attendanceRequest=api('attendance').then(value=>{if((snapshot.attendanceVersion||0)===version)snapshot.attendance=value;})
+            .catch(()=>{if((snapshot.attendanceVersion||0)===version)snapshot.attendance={signed:null,error:true};})
+            .finally(()=>{snapshot.attendanceRequest=null;});
+        }
       }
-      const {data,attendance}=cached,nextSignature=JSON.stringify(cached);
+      if(snapshot.attendanceRequest)void snapshot.attendanceRequest.then(paintAttendance);
+      const {data,attendance}=snapshot,nextSignature=JSON.stringify({data,attendance});
       // Keep focused inputs, open answers and unchanged DOM intact during polling.
       if(!local&&container.dataset.renderedTab===tab&&container.querySelector('.material-learning')&&(signature===nextSignature||container.querySelector('[data-quiz-card]')||(container.contains(document.activeElement)&&document.activeElement.matches('input,textarea,select,[contenteditable=true]'))||tab!=='graph')){schedule();return;}
       signature=nextSignature;planUI?.unmount();videoUI?.unmount();window.XueyaCourseGraph?.unmount();
@@ -76,7 +99,7 @@
         videoUI=window.XueyaCourses.create({host:target,embedded:true,toast:window.toast,render:drawVideo,navigate:hash=>location.hash=hash});drawVideo();
       }
       container.querySelector('[data-material-subject]')?.addEventListener('change',event=>{subject=event.target.value;redraw();});
-      container.querySelector('[data-attendance]').onclick=async event=>{event.stopPropagation();try{cached.attendance=await api('attendance',{});redraw();}catch(error){container.querySelector('[data-material-status]').textContent=error.message;}};
+      container.querySelector('[data-attendance]').onclick=async event=>{event.stopPropagation();event.currentTarget.disabled=true;snapshot.attendanceVersion=(snapshot.attendanceVersion||0)+1;try{snapshot.attendance=await api('attendance',{});paintAttendance();}catch(error){if(alive()){paintAttendance();container.querySelector('[data-material-status]').textContent=error.message;}}};
       container.querySelector('[data-material-prepare]')?.addEventListener('click',async()=>{try{await api('materials/prepare',{documentId:material.documentId,sourceCourseId:material.sourceCourseId,public:material.public,courseId});mount(container,courseId);}catch(error){container.querySelector('[data-material-status]').textContent=error.message;}});
       container.querySelectorAll('[data-material]').forEach(button=>button.onclick=()=>{selected=button.dataset.material;nodeId='';redraw();});
       // Existing accessible materials are prepared once; each document batch is
@@ -90,5 +113,5 @@
 
     }catch(error){if(stamp===generation&&container.isConnected)container.innerHTML=`<p role="alert">资料学习暂不可用：${e(error.message)}</p>`;}
   }
-  window.XueyaMaterialLearning={mount,mountWorkflow,unmount(){if(!location.hash.startsWith('#space/materials'))mountedLocation='';generation++;clearTimeout(timer);planUI?.unmount();videoUI?.unmount();window.XueyaCourseGraph?.unmount();cached=null;signature='';}};
+  window.XueyaMaterialLearning={mount,mountWorkflow,unmount(){if(!location.hash.startsWith('#space/materials'))mountedLocation='';generation++;clearTimeout(timer);planUI?.unmount();videoUI?.unmount();window.XueyaCourseGraph?.unmount();signature='';}};
 })();
