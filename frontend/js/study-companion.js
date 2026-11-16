@@ -41,7 +41,7 @@
     const find = selector => root.querySelector(selector), dock = find('[data-companion-dock]'), panel = find('[data-companion-panel]'), input = find('[data-companion-input]');
     root.addEventListener('click', event => event.stopPropagation());
     function historyKey() { return key + ':chat:' + course; }
-    function loadMessages() { try { const rows = JSON.parse(localStorage.getItem(historyKey()) || '[]'); messages = Array.isArray(rows) ? rows.filter(row => row && ['user','assistant'].includes(row.role) && typeof row.text === 'string').map(row => ({...row, sources:Array.isArray(row.sources) ? row.sources : []})) : []; } catch { messages = []; } }
+    function loadMessages() { try { const rows = JSON.parse(localStorage.getItem(historyKey()) || '[]'); messages = Array.isArray(rows) ? rows.filter(row => row && ['user','assistant'].includes(row.role) && typeof row.text === 'string').map(row => ({...row, sources:Array.isArray(row.sources) ? row.sources : [], links:Array.isArray(row.links) ? row.links.filter(link => link && typeof link.hash === 'string' && /^#space\//.test(link.hash) && typeof link.title === 'string').slice(0, 6) : []})) : []; } catch { messages = []; } }
     function saveMessages() { try { localStorage.setItem(historyKey(), JSON.stringify(messages.filter(row => !row.pending))); } catch { say('本机空间不足，本次对话暂未保存。'); } }
     function savePreferences() { try { localStorage.setItem(key, JSON.stringify(preferences)); } catch {} }
     function setState(value) { clearTimeout(timer); root.dataset.state = value; }
@@ -64,8 +64,9 @@
     }
     function drawMessages() {
       const list = find('[data-companion-messages]'), nearBottom = list.scrollHeight - list.scrollTop - list.clientHeight < 60;
-      list.innerHTML = messages.length ? messages.map((row, index) => `<article class="companion-message is-${row.role}${row.failed ? ' is-error' : ''}${row.pending ? ' is-pending' : ''}"><small>${row.role === 'user' ? '你' : '小涯'}${row.pending ? ' · 回答核对中' : ''}</small><div>${escape(row.text || '正在想一想…')}</div>${row.sources?.length ? `<details><summary>参考资料 ${row.sources.length} 处</summary>${row.sources.map((source, sourceIndex) => `<button type="button" data-companion-source="${index}:${sourceIndex}">${escape(source.title || '资料原文')} · ${escape(source.location || '查看出处')}</button>`).join('')}</details>` : ''}</article>`).join('') : '<div class="companion-welcome"><span>✦</span><strong>你好，我是小涯。</strong><p>可以陪你解题、梳理知识，也能帮你打开今天的学习任务。</p><small>点击发送后才会请求模型。</small></div>';
-      list.querySelectorAll('[data-companion-source]').forEach(button => button.onclick = () => { const [row, source] = button.dataset.companionSource.split(':').map(Number); const value = messages[row]?.sources?.[source]; if (value) openSource(value); });
+      list.innerHTML = messages.length ? messages.map((row, index) => `<article class="companion-message is-${row.role}${row.failed ? ' is-error' : ''}${row.pending ? ' is-pending' : ''}"><small>${row.role === 'user' ? '你' : '小涯'}${row.pending ? ' · 回答核对中' : (row.meta ? ' · ' + escape(row.meta) : '')}</small><div>${escape(row.text || '正在想一想…')}</div>${row.links?.length ? `<div class="companion-links" role="group" aria-label="可打开的页面">${row.links.map((link, linkIndex) => `<button type="button" data-companion-link="${index}:${linkIndex}" style="display:inline-block;margin:6px 4px 0 0;padding:5px 9px;border:1px solid var(--buddy-line);border-radius:7px;background:transparent;color:var(--buddy-accent);font-size:11px;line-height:1.4">${escape(link.title)} →</button>`).join('')}</div>` : ''}${row.sources?.length ? `<details><summary>系统百科依据 ${row.sources.length} 处</summary>${row.sources.map((source, sourceIndex) => `<button type="button" data-companion-source="${index}:${sourceIndex}">${escape(source.title || '资料原文')} · ${escape(source.location || '查看出处')}</button>`).join('')}</details>` : ''}</article>`).join('') : '<div class="companion-welcome"><span>✦</span><strong>你好，我是小涯。</strong><p>可以陪你解题、梳理知识，也能帮你打开今天的学习任务。</p><small>点击发送后才会请求模型。</small></div>';
+      list.querySelectorAll('[data-companion-source]').forEach(button => button.onclick = () => { const [row, source] = button.dataset.companionSource.split(':').map(Number); const value = messages[row]?.sources?.[source]; if (value) { if (typeof value.hash === 'string' && /^#space\//.test(value.hash)) navigate(value.hash); else openSource(value); } });
+      list.querySelectorAll('[data-companion-link]').forEach(button => button.onclick = () => { const [row, link] = button.dataset.companionLink.split(':').map(Number); const value = messages[row]?.links?.[link]; if (value && typeof value.hash === 'string' && /^#space\//.test(value.hash)) { toggle(false); navigate(value.hash); } });
       if (nearBottom || busy) list.scrollTop = list.scrollHeight;
     }
     function sync() { if (destroyed) return; const next = String(getCourseId()); if (next !== course && !busy) { course = next; loadMessages(); drawMessages(); } controls(); }
@@ -78,13 +79,19 @@
       const history = messages.filter(row => !row.failed && !row.pending).slice(-12).map(row => ({role:row.role, content:row.text}));
       const previousSources = [...messages].reverse().find(row => row.sources?.length)?.sources || [];
       messages.push({role:'user', text:question}); const answer = {role:'assistant', text:'', pending:true}; messages.push(answer);
-      input.value = ''; busy = true; setState('thinking'); saveMessages(); drawMessages(); controls(); controller = new AbortController();
+      input.value = ''; busy = true; setState('thinking'); find('[data-companion-status]').textContent = '正在检索系统百科…'; saveMessages(); drawMessages(); controls(); controller = new AbortController();
       try {
         const result = await ask(question, {courseId:course, history, previousSources, signal:controller.signal, onUpdate(update) { if (destroyed) return; if (typeof update.answer === 'string') answer.text = update.answer; drawMessages(); }});
         if (destroyed) return;
-        if (!result?.answer || result.answerStatus === 'unavailable') throw Error('AI_UNAVAILABLE');
-        answer.text = result.answer; answer.sources = Array.isArray(result.sources) ? result.sources : []; setState('done'); say('回答好了，来看看吧。'); timer = setTimeout(() => setState('idle'), 2400);
+        if (!result?.answer) throw Error('AI_UNAVAILABLE');
+        if (result.answerStatus === 'unavailable') { answer.text = controller.signal.aborted ? '已停止回答，不会自动重试。' : (result.answer || '模型暂不可用，请稍后再试。'); throw Object.assign(Error('AI_UNAVAILABLE'), {handled:true}); }
+        answer.text = result.answer;
+        answer.sources = Array.isArray(result.sources) ? result.sources : [];
+        answer.links = Array.isArray(result.links) ? result.links.filter(link => link && typeof link.hash === 'string' && /^#space\//.test(link.hash) && typeof link.title === 'string').slice(0, 6) : [];
+        answer.meta = result.route === 'system' ? (result.engine || '系统百科') : (result.route === 'general' ? '通用问答' : (result.engine || ''));
+        setState('done'); say(result.route === 'system' ? '查到系统里的位置了。' : '回答好了，来看看吧。'); timer = setTimeout(() => setState('idle'), 2400);
       } catch (error) {
+        if (error?.handled) { if (!destroyed) { answer.failed = true; saveMessages(); drawMessages(); setState('idle'); controls(); } return; }
         if (destroyed) return;
         answer.failed = true; answer.text = controller.signal.aborted ? '已停止回答，不会自动重试。' : ({AI_UNAVAILABLE:'模型暂不可用，请检查学涯的模型配置。',AI_CONNECTION_FAILED:'暂时连接不上模型，请检查网络后再试。',AUTH_REQUIRED:'登录已失效，请重新登录后再问。'}[error.code || error.message] || '这次回答没有完成，请检查服务设置后再试。'); setState('idle');
       } finally { delete answer.pending; busy = false; controller = null; if (!destroyed) { saveMessages(); drawMessages(); sync(); } }

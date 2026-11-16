@@ -4,6 +4,8 @@
 const clone=value=>JSON.parse(JSON.stringify(value));
 function createWorkspace(ctx){
   const {state,L,store,e,icon,persist,toast,render,sourceById,allSources,libraryService}=ctx;
+  // 联网搜索是显式可选项：首次进入（undefined）一律关闭，课程资料检索不依赖它。
+  if(state.webSearch!==true)state.webSearch=false;
   const rich=globalThis.XueyaRich,service=globalThis.XueyaWorkspaceService.createService({adapter:globalThis.XueyaWorkspaceBackend||{}}),cache=globalThis.XueyaFileCache.createCache();
   const $=s=>document.querySelector(s),id=()=>crypto.randomUUID();
   let attachments=[],queue=[],uploading=false,nextUpload=null,editorSubmit,readerURL,mediaController;
@@ -164,7 +166,7 @@ function createWorkspace(ctx){
     planPreview(L.buildPlan(date,minutes,state.records,L.today(),pool),date,minutes);return true;
   }
   const actions={
-    toggleWebSearch:()=>{state.webSearch=!state.webSearch;persist();render();toast(state.webSearch?'全网搜索已开启：提问将同时检索互联网最新信息':'全网搜索已关闭：仅依据课程资料回答');},
+    toggleWebSearch:()=>{state.webSearch=!Boolean(state.webSearch);persist();render();toast(state.webSearch?'联网搜索已开启（课程知识库始终参与检索）':'联网搜索已关闭（课程知识库始终参与检索）');},
     toggleDeepThink:()=>{state.deepThink=!state.deepThink;persist();render();toast(state.deepThink?'深度思考已开启：模型会先推理再回答，速度较慢':'深度思考已关闭：直接综合资料回答，更快');},
     newSession:()=>{store.newSession();render();},clearChat:()=>{store.newSession();render();},refreshSuggestions:()=>{state.suggestionOffset=((state.suggestionOffset||0)+4);render();},session:d=>{store.selectSession(d.session);render();},
     toggleSidebar:()=>{if(typeof window.XueyaToggleSidebar==='function')window.XueyaToggleSidebar();else document.body.classList.toggle('sidebar-collapsed');},

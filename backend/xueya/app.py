@@ -288,7 +288,9 @@ def create_app(config: Config | None = None, *, provider=None, start_jobs=True):
         if path == "/bootstrap" and method == "GET":
             portable = getattr(app.state, 'portable_knowledge', None)
             prepared = await portable.ensure(user_id) if portable else None
-            return success(token=app.state.token, schemaVersion="1.0", workspace=repo.get_workspace(user_id), courses=repo.courses(user_id), jobs=p.jobs.list(user_id), resources=p.resources.stats(), **({'portableKnowledge': prepared} if prepared else {}))
+            corpus = getattr(app.state, 'portable_corpus', None)
+            prepared_corpus = await corpus.ensure(user_id) if corpus else None
+            return success(token=app.state.token, schemaVersion="1.0", workspace=repo.get_workspace(user_id), courses=repo.courses(user_id), jobs=p.jobs.list(user_id), resources=p.resources.stats(), **({'portableKnowledge': prepared} if prepared else {}), **({'portableCorpus': prepared_corpus} if prepared_corpus else {}))
         require(secrets.compare_digest(request.headers.get("x-xueya-token", ""), app.state.token), "AUTH_REQUIRED")
         binary = path in ("/documents/upload", "/documents/import-original")
         value = {}
@@ -390,6 +392,8 @@ def create_app(config: Config | None = None, *, provider=None, start_jobs=True):
                 return success(tools=await session.list_tools(namespace=True))
         if path == "/tools/call" and method == "POST":
             async def call():
+                # 联网工具只能由显式放行的外部调用使用；普通工具调用默认不联网。
+                require(value.get("name") != "search_web" or value.get("allowWebSearch") is True, "WEB_SEARCH_NOT_ENABLED")
                 async with open_session(platform_registry(p, scope(), rag=getattr(app.state, 'rag', None), learning=getattr(app.state, 'learning', None))) as session:
                     return success(data=await session.call(value.get("name"), value.get("arguments") or {}))
             return await connected_work(request, call())
@@ -458,4 +462,6 @@ def create_app(config: Config | None = None, *, provider=None, start_jobs=True):
         install_practice(app)
         from .study_space_api import install_study_space
         install_study_space(app)
+        from .companion_api import install_companion
+        install_companion(app)
     return app

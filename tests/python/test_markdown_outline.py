@@ -17,7 +17,7 @@ def test_outline_uses_parsed_sections_in_document_order_not_code_headings():
     assert nodes == markdown_outline('material-1', chunks)
 
 
-def test_graph_opens_local_markdown_without_generation_and_removes_withdrawn_nodes(tmp_path, http_root):
+def test_graph_opens_local_markdown_without_generation_and_removes_withdrawn_nodes(tmp_path, http_root, monkeypatch):
     app = create_app(Config(root=http_root, data_dir=tmp_path/'data', api_key='',
         preserve_legacy_data=True, auto_import_demo=False), start_jobs=False)
     with TestClient(app, base_url='http://127.0.0.1') as client:
@@ -50,6 +50,24 @@ def test_graph_opens_local_markdown_without_generation_and_removes_withdrawn_nod
         from backend.xueya.account_scope import account_owner
         from backend.xueya.common import Scope
         scope = Scope(user_id=account_owner({'username': 'alice'}), course_id='course-default')
-        doc = p.repo.all(scope, 'document')[0]
+        # New material must appear on the next read, while both documents share
+        # one validation scan of this library's current sources.
+        added = client.post('/api/platform/library/text', json={'courseId': 'course-default',
+            'title': 'queues', 'text': '# 队列\n\n## FIFO 队列基础\n\n先进先出。', 'idempotencyKey': 'outline-second'})
+        assert added.status_code == 200, added.text
+        asyncio.run(drain())
+        calls = []
+        original_sources = app.state.rag.sources
+        def counted_sources(source_scope, **kwargs):
+            calls.append((source_scope.user_id, source_scope.course_id))
+            return original_sources(source_scope, **kwargs)
+        monkeypatch.setattr(app.state.rag, 'sources', counted_sources)
+        updated = client.get('/api/learning/space/course-graph').json()
+        assert len(updated['documents']) == 2
+        assert 'FIFO 队列基础' in [node['label'] for node in updated['nodes']]
+        assert calls.count((scope.user_id, scope.course_id)) == 1
+        second = next(d for d in p.repo.all(scope, 'document') if d['name'] == 'queues.md')
+        p.repo.put(scope, 'document', second['id'], {**second, 'archived': True}, second['version'])
+        doc = next(d for d in p.repo.all(scope, 'document') if d['name'] == 'linear-list.md')
         p.repo.put(scope, 'document', doc['id'], {**doc, 'archived': True}, doc['version'])
         assert not [n for n in client.get('/api/learning/space/course-graph').json()['nodes'] if n['kind'] == 'concept']

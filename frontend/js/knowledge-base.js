@@ -88,6 +88,7 @@ window.XueyaKnowledgeBase={create({state,store,toast,render}){
   catch(networkFailure){const failure=Error('无法连接本机服务，请确认服务已启动并刷新页面。');failure.code='NETWORK';throw failure;}
   const result=await response.json().catch(()=>null);
   if(!response.ok||!result?.ok){const failure=Error(errors[result?.error]||result?.error||'操作未完成');failure.code=result?.error||'';throw failure;}
+  if(value!==undefined)window.dispatchEvent(new Event('xueya:materials-changed'));
   return result;
  }
  let countCourse='',countAt=0,countLoading=false;

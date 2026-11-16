@@ -17,3 +17,12 @@ __pycache__/
 .migration-backup/
 .tmp/
 .qa-tmp/
+# Temp dirs that pytest/Playwright fall back to inside the repo when the host
+# temp directory is locked down; they are debris, never sources.
+pytest-of-*/
+xueya-*/
+probe-*/
+/tmp*/
+pip-build-tracker-*/
+pip-ephem-wheel-cache-*/
+pip-install-*/

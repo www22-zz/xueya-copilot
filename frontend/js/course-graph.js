@@ -4,7 +4,22 @@
   const e = window.XueyaRich.escape;
   const messageFor = code => ({AI_CONNECTION_FAILED:'当前服务无法连接模型站点，未提交新批次。请检查服务启动环境或网络。',JOB_FAILED:'请求异常，尚无可核验结果；请先核对连接和调用账本。'}[code] || code);
   const titleOf = name => name.replace(/\.[a-z0-9]+$/i, '').replace(/^week\d+[\s_-]*/i, '').replace(/[_-]+/g, ' ').trim();
-  let epoch = 0, timer;
+  let epoch = 0, timer, detach = () => {};
+  // Memory only: account/course data must never leak through a shared cache.
+  const snapshots = new Map(), requests = new Map();
+  const scopedKey = course => (window.XueyaDataKey || (key => key))('course-graph:' + course);
+  function rememberSnapshot(key, value) {
+    snapshots.delete(key); snapshots.set(key, value);
+    if (snapshots.size > 6) snapshots.delete(snapshots.keys().next().value);
+  }
+  function read(course, key) {
+    if (!requests.has(key)) {
+      const request = api(course).then(value => { rememberSnapshot(key, value); return value; })
+        .finally(() => { if (requests.get(key) === request) requests.delete(key); });
+      requests.set(key, request);
+    }
+    return requests.get(key);
+  }
 
   async function api(course, body) {
     const response = await window.XueyaPlatform.spaceFetch('/api/learning/space/course-graph' + (body ? '/continue' : '?courseId=' + encodeURIComponent(course)), body ? {
@@ -18,14 +33,16 @@
   async function mount(target, course, reference, directory=false) {
     const stamp = ++epoch;
     clearTimeout(timer);
+    detach();
+    const cacheKey = scopedKey(course);
     let data, signature = '', subject = '', filter = '', focusedDocument = '', selected = 'course', search = '', page = 0;
     let viewport, viewportKey = '', courses = [], videoError = false, submitting = false;
     let concepts = new Map(), children = new Map(), subjects = [];
     const stateKey=(window.XueyaDataKey||((k)=>k))('course-graph-view:'+course);
     try{const old=JSON.parse(sessionStorage.getItem(stateKey)||'{}');subject=old.subject||'';focusedDocument=old.focusedDocument||'';selected=old.selected||'course';page=old.page||0;viewport=old.viewport;viewportKey=old.viewportKey||'';}catch{}
     const remember=()=>sessionStorage.setItem(stateKey,JSON.stringify({subject,focusedDocument,selected,page,viewport,viewportKey}));
-    const alive = () => stamp === epoch && target.isConnected;
-    target.innerHTML = '<p role="status">正在读取课程书架…</p>';
+    const alive = () => stamp === epoch && target.isConnected && scopedKey(course) === cacheKey;
+    if (!snapshots.has(cacheKey)) target.innerHTML = '<p role="status">正在读取课程书架…</p>';
     const chapterNumber = text => {
       if (/^\d+$/.test(text)) return Number(text);
       const digits={'零':0,'一':1,'二':2,'三':3,'四':4,'五':5,'六':6,'七':7,'八':8,'九':9,'两':2};
@@ -58,28 +75,47 @@
     }
     function schedule() {
       clearTimeout(timer);
-      if (alive() && data?.coverage.pendingJobs) timer = setTimeout(() => document.hidden ? schedule() : load(), 8000);
+      if (alive()) timer = setTimeout(() => document.hidden ? schedule() : load(), data?.coverage.pendingJobs ? 8000 : 15000);
     }
+    function apply(next) {
+      const nextSignature = JSON.stringify(next);
+      // Keep the currently rendered data and selection consistent while editing.
+      const busy = target.querySelector('[data-quiz-card]') ||
+        (target.contains(document.activeElement) && document.activeElement.matches('input,textarea,select'));
+      if (data && nextSignature !== signature && busy) return;
+      data = next; index();
+      if (reference) {
+        const node = data.nodes.find(n => n.references?.some(r => r.materialId === reference));
+        const doc = data.documents.find(d => d.id === node?.references.find(r => r.materialId === reference)?.documentId);
+        if (doc?.ready) { subject = doc.subject; focusedDocument = doc.id; selected = node.id; }
+        reference = null;
+      }
+      if (nextSignature !== signature) { signature = nextSignature; draw(); }
+      const status = target.querySelector('[data-cg-load-status]');
+      if (status) status.textContent = '';
+    }
+    let loading = false, refreshAgain = false;
     async function load() {
+      if (!alive() || loading) return;
+      loading = true;
       try {
-        const next = await api(course);
+        const next = await read(course, cacheKey);
         if (!alive()) return;
-        const nextSignature = JSON.stringify(next);
-        data = next; index();
-        if (reference) {
-          const node = data.nodes.find(n => n.references?.some(r => r.materialId === reference));
-          const doc = data.documents.find(d => d.id === node?.references.find(r => r.materialId === reference)?.documentId);
-          if (doc?.ready) { subject = doc.subject; focusedDocument = doc.id; selected = node.id; }
-          reference = null;
-        }
-        const busy = target.querySelector('[data-quiz-card], details[open]') || (target.contains(document.activeElement) && document.activeElement.matches('input,textarea,select'));
-        if (nextSignature !== signature && !busy) { signature = nextSignature; draw(); }
-        schedule();
+        apply(next);
       } catch (error) {
         if (!alive()) return;
+        if (['AUTH_REQUIRED','AUTH_SCOPE_MISMATCH','FORBIDDEN','COURSE_NOT_FOUND'].includes(error.code || error.message)) {
+          snapshots.delete(cacheKey); data = null;
+          target.innerHTML = `<p role="alert">${e(messageFor(error.message))}</p>`;
+          return;
+        }
         const status = target.querySelector('[data-cg-load-status]');
         if (status) status.textContent = '更新暂不可用，当前内容已保留。' + messageFor(error.message);
         else target.innerHTML = `<p role="alert">${e(messageFor(error.message))}</p>`;
+      } finally {
+        loading = false;
+        if (alive() && refreshAgain) { refreshAgain = false; void load(); }
+        else schedule();
       }
     }
 
@@ -255,12 +291,24 @@
       const matching = courses.filter(c => c.subject === subject && /^https?:\/\//i.test(c.sourceUrl || ''));
       box.innerHTML = `<h4>相关视频课程</h4>${matching.map(c => `<a class="cg-video-link" href="#space/courses/${e(c.id)}/${e(c.episodes?.[0]?.id||'')}" data-concept-video="${e(c.id)}">${e(c.title)} ↗</a>`).join('') || `<p>${videoError ? '课程目录暂时无法读取。' : '暂无匹配的课程入口。'}</p>`}<p class="cg-muted">${matching.length ? '已核验的本科目课程入口；尚未定位到该知识点的具体分集。' : '没有匹配视频时，不添加占位链接。'}</p>`;
     }
-    target.addEventListener('click',event=>{const link=event.target.closest('[data-concept-video]');if(link)sessionStorage.setItem((window.XueyaDataKey||((k)=>k))('xueya-video-context'),JSON.stringify({courseId:link.dataset.conceptVideo,label:concepts.get(selected)?.label||subject,returnHash:location.hash,returnTab:directory?'graph':'corpus'}));});
+    const onVideo = event => {const link=event.target.closest('[data-concept-video]');if(link)sessionStorage.setItem((window.XueyaDataKey||((k)=>k))('xueya-video-context'),JSON.stringify({courseId:link.dataset.conceptVideo,label:concepts.get(selected)?.label||subject,returnHash:location.hash,returnTab:directory?'graph':'corpus'}));};
+    const refresh = () => { if (!document.hidden) { if (loading) refreshAgain = true; else void load(); } };
+    target.addEventListener('click', onVideo);
+    window.addEventListener('focus', refresh);
+    document.addEventListener('visibilitychange', refresh);
+    window.addEventListener('xueya:materials-changed', refresh);
+    detach = () => {
+      target.removeEventListener('click', onVideo);
+      window.removeEventListener('focus', refresh);
+      document.removeEventListener('visibilitychange', refresh);
+      window.removeEventListener('xueya:materials-changed', refresh);
+    };
+    if (snapshots.has(cacheKey)) apply(snapshots.get(cacheKey));
     const videoPromise = window.XueyaPlatform.spaceFetch('/api/learning/space/courses').then(async response => {
       const value = await response.json(); if (!response.ok || !value.ok) throw Error('课程目录读取失败');
       if (alive()) { courses = value.courses || []; drawVideos(); }
     }).catch(() => { if (alive()) { videoError = true; drawVideos(); } });
     await load(); await videoPromise;
   }
-  window.XueyaCourseGraph = {mount, unmount() { epoch++; clearTimeout(timer); }};
+  window.XueyaCourseGraph = {mount, unmount() { epoch++; clearTimeout(timer); detach(); }};
 })();

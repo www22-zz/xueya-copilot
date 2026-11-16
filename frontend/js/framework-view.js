@@ -201,9 +201,11 @@
         btn.addEventListener('click', (e) => {
           e.stopPropagation();
           const topic = btn.dataset.kfAsk;
-          if (window.XueyaAsk) {
+          const question = `请帮我系统讲解一下「${topic}」的核心概念和易混淆考点。`;
+          if (typeof window.XueyaOpenAsk === 'function') window.XueyaOpenAsk(question);
+          else if (window.XueyaAsk) {
             location.hash = '#space/ask';
-            setTimeout(() => window.XueyaAsk(`请帮我系统讲解一下「${topic}」的核心概念和易混淆考点。`), 200);
+            setTimeout(() => window.XueyaAsk(question), 200);
           }
         });
       });

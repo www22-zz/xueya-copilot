@@ -3,3 +3,8 @@ materials/data-structures-algorithms/*.json text eol=lf
 materials/stack-queue/*.md text eol=lf
 materials/stack-queue/portable/*.json text eol=lf
 materials/stack-queue/portable/*.gz binary
+资料库/*.md -text whitespace=cr-at-eol,-blank-at-eof
+资料库/portable/*.json text eol=lf
+资料库/portable/*.gz binary
+
+docs/guide/*.md -text

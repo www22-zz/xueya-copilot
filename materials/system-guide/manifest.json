@@ -1,0 +1,131 @@
+{
+ "adapter": "moark-qwen-text-v2",
+ "builder": "scripts/build_system_guide_vectors.py",
+ "builtAt": "2026-11-15T10:27:58.685068+00:00",
+ "chunkCount": 131,
+ "contentHash": "c5463e629f61a92ccde9210bd532dcca0195595200169a30ab5da11ae9a627e0",
+ "dimension": 4096,
+ "documentCount": 17,
+ "documents": [
+  {
+   "chunkCount": 7,
+   "path": "00-系统总览.md",
+   "sha256": "781e628cc4670304fcc4be32b7e81dabff71a8bacb86cd65121667df78d24cba",
+   "title": "系统总览"
+  },
+  {
+   "chunkCount": 7,
+   "path": "01-功能总览.md",
+   "sha256": "a587b68b1292cc64f2a25c0ea904ecc2bff61e056c0c5f90f425c676e7ea2b90",
+   "title": "功能总览"
+  },
+  {
+   "chunkCount": 9,
+   "path": "02-页面与路由目录.md",
+   "sha256": "5cfaac9100d599290c584a6d7dd27097344ddc890ecc9bccf3b1ebcbe133e8c6",
+   "title": "页面与路由目录"
+  },
+  {
+   "chunkCount": 7,
+   "path": "03-课程学习中心.md",
+   "sha256": "4fd27871164ec5e6647b6c705e099941c340c404ac178c9e99a3c2efeaf423c4",
+   "title": "课程学习中心（视频课程）"
+  },
+  {
+   "chunkCount": 7,
+   "path": "04-课程资料学习.md",
+   "sha256": "5fdadd455c76501a1cc4d53c2a2b2f179788532b1bfa7767fbee1ae93963f3eb",
+   "title": "课程资料学习"
+  },
+  {
+   "chunkCount": 9,
+   "path": "05-算法学习与Hot100.md",
+   "sha256": "567266da66c293c1bc0b05ed8f143d72a09bab52c5dd6e6fd1e3bfa2c5162999",
+   "title": "算法学习与 Hot100"
+  },
+  {
+   "chunkCount": 7,
+   "path": "06-408考研学习.md",
+   "sha256": "e8324b89c8cfe7e41fd7109f840ceb6ba70e1e66ba8c76c6ed22fac70b031de4",
+   "title": "408 考研学习"
+  },
+  {
+   "chunkCount": 8,
+   "path": "07-练习与错题本.md",
+   "sha256": "2a50592ad95ea7fbd2fedc021e53fa1bf1e9c058bf74a26246f53bcb6ae558ff",
+   "title": "练习与错题本"
+  },
+  {
+   "chunkCount": 7,
+   "path": "08-个人资料库.md",
+   "sha256": "d793876209254edf0c601e6ffa50575ac0dd552449f52e7d5caa196bfbb9bbb5",
+   "title": "个人资料库"
+  },
+  {
+   "chunkCount": 7,
+   "path": "09-AI助手与主问答.md",
+   "sha256": "9dc92969acb0faaf8555ebc02abfcae88d604e4822716dbb80a1b2a345e31f26",
+   "title": "AI 助手与主问答"
+  },
+  {
+   "chunkCount": 8,
+   "path": "10-学习计划与学情分析.md",
+   "sha256": "327302382c0f6dabaf80a4ed5cabf947068ee435e1a5490d5cc09477868327ee",
+   "title": "学习计划与学情分析"
+  },
+  {
+   "chunkCount": 7,
+   "path": "11-知识框架与学习路线.md",
+   "sha256": "c5e011b6355a872eb2f7e23544891733525aef56e035a59a68586a50600fe82a",
+   "title": "知识框架与学习路线"
+  },
+  {
+   "chunkCount": 7,
+   "path": "12-账号设置与数据.md",
+   "sha256": "51833c171d7a5c1e02eda597dfe4aac2cbcd417fa131bb766c833567a48260b4",
+   "title": "账号、设置与数据"
+  },
+  {
+   "chunkCount": 8,
+   "path": "13-桌宠小涯系统助手.md",
+   "sha256": "04b49b9a2ca775e4bed27a1403aa9a86447408e07b37d370149fb67072b99b2c",
+   "title": "桌宠小涯系统助手"
+  },
+  {
+   "chunkCount": 9,
+   "path": "14-常见问题FAQ.md",
+   "sha256": "018f5ddeb29b18be5e6bec0fc422e7d545e605bdf78eab62cb7be651a3293d72",
+   "title": "常见问题 FAQ"
+  },
+  {
+   "chunkCount": 8,
+   "path": "15-功能位置索引.md",
+   "sha256": "d13d4830d598fc5d0277fd1a3732a4c9b60fa391c7cf7d03755fd502a9de02a2",
+   "title": "功能位置索引"
+  },
+  {
+   "chunkCount": 9,
+   "path": "16-功能限制与未实现.md",
+   "sha256": "425853850d9f202df926dee751e171fd8f5abfd63c7ddd213feaba463bf49417",
+   "title": "功能限制与未实现"
+  }
+ ],
+ "duplicateChunks": [],
+ "identity": {
+  "adapter": "moark-qwen-text-v2",
+  "dimension": 4096,
+  "documentTask": "text",
+  "model": "Qwen3-VL-Embedding-8B",
+  "normalized": true,
+  "provider": "https://api.moark.com/v1",
+  "queryTask": "text",
+  "revision": "1"
+ },
+ "model": "Qwen3-VL-Embedding-8B",
+ "newEmbeddingRequests": 2,
+ "reusedChunks": 129,
+ "schema": "system-guide-vectors-v1",
+ "vectorFile": "vectors.json",
+ "vectorsBytes": 11754997,
+ "vectorsSha256": "63bb0a21e2e457994893d6a9643286a4555fb0988d24f90b12e4f904e394a0de"
+}

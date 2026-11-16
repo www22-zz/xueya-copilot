@@ -173,6 +173,8 @@ def install_knowledge_base(app):
             host.state.knowledge = KnowledgeBase(host)
             from .portable_knowledge import PortableKnowledge
             host.state.portable_knowledge = PortableKnowledge(host.state.knowledge, host.state.config)
+            from .portable_corpus import PortableCorpus
+            host.state.portable_corpus = PortableCorpus(host.state.knowledge, host.state.config)
             from .practice_generation import PracticeGeneration
             host.state.practice_generation = PracticeGeneration(host)
             def analysis_catalog(account):

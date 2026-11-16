@@ -29,6 +29,9 @@ def main():
             shutil.copytree(ROOT/folder, root/folder)
         if shared:
             template = (ROOT/'.env.team-embedding.example').read_text('utf-8')
+            # This regression targets the retained 2B stack/queue fixture. The
+            # current seven-file bundle uses the new 8B example defaults.
+            template = template.replace('Qwen3-VL-Embedding-8B', 'Qwen3-VL-Embedding-2B').replace('RAG_EMBEDDING_DIMENSION=4096', 'RAG_EMBEDDING_DIMENSION=2048')
             (root/'.env.team-embedding').write_text(template.replace('RAG_EMBEDDING_API_KEY=\n', 'RAG_EMBEDDING_API_KEY=synthetic-browser-key\n'), encoding='utf-8')
         config = Config(root=root, data_dir=directory/'brand-new-data', auto_import_stack=True)
         app = create_app(config)

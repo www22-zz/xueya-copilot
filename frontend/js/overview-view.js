@@ -268,16 +268,24 @@
   function mountListeners(root, { ask, navigate }) {
     if (!root) return;
 
+    /* Single entry for every overview -> ask jump. Prefer the app-level helper
+       that keeps the question through the route render and queues it when the
+       previous answer is still streaming; fall back to the legacy navigation. */
+    function askFromOverview(prompt) {
+      const question = String(prompt == null ? '' : prompt).trim();
+      if (!question) return false;
+      if (typeof window.XueyaOpenAsk === 'function') return window.XueyaOpenAsk(question);
+      navigate('#space/ask');
+      setTimeout(() => {
+        if (typeof ask === 'function') ask(question);
+      }, 120);
+      return true;
+    }
+
     // Handle suggestion prompt chips
     root.querySelectorAll('.overview-prompt-chip').forEach(btn => {
       btn.addEventListener('click', () => {
-        const prompt = btn.getAttribute('data-prompt');
-        if (prompt) {
-          navigate('#space/ask');
-          setTimeout(() => {
-            if (typeof ask === 'function') ask(prompt);
-          }, 100);
-        }
+        askFromOverview(btn.getAttribute('data-prompt'));
       });
     });
 
@@ -285,12 +293,8 @@
     const input = root.querySelector('#overviewPromptInput');
     const submitBtn = root.querySelector('#overviewSubmitPromptBtn');
     function submit() {
-      const q = input?.value?.trim();
-      if (q) {
-        navigate('#space/ask');
-        setTimeout(() => {
-          if (typeof ask === 'function') ask(q);
-        }, 100);
+      if (!askFromOverview(input?.value)) {
+        input?.focus();
       }
     }
     submitBtn?.addEventListener('click', submit);

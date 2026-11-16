@@ -1,0 +1,506 @@
+{
+ "version": "hot100-starters-1",
+ "source": "backend/xueya/data/practice_bank.json solutions (official signatures only)",
+ "questions": {
+  "h100-01": {
+   "python": "from typing import List\n\nclass Solution:\n    def twoSum(self, nums: List[int], target: int) -> List[int]:\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    vector<int> twoSum(vector<int>& nums, int target) {\n        // 请在这里编写代码\n        return {};\n    }\n};\n",
+   "java": "class Solution {\n    public int[] twoSum(int[] nums, int target) {\n        // 请在这里编写代码\n        return new int[0];\n    }\n}\n"
+  },
+  "h100-04": {
+   "python": "from typing import List\n\nclass Solution:\n    def groupAnagrams(self, strs: List[str]) -> List[List[str]]:\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    vector<vector<string>> groupAnagrams(vector<string>& strs) {\n        // 请在这里编写代码\n        return {};\n    }\n};\n",
+   "java": "class Solution {\n    public List<List<String>> groupAnagrams(String[] strs) {\n        // 请在这里编写代码\n        return new ArrayList<>();\n    }\n}\n"
+  },
+  "h100-05": {
+   "python": "from typing import List\n\nclass Solution:\n    def longestConsecutive(self, nums: List[int]) -> int:\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    int longestConsecutive(vector<int>& nums) {\n        // 请在这里编写代码\n        return 0;\n    }\n};\n",
+   "java": "class Solution {\n    public int longestConsecutive(int[] nums) {\n        // 请在这里编写代码\n        return 0;\n    }\n}\n"
+  },
+  "h100-03": {
+   "python": "from typing import List\n\nclass Solution:\n    def moveZeroes(self, nums: List[int]) -> None:\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    void moveZeroes(vector<int>& nums) {\n        // 请在这里编写代码\n    }\n};\n",
+   "java": "class Solution {\n    public void moveZeroes(int[] nums) {\n        // 请在这里编写代码\n    }\n}\n"
+  },
+  "h100-06": {
+   "python": "from typing import List\n\nclass Solution:\n    def maxArea(self, height: List[int]) -> int:\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    int maxArea(vector<int>& height) {\n        // 请在这里编写代码\n        return 0;\n    }\n};\n",
+   "java": "class Solution {\n    public int maxArea(int[] height) {\n        // 请在这里编写代码\n        return 0;\n    }\n}\n"
+  },
+  "h100-07": {
+   "python": "from typing import List\n\nclass Solution:\n    def threeSum(self, nums: List[int]) -> List[List[int]]:\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    vector<vector<int>> threeSum(vector<int>& nums) {\n        // 请在这里编写代码\n        return {};\n    }\n};\n",
+   "java": "class Solution {\n    public List<List<Integer>> threeSum(int[] nums) {\n        // 请在这里编写代码\n        return new ArrayList<>();\n    }\n}\n"
+  },
+  "h100-09": {
+   "python": "from typing import List\n\nclass Solution:\n    def trap(self, height: List[int]) -> int:\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    int trap(vector<int>& height) {\n        // 请在这里编写代码\n        return 0;\n    }\n};\n",
+   "java": "class Solution {\n    public int trap(int[] height) {\n        // 请在这里编写代码\n        return 0;\n    }\n}\n"
+  },
+  "h100-08": {
+   "python": "class Solution:\n    def lengthOfLongestSubstring(self, s: str) -> int:\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    int lengthOfLongestSubstring(string s) {\n        // 请在这里编写代码\n        return 0;\n    }\n};\n",
+   "java": "class Solution {\n    public int lengthOfLongestSubstring(String s) {\n        // 请在这里编写代码\n        return 0;\n    }\n}\n"
+  },
+  "h100-12": {
+   "python": "class Solution:\n    def findAnagrams(self, s: str, p: str) -> list:\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    vector<int> findAnagrams(string s, string p) {\n        // 请在这里编写代码\n        return {};\n    }\n};\n",
+   "java": "class Solution {\n    public List<Integer> findAnagrams(String s, String p) {\n        // 请在这里编写代码\n        return new ArrayList<>();\n    }\n}\n"
+  },
+  "h100-14": {
+   "python": "class Solution:\n    def subarraySum(self, nums: list, k: int) -> int:\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    int subarraySum(vector<int>& nums, int k) {\n        // 请在这里编写代码\n        return 0;\n    }\n};\n",
+   "java": "class Solution {\n    public int subarraySum(int[] nums, int k) {\n        // 请在这里编写代码\n        return 0;\n    }\n}\n"
+  },
+  "h100-15": {
+   "python": "class Solution:\n    def maxSlidingWindow(self, nums: list, k: int) -> list:\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    vector<int> maxSlidingWindow(vector<int>& nums, int k) {\n        // 请在这里编写代码\n        return {};\n    }\n};\n",
+   "java": "class Solution {\n    public int[] maxSlidingWindow(int[] nums, int k) {\n        // 请在这里编写代码\n        return new int[0];\n    }\n}\n"
+  },
+  "h100-10": {
+   "python": "class Solution:\n    def minWindow(self, s: str, t: str) -> str:\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    string minWindow(string s, string t) {\n        // 请在这里编写代码\n        return \"\";\n    }\n};\n",
+   "java": "class Solution {\n    public String minWindow(String s, String t) {\n        // 请在这里编写代码\n        return \"\";\n    }\n}\n"
+  },
+  "h100-21": {
+   "python": "from typing import List\n\nclass Solution:\n    def maxSubArray(self, nums: List[int]) -> int:\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    int maxSubArray(vector<int>& nums) {\n        // 请在这里编写代码\n        return 0;\n    }\n};\n",
+   "java": "class Solution {\n    public int maxSubArray(int[] nums) {\n        // 请在这里编写代码\n        return 0;\n    }\n}\n"
+  },
+  "h100-22": {
+   "python": "from typing import List\n\nclass Solution:\n    def merge(self, intervals: List[List[int]]) -> List[List[int]]:\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    vector<vector<int>> merge(vector<vector<int>>& intervals) {\n        // 请在这里编写代码\n        return {};\n    }\n};\n",
+   "java": "class Solution {\n    public int[][] merge(int[][] intervals) {\n        // 请在这里编写代码\n        return new int[0][];\n    }\n}\n"
+  },
+  "h100-23": {
+   "python": "from typing import List\n\nclass Solution:\n    def rotate(self, nums: List[int], k: int) -> None:\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    void rotate(vector<int>& nums, int k) {\n        // 请在这里编写代码\n    }\n};\n",
+   "java": "class Solution {\n    public void rotate(int[] nums, int k) {\n        // 请在这里编写代码\n    }\n}\n"
+  },
+  "h100-24": {
+   "python": "from typing import List\n\nclass Solution:\n    def productExceptSelf(self, nums: List[int]) -> List[int]:\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    vector<int> productExceptSelf(vector<int>& nums) {\n        // 请在这里编写代码\n        return {};\n    }\n};\n",
+   "java": "class Solution {\n    public int[] productExceptSelf(int[] nums) {\n        // 请在这里编写代码\n        return new int[0];\n    }\n}\n"
+  },
+  "h100-25": {
+   "python": "from typing import List\n\nclass Solution:\n    def firstMissingPositive(self, nums: List[int]) -> int:\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    int firstMissingPositive(vector<int>& nums) {\n        // 请在这里编写代码\n        return 0;\n    }\n};\n",
+   "java": "class Solution {\n    public int firstMissingPositive(int[] nums) {\n        // 请在这里编写代码\n        return 0;\n    }\n}\n"
+  },
+  "h100-26": {
+   "python": "from typing import List\n\nclass Solution:\n    def setZeroes(self, matrix: List[List[int]]) -> None:\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    void setZeroes(vector<vector<int>>& matrix) {\n        // 请在这里编写代码\n    }\n};\n",
+   "java": "class Solution {\n    public void setZeroes(int[][] matrix) {\n        // 请在这里编写代码\n    }\n}\n"
+  },
+  "h100-27": {
+   "python": "from typing import List\n\nclass Solution:\n    def spiralOrder(self, matrix: List[List[int]]) -> List[int]:\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    vector<int> spiralOrder(vector<vector<int>>& matrix) {\n        // 请在这里编写代码\n        return {};\n    }\n};\n",
+   "java": "class Solution {\n    public List<Integer> spiralOrder(int[][] matrix) {\n        // 请在这里编写代码\n        return new ArrayList<>();\n    }\n}\n"
+  },
+  "h100-28": {
+   "python": "from typing import List\n\nclass Solution:\n    def rotate(self, matrix: List[List[int]]) -> None:\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    void rotate(vector<vector<int>>& matrix) {\n        // 请在这里编写代码\n    }\n};\n",
+   "java": "class Solution {\n    public void rotate(int[][] matrix) {\n        // 请在这里编写代码\n    }\n}\n"
+  },
+  "lc-240": {
+   "python": "class Solution:\n    def searchMatrix(self, matrix, target):\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    bool searchMatrix(vector<vector<int>>& a, int target) {\n        // 请在这里编写代码\n        return false;\n    }\n};\n",
+   "java": "class Solution {\n    public boolean searchMatrix(int[][] a, int target) {\n        // 请在这里编写代码\n        return false;\n    }\n}\n"
+  },
+  "h100-31": {
+   "python": "class Solution:\n    def getIntersectionNode(self, headA, headB):\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    ListNode * getIntersectionNode(ListNode *headA, ListNode *headB) {\n        // 请在这里编写代码\n        return nullptr;\n    }\n};\n",
+   "java": "class Solution {\n    public ListNode getIntersectionNode(ListNode headA, ListNode headB) {\n        // 请在这里编写代码\n        return null;\n    }\n}\n"
+  },
+  "h100-32": {
+   "python": "class Solution:\n    def reverseList(self, head):\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    ListNode* reverseList(ListNode* head) {\n        // 请在这里编写代码\n        return nullptr;\n    }\n};\n",
+   "java": "class Solution {\n    public ListNode reverseList(ListNode head) {\n        // 请在这里编写代码\n        return null;\n    }\n}\n"
+  },
+  "h100-33": {
+   "python": "class Solution:\n    def isPalindrome(self, head):\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    bool isPalindrome(ListNode* head) {\n        // 请在这里编写代码\n        return false;\n    }\n};\n",
+   "java": "class Solution {\n    public boolean isPalindrome(ListNode head) {\n        // 请在这里编写代码\n        return false;\n    }\n}\n"
+  },
+  "lc-141": {
+   "python": "class Solution:\n    def hasCycle(self, head):\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    bool hasCycle(ListNode *head) {\n        // 请在这里编写代码\n        return false;\n    }\n};\n",
+   "java": "class Solution {\n    public boolean hasCycle(ListNode head) {\n        // 请在这里编写代码\n        return false;\n    }\n}\n"
+  },
+  "lc-21": {
+   "python": "class Solution:\n    def mergeTwoLists(self, list1, list2):\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    ListNode* mergeTwoLists(ListNode* a, ListNode* b) {\n        // 请在这里编写代码\n        return nullptr;\n    }\n};\n",
+   "java": "class Solution {\n    public ListNode mergeTwoLists(ListNode a, ListNode b) {\n        // 请在这里编写代码\n        return null;\n    }\n}\n"
+  },
+  "h100-34": {
+   "python": "class Solution:\n    def detectCycle(self, head):\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    ListNode * detectCycle(ListNode *head) {\n        // 请在这里编写代码\n        return nullptr;\n    }\n};\n",
+   "java": "class Solution {\n    public ListNode detectCycle(ListNode head) {\n        // 请在这里编写代码\n        return null;\n    }\n}\n"
+  },
+  "h100-35": {
+   "python": "class Solution:\n    def addTwoNumbers(self, l1, l2):\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    ListNode* addTwoNumbers(ListNode* l1, ListNode* l2) {\n        // 请在这里编写代码\n        return nullptr;\n    }\n};\n",
+   "java": "class Solution {\n    public ListNode addTwoNumbers(ListNode l1, ListNode l2) {\n        // 请在这里编写代码\n        return null;\n    }\n}\n"
+  },
+  "h100-36": {
+   "python": "class Solution:\n    def removeNthFromEnd(self, head, n):\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    ListNode* removeNthFromEnd(ListNode* head, int n) {\n        // 请在这里编写代码\n        return nullptr;\n    }\n};\n",
+   "java": "class Solution {\n    public ListNode removeNthFromEnd(ListNode head, int n) {\n        // 请在这里编写代码\n        return null;\n    }\n}\n"
+  },
+  "lc-24": {
+   "python": "class Solution:\n    def swapPairs(self, head):\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    ListNode* swapPairs(ListNode* head) {\n        // 请在这里编写代码\n        return nullptr;\n    }\n};\n",
+   "java": "class Solution {\n    public ListNode swapPairs(ListNode head) {\n        // 请在这里编写代码\n        return null;\n    }\n}\n"
+  },
+  "lc-138": {
+   "python": "class Solution:\n    def copyRandomList(self, head):\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    Node* copyRandomList(Node* head) {\n        // 请在这里编写代码\n        return nullptr;\n    }\n};\n",
+   "java": "class Solution {\n    public Node copyRandomList(Node head) {\n        // 请在这里编写代码\n        return null;\n    }\n}\n"
+  },
+  "h100-37": {
+   "python": "class Solution:\n    def sortList(self, head):\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    ListNode* sortList(ListNode* head) {\n        // 请在这里编写代码\n        return nullptr;\n    }\n};\n",
+   "java": "class Solution {\n    public ListNode sortList(ListNode head) {\n        // 请在这里编写代码\n        return null;\n    }\n}\n"
+  },
+  "h100-38": {
+   "python": "class LRUCache:\n    def __init__(self, capacity):\n        # 请在这里编写代码\n        pass\n\n    def get(self, key):\n        # 请在这里编写代码\n        pass\n\n    def put(self, key, value):\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class LRUCache {\npublic:\n    LRUCache(int capacity) {\n        // 请在这里编写代码\n    }\n\n    int get(int key) {\n        // 请在这里编写代码\n        return 0;\n    }\n\n    void put(int key, int value) {\n        // 请在这里编写代码\n    }\n};\n",
+   "java": "class LRUCache {\n    public LRUCache(int capacity) {\n        // 请在这里编写代码\n    }\n\n    public int get(int key) {\n        // 请在这里编写代码\n        return 0;\n    }\n\n    public void put(int key, int value) {\n        // 请在这里编写代码\n    }\n}\n"
+  },
+  "h100-39": {
+   "python": "class Solution:\n    def reverseKGroup(self, head, k):\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    ListNode* reverseKGroup(ListNode* head, int k) {\n        // 请在这里编写代码\n        return nullptr;\n    }\n};\n",
+   "java": "class Solution {\n    public ListNode reverseKGroup(ListNode head, int k) {\n        // 请在这里编写代码\n        return null;\n    }\n}\n"
+  },
+  "h100-40": {
+   "python": "class Solution:\n    def mergeKLists(self, lists):\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    ListNode* mergeKLists(vector<ListNode*>& lists) {\n        // 请在这里编写代码\n        return nullptr;\n    }\n};\n",
+   "java": "class Solution {\n    public ListNode mergeKLists(ListNode[] lists) {\n        // 请在这里编写代码\n        return null;\n    }\n}\n"
+  },
+  "h100-41": {
+   "python": "class Solution:\n    def inorderTraversal(self, root):\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    vector<int> inorderTraversal(TreeNode* root) {\n        // 请在这里编写代码\n        return {};\n    }\n};\n",
+   "java": "class Solution {\n    public List<Integer> inorderTraversal(TreeNode root) {\n        // 请在这里编写代码\n        return new ArrayList<>();\n    }\n}\n"
+  },
+  "h100-42": {
+   "python": "class Solution:\n    def maxDepth(self, root):\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    int maxDepth(TreeNode* root) {\n        // 请在这里编写代码\n        return 0;\n    }\n};\n",
+   "java": "class Solution {\n    public int maxDepth(TreeNode root) {\n        // 请在这里编写代码\n        return 0;\n    }\n}\n"
+  },
+  "h100-43": {
+   "python": "class Solution:\n    def invertTree(self, root):\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    TreeNode* invertTree(TreeNode* root) {\n        // 请在这里编写代码\n        return nullptr;\n    }\n};\n",
+   "java": "class Solution {\n    public TreeNode invertTree(TreeNode root) {\n        // 请在这里编写代码\n        return null;\n    }\n}\n"
+  },
+  "lc-101": {
+   "python": "class Solution:\n    def isSymmetric(self, root):\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    bool isSymmetric(TreeNode* root) {\n        // 请在这里编写代码\n        return false;\n    }\n};\n",
+   "java": "class Solution {\n    public boolean isSymmetric(TreeNode root) {\n        // 请在这里编写代码\n        return false;\n    }\n}\n"
+  },
+  "lc-543": {
+   "python": "class Solution:\n    def diameterOfBinaryTree(self, root):\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    int diameterOfBinaryTree(TreeNode* root) {\n        // 请在这里编写代码\n        return 0;\n    }\n};\n",
+   "java": "class Solution {\n    public int diameterOfBinaryTree(TreeNode root) {\n        // 请在这里编写代码\n        return 0;\n    }\n}\n"
+  },
+  "lc-108": {
+   "python": "class Solution:\n    def sortedArrayToBST(self, nums):\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    TreeNode* sortedArrayToBST(vector<int>& nums) {\n        // 请在这里编写代码\n        return nullptr;\n    }\n};\n",
+   "java": "class Solution {\n    public TreeNode sortedArrayToBST(int[] nums) {\n        // 请在这里编写代码\n        return null;\n    }\n}\n"
+  },
+  "h100-44": {
+   "python": "class Solution:\n    def levelOrder(self, root):\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    vector<vector<int>> levelOrder(TreeNode* root) {\n        // 请在这里编写代码\n        return {};\n    }\n};\n",
+   "java": "class Solution {\n    public List<List<Integer>> levelOrder(TreeNode root) {\n        // 请在这里编写代码\n        return new ArrayList<>();\n    }\n}\n"
+  },
+  "h100-45": {
+   "python": "class Solution:\n    def isValidBST(self, root):\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    bool isValidBST(TreeNode* root) {\n        // 请在这里编写代码\n        return false;\n    }\n};\n",
+   "java": "class Solution {\n    public boolean isValidBST(TreeNode root) {\n        // 请在这里编写代码\n        return false;\n    }\n}\n"
+  },
+  "h100-46": {
+   "python": "class Solution:\n    def kthSmallest(self, root, k):\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    int kthSmallest(TreeNode* root, int k) {\n        // 请在这里编写代码\n        return 0;\n    }\n};\n",
+   "java": "class Solution {\n    public int kthSmallest(TreeNode root, int k) {\n        // 请在这里编写代码\n        return 0;\n    }\n}\n"
+  },
+  "h100-47": {
+   "python": "class Solution:\n    def rightSideView(self, root):\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    vector<int> rightSideView(TreeNode* root) {\n        // 请在这里编写代码\n        return {};\n    }\n};\n",
+   "java": "class Solution {\n    public List<Integer> rightSideView(TreeNode root) {\n        // 请在这里编写代码\n        return new ArrayList<>();\n    }\n}\n"
+  },
+  "lc-114": {
+   "python": "class Solution:\n    def flatten(self, root):\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    void flatten(TreeNode* root) {\n        // 请在这里编写代码\n    }\n};\n",
+   "java": "class Solution {\n    public void flatten(TreeNode root) {\n        // 请在这里编写代码\n    }\n}\n"
+  },
+  "lc-105": {
+   "python": "class Solution:\n    def buildTree(self, preorder, inorder):\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    TreeNode* buildTree(vector<int>& preorder, vector<int>& inorder) {\n        // 请在这里编写代码\n        return nullptr;\n    }\n};\n",
+   "java": "class Solution {\n    public TreeNode buildTree(int[] preorder, int[] inorder) {\n        // 请在这里编写代码\n        return null;\n    }\n}\n"
+  },
+  "lc-437": {
+   "python": "class Solution:\n    def pathSum(self, root, targetSum):\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    int pathSum(TreeNode* root, int targetSum) {\n        // 请在这里编写代码\n        return 0;\n    }\n};\n",
+   "java": "class Solution {\n    public int pathSum(TreeNode root, int targetSum) {\n        // 请在这里编写代码\n        return 0;\n    }\n}\n"
+  },
+  "h100-48": {
+   "python": "class Solution:\n    def lowestCommonAncestor(self, root, p, q):\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    TreeNode* lowestCommonAncestor(TreeNode* root, TreeNode* p, TreeNode* q) {\n        // 请在这里编写代码\n        return nullptr;\n    }\n};\n",
+   "java": "class Solution {\n    public TreeNode lowestCommonAncestor(TreeNode root, TreeNode p, TreeNode q) {\n        // 请在这里编写代码\n        return null;\n    }\n}\n"
+  },
+  "h100-49": {
+   "python": "class Solution:\n    def maxPathSum(self, root):\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    int maxPathSum(TreeNode* root) {\n        // 请在这里编写代码\n        return 0;\n    }\n};\n",
+   "java": "class Solution {\n    public int maxPathSum(TreeNode root) {\n        // 请在这里编写代码\n        return 0;\n    }\n}\n"
+  },
+  "h100-53": {
+   "python": "from typing import List\n\nclass Solution:\n    def numIslands(self, grid: List[List[str]]) -> int:\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    int numIslands(vector<vector<char>>& grid) {\n        // 请在这里编写代码\n        return 0;\n    }\n};\n",
+   "java": "class Solution {\n    public int numIslands(char[][] grid) {\n        // 请在这里编写代码\n        return 0;\n    }\n}\n"
+  },
+  "h100-54": {
+   "python": "from typing import List\n\nclass Solution:\n    def orangesRotting(self, grid: List[List[int]]) -> int:\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    int orangesRotting(vector<vector<int>>& grid) {\n        // 请在这里编写代码\n        return 0;\n    }\n};\n",
+   "java": "class Solution {\n    public int orangesRotting(int[][] grid) {\n        // 请在这里编写代码\n        return 0;\n    }\n}\n"
+  },
+  "h100-55": {
+   "python": "from typing import List\n\nclass Solution:\n    def canFinish(self, numCourses: int, prerequisites: List[List[int]]) -> bool:\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    bool canFinish(int numCourses, vector<vector<int>>& prerequisites) {\n        // 请在这里编写代码\n        return false;\n    }\n};\n",
+   "java": "class Solution {\n    public boolean canFinish(int numCourses, int[][] prerequisites) {\n        // 请在这里编写代码\n        return false;\n    }\n}\n"
+  },
+  "lc-208": {
+   "python": "class Trie:\n    def __init__(self):\n        # 请在这里编写代码\n        pass\n\n    def insert(self, word):\n        # 请在这里编写代码\n        pass\n\n    def search(self, word):\n        # 请在这里编写代码\n        pass\n\n    def startsWith(self, prefix):\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Trie {\npublic:\n    Trie() {\n        // 请在这里编写代码\n    }\n\n    void insert(string word) {\n        // 请在这里编写代码\n    }\n\n    bool search(string word) {\n        // 请在这里编写代码\n        return false;\n    }\n\n    bool startsWith(string prefix) {\n        // 请在这里编写代码\n        return false;\n    }\n};\n",
+   "java": "class Trie {\n    public Trie() {\n        // 请在这里编写代码\n    }\n\n    public void insert(String word) {\n        // 请在这里编写代码\n    }\n\n    public boolean search(String word) {\n        // 请在这里编写代码\n        return false;\n    }\n\n    public boolean startsWith(String prefix) {\n        // 请在这里编写代码\n        return false;\n    }\n}\n"
+  },
+  "h100-56": {
+   "python": "from typing import List\n\nclass Solution:\n    def permute(self, nums: List[int]) -> List[List[int]]:\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    vector<vector<int>> permute(vector<int>& nums) {\n        // 请在这里编写代码\n        return {};\n    }\n};\n",
+   "java": "class Solution {\n    public List<List<Integer>> permute(int[] nums) {\n        // 请在这里编写代码\n        return new ArrayList<>();\n    }\n}\n"
+  },
+  "h100-57": {
+   "python": "from typing import List\n\nclass Solution:\n    def subsets(self, nums: List[int]) -> List[List[int]]:\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    vector<vector<int>> subsets(vector<int>& nums) {\n        // 请在这里编写代码\n        return {};\n    }\n};\n",
+   "java": "class Solution {\n    public List<List<Integer>> subsets(int[] nums) {\n        // 请在这里编写代码\n        return new ArrayList<>();\n    }\n}\n"
+  },
+  "lc-17": {
+   "python": "class Solution:\n    def letterCombinations(self, digits):\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    vector<string> letterCombinations(string digits) {\n        // 请在这里编写代码\n        return {};\n    }\n};\n",
+   "java": "class Solution {\n    public java.util.List<String> letterCombinations(String digits) {\n        // 请在这里编写代码\n        return new ArrayList<>();\n    }\n}\n"
+  },
+  "lc-39": {
+   "python": "class Solution:\n    def combinationSum(self, candidates, target):\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    vector<vector<int>> combinationSum(vector<int>& a, int target) {\n        // 请在这里编写代码\n        return {};\n    }\n};\n",
+   "java": "class Solution {\n    public java.util.List<java.util.List<Integer>> combinationSum(int[] a, int target) {\n        // 请在这里编写代码\n        return new ArrayList<>();\n    }\n}\n"
+  },
+  "lc-22": {
+   "python": "class Solution:\n    def generateParenthesis(self, n):\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    vector<string> generateParenthesis(int n) {\n        // 请在这里编写代码\n        return {};\n    }\n};\n",
+   "java": "class Solution {\n    public java.util.List<String> generateParenthesis(int n) {\n        // 请在这里编写代码\n        return new ArrayList<>();\n    }\n}\n"
+  },
+  "h100-58": {
+   "python": "from typing import List\n\nclass Solution:\n    def exist(self, board: List[List[str]], word: str) -> bool:\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    bool exist(vector<vector<char>>& board, string word) {\n        // 请在这里编写代码\n        return false;\n    }\n};\n",
+   "java": "class Solution {\n    public boolean exist(char[][] board, String word) {\n        // 请在这里编写代码\n        return false;\n    }\n}\n"
+  },
+  "lc-131": {
+   "python": "class Solution:\n    def partition(self, s):\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    vector<vector<string>> partition(string s) {\n        // 请在这里编写代码\n        return {};\n    }\n};\n",
+   "java": "class Solution {\n    public java.util.List<java.util.List<String>> partition(String s) {\n        // 请在这里编写代码\n        return new ArrayList<>();\n    }\n}\n"
+  },
+  "h100-59": {
+   "python": "from typing import List\n\nclass Solution:\n    def solveNQueens(self, n: int) -> List[List[str]]:\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    vector<vector<string>> solveNQueens(int n) {\n        // 请在这里编写代码\n        return {};\n    }\n};\n",
+   "java": "class Solution {\n    public List<List<String>> solveNQueens(int n) {\n        // 请在这里编写代码\n        return new ArrayList<>();\n    }\n}\n"
+  },
+  "h100-63": {
+   "python": "from typing import List\n\nclass Solution:\n    def searchInsert(self, nums: List[int], target: int) -> int:\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    int searchInsert(vector<int>& nums, int target) {\n        // 请在这里编写代码\n        return 0;\n    }\n};\n",
+   "java": "class Solution {\n    public int searchInsert(int[] nums, int target) {\n        // 请在这里编写代码\n        return 0;\n    }\n}\n"
+  },
+  "h100-64": {
+   "python": "from typing import List\n\nclass Solution:\n    def searchMatrix(self, matrix: List[List[int]], target: int) -> bool:\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    bool searchMatrix(vector<vector<int>>& matrix, int target) {\n        // 请在这里编写代码\n        return false;\n    }\n};\n",
+   "java": "class Solution {\n    public boolean searchMatrix(int[][] matrix, int target) {\n        // 请在这里编写代码\n        return false;\n    }\n}\n"
+  },
+  "h100-62": {
+   "python": "from typing import List\n\nclass Solution:\n    def searchRange(self, nums: List[int], target: int) -> List[int]:\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    vector<int> searchRange(vector<int>& nums, int target) {\n        // 请在这里编写代码\n        return {};\n    }\n};\n",
+   "java": "class Solution {\n    public int[] searchRange(int[] nums, int target) {\n        // 请在这里编写代码\n        return new int[0];\n    }\n}\n"
+  },
+  "h100-61": {
+   "python": "from typing import List\n\nclass Solution:\n    def search(self, nums: List[int], target: int) -> int:\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    int search(vector<int>& nums, int target) {\n        // 请在这里编写代码\n        return 0;\n    }\n};\n",
+   "java": "class Solution {\n    public int search(int[] nums, int target) {\n        // 请在这里编写代码\n        return 0;\n    }\n}\n"
+  },
+  "h100-65": {
+   "python": "from typing import List\n\nclass Solution:\n    def findMin(self, nums: List[int]) -> int:\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    int findMin(vector<int>& nums) {\n        // 请在这里编写代码\n        return 0;\n    }\n};\n",
+   "java": "class Solution {\n    public int findMin(int[] nums) {\n        // 请在这里编写代码\n        return 0;\n    }\n}\n"
+  },
+  "h100-66": {
+   "python": "from typing import List\n\nclass Solution:\n    def findMedianSortedArrays(self, nums1: List[int], nums2: List[int]) -> float:\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    double findMedianSortedArrays(vector<int>& nums1, vector<int>& nums2) {\n        // 请在这里编写代码\n        return 0.0;\n    }\n};\n",
+   "java": "class Solution {\n    public double findMedianSortedArrays(int[] nums1, int[] nums2) {\n        // 请在这里编写代码\n        return 0.0;\n    }\n}\n"
+  },
+  "h100-67": {
+   "python": "class Solution:\n    def isValid(self, s: str) -> bool:\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    bool isValid(string s) {\n        // 请在这里编写代码\n        return false;\n    }\n};\n",
+   "java": "class Solution {\n    public boolean isValid(String s) {\n        // 请在这里编写代码\n        return false;\n    }\n}\n"
+  },
+  "h100-68": {
+   "python": "class MinStack:\n    def __init__(self):\n        # 请在这里编写代码\n        pass\n\n    def push(self, val: int) -> None:\n        # 请在这里编写代码\n        pass\n\n    def pop(self) -> None:\n        # 请在这里编写代码\n        pass\n\n    def top(self) -> int:\n        # 请在这里编写代码\n        pass\n\n    def getMin(self) -> int:\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class MinStack {\npublic:\n    MinStack() {\n        // 请在这里编写代码\n    }\n\n    void push(int val) {\n        // 请在这里编写代码\n    }\n\n    void pop() {\n        // 请在这里编写代码\n    }\n\n    int top() {\n        // 请在这里编写代码\n        return 0;\n    }\n\n    int getMin() {\n        // 请在这里编写代码\n        return 0;\n    }\n};\n",
+   "java": "class MinStack {\n    public MinStack() {\n        // 请在这里编写代码\n    }\n\n    public void push(int val) {\n        // 请在这里编写代码\n    }\n\n    public void pop() {\n        // 请在这里编写代码\n    }\n\n    public int top() {\n        // 请在这里编写代码\n        return 0;\n    }\n\n    public int getMin() {\n        // 请在这里编写代码\n        return 0;\n    }\n}\n"
+  },
+  "h100-69": {
+   "python": "class Solution:\n    def decodeString(self, s: str) -> str:\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    string decodeString(string s) {\n        // 请在这里编写代码\n        return \"\";\n    }\n};\n",
+   "java": "class Solution {\n    public String decodeString(String s) {\n        // 请在这里编写代码\n        return \"\";\n    }\n}\n"
+  },
+  "lc-739": {
+   "python": "class Solution:\n    def dailyTemperatures(self, temperatures):\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    vector<int> dailyTemperatures(vector<int>& t) {\n        // 请在这里编写代码\n        return {};\n    }\n};\n",
+   "java": "class Solution {\n    public int[] dailyTemperatures(int[] t) {\n        // 请在这里编写代码\n        return new int[0];\n    }\n}\n"
+  },
+  "lc-84": {
+   "python": "class Solution:\n    def largestRectangleArea(self, heights):\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    int largestRectangleArea(vector<int>& h) {\n        // 请在这里编写代码\n        return 0;\n    }\n};\n",
+   "java": "class Solution {\n    public int largestRectangleArea(int[] h) {\n        // 请在这里编写代码\n        return 0;\n    }\n}\n"
+  },
+  "h100-74": {
+   "python": "from typing import List\n\nclass Solution:\n    def findKthLargest(self, nums: List[int], k: int) -> int:\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    int findKthLargest(vector<int>& nums, int k) {\n        // 请在这里编写代码\n        return 0;\n    }\n};\n",
+   "java": "class Solution {\n    public int findKthLargest(int[] nums, int k) {\n        // 请在这里编写代码\n        return 0;\n    }\n}\n"
+  },
+  "h100-73": {
+   "python": "from typing import List\n\nclass Solution:\n    def topKFrequent(self, nums: List[int], k: int) -> List[int]:\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    vector<int> topKFrequent(vector<int>& nums, int k) {\n        // 请在这里编写代码\n        return {};\n    }\n};\n",
+   "java": "class Solution {\n    public int[] topKFrequent(int[] nums, int k) {\n        // 请在这里编写代码\n        return new int[0];\n    }\n}\n"
+  },
+  "h100-79": {
+   "python": "class MedianFinder:\n    def __init__(self):\n        # 请在这里编写代码\n        pass\n\n    def addNum(self, num: int) -> None:\n        # 请在这里编写代码\n        pass\n\n    def findMedian(self) -> float:\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class MedianFinder {\npublic:\n    void addNum(int num) {\n        // 请在这里编写代码\n    }\n\n    double findMedian() {\n        // 请在这里编写代码\n        return 0.0;\n    }\n};\n",
+   "java": "class MedianFinder {\n    public void addNum(int num) {\n        // 请在这里编写代码\n    }\n\n    public double findMedian() {\n        // 请在这里编写代码\n        return 0.0;\n    }\n}\n"
+  },
+  "h100-71": {
+   "python": "class Solution:\n    def maxProfit(self, prices: List[int]) -> int:\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    int maxProfit(vector<int>& prices) {\n        // 请在这里编写代码\n        return 0;\n    }\n};\n",
+   "java": "class Solution {\n    public int maxProfit(int[] prices) {\n        // 请在这里编写代码\n        return 0;\n    }\n}\n"
+  },
+  "h100-75": {
+   "python": "from typing import List\n\nclass Solution:\n    def canJump(self, nums: List[int]) -> bool:\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    bool canJump(vector<int>& nums) {\n        // 请在这里编写代码\n        return false;\n    }\n};\n",
+   "java": "class Solution {\n    public boolean canJump(int[] nums) {\n        // 请在这里编写代码\n        return false;\n    }\n}\n"
+  },
+  "h100-76": {
+   "python": "from typing import List\n\nclass Solution:\n    def jump(self, nums: List[int]) -> int:\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    int jump(vector<int>& nums) {\n        // 请在这里编写代码\n        return 0;\n    }\n};\n",
+   "java": "class Solution {\n    public int jump(int[] nums) {\n        // 请在这里编写代码\n        return 0;\n    }\n}\n"
+  },
+  "h100-77": {
+   "python": "from typing import List\n\nclass Solution:\n    def partitionLabels(self, s: str) -> List[int]:\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    vector<int> partitionLabels(string s) {\n        // 请在这里编写代码\n        return {};\n    }\n};\n",
+   "java": "class Solution {\n    public List<Integer> partitionLabels(String s) {\n        // 请在这里编写代码\n        return new ArrayList<>();\n    }\n}\n"
+  },
+  "h100-81": {
+   "python": "class Solution:\n    def climbStairs(self, n: int) -> int:\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    int climbStairs(int n) {\n        // 请在这里编写代码\n        return 0;\n    }\n};\n",
+   "java": "class Solution {\n    public int climbStairs(int n) {\n        // 请在这里编写代码\n        return 0;\n    }\n}\n"
+  },
+  "h100-30": {
+   "python": "from typing import List\n\nclass Solution:\n    def generate(self, numRows: int) -> List[List[int]]:\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    vector<vector<int>> generate(int numRows) {\n        // 请在这里编写代码\n        return {};\n    }\n};\n",
+   "java": "class Solution {\n    public List<List<Integer>> generate(int numRows) {\n        // 请在这里编写代码\n        return new ArrayList<>();\n    }\n}\n"
+  },
+  "h100-83": {
+   "python": "class Solution:\n    def rob(self, nums: list[int]) -> int:\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    int rob(vector<int>& nums) {\n        // 请在这里编写代码\n        return 0;\n    }\n};\n",
+   "java": "class Solution {\n    public int rob(int[] nums) {\n        // 请在这里编写代码\n        return 0;\n    }\n}\n"
+  },
+  "h100-84": {
+   "python": "class Solution:\n    def numSquares(self, n: int) -> int:\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    int numSquares(int n) {\n        // 请在这里编写代码\n        return 0;\n    }\n};\n",
+   "java": "class Solution {\n    public int numSquares(int n) {\n        // 请在这里编写代码\n        return 0;\n    }\n}\n"
+  },
+  "h100-85": {
+   "python": "class Solution:\n    def coinChange(self, coins: list[int], amount: int) -> int:\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    int coinChange(vector<int>& coins, int amount) {\n        // 请在这里编写代码\n        return 0;\n    }\n};\n",
+   "java": "class Solution {\n    public int coinChange(int[] coins, int amount) {\n        // 请在这里编写代码\n        return 0;\n    }\n}\n"
+  },
+  "h100-86": {
+   "python": "class Solution:\n    def wordBreak(self, s: str, wordDict: list[str]) -> bool:\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    bool wordBreak(string s, vector<string>& wordDict) {\n        // 请在这里编写代码\n        return false;\n    }\n};\n",
+   "java": "class Solution {\n    public boolean wordBreak(String s, List<String> wordDict) {\n        // 请在这里编写代码\n        return false;\n    }\n}\n"
+  },
+  "h100-87": {
+   "python": "class Solution:\n    def lengthOfLIS(self, nums: list[int]) -> int:\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    int lengthOfLIS(vector<int>& nums) {\n        // 请在这里编写代码\n        return 0;\n    }\n};\n",
+   "java": "class Solution {\n    public int lengthOfLIS(int[] nums) {\n        // 请在这里编写代码\n        return 0;\n    }\n}\n"
+  },
+  "h100-88": {
+   "python": "class Solution:\n    def maxProduct(self, nums: list[int]) -> int:\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    int maxProduct(vector<int>& nums) {\n        // 请在这里编写代码\n        return 0;\n    }\n};\n",
+   "java": "class Solution {\n    public int maxProduct(int[] nums) {\n        // 请在这里编写代码\n        return 0;\n    }\n}\n"
+  },
+  "h100-89": {
+   "python": "class Solution:\n    def canPartition(self, nums: list[int]) -> bool:\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    bool canPartition(vector<int>& nums) {\n        // 请在这里编写代码\n        return false;\n    }\n};\n",
+   "java": "class Solution {\n    public boolean canPartition(int[] nums) {\n        // 请在这里编写代码\n        return false;\n    }\n}\n"
+  },
+  "h100-90": {
+   "python": "class Solution:\n    def longestValidParentheses(self, s: str) -> int:\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    int longestValidParentheses(string s) {\n        // 请在这里编写代码\n        return 0;\n    }\n};\n",
+   "java": "class Solution {\n    public int longestValidParentheses(String s) {\n        // 请在这里编写代码\n        return 0;\n    }\n}\n"
+  },
+  "h100-91": {
+   "python": "from typing import List\n\nclass Solution:\n    def uniquePaths(self, m: int, n: int) -> int:\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    int uniquePaths(int m, int n) {\n        // 请在这里编写代码\n        return 0;\n    }\n};\n",
+   "java": "class Solution {\n    public int uniquePaths(int m, int n) {\n        // 请在这里编写代码\n        return 0;\n    }\n}\n"
+  },
+  "h100-92": {
+   "python": "from typing import List\n\nclass Solution:\n    def minPathSum(self, grid: List[List[int]]) -> int:\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    int minPathSum(vector<vector<int>>& grid) {\n        // 请在这里编写代码\n        return 0;\n    }\n};\n",
+   "java": "class Solution {\n    public int minPathSum(int[][] grid) {\n        // 请在这里编写代码\n        return 0;\n    }\n}\n"
+  },
+  "lc-5": {
+   "python": "class Solution:\n    def longestPalindrome(self, s):\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    string longestPalindrome(string s) {\n        // 请在这里编写代码\n        return \"\";\n    }\n};\n",
+   "java": "class Solution {\n    public String longestPalindrome(String s) {\n        // 请在这里编写代码\n        return \"\";\n    }\n}\n"
+  },
+  "h100-94": {
+   "python": "class Solution:\n    def longestCommonSubsequence(self, text1: str, text2: str) -> int:\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    int longestCommonSubsequence(string text1, string text2) {\n        // 请在这里编写代码\n        return 0;\n    }\n};\n",
+   "java": "class Solution {\n    public int longestCommonSubsequence(String text1, String text2) {\n        // 请在这里编写代码\n        return 0;\n    }\n}\n"
+  },
+  "h100-95": {
+   "python": "class Solution:\n    def minDistance(self, word1: str, word2: str) -> int:\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    int minDistance(string word1, string word2) {\n        // 请在这里编写代码\n        return 0;\n    }\n};\n",
+   "java": "class Solution {\n    public int minDistance(String word1, String word2) {\n        // 请在这里编写代码\n        return 0;\n    }\n}\n"
+  },
+  "h100-96": {
+   "python": "from typing import List\n\nclass Solution:\n    def singleNumber(self, nums: List[int]) -> int:\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    int singleNumber(vector<int>& nums) {\n        // 请在这里编写代码\n        return 0;\n    }\n};\n",
+   "java": "class Solution {\n    public int singleNumber(int[] nums) {\n        // 请在这里编写代码\n        return 0;\n    }\n}\n"
+  },
+  "h100-97": {
+   "python": "from typing import List\n\nclass Solution:\n    def majorityElement(self, nums: List[int]) -> int:\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    int majorityElement(vector<int>& nums) {\n        // 请在这里编写代码\n        return 0;\n    }\n};\n",
+   "java": "class Solution {\n    public int majorityElement(int[] nums) {\n        // 请在这里编写代码\n        return 0;\n    }\n}\n"
+  },
+  "h100-98": {
+   "python": "from typing import List\n\nclass Solution:\n    def sortColors(self, nums: List[int]) -> None:\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    void sortColors(vector<int>& nums) {\n        // 请在这里编写代码\n    }\n};\n",
+   "java": "class Solution {\n    public void sortColors(int[] nums) {\n        // 请在这里编写代码\n    }\n}\n"
+  },
+  "h100-99": {
+   "python": "from typing import List\n\nclass Solution:\n    def nextPermutation(self, nums: List[int]) -> None:\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    void nextPermutation(vector<int>& nums) {\n        // 请在这里编写代码\n    }\n};\n",
+   "java": "class Solution {\n    public void nextPermutation(int[] nums) {\n        // 请在这里编写代码\n    }\n}\n"
+  },
+  "h100-100": {
+   "python": "from typing import List\n\nclass Solution:\n    def findDuplicate(self, nums: List[int]) -> int:\n        # 请在这里编写代码\n        pass\n",
+   "cpp": "class Solution {\npublic:\n    int findDuplicate(vector<int>& nums) {\n        // 请在这里编写代码\n        return 0;\n    }\n};\n",
+   "java": "class Solution {\n    public int findDuplicate(int[] nums) {\n        // 请在这里编写代码\n        return 0;\n    }\n}\n"
+  }
+ }
+}
