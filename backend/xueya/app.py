@@ -392,6 +392,8 @@ def create_app(config: Config | None = None, *, provider=None, start_jobs=True):
                 return success(tools=await session.list_tools(namespace=True))
         if path == "/tools/call" and method == "POST":
             async def call():
+                # 联网工具只能由显式放行的外部调用使用；普通工具调用默认不联网。
+                require(value.get("name") != "search_web" or value.get("allowWebSearch") is True, "WEB_SEARCH_NOT_ENABLED")
                 async with open_session(platform_registry(p, scope(), rag=getattr(app.state, 'rag', None), learning=getattr(app.state, 'learning', None))) as session:
                     return success(data=await session.call(value.get("name"), value.get("arguments") or {}))
             return await connected_work(request, call())
@@ -460,4 +462,6 @@ def create_app(config: Config | None = None, *, provider=None, start_jobs=True):
         install_practice(app)
         from .study_space_api import install_study_space
         install_study_space(app)
+        from .companion_api import install_companion
+        install_companion(app)
     return app

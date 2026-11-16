@@ -1213,13 +1213,21 @@ body.in-ask .learning-shortcuts {
 
 .hot100-search-wrap {
   position: relative;
+  display: flex;
+  align-items: center;
   flex: 1;
   min-width: 0;
+  min-height: 38px;
 }
 
 .hot100-search-wrap input {
+  display: block;
+  flex: 1 1 auto;
   width: 100%;
+  min-width: 0;
   height: 38px;
+  margin: 0;
+  align-self: center;
   padding-left: 36px;
   padding-right: 12px;
   border-radius: 0.5rem;
@@ -1326,6 +1334,128 @@ body.in-ask .learning-shortcuts {
   background: #4f46e5;
   color: #ffffff;
   box-shadow: 0 2px 8px rgba(79, 70, 229, 0.25);
+}
+
+/* Official-topic navigation (17 Hot100 topics with live counts) */
+.hot100-topic-nav {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 9px;
+  border-radius: 0.75rem;
+  background: var(--stitch-surface-container-low);
+  border: 1px solid rgb(var(--stitch-color-outline-variant) / 0.3);
+}
+
+.hot100-topic-nav-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--stitch-on-surface);
+}
+
+.hot100-topic-nav-meta {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--stitch-outline);
+}
+
+.hot100-topic-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px;
+  max-height: 172px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  padding-right: 2px;
+}
+
+.hot100-topic-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  min-width: 0;
+  padding: 4px 7px;
+  border-radius: 8px;
+  font-size: 11px;
+}
+
+.hot100-topic-btn .hot100-topic-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hot100-topic-btn .hot100-topic-count {
+  flex-shrink: 0;
+  min-width: 18px;
+  padding: 0 5px;
+  border-radius: 9999px;
+  background: rgb(var(--stitch-color-surface-container-high) / 0.95);
+  color: var(--stitch-on-surface-variant);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.hot100-topic-btn.is-active .hot100-topic-count {
+  background: rgba(255, 255, 255, 0.24);
+  color: #ffffff;
+}
+
+/* Topic group heading inside the "全部知识点" list */
+.hot100-topic-group {
+  display: flex !important;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  max-width: 100%;
+  margin: 6px 0 0;
+  padding: 3px 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--stitch-on-surface-variant);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.hot100-topic-group::before {
+  content: '';
+  flex: none;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #4f46e5;
+  opacity: 0.9;
+}
+
+.hot100-topic-group small {
+  margin-left: auto;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--stitch-outline);
+}
+
+.hot100-topic-group:first-child {
+  margin-top: 0;
+}
+
+@container hot100 (max-width: 849px) {
+  .hot100-topic-grid {
+    grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
+    max-height: none;
+  }
 }
 
 /* Question Cards in Left Navigator */

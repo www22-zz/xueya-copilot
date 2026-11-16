@@ -125,12 +125,13 @@ function createViews(ctx,base){
         `<div class="composer-tools">`+
           `<button type="button" class="composer-icon-button composer-add p-1.5 rounded-lg hover:bg-surface-container-low text-on-surface-variant hover:text-on-surface transition-colors" data-add-images aria-label="添加文件或图片" title="添加文件或图片（PDF、Word、TXT、Markdown）" ${locked?'disabled':''}>${plusIcon}</button>`+
           `<button type="button" class="composer-icon-button composer-mic p-1.5 rounded-lg hover:bg-surface-container-low text-on-surface-variant hover:text-on-surface transition-colors ${recording?'is-recording':''}" data-add-audio aria-label="${recording?'停止录音并识别':voice.phase==='transcribing'?'正在识别语音':'开始录音'}" title="录音停止后识别为文字，核对后发送" aria-pressed="${recording}" ${state.pending||['requesting','transcribing'].includes(voice.phase)?'disabled':''}>${recording?'<span class="record-stop" aria-hidden="true"></span>':mic}</button>`+
-          `<button type="button" class="composer-web ${state.webSearch?'is-active':''}" data-toggle-web-search aria-label="全网 + 课程知识库混合检索" title="${state.webSearch?'全网搜索已开启（联网获取最新信息）':'开启全网搜索（联网获取最新信息）'}" aria-pressed="${Boolean(state.webSearch)}" ${locked?'disabled':''}>`+
-            `<span class="text-sm">🌐</span> <span class="web-search-text">全网 + 课程知识库混合检索</span>`+
+          `<button type="button" class="composer-web ${state.webSearch?'is-active':''}" data-toggle-web-search aria-label="联网搜索（开启后结合互联网与课程知识库）" title="${state.webSearch?'联网搜索已开启（结合互联网与课程知识库）':'开启联网搜索（结合互联网与课程知识库）'}" aria-pressed="${Boolean(state.webSearch)}" ${locked?'disabled':''}>`+
+            `<span class="text-sm">🌐</span> <span class="web-search-text">联网搜索</span>`+
           `</button>`+
           `<button type="button" class="composer-web composer-fast ${state.deepThink?'is-active':''}" data-toggle-deep-think aria-label="深度思考" title="${state.deepThink?'深度思考已开启：模型先推理再回答，速度较慢':'开启深度思考：模型先推理再回答，适合复杂问题'}" aria-pressed="${Boolean(state.deepThink)}" ${locked?'disabled':''}>`+
             `<span class="text-sm">🧠</span> <span class="web-search-text">深度思考</span>`+
           `</button>`+
+          `<span class="composer-web-hint text-[11px] text-on-surface-variant hidden sm:inline" title="课程资料始终参与检索，无需开启联网搜索">课程资料默认参与检索</span>`+
         `</div>`+
         `<div class="flex items-center gap-3">`+
           `<span class="composer-note text-xs text-on-surface-variant hidden sm:inline">${state.pending?'正在生成，可随时停止':getAttachments().length&&!window.XueyaPlatform?.available?'启动本地服务后可发送附件':'Enter 发送 · Shift + Enter 换行'}</span>`+

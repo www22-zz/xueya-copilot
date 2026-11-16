@@ -11,7 +11,7 @@ const esc=s=>e(s);
 function createPracticeView({store,client,toast=()=>{},navigate=()=>{}}={}){
   let root=null,view='practice',revealed=false,attempt=null,choice=null,shortDraft='',fillDraft='',noteTimer=null,noteTarget=null;
   let loading=true,loadError='',saving=new Set(),noteErrors=new Set(),syncing=false,initialized=false,pendingRender=false;
-  let entry='hub',writtenTimer=null,writtenTarget=null,requestedQuestionId=null;
+  let entry='hub',writtenTimer=null,writtenTarget=null,requestedQuestionId=null,ensureVisiblePending=false;
   let whiteboardOpen=false,whiteboardTab='complexity',consoleTab='testcase',activeCaseIndex=0;
   let runState={questionId:'',loading:false,result:null,error:''},runToken=0;
   let analysisState={key:'',loading:false,result:null,error:''},analysisToken=0;
@@ -47,12 +47,15 @@ function createPracticeView({store,client,toast=()=>{},navigate=()=>{}}={}){
     if(analysisState.key===key)return analysisState;
     return {key,loading:false,result:analysisCache.get(key)||null,error:''};
   }
-  const HOT_TOPICS=['全部专题','哈希表','双指针','二叉树','动态规划','链表','滑动窗口','贪心','回溯','栈','数组','图论'];
+  // The 交互演示 ids come from frontend/js/algorithm-demo-registry.js, which the
+  // backend export script (scripts/export_algorithm_demos.py --write) generates.
+  // No question id is hardcoded here: a missing registry simply marks nothing.
+  function demoIds(){const registry=globalThis.XueyaAlgorithmDemoIds;return Array.isArray(registry)?registry:[];}
   function generateLineNumbers(codeText){
     const lineCount=Math.max(14,(codeText||'').split('\n').length);
     return Array.from({length:lineCount},(_,i)=>`<span>${i+1}</span>`).join('');
   }
-  function applyRequestedQuestion(){if(requestedQuestionId&&bank().some(q=>q.id===requestedQuestionId)){position().selected=requestedQuestionId;position().completed=false;ui.selectedQuestionId=requestedQuestionId;requestedQuestionId=null;}}
+  function applyRequestedQuestion(){if(requestedQuestionId&&bank().some(q=>q.id===requestedQuestionId)){position().selected=requestedQuestionId;position().completed=false;ui.selectedQuestionId=requestedQuestionId;requestedQuestionId=null;ensureVisiblePending=true;}}
   const ui=store.state.ui;
   const button=(label,action,attrs='',style='button-outline')=>`<button type="button" class="button button-small ${style}" data-action="${action}" ${attrs}>${label}</button>`;
   const bank=()=>client.bank()||[];
@@ -76,8 +79,8 @@ function createPracticeView({store,client,toast=()=>{},navigate=()=>{}}={}){
     const text=String(f.keyword||'').trim().toLowerCase();
     return !text||[q.id,q.leetcodeNumber||'',q.title,q.prompt,...(q.tags||[])].join(' ').toLowerCase().includes(text);
   }
-  function listed(){
-    const f=filters();let list=pool().filter(q=>matches(q,f)&&(view==='review'?statusOf(q.id)==='wrong':statusOf(q.id)===(f.status||'pending')));
+  function listed(fOverride){
+    const f=fOverride||filters();let list=pool().filter(q=>matches(q,f)&&(view==='review'?statusOf(q.id)==='wrong':statusOf(q.id)===(f.status||'pending')));
     if(view==='review')list.sort((a,b)=>{
       const pa=progress(a.id),pb=progress(b.id),stamp=p=>[p.lastWrongAt||'',p.wrongEnteredAt||''].sort().pop();
       return (ui.wrongSort==='count'?(pb.wrongCount||0)-(pa.wrongCount||0):0)||stamp(pb).localeCompare(stamp(pa))||a.id.localeCompare(b.id);
@@ -91,9 +94,9 @@ function createPracticeView({store,client,toast=()=>{},navigate=()=>{}}={}){
     return root?.querySelector('.hot100-workbench .practice-list')||root?.querySelector('.practice-list-pane');
   }
   function savePosition(){const pane=listScroller();if(pane&&!loading)position().scroll=pane.scrollTop;store.persist();}
-  function resetSelection(){flushNote();clearTransient();position().selected=listed()[0]?.id||null;position().completed=false;position().scroll=0;ui.selectedQuestionId=position().selected;store.persist();}
+  function resetSelection(){flushNote();clearTransient();position().selected=listed()[0]?.id||null;position().completed=false;position().scroll=0;ui.selectedQuestionId=position().selected;ensureVisiblePending=true;store.persist();}
   function select(id,{manual=true}={}){
-    flushNote();savePosition();clearTransient();position().selected=id;position().completed=false;ui.selectedQuestionId=id;
+    flushNote();savePosition();clearTransient();position().selected=id;position().completed=false;ui.selectedQuestionId=id;ensureVisiblePending=true;
     if(manual)ui.mode='order';
     ui.detailFullscreen=matchMedia('(max-width:720px)').matches;
     store.persist();render();
@@ -103,7 +106,7 @@ function createPracticeView({store,client,toast=()=>{},navigate=()=>{}}={}){
     const list=listed(),oldId=position().selected;let next;
     if(ui.mode==='random'&&view!=='review')next=randomPickLocal(list);
     else {const index=previous.findIndex(q=>q.id===oldId);next=previous.slice(index+1).find(q=>list.some(x=>x.id===q.id));if(!next&&list.length&&!list.some(q=>q.id===oldId))next=list[0];}
-    flushNote();clearTransient();position().selected=next?.id||null;position().completed=!next;ui.selectedQuestionId=next?.id||null;store.persist();render();
+    flushNote();clearTransient();position().selected=next?.id||null;position().completed=!next;ui.selectedQuestionId=next?.id||null;ensureVisiblePending=true;store.persist();render();
   }
   function allTags(){const f=filters();return [...new Set(pool().filter(q=>(!f.subject||q.subject===f.subject)&&(!f.type||q.type===f.type)).flatMap(q=>q.tags||[]))].sort();}
   function selectFilter(name,label,options){const f=filters();return `<select class="form-field" data-filter="${name}" aria-label="${label}"><option value="">全部${label}</option>${options.map(v=>{const [value,text]=Array.isArray(v)?v:[v,v];return `<option value="${e(value)}" ${f[name]===value?'selected':''}>${e(text)}</option>`;}).join('')}</select>`;}
@@ -123,12 +126,7 @@ function createPracticeView({store,client,toast=()=>{},navigate=()=>{}}={}){
 
     return `
       <div class="hot100-header flex flex-col lg:flex-row lg:items-center justify-between gap-3 pt-1">
-        <div class="flex flex-wrap items-center gap-2.5">
-          <a class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface font-label-md text-xs transition-colors" href="#space/algorithms">
-            <span class="material-symbols-outlined text-[15px]">arrow_back</span>
-            <span>返回算法学习</span>
-          </a>
-          <span class="text-outline-variant select-none">/</span>
+        <div class="hot100-header-title flex flex-wrap items-center gap-2.5 min-w-0">
           <h1 class="font-headline-md text-xl lg:text-2xl text-on-surface font-bold tracking-tight">力扣算法 Hot100 精选题库</h1>
         </div>
 
@@ -157,7 +155,7 @@ function createPracticeView({store,client,toast=()=>{},navigate=()=>{}}={}){
           </div>
           <div class="flex flex-wrap items-center gap-2">
             ${selectFilter('difficulty','难度',DIFFICULTY.hot100)}
-            ${selectFilter('tag','知识点',allTags())}
+            ${selectFilter('tag','标签',allTags())}
           </div>
         </div>
         <div class="hot100-actions flex flex-wrap items-center gap-2">
@@ -197,38 +195,60 @@ function createPracticeView({store,client,toast=()=>{},navigate=()=>{}}={}){
   }
   function statusChip(id){const status=statusOf(id);return `<span class="chip chip-${status}">${STATUS_LABEL[status]}</span>${progress(id).confidence==='fuzzy'&&status==='pending'?'<span class="chip chip-fuzzy">待巩固</span>':''}`;}
   function empty(){if(view==='review'&&!bank().length)return `<div class="practice-empty" role="status"><p>${loading?'正在读取固定题与错题记录…':'固定题库尚未读取，暂不能确认此分类的错题数量。'}</p>${loading?'':button('重试同步','retry-sync')}</div>`;const complete=position().completed;return `<div class="practice-empty"><p>${view==='review'?'当前错题已清空。':!bank().length?'当前题库暂时没有可练习题目，请返回练习首页选择其他入口。':complete?'当前筛选下的题目已刷完。':'当前筛选下没有题目。'}</p>${!bank().length?'<a class="text-link" href="#space/practice">返回练习首页 →</a>':button('调整筛选','clear-filters')}${view==='review'||!bank().length?'':button('查看已掌握','show-mastered')}</div>`;}
-  function hot100ListRows(){
-    const list=listed();
-    const f=filters();
-    const capsules=`
-      <div class="stitch-capsules-bar">
-        <button class="stitch-capsule-btn ${!f.tag?'is-active':''}" type="button" data-action="hot-topic" data-topic="">全部专题</button>
-        ${HOT_TOPICS.slice(1).map(t=>`<button class="stitch-capsule-btn ${f.tag===t?'is-active':''}" type="button" data-action="hot-topic" data-topic="${e(t)}">${e(t)}</button>`).join('')}
+  function hot100Rows(){return pool().filter(q=>q.category==='hot100');}
+  function hot100Topics(){const topics=[];for(const q of hot100Rows())if(q.topic&&!topics.includes(q.topic))topics.push(q.topic);return topics;}
+  function hot100TopicCounts(){
+    const f=filters(),topics=hot100Topics(),selected=topics.includes(f.tag);
+    const scope=selected?{...f,tag:''}:f,counts=new Map();
+    let total=0;
+    for(const q of listed(scope)){const key=q.topic||'其他';counts.set(key,(counts.get(key)||0)+1);total+=1;}
+    return {topics,selected,counts,total};
+  }
+  function hot100TopicNav(){
+    const f=filters(),{topics,selected,counts,total}=hot100TopicCounts();
+    const allActive=!selected;
+    return `<nav class="hot100-topic-nav" aria-label="知识点导航">
+      <div class="hot100-topic-nav-head"><span>知识点</span><span class="hot100-topic-nav-meta">${topics.length} 个官方专题</span></div>
+      <div class="hot100-topic-grid">
+        <button class="stitch-capsule-btn hot100-topic-btn ${allActive?'is-active':''}" type="button" data-action="hot-topic" data-topic="" aria-pressed="${allActive}"><span>全部知识点</span><span class="hot100-topic-count">${total}</span></button>
+        ${topics.map(topic=>`<button class="stitch-capsule-btn hot100-topic-btn ${selected&&f.tag===topic?'is-active':''}" type="button" data-action="hot-topic" data-topic="${e(topic)}" aria-pressed="${selected&&f.tag===topic}" title="${e(topic)}"><span class="hot100-topic-name">${e(topic)}</span><span class="hot100-topic-count">${counts.get(topic)||0}</span></button>`).join('')}
       </div>
-    `;
-    if(!list.length)return `${capsules}${empty()}`;
+    </nav>`;
+  }
+  function hot100ListRows(){
+    const {selected}=hot100TopicCounts();
+    const nav=hot100TopicNav();
+    const list=listed();
+    if(!list.length)return `${nav}${empty()}`;
+    const groupCounts=new Map();
+    for(const q of list){const key=q.topic||'其他';groupCounts.set(key,(groupCounts.get(key)||0)+1);}
+    let lastTopic=null;
+    const rows=list.map(q=>{
+      const isSelected=q.id===position().selected;
+      const status=statusOf(q.id);
+      const num=q.leetcodeNumber||q.id.replace('h100-','').replace(/^0+/,'');
+      const topic=q.topic||'其他';
+      const heading=!selected&&topic!==lastTopic?`<li class="practice-topic hot100-topic-group" role="presentation" data-topic-group="${e(topic)}"><span>${e(topic)}</span><small>${groupCounts.get(topic)||0}</small></li>`:'';
+      lastTopic=topic;
+      return heading+`
+        <li tabindex="0" class="practice-row stitch-question-card ${isSelected?'is-active':''}" data-action="select" data-id="${e(q.id)}" role="option" aria-selected="${isSelected}">
+          <div class="stitch-row-header">
+            <div class="flex items-center gap-1.5">
+              <span class="font-code-sm text-[12px] ${isSelected?'text-primary font-bold':'text-outline'}">#${e(num)}</span>
+            </div>
+            ${status!=='pending'?'<span class="stitch-chip stitch-chip-'+status+'">'+STATUS_LABEL[status]+'</span>':''}
+          </div>
+          <div class="practice-row-title font-headline-sm text-sm ${isSelected?'text-primary font-bold':'text-on-surface font-semibold'}">${e(q.title)}${demoIds().includes(q.id)?'<span class="stitch-chip">交互演示</span>':''}</div>
+          <div class="practice-row-meta flex items-center gap-2 text-xs">
+            <span class="${q.difficulty==='简单'?'text-[#16a34a] font-semibold':q.difficulty==='中等'?'text-tertiary font-semibold':'text-error font-semibold'}">${e(q.difficulty)}</span>
+          </div>
+        </li>
+      `;
+    }).join('');
     return `
-      ${capsules}
+      ${nav}
       <ul class="practice-list flex flex-col gap-2 overflow-y-auto pr-1 flex-1" role="listbox" aria-label="题目列表">
-        ${list.map(q=>{
-          const isSelected=q.id===position().selected;
-          const status=statusOf(q.id);
-          const num=q.leetcodeNumber||q.id.replace('h100-','').replace(/^0+/,'');
-          return `
-            <li tabindex="0" class="practice-row stitch-question-card ${isSelected?'is-active':''}" data-action="select" data-id="${e(q.id)}" role="option" aria-selected="${isSelected}">
-              <div class="stitch-row-header">
-                <div class="flex items-center gap-1.5">
-                  <span class="font-code-sm text-[12px] ${isSelected?'text-primary font-bold':'text-outline'}">#${e(num)}</span>
-                </div>
-                ${status!=='pending'?'<span class="stitch-chip stitch-chip-'+status+'">'+STATUS_LABEL[status]+'</span>':''}
-              </div>
-              <div class="practice-row-title font-headline-sm text-sm ${isSelected?'text-primary font-bold':'text-on-surface font-semibold'}">${e(q.title)}${['h100-63','h100-53'].includes(q.id)?'<span class="stitch-chip">交互演示</span>':''}</div>
-              <div class="practice-row-meta flex items-center gap-2 text-xs">
-                <span class="${q.difficulty==='简单'?'text-[#16a34a] font-semibold':q.difficulty==='中等'?'text-tertiary font-semibold':'text-error font-semibold'}">${e(q.difficulty)}</span>
-              </div>
-            </li>
-          `;
-        }).join('')}
+        ${rows}
       </ul>
     `;
   }
@@ -330,13 +350,15 @@ function createPracticeView({store,client,toast=()=>{},navigate=()=>{}}={}){
       <div class="code-analysis-actions">${button('调用 AI 分析','analyze-code','','button-blue')}</div>
     </div>`;
   }
+  function defaultCodeFor(q,language){const starter=q?.starterCode?.[language];if(typeof starter==='string'&&starter.trim())return starter;return q?.solutions?.[language]||q?.solutions?.python||'';}
+  function isTemplateCode(q,code){if(!q||typeof code!=='string'||!code.trim())return true;const candidates=[...Object.values(q.starterCode||{}),...Object.values(q.solutions||{})];return candidates.includes(code);}
   function hot100Detail(q){
     const languages=Object.keys(q.solutions||{});
     const curLang=languages.includes(ui.language)?ui.language:(languages[0]||'python');
     const num=q.leetcodeNumber||q.id.replace('h100-','').replace(/^0+/,'');
     ui.fixedAiDrafts=ui.fixedAiDrafts||{};
     if(ui.fixedAiDrafts[q.id]===undefined){
-      ui.fixedAiDrafts[q.id]=q.solutions?.[curLang]||q.solutions?.python||'';
+      ui.fixedAiDrafts[q.id]=defaultCodeFor(q,curLang);
     }
     const currentCode=ui.fixedAiDrafts[q.id];
     const samples=q.samples||[];
@@ -633,6 +655,14 @@ function createPracticeView({store,client,toast=()=>{},navigate=()=>{}}={}){
     ${revealed?`<section class="practice-answer">${attempt?`<p class="practice-result">${attempt.correct?'回答正确':'回答错误'} · 你的答案：${e(answerText(q,attempt.answer))}</p>`:''}${q.type==='short'&&!q.parts?`<p><strong>一句话核心答案：</strong>${e(q.answer)}</p><h3>关键得分点</h3><ul>${(q.keyPoints||[]).map(x=>'<li>'+e(x)+'</li>').join('')}</ul><h3>常见追问</h3><ul>${(q.followUps||[]).map(x=>'<li>'+e(x)+'</li>').join('')}</ul>`:['single','multiple','boolean','fill'].includes(q.type)?`<p>正确答案：<strong>${e(answerText(q,q.answer))}</strong></p>`:''}<p class="practice-explanation">${e(q.explanation)}</p>${q.paper?paperBlock(q,true):''}${['single','multiple','boolean','fill'].includes(q.type)?button('重新作答','re-answer'):''}${q.type==='fill'&&attempt&&!attempt.correct?button('此答案也正确','also-correct'):''}</section>`:''}
     ${q.evidenceQuote?`<details class="practice-evidence"><summary>${q.curated?'知识点依据 · '+e(q.origin?.label||'课程题库'):'资料依据 · AI生成，答案请核对'}</summary><p>${e(q.documentName)}${q.sourceLocation?' · '+e(q.sourceLocation):''} · 内容修订 ${e(q.sourceVersion)}</p><blockquote>${e(q.evidenceQuote)}</blockquote>${q.curated?'<p>教材摘录用于说明相关知识点，不代表教材收录了这道原题或完整题解。选编题的原题链接见上方。</p>':''}</details>`:''}${solutionBlock(q)}<div class="practice-actions">${statusActions(q)}${button('下一题','next')}</div>${noteBlock(q)}</article>`;
   }
+  function ensureSelectedVisible(){
+    if(!ensureVisiblePending)return;
+    ensureVisiblePending=false;
+    const pane=listScroller(),row=root?.querySelector('.practice-row.is-active');
+    if(!pane||!row)return;
+    const rowRect=row.getBoundingClientRect(),paneRect=pane.getBoundingClientRect();
+    if(rowRect.top<paneRect.top||rowRect.bottom>paneRect.bottom)row.scrollIntoView({block:'nearest'});
+  }
   function render(){
     if(!root?.isConnected)return;
     if(view!=='review'&&entry!=='practice'){root.innerHTML=entry==='materials'?window.XueyaPracticeHub.materials():window.XueyaPracticeHub.home();return;}
@@ -646,9 +676,9 @@ function createPracticeView({store,client,toast=()=>{},navigate=()=>{}}={}){
     root.innerHTML=`<div class="practice-module ${view!=='review'&&ui.category==='hot100'?'hot100-workbench':''} ${view==='review'?'practice-review':''} ${ui.detailFullscreen&&current()?'is-fullscreen':''}">${toolbar()}${loading?'<p role="status">正在加载题库…</p>':loadError?`<p role="alert">${e(loadError)}</p>`:''}<div class="practice-split"><section class="practice-list-pane">${listRows()}</section><section class="practice-detail-pane">${detail()}</section></div></div>`;
     listScroller().scrollTop=position().scroll||0;
     root.querySelector('.practice-detail-pane').scrollTop=detailScroll;
-    if(current()&&ui.category==='hot100'){
-      const title=current().title||'';
-      if(['h100-63','h100-53'].includes(current()?.id)){const link=document.createElement('a');link.className='button button-outline';link.href='/algorithm-demo.html?question='+encodeURIComponent(current().id);link.target='_blank';link.rel='noopener';link.textContent='打开交互演示';root.querySelector('.practice-detail-pane').prepend(link);}
+    ensureSelectedVisible();
+    if(current()&&ui.category==='hot100'&&demoIds().includes(current().id)){
+      const link=document.createElement('a');link.className='button button-outline';link.href='/algorithm-demo.html?question='+encodeURIComponent(current().id);link.target='_blank';link.rel='noopener';link.textContent='打开交互演示';root.querySelector('.practice-detail-pane').prepend(link);
     }
     if(view==='review'&&globalThis.XueyaStudyQuiz){
       const keep=savedReview?.dataset.reviewArea===reviewArea()&&savedReview.dataset.bankVersion===client.version;
@@ -751,10 +781,8 @@ function createPracticeView({store,client,toast=()=>{},navigate=()=>{}}={}){
       }
       if(action==='reset-code-template'){
         const q=current();if(!q)return;
-        const lang=ui.language||'python';
-        const tmpl=q.solutions?.[lang]||q.solutions?.python||'';
-        ui.fixedAiDrafts||={};ui.fixedAiDrafts[q.id]=tmpl;
-        store.persist();render();toast('已重置为代码初始模板');return;
+        ui.fixedAiDrafts||={};ui.fixedAiDrafts[q.id]=defaultCodeFor(q,ui.language||'python');
+        store.persist();render();toast('已重置为代码初始骨架');return;
       }
       if(action==='format-code'){toast('代码已对齐并格式化 (4 空格缩进)');return;}
       if(action==='show-shortcut-tip'){toast('快捷键：Ctrl + Enter 运行代码，Tab 缩进 4 空格');return;}
@@ -811,11 +839,12 @@ function createPracticeView({store,client,toast=()=>{},navigate=()=>{}}={}){
       return true;
     }
     if(el.dataset.action==='language-select'){
-      ui.language=el.value;
       const q=current();
-      if(q&&q.solutions?.[el.value]){
+      ui.language=el.value;
+      if(q){
         ui.fixedAiDrafts||={};
-        ui.fixedAiDrafts[q.id]=q.solutions[el.value];
+        const existing=ui.fixedAiDrafts[q.id];
+        if(existing===undefined||isTemplateCode(q,existing))ui.fixedAiDrafts[q.id]=defaultCodeFor(q,el.value);
       }
       store.persist();render();return true;
     }if(el.dataset.written!==undefined||el.dataset.selfScore!==undefined){onWrittenInput(el);return true;}if(el.dataset.fill!==undefined){fillDraft=el.value;return true;}if(el.dataset.note!==undefined){onNoteInput(el.dataset.note,el.value);return true;}if(el.dataset.short!==undefined){shortDraft=el.value;return true;}if(el.dataset.filter!==undefined){flushWritten();flushNote();const f=filters();f[el.dataset.filter]=el.value;if(['subject','type'].includes(el.dataset.filter)&&f.tag&&!pool().some(q=>(!f.subject||q.subject===f.subject)&&(!f.type||q.type===f.type)&&(q.tags||[]).includes(f.tag)))f.tag='';resetSelection();render();return true;}return false;}

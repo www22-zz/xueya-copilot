@@ -37,6 +37,9 @@ NARRATIVE_INSTRUCTION = (
 )
 
 LEARNING_READ_TOOLS = frozenset(('search_materials', 'read_source', 'analyze_progress', 'build_review_plan', 'search_web'))
+# Ordinary course sessions never expose the web tool: only an explicit
+# request.webSearch=true answer may open a session that includes search_web.
+COURSE_READ_TOOLS = LEARNING_READ_TOOLS - {'search_web'}
 
 
 def normalize_request(value):
@@ -686,12 +689,12 @@ class Agent:
             yield mark("connect", "正在连接课程学习工具")
             registry = platform_registry(self.platform, scope, context=context, rag=self.rag, learning=self.learning) if stored else None
             if registry:
-                registry.allowed_tools = LEARNING_READ_TOOLS
+                registry.allowed_tools = COURSE_READ_TOOLS
             # Browser-only context uses the same scoped MCP tools in-process;
             # starting a Python stdio server on every message adds cold-start latency.
             material_timeout = self.material_tool_timeout()
             async with open_session(registry, context=None if stored else context, timeout=material_timeout,
-                                    max_duration=max(60, material_timeout+10), allowed_tools=LEARNING_READ_TOOLS) as session:
+                                    max_duration=max(60, material_timeout+10), allowed_tools=COURSE_READ_TOOLS) as session:
                 require(bool(session.definitions), "MCP_TOOL_MISSING")
                 yield mark("connect", "课程学习工具已就绪", "completed")
                 if study:

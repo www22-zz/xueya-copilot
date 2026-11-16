@@ -54,6 +54,32 @@
     return chatService.stream(request,{workflow:true,signal,onUpdate});
   }
   window.XueyaAskInline=askInline;
+  /* Companion (小涯) chat: system-guide knowledge first, ordinary chat fallback.
+     The backend decides the route; when the endpoint is missing or the reply is
+     unusable we keep the old course-RAG/general stream so the pet never breaks. */
+  async function askCompanion(question,{courseId,history=[],previousSources=[],onUpdate=()=>{},signal}={}){
+    const clean=String(question||'').trim();
+    if(!clean)throw new Error('EMPTY_QUESTION');
+    const platform=window.XueyaPlatform;
+    if(platform?.available){
+      try{
+        const response=await platform.spaceFetch('/api/learning/space/companion/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question:clean,history:Array.isArray(history)?history:[],courseId:typeof courseId==='string'&&courseId?courseId:state.courseId}),signal});
+        const value=await response.json().catch(()=>null);
+        if(response.ok&&value?.ok){
+          const reply=value.reply||value;
+          if(typeof reply?.answer==='string'&&reply.answer.trim()){
+            const answer={answer:reply.answer,sources:Array.isArray(reply.sources)?reply.sources:[],engine:reply.engine||'系统百科',online:reply.route!=='system',links:Array.isArray(reply.links)?reply.links:[],route:reply.route||'general',status:reply.status||'ok',...(reply.answerStatus?{answerStatus:reply.answerStatus}:{})};
+            if(typeof onUpdate==='function')onUpdate({answer:answer.answer});
+            return answer;
+          }
+        }
+      }catch(error){
+        if(signal?.aborted||error.name==='AbortError')throw error;
+      }
+    }
+    return askInline(clean,{courseId,history,previousSources,onUpdate,signal});
+  }
+  window.XueyaAskCompanion=askCompanion;
   const experience=window.XueyaExperience?.create({state});
   let activeChat;
   const historyLayout=window.XueyaHistoryLayout?.create();
@@ -165,9 +191,40 @@
     }
     return workspace.openSource(source);
   }
-  async function ask(question){
+  /* One pending question slot: a second entry is queued instead of silently dropped. */
+  let queuedAsk=null;
+  function ask(question){
     window.XueyaAsk=ask;
-    const clean=question.trim()||(workspace.attachments.length?'请根据附件内容帮我解答。':'');if(!clean||state.pending||!workspace.canAsk())return;
+    const clean=String(question==null?'':question).trim()||(workspace.attachments.length?'请根据附件内容帮我解答。':'');
+    if(!clean){toast('请先输入问题');if(state.view==='ask')$('#chatInput')?.focus();return false;}
+    if(!workspace.canAsk())return false;
+    if(state.pending){
+      queuedAsk=clean;state.draft=clean;persist();
+      if(state.view!=='ask')location.hash='space/ask';else render();
+      toast('上一条回答仍在生成，问题已保留并排队，结束后自动发送');
+      return true;
+    }
+    state.draft='';state.followupIndex=null;
+    askNow(clean);return true;
+  }
+  /* Every UI entry that jumps to the ask surface goes through this helper so the
+     question survives the route render and is never lost on a busy assistant. */
+  function openAsk(question){
+    const clean=String(question==null?'':question).trim();
+    if(!clean){toast('请先输入问题');return false;}
+    if(!workspace.canAsk())return false;
+    state.draft=clean;persist();
+    if(location.hash!=='#space/ask')location.hash='space/ask';
+    let tries=0;
+    const send=()=>{
+      if(state.view==='ask'){ask(clean);return;}
+      if(++tries<60)requestAnimationFrame(send);else ask(clean);
+    };
+    requestAnimationFrame(send);
+    return true;
+  }
+  window.XueyaOpenAsk=openAsk;
+  async function askNow(clean){
     const {history,previousSources,previousAnswerKind}=workspace.historyFor(clean);
     const sources=state.selectedDocuments.length?allSources().filter(s=>state.selectedDocuments.includes(s.documentId)):allSources();
     const request={courseId:state.courseId,question:clean,mode:state.mode,sources,history,previousSources,previousAnswerKind,learning:{questions:[],records:[]},webSearch:Boolean(state.webSearch),deepThink:Boolean(state.deepThink)};
@@ -337,6 +394,7 @@
       delete ai.draft;delete ai.organizing;
       if(thinkingDuration&&!ai.thinkingSeconds)ai.thinkingSeconds=thinkingDuration;
       state.pending=false;persist();
+      if(queuedAsk){const next=queuedAsk;queuedAsk=null;if(state.view==='ask'&&!$('#spacePage').hidden)setTimeout(()=>{if(!state.pending)ask(next);},80);else{state.draft=next;persist();toast('排队的问题已保留在输入框');}}
       if(state.view==='ask'&&!$('#spacePage').hidden){
         render();
         if(!userScrolledUp){
@@ -355,7 +413,7 @@
   function mount(){
     agentRuns?.mount();
     workspace.mount();practiceUI?.initialize?.();route();window.addEventListener('hashchange',route);
-    window.XueyaStudyCompanion?.mount({ask:askInline,getCourseId:()=>state.courseId,getBusy:()=>state.pending,openSource,navigate:hash=>{if(location.hash===hash)window.dispatchEvent(new HashChangeEvent('hashchange'));else location.hash=hash;}});
+    window.XueyaStudyCompanion?.mount({ask:askCompanion,getCourseId:()=>state.courseId,getBusy:()=>state.pending,openSource,navigate:hash=>{if(location.hash===hash)window.dispatchEvent(new HashChangeEvent('hashchange'));else location.hash=hash;}});
     if(location.protocol==='file:')$('#engineStatus').textContent='本地模式';
     else fetch('/api/health',{signal:AbortSignal.timeout(5000)}).then(r=>r.json()).then(p=>{$('#engineStatus').textContent=p.engine==='xiaomi-mimo'?'已就绪':'本地模式';
       if(p.uiBuild&&window.XUEYA_UI_BUILD&&p.uiBuild!==window.XUEYA_UI_BUILD){try{const key='xueya-ui-build-reload';if(sessionStorage.getItem(key)!==p.uiBuild){sessionStorage.setItem(key,p.uiBuild);location.reload();}}catch{}}}).catch(()=>{$('#engineStatus').textContent='本地模式';});
